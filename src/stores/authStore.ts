@@ -50,11 +50,15 @@ export const useAuthStore = create<AuthState>()(
           
         } catch (error: any) {
           console.error('❌ Error en login:', error);
+          const errorMessage = error.response?.data?.error?.message 
+            || error.message 
+            || 'Credenciales inválidas';
+          
           set({ 
             user: null, 
             isAuthenticated: false, 
             isLoading: false,
-            error: error.response?.data?.error || error.message || 'Credenciales inválidas'
+            error: errorMessage
           });
           throw error;
         }

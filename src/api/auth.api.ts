@@ -28,8 +28,15 @@ export interface LoginResponse {
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
-  error?: string;
-  message?: string;
+  error?: {
+    message: string;
+    errorCode: string;
+    fieldErrors?: Array<{
+      field: string;
+      message: string;
+    }>;
+  };
+  timestamp?: string;
 }
 
 /**
@@ -45,7 +52,7 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
     return response.data.data;
   }
   
-  throw new Error(response.data.error || 'Error en login');
+  throw new Error(response.data.error?.message || 'Error en login');
 };
 
 /**
@@ -58,7 +65,7 @@ export const getCurrentUser = async (): Promise<User> => {
     return response.data.data;
   }
   
-  throw new Error(response.data.error || 'No autenticado');
+  throw new Error(response.data.error?.message || 'No autenticado');
 };
 
 /**
