@@ -10,8 +10,8 @@ export const customersApi = {
   /**
    * Listar clientes (opcionalmente con búsqueda)
    */
-  list: async (search?: string): Promise<CustomerSummary[]> => {
-    const response = await apiClient.get<ApiResponse<CustomerSummary[]>>('/api/customers', {
+  list: async (search?: string): Promise<Customer[]> => {
+    const response = await apiClient.get<ApiResponse<Customer[]>>('/api/customers', {
       params: search ? { search } : undefined
     });
     return response.data.data || [];

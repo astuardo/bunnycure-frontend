@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { Customer, CustomerSummary, CustomerFormData } from '../types/customer.types';
+import { Customer, CustomerFormData } from '../types/customer.types';
 import { customersApi } from '../api/customers.api';
 import { toast } from 'react-toastify';
 
 interface CustomersState {
-    customers: (Customer | CustomerSummary)[];
+    customers: Customer[];
     currentCustomer: Customer | null;
     loading: boolean;
     error: string | null;

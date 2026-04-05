@@ -1,10 +1,8 @@
 import { Navbar as BsNavbar, Container, Nav, Dropdown } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
 
     const handleLogout = async () => {
         await logout();

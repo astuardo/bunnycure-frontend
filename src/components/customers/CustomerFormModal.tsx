@@ -13,7 +13,7 @@ interface CustomerFormModalProps {
 }
 
 // Esquema de validación
-const customerSchema = yup.object({
+const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     fullName: yup
         .string()
         .required('El nombre completo es requerido')
@@ -58,7 +58,7 @@ const customerSchema = yup.object({
         .mixed<NotificationPreference>()
         .oneOf(Object.values(NotificationPreference))
         .required('La preferencia de notificación es requerida')
-});
+}) as yup.ObjectSchema<CustomerFormData>;
 
 export default function CustomerFormModal({ show, onHide, customer }: CustomerFormModalProps) {
     const { createCustomer, updateCustomer, loading } = useCustomersStore();
@@ -70,7 +70,7 @@ export default function CustomerFormModal({ show, onHide, customer }: CustomerFo
         reset,
         setValue
     } = useForm<CustomerFormData>({
-        resolver: yupResolver<CustomerFormData>(customerSchema),
+        resolver: yupResolver(customerSchema),
         defaultValues: {
             fullName: '',
             phone: '',

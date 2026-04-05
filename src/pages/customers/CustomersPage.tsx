@@ -175,7 +175,7 @@ export default function CustomersPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {customers.map((customer: Customer) => (
+                                        {customers.map((customer) => (
                                             <tr key={customer.id}>
                                                 <td>
                                                     <code className="text-muted small">

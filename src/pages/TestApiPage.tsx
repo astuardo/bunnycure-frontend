@@ -6,11 +6,11 @@ import { useState, useEffect } from 'react';
 import { servicesApi } from '../api/services.api';
 import { customersApi } from '../api/customers.api';
 import { ServiceCatalog } from '../types/service.types';
-import { CustomerSummary } from '../types/customer.types';
+import { Customer } from '../types/customer.types';
 
 export default function TestApiPage() {
   const [services, setServices] = useState<ServiceCatalog[]>([]);
-  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
