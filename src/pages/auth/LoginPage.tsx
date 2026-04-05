@@ -17,8 +17,8 @@ interface LoginFormData {
 }
 
 export default function LoginPage() {
-    const navigate = useNavigate();
     const location = useLocation();
+    const navigate = useNavigate();
     const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
     const [showError, setShowError] = useState(false);
 

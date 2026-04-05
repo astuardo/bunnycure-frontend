@@ -70,7 +70,7 @@ export default function CustomerFormModal({ show, onHide, customer }: CustomerFo
         reset,
         setValue
     } = useForm<CustomerFormData>({
-        resolver: yupResolver(customerSchema),
+        resolver: yupResolver<CustomerFormData>(customerSchema),
         defaultValues: {
             fullName: '',
             phone: '',

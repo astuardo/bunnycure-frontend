@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { Customer, CustomerFormData } from '../types/customer.types';
+import { Customer, CustomerSummary, CustomerFormData } from '../types/customer.types';
 import { customersApi } from '../api/customers.api';
 import { toast } from 'react-toastify';
 
 interface CustomersState {
-    customers: Customer[];
+    customers: (Customer | CustomerSummary)[];
     currentCustomer: Customer | null;
     loading: boolean;
     error: string | null;
@@ -19,7 +19,7 @@ interface CustomersState {
     clearError: () => void;
 }
 
-export const useCustomersStore = create<CustomersState>((set, get) => ({
+export const useCustomersStore = create<CustomersState>((set) => ({
     customers: [],
     currentCustomer: null,
     loading: false,
