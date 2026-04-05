@@ -1,6 +1,6 @@
 /**
  * API Client para autenticación.
- * Spring Security usa form-based authentication con cookies JSESSIONID.
+ * Usa endpoints REST JSON para login/logout.
  */
 
 import apiClient from './client';
@@ -19,59 +19,57 @@ export interface User {
   enabled: boolean;
 }
 
-export interface AuthResponse {
-  authenticated: boolean;
-  user: User | null;
+export interface LoginResponse {
+  user: User;
+  requiresPasswordChange: boolean;
+  message: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
 /**
- * Login del usuario.
- * Spring Security maneja el login con form-based authentication.
- * NO retorna JSON, retorna 302 redirect en caso de éxito.
+ * Login del usuario con API REST JSON.
  */
-export const login = async (credentials: LoginRequest): Promise<void> => {
-  // Spring Security espera form data, no JSON
-  const formData = new URLSearchParams();
-  formData.append('username', credentials.username);
-  formData.append('password', credentials.password);
-
-  const response = await apiClient.post('/login', formData, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    // No seguir redirects automáticamente para detectar éxito/error
-    maxRedirects: 0,
-    validateStatus: (status) => status === 302 || status === 200 || status === 401,
-  });
-
-  // Spring Security redirige a /admin/dashboard en éxito
-  if (response.status === 302 || response.status === 200) {
-    return; // Login exitoso
+export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
+  const response = await apiClient.post<ApiResponse<LoginResponse>>(
+    '/api/auth/login', 
+    credentials
+  );
+  
+  if (response.data.success && response.data.data) {
+    return response.data.data;
   }
-
-  throw new Error('Credenciales inválidas');
+  
+  throw new Error(response.data.error || 'Error en login');
 };
 
 /**
  * Obtener usuario actual autenticado.
- * Debemos crear este endpoint en el backend.
  */
 export const getCurrentUser = async (): Promise<User> => {
-  const response = await apiClient.get<User>('/api/auth/me');
-  return response.data;
+  const response = await apiClient.get<ApiResponse<User>>('/api/auth/me');
+  
+  if (response.data.success && response.data.data) {
+    return response.data.data;
+  }
+  
+  throw new Error(response.data.error || 'No autenticado');
 };
 
 /**
  * Logout del usuario.
- * Spring Security maneja el logout y limpia la sesión.
  */
 export const logout = async (): Promise<void> => {
-  await apiClient.post('/logout');
+  await apiClient.post<ApiResponse<string>>('/api/auth/logout');
 };
 
 /**
  * Verificar si el usuario está autenticado.
- * Intenta obtener el usuario actual.
  */
 export const checkAuth = async (): Promise<boolean> => {
   try {

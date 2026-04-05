@@ -33,25 +33,28 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          // Login con Spring Security
-          await authApi.login({ username, password });
-          
-          // Obtener datos del usuario
-          const user = await authApi.getCurrentUser();
+          // Login con API REST JSON
+          const loginResponse = await authApi.login({ username, password });
           
           set({ 
-            user, 
+            user: loginResponse.user, 
             isAuthenticated: true, 
             isLoading: false,
             error: null 
           });
+          
+          // TODO: Manejar requiresPasswordChange cuando se implemente
+          if (loginResponse.requiresPasswordChange) {
+            console.warn('⚠️ Usuario debe cambiar contraseña');
+          }
+          
         } catch (error: any) {
           console.error('❌ Error en login:', error);
           set({ 
             user: null, 
             isAuthenticated: false, 
             isLoading: false,
-            error: error.response?.data?.message || 'Credenciales inválidas'
+            error: error.response?.data?.error || error.message || 'Credenciales inválidas'
           });
           throw error;
         }
