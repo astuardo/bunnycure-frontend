@@ -46,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
             error: null 
           });
         } catch (error: any) {
+          console.error('❌ Error en login:', error);
           set({ 
             user: null, 
             isAuthenticated: false, 
@@ -74,12 +75,15 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const user = await authApi.getCurrentUser();
+          console.log('✅ Sesión válida:', user.username);
           set({ 
             user, 
             isAuthenticated: true, 
             isLoading: false 
           });
         } catch (error) {
+          console.log('⚠️ Sin sesión activa, limpiando estado');
+          // Sesión expiró o no existe - limpiar estado
           set({ 
             user: null, 
             isAuthenticated: false, 
@@ -100,12 +104,14 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage', // LocalStorage key
+      name: 'auth-storage',
       partialize: (state) => ({ 
         // Solo persistir user e isAuthenticated
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      // IMPORTANTE: Versión para forzar reset cuando cambie la estructura
+      version: 1,
     }
   )
 );

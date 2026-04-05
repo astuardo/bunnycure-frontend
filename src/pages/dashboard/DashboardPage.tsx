@@ -1,11 +1,12 @@
-import { Container, Row, Col, Card } from 'react-bootstrap';
+import { Row, Col, Card } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
+import DashboardLayout from '../../components/common/DashboardLayout';
 
 export default function DashboardPage() {
     const { user } = useAuth();
 
     return (
-        <Container fluid className="py-4">
+        <DashboardLayout>
             <Row className="mb-4">
                 <Col>
                     <h1>📊 Dashboard</h1>
@@ -75,6 +76,6 @@ export default function DashboardPage() {
                     </Card>
                 </Col>
             </Row>
-        </Container>
+        </DashboardLayout>
     );
 }
