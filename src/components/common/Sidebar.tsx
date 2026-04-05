@@ -20,19 +20,19 @@ export default function Sidebar() {
             path: '/customers', 
             icon: '👥', 
             label: 'Clientes',
-            description: 'Registro de clientes'
+            description: 'Base de datos'
         },
         { 
             path: '/services', 
             icon: '💅', 
             label: 'Servicios',
-            description: 'Catálogo de servicios'
+            description: 'Catálogo'
         },
         { 
             path: '/booking-requests', 
             icon: '📬', 
             label: 'Solicitudes',
-            description: 'Reservas pendientes'
+            description: 'Reservas nuevas'
         }
     ];
 

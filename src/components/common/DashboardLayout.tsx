@@ -15,13 +15,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             
             <Container fluid className="px-0">
                 <Row className="g-0">
-                    {/* Sidebar */}
-                    <Col xs={12} md={3} lg={2} className="d-md-block">
+                    {/* Sidebar - optimizado para desktop */}
+                    <Col xs={12} md={2} xl={2} className="d-md-block" style={{ maxWidth: '250px' }}>
                         <Sidebar />
                     </Col>
 
-                    {/* Main content */}
-                    <Col xs={12} md={9} lg={10} className="main-content-col">
+                    {/* Main content - más espacio en desktop */}
+                    <Col xs={12} md={10} xl={10} className="main-content-col" style={{ flex: 1 }}>
                         <main className="p-4">
                             {children}
                         </main>

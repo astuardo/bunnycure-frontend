@@ -3,11 +3,13 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 /* Main content area */
 .main-content-col {
     max-width: 100%;
+    flex: 1 1 auto;
 }
 
 .main-content-col main {
@@ -20,6 +22,7 @@
 .main-content-col .row {
     margin-left: 0;
     margin-right: 0;
+    max-width: 100%;
 }
 
 .main-content-col [class*="col-"] {
@@ -34,11 +37,23 @@
     }
 }
 
+/* Desktop optimization */
+@media (min-width: 992px) {
+    .main-content-col {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
 /* Fix body overflow */
 body {
     overflow-x: hidden;
 }
 
 #root {
+    overflow-x: hidden;
+}
+
+html {
     overflow-x: hidden;
 }

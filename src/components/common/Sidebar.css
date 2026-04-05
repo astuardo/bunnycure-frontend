@@ -2,7 +2,8 @@
 .sidebar {
     min-height: calc(100vh - 56px); /* Full height minus navbar */
     width: 100%;
-    max-width: 280px;
+    max-width: 250px;
+    min-width: 220px;
     position: sticky;
     top: 56px; /* Height of navbar */
     overflow-y: auto;
