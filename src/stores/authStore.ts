@@ -63,11 +63,15 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Error al hacer logout:', error);
         } finally {
+          // Limpiar estado
           set({ 
             user: null, 
             isAuthenticated: false, 
             error: null 
           });
+          
+          // IMPORTANTE: Limpiar localStorage para forzar re-login
+          localStorage.removeItem('auth-storage');
         }
       },
 

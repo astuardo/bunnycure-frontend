@@ -8,7 +8,8 @@ export default function Navbar() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/login');
+        // Forzar reload completo para limpiar todo el estado
+        window.location.href = '/login';
     };
 
     return (

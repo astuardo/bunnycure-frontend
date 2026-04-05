@@ -17,8 +17,13 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Redirect a login si no está autenticado
+    // Si recibimos 401 (no autorizado) o la respuesta es un redirect a login
+    if (error.response?.status === 401 || 
+        error.response?.status === 302 ||
+        error.request?.responseURL?.includes('/login')) {
+      // Limpiar sesión local
+      localStorage.removeItem('auth-storage');
+      // Redirect a login
       window.location.href = '/login';
     }
     return Promise.reject(error);
