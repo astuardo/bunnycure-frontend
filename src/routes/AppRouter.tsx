@@ -6,6 +6,7 @@ import AppointmentsPage from '../pages/appointments/AppointmentsPage';
 import CustomersPage from '../pages/customers/CustomersPage';
 import ServicesPage from '../pages/services/ServicesPage';
 import BookingRequestsPage from '../pages/booking-requests/BookingRequestsPage';
+import InstallPage from '../pages/InstallPage';
 import TestApiPage from '../pages/TestApiPage';
 
 export default function AppRouter() {
@@ -15,6 +16,7 @@ export default function AppRouter() {
                 {/* Public routes */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/install" element={<InstallPage />} />
                 <Route path="/test" element={<TestApiPage />} />
 
                 {/* Protected routes */}

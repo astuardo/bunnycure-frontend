@@ -13,15 +13,19 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, checkAuth } = useAuth();
+  const { isAuthenticated, isLoading, checkAuth, user } = useAuth();
   const location = useLocation();
 
   // Verificar autenticación al montar
   useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
+    // Solo hacer checkAuth si:
+    // 1. No está autenticado según el estado
+    // 2. O el estado dice autenticado pero no hay usuario (inconsistencia)
+    if (!isAuthenticated || (isAuthenticated && !user)) {
+      console.log('🔍 Verificando autenticación...');
       checkAuth();
     }
-  }, [isAuthenticated, isLoading, checkAuth]);
+  }, [location.pathname]); // Solo re-verificar cuando cambia la ruta
 
   // Mostrar loader mientras verifica
   if (isLoading) {
@@ -37,6 +41,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Redirigir a login si no está autenticado
   if (!isAuthenticated) {
+    // Guardar ruta actual para restaurar después del login
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

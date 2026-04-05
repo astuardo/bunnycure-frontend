@@ -69,22 +69,50 @@ export default defineConfig({
               }
             }
           },
+          // API de autenticación - NetworkOnly (nunca cachear)
+          {
+            urlPattern: /\/api\/auth\/(login|logout|me)/i,
+            handler: 'NetworkOnly'
+          },
+          // Otras APIs - NetworkFirst con timeout corto
           {
             urlPattern: /\/api\/.*\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 5 // 5 minutos
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 2 // Solo 2 minutos para evitar datos stale
               },
-              networkTimeoutSeconds: 10
+              networkTimeoutSeconds: 5, // Timeout más corto
+              plugins: [
+                {
+                  cacheWillUpdate: async ({ response }: any) => {
+                    // Solo cachear respuestas exitosas
+                    if (response.status === 200) {
+                      return response;
+                    }
+                    return null;
+                  },
+                },
+              ],
+            }
+          },
+          // Páginas de la app - NetworkFirst para tener siempre última versión
+          {
+            urlPattern: /\/(?:dashboard|customers|appointments|services|booking-requests)/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages-cache',
+              networkTimeoutSeconds: 3
             }
           }
         ],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
-        clientsClaim: true
+        clientsClaim: true,
+        // No cachear redirects ni errores
+        navigateFallback: null,
       },
       devOptions: {
         enabled: false // Deshabilitar en desarrollo para evitar conflictos

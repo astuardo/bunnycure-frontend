@@ -42,8 +42,16 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const from = (location.state as any)?.from?.pathname || '/dashboard';
-            navigate(from, { replace: true });
+            // Intentar restaurar la ruta anterior de sessionStorage
+            const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+            if (redirectPath) {
+                sessionStorage.removeItem('redirectAfterLogin');
+                navigate(redirectPath, { replace: true });
+            } else {
+                // Fallback: usar location.state o ir a dashboard
+                const from = (location.state as any)?.from?.pathname || '/dashboard';
+                navigate(from, { replace: true });
+            }
         }
     }, [isAuthenticated, navigate, location]);
 

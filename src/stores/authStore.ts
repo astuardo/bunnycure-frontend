@@ -79,6 +79,9 @@ export const useAuthStore = create<AuthState>()(
           
           // IMPORTANTE: Limpiar localStorage para forzar re-login
           localStorage.removeItem('auth-storage');
+          
+          // Limpiar también sessionStorage
+          sessionStorage.removeItem('redirectAfterLogin');
         }
       },
 
@@ -92,14 +95,26 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true, 
             isLoading: false 
           });
-        } catch (error) {
-          console.log('⚠️ Sin sesión activa, limpiando estado');
-          // Sesión expiró o no existe - limpiar estado
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
-            isLoading: false 
-          });
+        } catch (error: any) {
+          // Solo limpiar estado si es un error real de autenticación (401/403)
+          // NO limpiar si es error de red o servidor (500, timeout, etc.)
+          const isAuthenticationError = error.response?.status === 401 || 
+                                       error.response?.status === 403 ||
+                                       error.response?.status === 302;
+          
+          if (isAuthenticationError) {
+            console.log('⚠️ Sesión expirada, limpiando estado');
+            // Sesión expiró o no existe - limpiar estado
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              isLoading: false 
+            });
+          } else {
+            // Error de red u otro - mantener estado actual y solo quitar loading
+            console.warn('⚠️ Error al verificar sesión (no es error de auth):', error.message);
+            set({ isLoading: false });
+          }
         }
       },
 
