@@ -4,7 +4,7 @@
 
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
-import { Customer, CustomerSummary, CustomerLookupResponse, CustomerFormData } from '../types/customer.types';
+import { Customer, CustomerLookupResponse, CustomerFormData } from '../types/customer.types';
 
 export const customersApi = {
   /**
