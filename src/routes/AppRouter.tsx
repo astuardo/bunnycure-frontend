@@ -4,8 +4,11 @@ import LoginPage from '../pages/auth/LoginPage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import AppointmentsPage from '../pages/appointments/AppointmentsPage';
 import CustomersPage from '../pages/customers/CustomersPage';
+import CustomerDetailsPage from '../pages/customers/CustomerDetailsPage';
 import ServicesPage from '../pages/services/ServicesPage';
 import BookingRequestsPage from '../pages/booking-requests/BookingRequestsPage';
+import SettingsPage from '../pages/settings/SettingsPage';
+import CalendarPage from '../pages/calendar/CalendarPage';
 import InstallPage from '../pages/InstallPage';
 import TestApiPage from '../pages/TestApiPage';
 
@@ -48,10 +51,37 @@ export default function AppRouter() {
                 />
 
                 <Route
+                    path="/customers/:id"
+                    element={
+                        <ProtectedRoute>
+                            <CustomerDetailsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
                     path="/services"
                     element={
                         <ProtectedRoute>
                             <ServicesPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/calendar"
+                    element={
+                        <ProtectedRoute>
+                            <CalendarPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute>
+                            <SettingsPage />
                         </ProtectedRoute>
                     }
                 />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
 import DeleteCustomerModal from '../../components/customers/DeleteCustomerModal';
@@ -8,6 +9,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { Customer, NotificationPreference } from '../../types/customer.types';
 
 export default function CustomersPage() {
+    const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -216,6 +218,14 @@ export default function CustomersPage() {
                                                         <td>{getNotificationBadge(customer.notificationPreference)}</td>
                                                         <td className="text-center">
                                                             <Button 
+                                                                variant="outline-primary" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => navigate(`/customers/${customer.id}`)}
+                                                            >
+                                                                👁️ Ver
+                                                            </Button>
+                                                            <Button 
                                                                 variant="outline-secondary" 
                                                                 size="sm"
                                                                 className="me-2"
@@ -267,6 +277,14 @@ export default function CustomersPage() {
                                                     )}
                                                     
                                                     <div className="d-flex gap-2">
+                                                        <Button 
+                                                            variant="outline-primary" 
+                                                            size="sm"
+                                                            className="flex-fill"
+                                                            onClick={() => navigate(`/customers/${customer.id}`)}
+                                                        >
+                                                            👁️ Ver
+                                                        </Button>
                                                         <Button 
                                                             variant="outline-secondary" 
                                                             size="sm"
