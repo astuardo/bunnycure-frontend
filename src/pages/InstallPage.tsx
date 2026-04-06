@@ -6,25 +6,29 @@
 import { Container, Card, Button, Row, Col } from 'react-bootstrap';
 import { useState, useEffect } from 'react';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export default function InstallPage() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    // Verificar si ya está instalada (compute inicial)
+    return window.matchMedia('(display-mode: standalone)').matches;
+  });
+  const [isIOS] = useState(() => {
+    // Detectar iOS en estado inicial
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+  });
+  const [isAndroid] = useState(() => {
+    // Detectar Android en estado inicial
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /android/.test(userAgent);
+  });
 
   useEffect(() => {
-    // Detectar plataforma
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
-    const isAndroidDevice = /android/.test(userAgent);
-    
-    setIsIOS(isIOSDevice);
-    setIsAndroid(isAndroidDevice);
-
-    // Verificar si ya está instalada
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
 
     // Capturar evento de instalación (solo funciona en Chrome/Edge Android)
     const handleBeforeInstallPrompt = (e: Event) => {

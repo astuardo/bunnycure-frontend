@@ -87,7 +87,7 @@ export default defineConfig({
               networkTimeoutSeconds: 5, // Timeout más corto
               plugins: [
                 {
-                  cacheWillUpdate: async ({ response }: any) => {
+                  cacheWillUpdate: async ({ response }: { response: Response }) => {
                     // Solo cachear respuestas exitosas
                     if (response.status === 200) {
                       return response;

@@ -16,7 +16,7 @@ export default function CustomersPage() {
 
     useEffect(() => {
         fetchCustomers();
-    }, []);
+    }, [fetchCustomers]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

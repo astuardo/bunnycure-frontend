@@ -49,10 +49,11 @@ export const useAuthStore = create<AuthState>()(
             console.warn('⚠️ Usuario debe cambiar contraseña');
           }
           
-        } catch (error: any) {
+        } catch (error) {
           console.error('❌ Error en login:', error);
-          const errorMessage = error.response?.data?.error?.message 
-            || error.message 
+          const err = error as { response?: { data?: { error?: { message?: string }; message?: string } } };
+          const errorMessage = err.response?.data?.error?.message 
+            || err.response?.data?.message 
             || 'Credenciales inválidas';
           
           set({ 
@@ -96,12 +97,13 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true, 
             isLoading: false 
           });
-        } catch (error: any) {
+        } catch (error) {
           // Solo limpiar estado si es un error real de autenticación (401/403)
           // NO limpiar si es error de red o servidor (500, timeout, etc.)
-          const isAuthenticationError = error.response?.status === 401 || 
-                                       error.response?.status === 403 ||
-                                       error.response?.status === 302;
+          const err = error as { response?: { status?: number } };
+          const isAuthenticationError = err.response?.status === 401 || 
+                                       err.response?.status === 403 ||
+                                       err.response?.status === 302;
           
           if (isAuthenticationError) {
             console.log('⚠️ Sesión expirada, limpiando estado');

@@ -46,7 +46,7 @@ apiClient.interceptors.response.use(
       // Importar authStore dinámicamente para evitar dependencias circulares
       const { useAuthStore } = await import('../stores/authStore');
       
-      // Llamar al método handleSessionExpired del store
+      // Llamar al metodo handleSessionExpired del store
       useAuthStore.getState().handleSessionExpired();
       
       // Reset flag después de un delay

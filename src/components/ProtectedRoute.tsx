@@ -21,11 +21,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Solo hacer checkAuth si:
     // 1. No está autenticado según el estado
     // 2. O el estado dice autenticado pero no hay usuario (inconsistencia)
-    if (!isAuthenticated || (isAuthenticated && !user)) {
+    const shouldCheck = !isAuthenticated || (isAuthenticated && !user);
+    
+    if (shouldCheck) {
       console.log('🔍 Verificando autenticación...');
       checkAuth();
     }
-  }, [location.pathname]); // Solo re-verificar cuando cambia la ruta
+  }, [location.pathname, isAuthenticated, user, checkAuth]); // Incluir todas las dependencias
 
   // Mostrar loader mientras verifica
   if (isLoading) {

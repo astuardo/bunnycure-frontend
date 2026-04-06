@@ -34,20 +34,21 @@ export default function LoginPage() {
     // Detectar si venimos de una sesión expirada
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        if (params.get('expired') === 'true') {
+        const isExpired = params.get('expired') === 'true';
+        if (isExpired && !sessionExpired) {
             setSessionExpired(true);
         }
-    }, [location.search]);
+    }, [location.search, sessionExpired]);
 
     useEffect(() => {
         return () => clearError();
     }, [clearError]);
 
     useEffect(() => {
-        if (error) {
+        if (error && !showError) {
             setShowError(true);
         }
-    }, [error]);
+    }, [error, showError]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -58,7 +59,7 @@ export default function LoginPage() {
                 navigate(redirectPath, { replace: true });
             } else {
                 // Fallback: usar location.state o ir a dashboard
-                const from = (location.state as any)?.from?.pathname || '/dashboard';
+                const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard';
                 navigate(from, { replace: true });
             }
         }
@@ -68,7 +69,7 @@ export default function LoginPage() {
         try {
             setShowError(false);
             await login(data.username, data.password);
-        } catch (err) {
+        } catch {
             setShowError(true);
         }
     };
