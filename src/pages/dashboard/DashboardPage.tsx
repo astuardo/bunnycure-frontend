@@ -1,32 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Table, Badge, Spinner, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { format, isToday, startOfWeek, endOfWeek } from 'date-fns';
+import { isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '../../hooks/useAuth';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useBookingRequestsStore } from '../../stores/bookingRequestsStore';
 import { useCustomersStore } from '../../stores/customersStore';
-import { Appointment, AppointmentStatus } from '../../types/appointment.types';
+import { AppointmentStatus } from '../../types/appointment.types';
 
 export default function DashboardPage() {
     const { user } = useAuth();
     const { 
         appointments, 
-        loading: appointmentsLoading, 
+        isLoading: appointmentsLoading, 
         fetchAppointments 
     } = useAppointmentsStore();
     
     const { 
-        requests, 
-        loading: requestsLoading, 
-        fetchRequests 
+        bookingRequests, 
+        fetchBookingRequests 
     } = useBookingRequestsStore();
     
     const { 
         customers, 
-        loading: customersLoading, 
         fetchCustomers 
     } = useCustomersStore();
 
@@ -37,13 +35,13 @@ export default function DashboardPage() {
             setStatsLoading(true);
             await Promise.all([
                 fetchAppointments(),
-                fetchRequests(),
+                fetchBookingRequests(),
                 fetchCustomers()
             ]);
             setStatsLoading(false);
         };
         loadData();
-    }, [fetchAppointments, fetchRequests, fetchCustomers]);
+    }, [fetchAppointments, fetchBookingRequests, fetchCustomers]);
 
     // Calculate stats
     const todayAppointments = appointments.filter(apt => 
@@ -62,7 +60,7 @@ export default function DashboardPage() {
         return date >= weekStart && date <= weekEnd;
     });
 
-    const pendingRequests = requests.filter(req => req.status === 'PENDING');
+    const pendingRequests = bookingRequests.filter((req: any) => req.status === 'PENDING');
 
     const getStatusBadge = (status: AppointmentStatus) => {
         switch (status) {
@@ -230,8 +228,8 @@ export default function DashboardPage() {
                                             {todayAppointments.slice(0, 5).map((apt) => (
                                                 <tr key={apt.id}>
                                                     <td>{apt.appointmentTime || '-'}</td>
-                                                    <td>{apt.customerName}</td>
-                                                    <td>{apt.serviceName || '-'}</td>
+                                                    <td>{apt.customer.fullName}</td>
+                                                    <td>{apt.service?.name || '-'}</td>
                                                     <td>{getStatusBadge(apt.status)}</td>
                                                 </tr>
                                             ))}

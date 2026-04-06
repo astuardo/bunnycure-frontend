@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { bookingsApi } from '../api/bookings.api';
-import { BookingRequest, BookingApproval } from '../types/booking.types';
+import { BookingRequest, BookingApproval, BookingRequestStatus } from '../types/booking.types';
 import { Appointment } from '../types/appointment.types';
 
 interface BookingRequestsState {
@@ -68,10 +68,10 @@ export const useBookingRequestsStore = create<BookingRequestsState>((set, get) =
       // Actualizar estado de la solicitud en la lista
       set((state) => ({
         bookingRequests: state.bookingRequests.map((req) =>
-          req.id === id ? { ...req, status: 'APPROVED' as const, appointmentId: appointment.id } : req
+          req.id === id ? { ...req, status: BookingRequestStatus.APPROVED, appointmentId: appointment.id } : req
         ),
         selectedBookingRequest: state.selectedBookingRequest?.id === id 
-          ? { ...state.selectedBookingRequest, status: 'APPROVED' as const, appointmentId: appointment.id }
+          ? { ...state.selectedBookingRequest, status: BookingRequestStatus.APPROVED, appointmentId: appointment.id }
           : state.selectedBookingRequest,
         isLoading: false,
       }));

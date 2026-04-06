@@ -9,12 +9,12 @@ import './BookingRequestsPage.css';
 
 const BookingRequestsPage: React.FC = () => {
   const {
-    requests,
-    loading,
+    bookingRequests,
+    isLoading,
     error,
-    fetchRequests,
-    approveRequest,
-    rejectRequest
+    fetchBookingRequests,
+    approveBookingRequest,
+    rejectBookingRequest
   } = useBookingRequestsStore();
 
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending'>('pending');
@@ -34,10 +34,10 @@ const BookingRequestsPage: React.FC = () => {
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+    fetchBookingRequests();
+  }, [fetchBookingRequests]);
 
-  const filteredRequests = requests.filter(request => {
+  const filteredRequests = bookingRequests.filter((request: BookingRequest) => {
     if (filterStatus === 'pending') {
       return request.status === 'PENDING';
     }
@@ -60,12 +60,10 @@ const BookingRequestsPage: React.FC = () => {
   const handleApproveClick = (request: BookingRequest) => {
     setSelectedRequest(request);
     // Pre-fill with request data
-    if (request.requestedDate) {
-      setAppointmentDate(request.requestedDate);
+    if (request.preferredDate) {
+      setAppointmentDate(request.preferredDate);
     }
-    if (request.requestedTime) {
-      setAppointmentTime(request.requestedTime);
-    }
+    setAppointmentTime('10:00'); // Default time
     setNotes('');
     setActionError(null);
     setShowApproveModal(true);
@@ -86,12 +84,11 @@ const BookingRequestsPage: React.FC = () => {
     setActionError(null);
 
     try {
-      await approveRequest(
-        selectedRequest.id,
+      await approveBookingRequest(selectedRequest.id, {
         appointmentDate,
         appointmentTime,
-        notes || undefined
-      );
+        observations: notes || undefined
+      });
       
       setShowApproveModal(false);
       setSelectedRequest(null);
@@ -100,7 +97,7 @@ const BookingRequestsPage: React.FC = () => {
       setNotes('');
       
       // Refresh list
-      await fetchRequests();
+      await fetchBookingRequests();
     } catch (err: any) {
       setActionError(err.message || 'Error al aprobar la solicitud');
     } finally {
@@ -116,14 +113,14 @@ const BookingRequestsPage: React.FC = () => {
     setActionError(null);
 
     try {
-      await rejectRequest(selectedRequest.id, rejectionReason || 'No especificado');
+      await rejectBookingRequest(selectedRequest.id, rejectionReason || 'No especificado');
       
       setShowRejectModal(false);
       setSelectedRequest(null);
       setRejectionReason('');
       
       // Refresh list
-      await fetchRequests();
+      await fetchBookingRequests();
     } catch (err: any) {
       setActionError(err.message || 'Error al rechazar la solicitud');
     } finally {
@@ -174,8 +171,8 @@ const BookingRequestsPage: React.FC = () => {
           <Col md={6} className="d-flex align-items-end justify-content-end">
             <Button 
               variant="outline-primary" 
-              onClick={() => fetchRequests()}
-              disabled={loading}
+              onClick={() => fetchBookingRequests()}
+              disabled={isLoading}
             >
               🔄 Actualizar
             </Button>
@@ -190,7 +187,7 @@ const BookingRequestsPage: React.FC = () => {
         )}
 
         {/* Loading */}
-        {loading && (
+        {isLoading && (
           <div className="text-center my-5">
             <div className="spinner-border text-primary" role="status">
               <span className="visually-hidden">Cargando...</span>
@@ -199,7 +196,7 @@ const BookingRequestsPage: React.FC = () => {
         )}
 
         {/* Table */}
-        {!loading && (
+        {!isLoading && (
           <Row>
             <Col>
               <div className="table-responsive">
@@ -225,19 +222,14 @@ const BookingRequestsPage: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredRequests.map((request) => (
+                      filteredRequests.map((request: BookingRequest) => (
                         <tr key={request.id}>
                           <td>{request.id}</td>
-                          <td>{request.customerName}</td>
+                          <td>{request.fullName}</td>
                           <td>
                             {request.phone && (
                               <div>
                                 📱 {request.phone}
-                                {request.whatsappNumber && request.whatsappNumber !== request.phone && (
-                                  <div className="text-muted small">
-                                    WhatsApp: {request.whatsappNumber}
-                                  </div>
-                                )}
                               </div>
                             )}
                             {request.email && (
@@ -245,12 +237,12 @@ const BookingRequestsPage: React.FC = () => {
                             )}
                           </td>
                           <td>
-                            {request.requestedDate 
-                              ? format(new Date(request.requestedDate), 'dd/MM/yyyy', { locale: es })
+                            {request.preferredDate 
+                              ? format(new Date(request.preferredDate), 'dd/MM/yyyy', { locale: es })
                               : '-'}
                           </td>
-                          <td>{request.requestedTime || '-'}</td>
-                          <td>{request.serviceName || '-'}</td>
+                          <td>{request.preferredBlock || '-'}</td>
+                          <td>{request.service?.name || '-'}</td>
                           <td>{getStatusBadge(request.status)}</td>
                           <td>
                             {request.createdAt 
@@ -281,8 +273,8 @@ const BookingRequestsPage: React.FC = () => {
                                 Convertida a cita
                               </span>
                             )}
-                            {request.status === 'REJECTED' && request.rejectionReason && (
-                              <span className="text-danger small" title={request.rejectionReason}>
+                            {request.status === 'REJECTED' && (
+                              <span className="text-danger small">
                                 Rechazada
                               </span>
                             )}
@@ -313,13 +305,13 @@ const BookingRequestsPage: React.FC = () => {
               {selectedRequest && (
                 <div className="mb-3">
                   <h6>Información del Cliente:</h6>
-                  <p className="mb-1"><strong>Nombre:</strong> {selectedRequest.customerName}</p>
+                  <p className="mb-1"><strong>Nombre:</strong> {selectedRequest.fullName}</p>
                   <p className="mb-1"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
                   {selectedRequest.email && (
                     <p className="mb-1"><strong>Email:</strong> {selectedRequest.email}</p>
                   )}
-                  {selectedRequest.serviceName && (
-                    <p className="mb-1"><strong>Servicio:</strong> {selectedRequest.serviceName}</p>
+                  {selectedRequest.service && (
+                    <p className="mb-1"><strong>Servicio:</strong> {selectedRequest.service.name}</p>
                   )}
                 </div>
               )}
@@ -389,7 +381,7 @@ const BookingRequestsPage: React.FC = () => {
 
               {selectedRequest && (
                 <div className="mb-3">
-                  <p><strong>Cliente:</strong> {selectedRequest.customerName}</p>
+                  <p><strong>Cliente:</strong> {selectedRequest.fullName}</p>
                   <p><strong>Teléfono:</strong> {selectedRequest.phone}</p>
                 </div>
               )}

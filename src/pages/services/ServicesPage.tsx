@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Row, Col, Button, Table, Badge, Form, Modal, Alert, Card } from 'react-bootstrap';
+import { Row, Col, Button, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useServicesStore } from '../../stores/servicesStore';
 import { ServiceFormData } from '../../types/service.types';
