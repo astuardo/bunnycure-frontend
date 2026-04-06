@@ -28,12 +28,24 @@ export const useCustomersStore = create<CustomersState>((set) => ({
     fetchCustomers: async (search?: string) => {
         set({ loading: true, error: null });
         try {
+            console.log('📡 Fetching customers...', search ? `search="${search}"` : 'all');
             const customers = await customersApi.list(search);
+            console.log(`✅ Loaded ${customers.length} customers`);
             set({ customers, loading: false });
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Error al cargar clientes';
-            set({ error: errorMessage, loading: false });
-            toast.error(errorMessage);
+        } catch (error) {
+            const err = error as { response?: { status?: number; data?: { message?: string } } };
+            const errorMessage = err.response?.data?.message || 'Error al cargar clientes';
+            
+            // Solo mostrar toast si NO es error de autenticación (401)
+            // El interceptor ya maneja redirects de auth
+            if (err.response?.status !== 401) {
+                console.error('❌ Error fetching customers:', errorMessage);
+                set({ error: errorMessage, loading: false });
+                toast.error(errorMessage);
+            } else {
+                console.warn('⚠️ 401 en fetchCustomers - sesión expirada (interceptor manejará)');
+                set({ loading: false });
+            }
         }
     },
 

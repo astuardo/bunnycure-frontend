@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
 import DeleteCustomerModal from '../../components/customers/DeleteCustomerModal';
 import { useCustomersStore } from '../../stores/customersStore';
+import { useAuthStore } from '../../stores/authStore';
 import { Customer, NotificationPreference } from '../../types/customer.types';
 
 export default function CustomersPage() {
@@ -13,10 +14,17 @@ export default function CustomersPage() {
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     
     const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomersStore();
+    const { isAuthenticated, user } = useAuthStore();
 
     useEffect(() => {
-        fetchCustomers();
-    }, [fetchCustomers]);
+        // Solo fetch si está autenticado y tiene usuario
+        if (isAuthenticated && user) {
+            console.log('✅ Usuario autenticado, cargando clientes...');
+            fetchCustomers();
+        } else {
+            console.warn('⚠️ Usuario no autenticado en CustomersPage');
+        }
+    }, [isAuthenticated, user, fetchCustomers]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

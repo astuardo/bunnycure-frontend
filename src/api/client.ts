@@ -21,8 +21,19 @@ let isRedirecting = false;
  * Detecta cuando la sesión expira (401) y redirige automáticamente al login.
  */
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful requests para debug
+    if (response.config.url?.includes('/api/')) {
+      console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} → ${response.status}`);
+    }
+    return response;
+  },
   async (error) => {
+    // Log del error para debug
+    const url = error.config?.url;
+    const status = error.response?.status;
+    console.error(`❌ ${error.config?.method?.toUpperCase()} ${url} → ${status || 'Network Error'}`);
+    
     // Solo manejar errores de autenticación en requests que NO son login/checkAuth
     const isAuthRequest = error.config?.url?.includes('/api/auth/login') || 
                           error.config?.url?.includes('/api/auth/me');
@@ -41,6 +52,8 @@ apiClient.interceptors.response.use(
     // 4. Estamos en una ruta protegida (no en /login)
     if (isAuthError && !isAuthRequest && !isRedirecting && window.location.pathname !== '/login') {
       console.warn('🔒 Sesión expirada o inválida - redirigiendo a login');
+      console.warn(`   URL fallida: ${url}`);
+      console.warn(`   Status: ${status}`);
       isRedirecting = true;
       
       // Importar authStore dinámicamente para evitar dependencias circulares
