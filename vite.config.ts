@@ -109,7 +109,9 @@ export default defineConfig({
           }
         ],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
+        // CRÍTICO: skipWaiting en false para evitar problemas con cookies
+        // El service worker esperará hasta que todas las pestañas estén cerradas
+        skipWaiting: false,
         clientsClaim: true,
         // No cachear redirects ni errores
         navigateFallback: null,
