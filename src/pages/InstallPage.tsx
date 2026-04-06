@@ -33,7 +33,8 @@ export default function InstallPage() {
     // Capturar evento de instalación (solo funciona en Chrome/Edge Android)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      // Type assertion segura - este evento tiene estas propiedades
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

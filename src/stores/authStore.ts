@@ -100,7 +100,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           // Solo limpiar estado si es un error real de autenticación (401/403)
           // NO limpiar si es error de red o servidor (500, timeout, etc.)
-          const err = error as { response?: { status?: number } };
+          const err = error as { response?: { status?: number }; message?: string };
           const isAuthenticationError = err.response?.status === 401 || 
                                        err.response?.status === 403 ||
                                        err.response?.status === 302;
@@ -115,7 +115,8 @@ export const useAuthStore = create<AuthState>()(
             });
           } else {
             // Error de red u otro - mantener estado actual y solo quitar loading
-            console.warn('⚠️ Error al verificar sesión (no es error de auth):', error.message);
+            const errorMessage = err.message || 'Error desconocido';
+            console.warn('⚠️ Error al verificar sesión (no es error de auth):', errorMessage);
             set({ isLoading: false });
           }
         }
