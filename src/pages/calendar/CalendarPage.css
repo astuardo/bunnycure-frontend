@@ -1,0 +1,259 @@
+/* Calendario Mensual - Estilo Similar al Monolito */
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.month-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  min-width: 200px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.nav-button {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.nav-button:hover {
+  background: #f8f9fa;
+  border-color: #8b5cf6;
+}
+
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Grid del Calendario */
+.month-week-header {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.month-week-header div {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #6c757d;
+  padding: 0.5rem;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-bottom: 1.5rem;
+}
+
+.month-day-card {
+  min-height: 78px;
+  border: 1px solid #e8e8ef;
+  border-radius: 14px;
+  padding: 0.55rem;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  position: relative;
+}
+
+.month-day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #8b5cf6;
+}
+
+.month-day-card.is-today {
+  background: linear-gradient(135deg, #f3f0ff 0%, #e9d5ff 100%);
+  border-color: #8b5cf6;
+  font-weight: 600;
+}
+
+.month-day-card.is-selected {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #7c3aed;
+  color: white;
+}
+
+.month-day-card.is-selected .month-day-number,
+.month-day-card.is-selected .month-day-mini-label {
+  color: white;
+}
+
+.month-day-card.is-outside {
+  background: #f9fafb;
+  opacity: 0.5;
+}
+
+.month-day-number {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.3rem;
+}
+
+/* Indicadores de citas (dots) */
+.month-day-dots {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+  min-height: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.month-day-dot {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: #8b5cf6;
+  display: inline-block;
+}
+
+.month-day-card.is-selected .month-day-dot {
+  background: #fff;
+}
+
+.month-day-dot-fallback {
+  font-size: 1.2rem;
+  color: #8b5cf6;
+  line-height: 1;
+}
+
+.month-day-card.is-selected .month-day-dot-fallback {
+  color: #fff;
+}
+
+.month-day-mini-label {
+  margin-top: 0.2rem;
+  font-size: 0.63rem;
+  color: #6b7280;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Tabla de citas del día seleccionado */
+.selected-day-section {
+  margin-top: 1.5rem;
+}
+
+.selected-day-header {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #f3f0ff 0%, #e9d5ff 100%);
+  border-bottom: 2px solid #8b5cf6;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.appointments-table {
+  width: 100%;
+}
+
+.appointments-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.appointments-table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.appointments-table tr:hover {
+  background: #f8f9fa;
+}
+
+.appointment-time {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.no-appointments-message {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Badges de estado */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.PENDING {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.CONFIRMED {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.COMPLETED {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.CANCELLED {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .month-grid {
+    gap: 0.25rem;
+  }
+
+  .month-day-card {
+    min-height: 60px;
+    padding: 0.35rem;
+  }
+
+  .month-day-number {
+    font-size: 0.875rem;
+  }
+
+  .month-day-mini-label {
+    font-size: 0.55rem;
+  }
+
+  .month-title {
+    font-size: 1.25rem;
+    min-width: 150px;
+  }
+
+  .nav-button {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}

@@ -1,47 +1,40 @@
 /**
  * Página de Calendario
- * Vista mensual de todas las citas usando react-big-calendar
+ * Vista mensual tipo grid con indicadores de citas (dots)
+ * Basado en el diseño del sistema monolito
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Container, Card, Badge, Spinner } from 'react-bootstrap';
-import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { Container, Card, Badge, Spinner, Button, Table } from 'react-bootstrap';
+import { 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  format, 
+  isSameDay, 
+  isToday, 
+  isSameMonth,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek
+} from 'date-fns';
 import { es } from 'date-fns/locale';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { useNavigate } from 'react-router-dom';
+import './CalendarPage.css';
 
-interface CalendarEvent {
-  id?: number;
-  title: string;
-  start: Date;
-  end: Date;
-  resource: {
-    id: number;
-    status: AppointmentStatus;
-    customerName: string;
-    serviceName: string;
-  };
+interface CalendarDayCell {
+  date: Date;
+  isToday: boolean;
+  isSelected: boolean;
+  isOutsideMonth: boolean;
+  appointmentCount: number;
+  appointments: Appointment[];
 }
-
-const locales = { es };
-
-const localizer = dateFnsLocalizer({
-  format: (date: Date, formatStr: string, culture?: string) => {
-    return format(date, formatStr, { locale: culture ? locales[culture as keyof typeof locales] : es });
-  },
-  parse: (dateStr: string, formatStr: string) => {
-    return parse(dateStr, formatStr, new Date(), { locale: es });
-  },
-  startOfWeek: (culture?: string) => {
-    return startOfWeek(new Date(), { locale: culture ? locales[culture as keyof typeof locales] : es }).getDay();
-  },
-  getDay,
-  locales,
-});
 
 const statusColors: Record<AppointmentStatus, string> = {
   CONFIRMED: '#0d6efd',
@@ -57,59 +50,79 @@ const statusLabels: Record<AppointmentStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
+const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
-  const [view, setView] = useState<View>('month');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  const events: CalendarEvent[] = useMemo(() => {
-    return appointments.map((apt: Appointment) => {
-      // appointmentTime format: "HH:mm" (e.g., "14:30")
-      const [hours, minutes] = apt.appointmentTime.split(':');
+  // Generar celdas del calendario
+  const calendarCells = useMemo((): CalendarDayCell[] => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    
+    // Obtener el inicio y fin del calendario (incluyendo días de meses adyacentes)
+    // weekStartsOn: 1 = Monday
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    
+    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    
+    return days.map(day => {
+      const dayAppointments = appointments.filter(apt => {
+        const aptDate = new Date(apt.appointmentDate);
+        return isSameDay(aptDate, day);
+      });
       
-      const startDate = new Date(apt.appointmentDate);
-      startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-      
-      // Assume 1 hour duration by default
-      const endDate = new Date(startDate);
-      endDate.setHours(startDate.getHours() + 1);
-
       return {
-        id: apt.id,
-        title: `${apt.customer.fullName} - ${apt.service.name}`,
-        start: startDate,
-        end: endDate,
-        resource: {
-          id: apt.id,
-          status: apt.status,
-          customerName: apt.customer.fullName,
-          serviceName: apt.service.name,
-        },
+        date: day,
+        isToday: isToday(day),
+        isSelected: selectedDate ? isSameDay(day, selectedDate) : false,
+        isOutsideMonth: !isSameMonth(day, currentMonth),
+        appointmentCount: dayAppointments.length,
+        appointments: dayAppointments,
       };
     });
-  }, [appointments]);
+  }, [currentMonth, appointments, selectedDate]);
 
-  const handleSelectEvent = () => {
-    navigate(`/appointments`);
+  // Citas del día seleccionado
+  const selectedDayAppointments = useMemo(() => {
+    if (!selectedDate) return [];
+    
+    return appointments
+      .filter(apt => {
+        const aptDate = new Date(apt.appointmentDate);
+        return isSameDay(aptDate, selectedDate);
+      })
+      .sort((a, b) => {
+        // Ordenar por hora
+        return a.appointmentTime.localeCompare(b.appointmentTime);
+      });
+  }, [appointments, selectedDate]);
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(prev => subMonths(prev, 1));
+    setSelectedDate(null);
   };
 
-  const eventStyleGetter = (event: CalendarEvent) => {
-    const backgroundColor = statusColors[event.resource.status] || '#6c757d';
-    
-    return {
-      style: {
-        backgroundColor,
-        borderRadius: '5px',
-        opacity: 0.9,
-        color: 'white',
-        border: '0',
-        display: 'block',
-      },
-    };
+  const handleNextMonth = () => {
+    setCurrentMonth(prev => addMonths(prev, 1));
+    setSelectedDate(null);
+  };
+
+  const handleToday = () => {
+    setCurrentMonth(new Date());
+    setSelectedDate(new Date());
+  };
+
+  const handleDayClick = (cell: CalendarDayCell) => {
+    setSelectedDate(cell.date);
   };
 
   if (isLoading) {
@@ -128,6 +141,7 @@ export default function CalendarPage() {
   return (
     <DashboardLayout>
       <Container fluid className="py-4">
+        {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 className="mb-1">📅 Calendario de Citas</h2>
@@ -148,69 +162,191 @@ export default function CalendarPage() {
           </div>
         </div>
 
+        {/* Calendario */}
         <Card>
-          <Card.Body style={{ height: '700px' }}>
-            <Calendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: '100%' }}
-              onSelectEvent={handleSelectEvent}
-              eventPropGetter={eventStyleGetter}
-              view={view}
-              onView={(newView: View) => setView(newView)}
-              views={['month', 'week', 'day']}
-              messages={{
-                next: 'Siguiente',
-                previous: 'Anterior',
-                today: 'Hoy',
-                month: 'Mes',
-                week: 'Semana',
-                day: 'Día',
-                agenda: 'Agenda',
-                date: 'Fecha',
-                time: 'Hora',
-                event: 'Evento',
-                noEventsInRange: 'No hay citas en este rango de fechas.',
-                showMore: (total: number) => `+ Ver más (${total})`,
-              }}
-              culture="es"
-            />
+          <Card.Body className="p-3">
+            {/* Navegación del mes */}
+            <div className="calendar-header">
+              <div className="month-navigation">
+                <button 
+                  className="nav-button" 
+                  onClick={handlePrevMonth}
+                  aria-label="Mes anterior"
+                >
+                  <FaChevronLeft />
+                </button>
+                
+                <h3 className="month-title">
+                  {format(currentMonth, 'MMMM yyyy', { locale: es })}
+                </h3>
+                
+                <button 
+                  className="nav-button" 
+                  onClick={handleNextMonth}
+                  aria-label="Mes siguiente"
+                >
+                  <FaChevronRight />
+                </button>
+              </div>
+              
+              <Button 
+                variant="outline-primary" 
+                size="sm"
+                onClick={handleToday}
+              >
+                Hoy
+              </Button>
+            </div>
+
+            {/* Cabecera de días de la semana */}
+            <div className="month-week-header">
+              {weekDayNames.map(day => (
+                <div key={day}>{day}</div>
+              ))}
+            </div>
+
+            {/* Grid de días */}
+            <div className="month-grid">
+              {calendarCells.map((cell, idx) => (
+                <div key={idx} onClick={() => handleDayClick(cell)}>
+                  <div
+                    className={`month-day-card ${
+                      cell.isSelected ? 'is-selected' :
+                      cell.isToday ? 'is-today' :
+                      cell.isOutsideMonth ? 'is-outside' : ''
+                    }`}
+                  >
+                    <div className="month-day-number">
+                      {format(cell.date, 'd')}
+                    </div>
+                    
+                    {/* Indicadores de citas (dots) */}
+                    {cell.appointmentCount > 0 && (
+                      <div className="month-day-dots">
+                        {cell.appointmentCount === 1 ? (
+                          <span className="month-day-dot-fallback">•</span>
+                        ) : (
+                          Array.from({ length: Math.min(cell.appointmentCount, 5) }).map((_, i) => (
+                            <span key={i} className="month-day-dot"></span>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Label de cantidad */}
+                    {cell.appointmentCount > 0 && (
+                      <div className="month-day-mini-label">
+                        {cell.appointmentCount === 1 
+                          ? '1 cita' 
+                          : `${cell.appointmentCount} citas`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </Card.Body>
         </Card>
 
-        <div className="mt-3">
-          <Card>
-            <Card.Body>
-              <h6 className="mb-3">📊 Resumen</h6>
-              <div className="row text-center">
-                <div className="col">
-                  <div className="h3 mb-0">{appointments.length}</div>
-                  <div className="small text-muted">Total Citas</div>
-                </div>
-                <div className="col">
-                  <div className="h3 mb-0">
-                    {appointments.filter((a: Appointment) => a.status === 'CONFIRMED').length}
-                  </div>
-                  <div className="small text-muted">Confirmadas</div>
-                </div>
-                <div className="col">
-                  <div className="h3 mb-0">
-                    {appointments.filter((a: Appointment) => a.status === 'PENDING').length}
-                  </div>
-                  <div className="small text-muted">Pendientes</div>
-                </div>
-                <div className="col">
-                  <div className="h3 mb-0">
-                    {appointments.filter((a: Appointment) => a.status === 'COMPLETED').length}
-                  </div>
-                  <div className="small text-muted">Completadas</div>
-                </div>
-              </div>
-            </Card.Body>
+        {/* Citas del día seleccionado */}
+        {selectedDate && (
+          <Card className="mt-3 selected-day-section">
+            <div className="selected-day-header">
+              Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}
+            </div>
+            
+            {selectedDayAppointments.length === 0 ? (
+              <Card.Body>
+                <p className="no-appointments-message">
+                  No hay citas programadas para este día
+                </p>
+              </Card.Body>
+            ) : (
+              <Card.Body className="p-0">
+                <Table hover responsive className="mb-0 appointments-table">
+                  <thead>
+                    <tr>
+                      <th>Hora</th>
+                      <th>Cliente</th>
+                      <th>Servicio</th>
+                      <th>Estado</th>
+                      <th className="text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDayAppointments.map(apt => (
+                      <tr key={apt.id}>
+                        <td>
+                          <span className="appointment-time">
+                            {apt.appointmentTime}
+                          </span>
+                        </td>
+                        <td>
+                          <a
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate(`/customers/${apt.customer.id}`);
+                            }}
+                            className="text-decoration-none"
+                          >
+                            {apt.customer.fullName}
+                          </a>
+                        </td>
+                        <td>{apt.service.name}</td>
+                        <td>
+                          <span className={`status-badge ${apt.status}`}>
+                            {statusLabels[apt.status]}
+                          </span>
+                        </td>
+                        <td className="text-end">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => navigate('/appointments')}
+                          >
+                            Ver detalles
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Card.Body>
+            )}
           </Card>
-        </div>
+        )}
+
+        {/* Resumen estadístico */}
+        <Card className="mt-3">
+          <Card.Body>
+            <h6 className="mb-3">📊 Resumen</h6>
+            <div className="row text-center">
+              <div className="col">
+                <div className="h3 mb-0">{appointments.length}</div>
+                <div className="small text-muted">Total Citas</div>
+              </div>
+              <div className="col">
+                <div className="h3 mb-0">
+                  {appointments.filter((a: Appointment) => a.status === 'CONFIRMED').length}
+                </div>
+                <div className="small text-muted">Confirmadas</div>
+              </div>
+              <div className="col">
+                <div className="h3 mb-0">
+                  {appointments.filter((a: Appointment) => a.status === 'PENDING').length}
+                </div>
+                <div className="small text-muted">Pendientes</div>
+              </div>
+              <div className="col">
+                <div className="h3 mb-0">
+                  {appointments.filter((a: Appointment) => a.status === 'COMPLETED').length}
+                </div>
+                <div className="small text-muted">Completadas</div>
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
       </Container>
     </DashboardLayout>
   );
