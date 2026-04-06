@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { ReactNode } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Offcanvas, Button } from 'react-bootstrap';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import './DashboardLayout.css';
@@ -9,20 +10,54 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+    const [showSidebar, setShowSidebar] = useState(false);
+
+    const handleCloseSidebar = () => setShowSidebar(false);
+    const handleShowSidebar = () => setShowSidebar(true);
+
     return (
         <div className="dashboard-layout">
             <Navbar />
             
+            {/* Botón hamburguesa para móvil */}
+            <div className="d-md-none p-3 border-bottom bg-white">
+                <Button 
+                    variant="outline-primary" 
+                    onClick={handleShowSidebar}
+                    className="d-flex align-items-center gap-2"
+                >
+                    <span style={{ fontSize: '1.5rem' }}>☰</span>
+                    <span>Menú</span>
+                </Button>
+            </div>
+
+            {/* Offcanvas sidebar para móvil */}
+            <Offcanvas 
+                show={showSidebar} 
+                onHide={handleCloseSidebar}
+                className="d-md-none"
+                placement="start"
+            >
+                <Offcanvas.Header closeButton>
+                    <Offcanvas.Title>
+                        <span className="text-primary fw-bold">💅 BunnyCure</span>
+                    </Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body className="p-0">
+                    <Sidebar onNavigate={handleCloseSidebar} />
+                </Offcanvas.Body>
+            </Offcanvas>
+            
             <Container fluid className="px-0">
                 <Row className="g-0">
-                    {/* Sidebar - optimizado para desktop */}
-                    <Col xs={12} md={2} xl={2} className="d-md-block" style={{ maxWidth: '250px' }}>
+                    {/* Sidebar fijo para desktop */}
+                    <Col className="d-none d-md-block sidebar-col">
                         <Sidebar />
                     </Col>
 
-                    {/* Main content - más espacio en desktop */}
-                    <Col xs={12} md={10} xl={10} className="main-content-col" style={{ flex: 1 }}>
-                        <main className="p-4">
+                    {/* Main content */}
+                    <Col className="main-content-col">
+                        <main className="p-3 p-md-4">
                             {children}
                         </main>
                     </Col>

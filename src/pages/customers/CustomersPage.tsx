@@ -80,14 +80,19 @@ export default function CustomersPage() {
 
     return (
         <DashboardLayout>
-            <Row className="mb-4">
+            <Row className="mb-3 mb-md-4">
                 <Col>
-                    <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                         <div>
-                            <h1>👥 Gestión de Clientes</h1>
-                            <p className="text-muted">Administra la base de datos de clientes</p>
+                            <h1 className="mb-1">👥 Gestión de Clientes</h1>
+                            <p className="text-muted mb-0 small">Administra la base de datos de clientes</p>
                         </div>
-                        <Button variant="primary" size="lg" onClick={handleNewCustomer}>
+                        <Button 
+                            variant="primary" 
+                            size="lg" 
+                            onClick={handleNewCustomer}
+                            className="w-100 w-md-auto"
+                        >
                             ➕ Nuevo Cliente
                         </Button>
                     </div>
@@ -95,8 +100,8 @@ export default function CustomersPage() {
             </Row>
 
             {/* Búsqueda */}
-            <Row className="mb-4">
-                <Col md={6}>
+            <Row className="mb-3 mb-md-4">
+                <Col md={8} lg={6}>
                     <Card>
                         <Card.Body>
                             <Form onSubmit={handleSearch}>
@@ -107,8 +112,8 @@ export default function CustomersPage() {
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                     />
-                                    <Button type="submit" variant="primary">
-                                        🔍 Buscar
+                                    <Button type="submit" variant="primary" className="text-nowrap">
+                                        🔍 <span className="d-none d-sm-inline">Buscar</span>
                                     </Button>
                                     {search && (
                                         <Button 
@@ -163,62 +168,118 @@ export default function CustomersPage() {
                                     </p>
                                 </div>
                             ) : (
-                                <Table responsive hover className="mb-0">
-                                    <thead className="table-light">
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Nombre Completo</th>
-                                            <th>Teléfono</th>
-                                            <th>Email</th>
-                                            <th>Notificaciones</th>
-                                            <th className="text-center">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                <>
+                                    {/* Vista Desktop: Tabla */}
+                                    <div className="d-none d-md-block">
+                                        <Table responsive hover className="mb-0">
+                                            <thead className="table-light">
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nombre Completo</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th>Notificaciones</th>
+                                                    <th className="text-center">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {customers.map((customer) => (
+                                                    <tr key={customer.id}>
+                                                        <td>
+                                                            <code className="text-muted small">
+                                                                #{customer.publicId}
+                                                            </code>
+                                                        </td>
+                                                        <td className="fw-semibold">{customer.fullName}</td>
+                                                        <td>
+                                                            <a href={`tel:${customer.phone}`} className="text-decoration-none">
+                                                                📱 {customer.phone}
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            {customer.email ? (
+                                                                <a href={`mailto:${customer.email}`} className="text-decoration-none">
+                                                                    {customer.email}
+                                                                </a>
+                                                            ) : (
+                                                                <span className="text-muted">-</span>
+                                                            )}
+                                                        </td>
+                                                        <td>{getNotificationBadge(customer.notificationPreference)}</td>
+                                                        <td className="text-center">
+                                                            <Button 
+                                                                variant="outline-secondary" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => handleEditCustomer(customer)}
+                                                            >
+                                                                ✏️ Editar
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline-danger" 
+                                                                size="sm"
+                                                                onClick={() => handleDeleteCustomer(customer)}
+                                                            >
+                                                                🗑️
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    </div>
+
+                                    {/* Vista Móvil: Cards */}
+                                    <div className="d-md-none">
                                         {customers.map((customer) => (
-                                            <tr key={customer.id}>
-                                                <td>
-                                                    <code className="text-muted small">
-                                                        #{customer.publicId}
-                                                    </code>
-                                                </td>
-                                                <td className="fw-semibold">{customer.fullName}</td>
-                                                <td>
-                                                    <a href={`tel:${customer.phone}`} className="text-decoration-none">
-                                                        📱 {customer.phone}
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    {customer.email ? (
-                                                        <a href={`mailto:${customer.email}`} className="text-decoration-none">
-                                                            {customer.email}
+                                            <Card key={customer.id} className="mb-3 mx-3 mt-3">
+                                                <Card.Body>
+                                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                                        <div>
+                                                            <h6 className="mb-1 fw-bold">{customer.fullName}</h6>
+                                                            <code className="text-muted small">#{customer.publicId}</code>
+                                                        </div>
+                                                        {getNotificationBadge(customer.notificationPreference)}
+                                                    </div>
+                                                    
+                                                    <div className="mb-2">
+                                                        <small className="text-muted d-block">Teléfono:</small>
+                                                        <a href={`tel:${customer.phone}`} className="text-decoration-none">
+                                                            📱 {customer.phone}
                                                         </a>
-                                                    ) : (
-                                                        <span className="text-muted">-</span>
+                                                    </div>
+                                                    
+                                                    {customer.email && (
+                                                        <div className="mb-3">
+                                                            <small className="text-muted d-block">Email:</small>
+                                                            <a href={`mailto:${customer.email}`} className="text-decoration-none small">
+                                                                {customer.email}
+                                                            </a>
+                                                        </div>
                                                     )}
-                                                </td>
-                                                <td>{getNotificationBadge(customer.notificationPreference)}</td>
-                                                <td className="text-center">
-                                                    <Button 
-                                                        variant="outline-secondary" 
-                                                        size="sm"
-                                                        className="me-2"
-                                                        onClick={() => handleEditCustomer(customer)}
-                                                    >
-                                                        ✏️ Editar
-                                                    </Button>
-                                                    <Button 
-                                                        variant="outline-danger" 
-                                                        size="sm"
-                                                        onClick={() => handleDeleteCustomer(customer)}
-                                                    >
-                                                        🗑️
-                                                    </Button>
-                                                </td>
-                                            </tr>
+                                                    
+                                                    <div className="d-flex gap-2">
+                                                        <Button 
+                                                            variant="outline-secondary" 
+                                                            size="sm"
+                                                            className="flex-fill"
+                                                            onClick={() => handleEditCustomer(customer)}
+                                                        >
+                                                            ✏️ Editar
+                                                        </Button>
+                                                        <Button 
+                                                            variant="outline-danger" 
+                                                            size="sm"
+                                                            onClick={() => handleDeleteCustomer(customer)}
+                                                        >
+                                                            🗑️
+                                                        </Button>
+                                                    </div>
+                                                </Card.Body>
+                                            </Card>
                                         ))}
-                                    </tbody>
-                                </Table>
+                                    </div>
+                                </>
                             )}
                         </Card.Body>
                     </Card>

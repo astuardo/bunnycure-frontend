@@ -8,14 +8,14 @@
 
 /* Main content area */
 .main-content-col {
-    max-width: 100%;
     flex: 1 1 auto;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .main-content-col main {
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
 }
 
 /* Ensure rows don't overflow */
@@ -31,14 +31,28 @@
 }
 
 /* Card responsiveness */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .main-content-col main {
         padding: 1rem !important;
+    }
+    
+    /* Reduce padding in cards */
+    .main-content-col .card {
+        margin-bottom: 1rem;
+    }
+    
+    .main-content-col h1 {
+        font-size: 1.5rem;
+    }
+    
+    .main-content-col .btn-lg {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
     }
 }
 
 /* Desktop optimization */
-@media (min-width: 992px) {
+@media (min-width: 768px) {
     .main-content-col {
         padding-left: 1rem;
         padding-right: 1rem;

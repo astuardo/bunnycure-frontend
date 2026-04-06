@@ -2,7 +2,11 @@ import { Nav } from 'react-bootstrap';
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
-export default function Sidebar() {
+interface SidebarProps {
+    onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: SidebarProps) {
     const menuItems = [
         { 
             path: '/dashboard', 
@@ -44,6 +48,7 @@ export default function Sidebar() {
                         <NavLink
                             key={item.path}
                             to={item.path}
+                            onClick={onNavigate}
                             className={({ isActive }) =>
                                 `sidebar-link nav-link d-flex align-items-center py-3 px-3 rounded mb-2 ${
                                     isActive ? 'active' : ''
