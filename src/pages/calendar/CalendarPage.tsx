@@ -37,8 +37,7 @@ const localizer = dateFnsLocalizer({
     return parse(dateStr, formatStr, new Date(), { locale: es });
   },
   startOfWeek: (culture?: string) => {
-    const weekStartsOn = startOfWeek(new Date(), { locale: culture ? locales[culture as keyof typeof locales] : es }).getDay();
-    return weekStartsOn;
+    return startOfWeek(new Date(), { locale: culture ? locales[culture as keyof typeof locales] : es }).getDay();
   },
   getDay,
   locales,
