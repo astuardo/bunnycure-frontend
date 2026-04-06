@@ -1,6 +1,6 @@
 /**
  * Cliente HTTP configurado con Axios para comunicarse con el backend.
- * Incluye manejo de errores y autenticación con cookies.
+ * Incluye manejo de errores y autenticación con JWT.
  */
 
 import axios from 'axios';
@@ -10,11 +10,33 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Importante para cookies de sesión
+  withCredentials: true, // Importante para cookies de sesión (fallback)
 });
 
 // Variable para evitar múltiples redirects simultáneos
 let isRedirecting = false;
+
+/**
+ * Interceptor de peticiones para agregar JWT token en cada request.
+ * Busca el token en localStorage y lo agrega al header Authorization.
+ */
+apiClient.interceptors.request.use(
+  (config) => {
+    // Obtener token JWT de localStorage
+    const token = localStorage.getItem('jwt_token');
+    
+    if (token) {
+      // Agregar header Authorization con el token
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log(`🔑 JWT incluido en request: ${config.method?.toUpperCase()} ${config.url}`);
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Interceptor de respuesta para manejo de errores de autenticación.

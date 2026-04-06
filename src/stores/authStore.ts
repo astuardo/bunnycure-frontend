@@ -81,6 +81,7 @@ export const useAuthStore = create<AuthState>()(
           
           // IMPORTANTE: Limpiar localStorage para forzar re-login
           localStorage.removeItem('auth-storage');
+          localStorage.removeItem('jwt_token'); // Limpiar JWT token
           
           // Limpiar también sessionStorage
           sessionStorage.removeItem('redirectAfterLogin');
@@ -146,6 +147,7 @@ export const useAuthStore = create<AuthState>()(
         // Limpiar localStorage
         localStorage.removeItem('auth-storage');
         localStorage.removeItem('session_backup');
+        localStorage.removeItem('jwt_token'); // Limpiar JWT token
         
         // Guardar ruta actual para redirect después del login
         const currentPath = window.location.pathname;

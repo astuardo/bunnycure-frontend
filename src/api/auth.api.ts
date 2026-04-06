@@ -21,6 +21,7 @@ export interface User {
 
 export interface LoginResponse {
   user: User;
+  token?: string; // JWT token para autenticación
   requiresPasswordChange: boolean;
   message: string;
 }
@@ -41,6 +42,7 @@ export interface ApiResponse<T> {
 
 /**
  * Login del usuario con API REST JSON.
+ * Guarda el JWT token en localStorage para autenticación en requests posteriores.
  */
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
   const response = await apiClient.post<ApiResponse<LoginResponse>>(
@@ -49,6 +51,12 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
   );
   
   if (response.data.success && response.data.data) {
+    // Guardar JWT token en localStorage si viene en la respuesta
+    if (response.data.data.token) {
+      localStorage.setItem('jwt_token', response.data.data.token);
+      console.log('✅ JWT token guardado en localStorage');
+    }
+    
     return response.data.data;
   }
   
