@@ -1,48 +1,372 @@
-import { Row, Col, Card, Alert } from 'react-bootstrap';
+/**
+ * Página principal de gestión de citas.
+ * Incluye lista, filtros, CRUD completo y cambio de estados.
+ */
+
+import { useEffect, useState } from 'react';
+import { Row, Col, Button, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
 import DashboardLayout from '../../components/common/DashboardLayout';
+import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { useCustomersStore } from '../../stores/customersStore';
+import { useServicesStore } from '../../stores/servicesStore';
+import { AppointmentStatus, AppointmentCreateRequest } from '../../types/appointment.types';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function AppointmentsPage() {
-    return (
-        <DashboardLayout>
-            <Row className="mb-4">
-                <Col>
-                    <h1>📅 Gestión de Citas</h1>
-                    <p className="text-muted">Administra las citas y agenda del salón</p>
-                </Col>
-            </Row>
+  const {
+    appointments,
+    isLoading,
+    error,
+    fetchAppointments,
+    createAppointment,
+    updateAppointmentStatus,
+    deleteAppointment,
+    clearError,
+  } = useAppointmentsStore();
 
-            <Row>
-                <Col>
-                    <Alert variant="info">
-                        <Alert.Heading>🚧 En Construcción</Alert.Heading>
-                        <p className="mb-0">
-                            El módulo de gestión de citas estará disponible próximamente.
-                            Podrás ver, crear, editar y gestionar todas las citas del salón.
-                        </p>
-                    </Alert>
-                </Col>
-            </Row>
+  const { customers, fetchCustomers } = useCustomersStore();
+  const { services, fetchServices } = useServicesStore();
 
+  // State local para modales y formularios
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<AppointmentStatus | ''>('');
+  const [dateFilter, setDateFilter] = useState<string>('');
+
+  // Form state
+  const [formData, setFormData] = useState<AppointmentCreateRequest>({
+    customerId: 0,
+    serviceId: 0,
+    appointmentDate: '',
+    appointmentTime: '',
+    notes: '',
+  });
+
+  // Cargar datos al montar
+  useEffect(() => {
+    fetchAppointments();
+    fetchCustomers();
+    fetchServices(true); // Solo servicios activos
+  }, []);
+
+  // Aplicar filtros
+  const handleApplyFilters = () => {
+    const filters: any = {};
+    if (statusFilter) filters.status = statusFilter;
+    if (dateFilter) {
+      filters.startDate = dateFilter;
+      filters.endDate = dateFilter;
+    }
+    fetchAppointments(filters);
+  };
+
+  // Limpiar filtros
+  const handleClearFilters = () => {
+    setStatusFilter('');
+    setDateFilter('');
+    fetchAppointments();
+  };
+
+  // Crear cita
+  const handleCreateAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createAppointment(formData);
+      setShowCreateModal(false);
+      resetForm();
+      fetchAppointments(); // Recargar lista
+    } catch (err) {
+      console.error('Error creating appointment:', err);
+    }
+  };
+
+  // Cambiar estado
+  const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
+    if (confirm(`¿Cambiar estado a ${status}?`)) {
+      try {
+        await updateAppointmentStatus(id, status);
+        fetchAppointments(); // Recargar lista
+      } catch (err) {
+        console.error('Error updating status:', err);
+      }
+    }
+  };
+
+  // Cancelar cita
+  const handleCancelAppointment = async (id: number) => {
+    if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
+      try {
+        await updateAppointmentStatus(id, AppointmentStatus.CANCELLED);
+        fetchAppointments();
+      } catch (err) {
+        console.error('Error cancelling appointment:', err);
+      }
+    }
+  };
+
+  // Eliminar cita
+  const handleDeleteAppointment = async (id: number) => {
+    if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
+      try {
+        await deleteAppointment(id);
+        fetchAppointments();
+      } catch (err) {
+        console.error('Error deleting appointment:', err);
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      customerId: 0,
+      serviceId: 0,
+      appointmentDate: '',
+      appointmentTime: '',
+      notes: '',
+    });
+  };
+
+  // Badge de estado
+  const getStatusBadge = (status: AppointmentStatus) => {
+    const variants: Record<AppointmentStatus, string> = {
+      PENDING: 'warning',
+      CONFIRMED: 'primary',
+      COMPLETED: 'success',
+      CANCELLED: 'secondary',
+    };
+    const labels: Record<AppointmentStatus, string> = {
+      PENDING: 'Pendiente',
+      CONFIRMED: 'Confirmada',
+      COMPLETED: 'Completada',
+      CANCELLED: 'Cancelada',
+    };
+    return <Badge bg={variants[status]}>{labels[status]}</Badge>;
+  };
+
+  return (
+    <DashboardLayout>
+      <Row className="mb-4">
+        <Col>
+          <h1>📅 Gestión de Citas</h1>
+          <p className="text-muted">Administra las citas y agenda del salón</p>
+        </Col>
+        <Col xs="auto">
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            + Nueva Cita
+          </Button>
+        </Col>
+      </Row>
+
+      {error && (
+        <Alert variant="danger" onClose={clearError} dismissible>
+          {error}
+        </Alert>
+      )}
+
+      {/* Filtros */}
+      <Row className="mb-4">
+        <Col md={4}>
+          <Form.Group>
+            <Form.Label>Fecha</Form.Label>
+            <Form.Control
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+          </Form.Group>
+        </Col>
+        <Col md={4}>
+          <Form.Group>
+            <Form.Label>Estado</Form.Label>
+            <Form.Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as AppointmentStatus | '')}
+            >
+              <option value="">Todos</option>
+              <option value={AppointmentStatus.PENDING}>Pendiente</option>
+              <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
+              <option value={AppointmentStatus.COMPLETED}>Completada</option>
+              <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
+            </Form.Select>
+          </Form.Group>
+        </Col>
+        <Col md={4} className="d-flex align-items-end gap-2">
+          <Button variant="secondary" onClick={handleApplyFilters}>
+            Filtrar
+          </Button>
+          <Button variant="outline-secondary" onClick={handleClearFilters}>
+            Limpiar
+          </Button>
+        </Col>
+      </Row>
+
+      {/* Tabla de citas */}
+      <Row>
+        <Col>
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : appointments.length === 0 ? (
+            <Alert variant="info">
+              No hay citas que mostrar. {dateFilter || statusFilter ? 'Intenta cambiar los filtros.' : 'Crea tu primera cita.'}
+            </Alert>
+          ) : (
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Cliente</th>
+                  <th>Servicio</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((apt) => (
+                  <tr key={apt.id}>
+                    <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
+                    <td>{apt.appointmentTime}</td>
+                    <td>{apt.customer.fullName}</td>
+                    <td>{apt.service.name}</td>
+                    <td>{getStatusBadge(apt.status)}</td>
+                    <td>
+                      <div className="d-flex gap-2">
+                        {apt.status === AppointmentStatus.PENDING && (
+                          <Button
+                            size="sm"
+                            variant="success"
+                            onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
+                          >
+                            Confirmar
+                          </Button>
+                        )}
+                        {apt.status === AppointmentStatus.CONFIRMED && (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
+                          >
+                            Completar
+                          </Button>
+                        )}
+                        {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
+                          <Button
+                            size="sm"
+                            variant="warning"
+                            onClick={() => handleCancelAppointment(apt.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleDeleteAppointment(apt.id)}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Col>
+      </Row>
+
+      {/* Modal Crear Cita */}
+      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Nueva Cita</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleCreateAppointment}>
+          <Modal.Body>
             <Row>
-                <Col>
-                    <Card>
-                        <Card.Header>
-                            <h5 className="mb-0">Funcionalidades Planificadas</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <ul>
-                                <li>Vista de calendario mensual/semanal/diaria</li>
-                                <li>Crear nueva cita con cliente y servicio</li>
-                                <li>Editar citas existentes</li>
-                                <li>Cambiar estado: Programada → Confirmada → Completada</li>
-                                <li>Cancelar citas con motivo</li>
-                                <li>Buscar y filtrar por fecha/cliente/servicio</li>
-                                <li>Notificaciones y recordatorios</li>
-                            </ul>
-                        </Card.Body>
-                    </Card>
-                </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Cliente *</Form.Label>
+                  <Form.Select
+                    required
+                    value={formData.customerId}
+                    onChange={(e) => setFormData({ ...formData, customerId: parseInt(e.target.value) })}
+                  >
+                    <option value={0}>Seleccionar cliente...</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.fullName} - {customer.phone}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Servicio *</Form.Label>
+                  <Form.Select
+                    required
+                    value={formData.serviceId}
+                    onChange={(e) => setFormData({ ...formData, serviceId: parseInt(e.target.value) })}
+                  >
+                    <option value={0}>Seleccionar servicio...</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name} - ${service.price} ({service.durationMinutes} min)
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
             </Row>
-        </DashboardLayout>
-    );
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Fecha *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    required
+                    value={formData.appointmentDate}
+                    onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Hora *</Form.Label>
+                  <Form.Control
+                    type="time"
+                    required
+                    value={formData.appointmentTime}
+                    onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Form.Group className="mb-3">
+              <Form.Label>Notas</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Observaciones, preferencias, etc..."
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit">
+              Crear Cita
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+    </DashboardLayout>
+  );
 }
