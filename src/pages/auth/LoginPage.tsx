@@ -21,6 +21,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
     const [showError, setShowError] = useState(false);
+    const [sessionExpired, setSessionExpired] = useState(false);
 
     const {
         register,
@@ -29,6 +30,14 @@ export default function LoginPage() {
     } = useForm<LoginFormData>({
         resolver: yupResolver(loginSchema),
     });
+
+    // Detectar si venimos de una sesión expirada
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('expired') === 'true') {
+            setSessionExpired(true);
+        }
+    }, [location.search]);
 
     useEffect(() => {
         return () => clearError();
@@ -74,6 +83,18 @@ export default function LoginPage() {
                                 <h2 className="fw-bold text-primary">💅 BunnyCure</h2>
                                 <p className="text-muted">Sistema de Gestión</p>
                             </div>
+
+                            {sessionExpired && (
+                                <Alert 
+                                    variant="warning" 
+                                    dismissible 
+                                    onClose={() => setSessionExpired(false)}
+                                    className="mb-3"
+                                >
+                                    <i className="bi bi-clock-history me-2"></i>
+                                    Tu sesión ha expirado. Por favor, inicia sesión nuevamente.
+                                </Alert>
+                            )}
 
                             {showError && error && (
                                 <Alert

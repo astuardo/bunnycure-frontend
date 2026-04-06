@@ -16,16 +16,20 @@ const apiClient = axios.create({
 // Variable para evitar múltiples redirects simultáneos
 let isRedirecting = false;
 
-// Interceptor de respuesta para manejo de errores
+/**
+ * Interceptor de respuesta para manejo de errores de autenticación.
+ * Detecta cuando la sesión expira (401) y redirige automáticamente al login.
+ */
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     // Solo manejar errores de autenticación en requests que NO son login/checkAuth
     const isAuthRequest = error.config?.url?.includes('/api/auth/login') || 
                           error.config?.url?.includes('/api/auth/me');
     
-    // Si es un error de autenticación real (401 o redirect HTML a login)
+    // Detectar error de autenticación (401, 403, o redirect a login)
     const isAuthError = error.response?.status === 401 || 
+                        error.response?.status === 403 ||
                         error.response?.status === 302 ||
                         (error.request?.responseURL?.includes('/login') && 
                          error.request?.responseType !== 'json');
@@ -36,20 +40,14 @@ apiClient.interceptors.response.use(
     // 3. No estamos ya redirigiendo
     // 4. Estamos en una ruta protegida (no en /login)
     if (isAuthError && !isAuthRequest && !isRedirecting && window.location.pathname !== '/login') {
-      console.warn('⚠️ Sesión expirada o inválida - redirigiendo a login');
+      console.warn('🔒 Sesión expirada o inválida - redirigiendo a login');
       isRedirecting = true;
       
-      // Limpiar sesión local
-      localStorage.removeItem('auth-storage');
+      // Importar authStore dinámicamente para evitar dependencias circulares
+      const { useAuthStore } = await import('../stores/authStore');
       
-      // Guardar la ruta actual para volver después del login
-      const currentPath = window.location.pathname;
-      if (currentPath !== '/login') {
-        sessionStorage.setItem('redirectAfterLogin', currentPath);
-      }
-      
-      // Redirect a login
-      window.location.href = '/login';
+      // Llamar al método handleSessionExpired del store
+      useAuthStore.getState().handleSessionExpired();
       
       // Reset flag después de un delay
       setTimeout(() => {

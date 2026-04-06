@@ -20,6 +20,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
   setUser: (user: User | null) => void;
   clearError: () => void;
+  handleSessionExpired: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -127,6 +128,30 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => {
         set({ error: null });
+      },
+
+      handleSessionExpired: () => {
+        console.warn('⚠️ Sesión expirada - limpiando estado local');
+        
+        // Limpiar estado de autenticación
+        set({ 
+          user: null, 
+          isAuthenticated: false,
+          error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+        });
+        
+        // Limpiar localStorage
+        localStorage.removeItem('auth-storage');
+        localStorage.removeItem('session_backup');
+        
+        // Guardar ruta actual para redirect después del login
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/login' && currentPath !== '/') {
+          sessionStorage.setItem('redirectAfterLogin', currentPath);
+        }
+        
+        // Redirigir a login con parámetro de sesión expirada
+        window.location.href = '/login?expired=true';
       },
     }),
     {
