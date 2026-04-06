@@ -5,7 +5,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Container, Card, Badge, Spinner } from 'react-bootstrap';
-import { Calendar, dateFnsLocalizer, Event } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -14,17 +14,11 @@ import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { useNavigate } from 'react-router-dom';
 
-const locales = { es };
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { locale: es }),
-  getDay,
-  locales,
-});
-
-interface CalendarEvent extends Event {
+interface CalendarEvent {
+  id?: number;
+  title: string;
+  start: Date;
+  end: Date;
   resource: {
     id: number;
     status: AppointmentStatus;
@@ -33,12 +27,28 @@ interface CalendarEvent extends Event {
   };
 }
 
+const locales = { es };
+
+const localizer = dateFnsLocalizer({
+  format: (date: Date, formatStr: string, culture?: string) => {
+    return format(date, formatStr, { locale: culture ? locales[culture as keyof typeof locales] : es });
+  },
+  parse: (dateStr: string, formatStr: string) => {
+    return parse(dateStr, formatStr, new Date(), { locale: es });
+  },
+  startOfWeek: (culture?: string) => {
+    const weekStartsOn = startOfWeek(new Date(), { locale: culture ? locales[culture as keyof typeof locales] : es }).getDay();
+    return weekStartsOn;
+  },
+  getDay,
+  locales,
+});
+
 const statusColors: Record<AppointmentStatus, string> = {
   CONFIRMED: '#0d6efd',
   PENDING: '#ffc107',
   COMPLETED: '#198754',
   CANCELLED: '#dc3545',
-  NO_SHOW: '#6c757d',
 };
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -46,13 +56,12 @@ const statusLabels: Record<AppointmentStatus, string> = {
   PENDING: 'Pendiente',
   COMPLETED: 'Completada',
   CANCELLED: 'Cancelada',
-  NO_SHOW: 'No asistió',
 };
 
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
+  const [view, setView] = useState<View>('month');
 
   useEffect(() => {
     fetchAppointments();
@@ -60,8 +69,15 @@ export default function CalendarPage() {
 
   const events: CalendarEvent[] = useMemo(() => {
     return appointments.map((apt: Appointment) => {
-      const startDate = new Date(`${apt.date}T${apt.startTime}`);
-      const endDate = new Date(`${apt.date}T${apt.endTime}`);
+      // appointmentTime format: "HH:mm" (e.g., "14:30")
+      const [hours, minutes] = apt.appointmentTime.split(':');
+      
+      const startDate = new Date(apt.appointmentDate);
+      startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+      
+      // Assume 1 hour duration by default
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
 
       return {
         id: apt.id,
@@ -78,7 +94,7 @@ export default function CalendarPage() {
     });
   }, [appointments]);
 
-  const handleSelectEvent = (event: CalendarEvent) => {
+  const handleSelectEvent = () => {
     navigate(`/appointments`);
   };
 
@@ -144,7 +160,7 @@ export default function CalendarPage() {
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               view={view}
-              onView={(newView) => setView(newView as 'month' | 'week' | 'day')}
+              onView={(newView: View) => setView(newView)}
               views={['month', 'week', 'day']}
               messages={{
                 next: 'Siguiente',
@@ -158,7 +174,7 @@ export default function CalendarPage() {
                 time: 'Hora',
                 event: 'Evento',
                 noEventsInRange: 'No hay citas en este rango de fechas.',
-                showMore: (total) => `+ Ver más (${total})`,
+                showMore: (total: number) => `+ Ver más (${total})`,
               }}
               culture="es"
             />
