@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner, Tabs, Tab } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner } from 'react-bootstrap';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -18,7 +18,7 @@ export default function CustomerDetailsPage() {
   const navigate = useNavigate();
   const toast = useToast();
   
-  const { customers, isLoading: customersLoading, fetchCustomers } = useCustomersStore();
+  const { customers, loading: customersLoading, fetchCustomers } = useCustomersStore();
   const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
 
   const [customer, setCustomer] = useState<any>(null);

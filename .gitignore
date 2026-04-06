@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 *.md
 *.bat
+*.txt
 
 .vercel
