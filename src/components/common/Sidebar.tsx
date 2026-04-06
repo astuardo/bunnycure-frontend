@@ -21,6 +21,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             description: 'Gestión de agenda'
         },
         { 
+            path: '/calendar', 
+            icon: '🗓️', 
+            label: 'Calendario',
+            description: 'Vista mensual'
+        },
+        { 
             path: '/customers', 
             icon: '👥', 
             label: 'Clientes',
@@ -37,6 +43,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             icon: '📬', 
             label: 'Solicitudes',
             description: 'Reservas nuevas'
+        },
+        { 
+            path: '/settings', 
+            icon: '⚙️', 
+            label: 'Configuración',
+            description: 'Ajustes del negocio'
         }
     ];
 
