@@ -1,8 +1,3 @@
-/**
- * Hook para mostrar notificaciones toast en toda la aplicación.
- * Wrapper de react-toastify para uso consistente.
- */
-
 import { toast, ToastOptions } from 'react-toastify';
 
 const defaultOptions: ToastOptions = {
@@ -32,12 +27,12 @@ export const useToast = () => {
   };
 
   const promise = <T,>(
-    promise: Promise<T>,
-    messages: {
-      pending: string;
-      success: string;
-      error: string;
-    }
+      promise: Promise<T>,
+      messages: {
+        pending: string;
+        success: string;
+        error: string;
+      }
   ) => {
     return toast.promise(promise, messages, defaultOptions);
   };

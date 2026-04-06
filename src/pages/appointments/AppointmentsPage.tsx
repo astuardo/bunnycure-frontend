@@ -12,8 +12,10 @@ import { useServicesStore } from '../../stores/servicesStore';
 import { AppointmentStatus, AppointmentCreateRequest } from '../../types/appointment.types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useToast } from '../../hooks/useToast';
 
 export default function AppointmentsPage() {
+  const toast = useToast();
   const {
     appointments,
     isLoading,
@@ -72,11 +74,12 @@ export default function AppointmentsPage() {
     e.preventDefault();
     try {
       await createAppointment(formData);
+      toast.success('Cita creada exitosamente');
       setShowCreateModal(false);
       resetForm();
       fetchAppointments(); // Recargar lista
-    } catch (err) {
-      console.error('Error creating appointment:', err);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al crear la cita');
     }
   };
 
@@ -85,9 +88,10 @@ export default function AppointmentsPage() {
     if (confirm(`¿Cambiar estado a ${status}?`)) {
       try {
         await updateAppointmentStatus(id, status);
+        toast.success('Estado actualizado correctamente');
         fetchAppointments(); // Recargar lista
-      } catch (err) {
-        console.error('Error updating status:', err);
+      } catch (err: any) {
+        toast.error(err.message || 'Error al actualizar el estado');
       }
     }
   };
@@ -97,9 +101,10 @@ export default function AppointmentsPage() {
     if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
       try {
         await updateAppointmentStatus(id, AppointmentStatus.CANCELLED);
+        toast.success('Cita cancelada');
         fetchAppointments();
-      } catch (err) {
-        console.error('Error cancelling appointment:', err);
+      } catch (err: any) {
+        toast.error(err.message || 'Error al cancelar la cita');
       }
     }
   };
@@ -109,9 +114,10 @@ export default function AppointmentsPage() {
     if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
       try {
         await deleteAppointment(id);
+        toast.success('Cita eliminada');
         fetchAppointments();
-      } catch (err) {
-        console.error('Error deleting appointment:', err);
+      } catch (err: any) {
+        toast.error(err.message || 'Error al eliminar la cita');
       }
     }
   };

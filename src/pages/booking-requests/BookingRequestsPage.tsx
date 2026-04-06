@@ -5,9 +5,11 @@ import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useBookingRequestsStore } from '../../stores/bookingRequestsStore';
 import { BookingRequest, BookingRequestStatus } from '../../types/booking.types';
+import { useToast } from '../../hooks/useToast';
 import './BookingRequestsPage.css';
 
 const BookingRequestsPage: React.FC = () => {
+  const toast = useToast();
   const {
     bookingRequests,
     isLoading,
@@ -90,6 +92,7 @@ const BookingRequestsPage: React.FC = () => {
         observations: notes || undefined
       });
       
+      toast.success('Solicitud aprobada y cita creada exitosamente');
       setShowApproveModal(false);
       setSelectedRequest(null);
       setAppointmentDate('');
@@ -99,7 +102,9 @@ const BookingRequestsPage: React.FC = () => {
       // Refresh list
       await fetchBookingRequests();
     } catch (err: any) {
-      setActionError(err.message || 'Error al aprobar la solicitud');
+      const errorMessage = err.message || 'Error al aprobar la solicitud';
+      setActionError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -115,6 +120,7 @@ const BookingRequestsPage: React.FC = () => {
     try {
       await rejectBookingRequest(selectedRequest.id, rejectionReason || 'No especificado');
       
+      toast.success('Solicitud rechazada');
       setShowRejectModal(false);
       setSelectedRequest(null);
       setRejectionReason('');
@@ -122,7 +128,9 @@ const BookingRequestsPage: React.FC = () => {
       // Refresh list
       await fetchBookingRequests();
     } catch (err: any) {
-      setActionError(err.message || 'Error al rechazar la solicitud');
+      const errorMessage = err.message || 'Error al rechazar la solicitud';
+      setActionError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setActionLoading(false);
     }

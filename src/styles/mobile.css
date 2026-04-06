@@ -1,0 +1,91 @@
+/* Mobile Optimizations */
+
+/* Touch-friendly buttons */
+@media (max-width: 767px) {
+    .btn {
+        min-height: 44px;
+        padding: 10px 16px;
+        font-size: 16px;
+    }
+
+    .btn-sm {
+        min-height: 36px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    /* Forms */
+    .form-control,
+    .form-select {
+        min-height: 44px;
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+
+    /* Tables responsive */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Modals full-screen en móvil */
+    .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        height: 100%;
+    }
+
+    .modal-content {
+        height: 100%;
+        border-radius: 0;
+    }
+
+    /* Cards más compactas */
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Spacing reducido */
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Nav items touch-friendly */
+    .nav-link {
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 991px) {
+    .container-fluid {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+/* Hide scrollbar but keep functionality */
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+/* Touch feedback */
+.btn:active,
+.nav-link:active,
+.list-group-item:active {
+    transform: scale(0.98);
+    transition: transform 0.1s;
+}

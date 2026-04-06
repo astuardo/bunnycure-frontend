@@ -8,8 +8,10 @@ import { Row, Col, Button, Table, Badge, Form, Modal, Alert } from 'react-bootst
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useServicesStore } from '../../stores/servicesStore';
 import { ServiceFormData } from '../../types/service.types';
+import { useToast } from '../../hooks/useToast';
 
 export default function ServicesPage() {
+  const toast = useToast();
   const {
     services,
     isLoading,
@@ -48,11 +50,12 @@ export default function ServicesPage() {
     e.preventDefault();
     try {
       await createService(formData);
+      toast.success('Servicio creado exitosamente');
       setShowCreateModal(false);
       resetForm();
       fetchServices();
-    } catch (err) {
-      console.error('Error creating service:', err);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al crear el servicio');
     }
   };
 
@@ -62,12 +65,13 @@ export default function ServicesPage() {
     if (!editingServiceId) return;
     try {
       await updateService(editingServiceId, formData);
+      toast.success('Servicio actualizado exitosamente');
       setShowEditModal(false);
       setEditingServiceId(null);
       resetForm();
       fetchServices();
-    } catch (err) {
-      console.error('Error updating service:', err);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar el servicio');
     }
   };
 
@@ -88,9 +92,10 @@ export default function ServicesPage() {
   const handleToggleActive = async (id: number) => {
     try {
       await toggleServiceActive(id);
+      toast.success('Estado actualizado');
       fetchServices();
-    } catch (err) {
-      console.error('Error toggling service:', err);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al cambiar el estado');
     }
   };
 
@@ -99,9 +104,10 @@ export default function ServicesPage() {
     if (confirm('¿Estás seguro de eliminar este servicio? Esta acción no se puede deshacer.')) {
       try {
         await deleteService(id);
+        toast.success('Servicio eliminado');
         fetchServices();
-      } catch (err) {
-        console.error('Error deleting service:', err);
+      } catch (err: any) {
+        toast.error(err.message || 'Error al eliminar el servicio');
       }
     }
   };

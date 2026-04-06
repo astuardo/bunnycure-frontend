@@ -1,7 +1,3 @@
-/**
- * Hook para detectar media queries y responsive breakpoints.
- */
-
 import { useState, useEffect } from 'react';
 
 export const useMediaQuery = (query: string): boolean => {
@@ -22,7 +18,6 @@ export const useMediaQuery = (query: string): boolean => {
   return matches;
 };
 
-// Breakpoints predefinidos (Bootstrap)
 export const useIsMobile = () => useMediaQuery('(max-width: 767px)');
 export const useIsTablet = () => useMediaQuery('(min-width: 768px) and (max-width: 991px)');
 export const useIsDesktop = () => useMediaQuery('(min-width: 992px)');
