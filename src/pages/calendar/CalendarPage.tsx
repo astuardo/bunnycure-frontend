@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Container, Card, Badge, Spinner, Button, Table } from 'react-bootstrap';
+import { Container, Card, Badge, Spinner, Button, Table, Dropdown } from 'react-bootstrap';
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -20,11 +20,13 @@ import {
   endOfWeek
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
+import { appointmentsApi } from '../../api/appointments.api';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../hooks/useToast';
 import './CalendarPage.css';
 
 interface CalendarDayCell {
@@ -54,6 +56,7 @@ const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 export default function CalendarPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -61,6 +64,48 @@ export default function CalendarPage() {
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
+
+  // Handlers para notificaciones y WhatsApp
+  const handleSendNotification = async (id: number) => {
+    try {
+      await appointmentsApi.sendNotification(id);
+      toast.success('📧 Notificación enviada correctamente');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al enviar notificación');
+    }
+  };
+
+  const handleWhatsAppHandoff = async (id: number) => {
+    try {
+      const url = await appointmentsApi.whatsappHandoff(id);
+      window.open(url, '_blank');
+      toast.success('✅ Abriendo WhatsApp para traspaso');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al generar handoff');
+    }
+  };
+
+  const handleSendWhatsAppConfirmation = async (id: number) => {
+    try {
+      await appointmentsApi.sendWhatsAppConfirmation(id);
+      toast.success('✅ Confirmación enviada por WhatsApp');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al enviar confirmación');
+    }
+  };
+
+  const handleSendWhatsAppReminder = async (id: number) => {
+    try {
+      await appointmentsApi.sendWhatsAppReminder(id);
+      toast.success('✅ Recordatorio enviado por WhatsApp');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al enviar recordatorio');
+    }
+  };
 
   // Generar celdas del calendario
   const calendarCells = useMemo((): CalendarDayCell[] => {
@@ -300,13 +345,42 @@ export default function CalendarPage() {
                           </span>
                         </td>
                         <td className="text-end">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() => navigate('/appointments')}
-                          >
-                            Ver detalles
-                          </Button>
+                          <div className="d-flex gap-1 justify-content-end">
+                            {/* Dropdown de notificaciones y WhatsApp */}
+                            <Dropdown>
+                              <Dropdown.Toggle size="sm" variant="info" id={`cal-dropdown-${apt.id}`}>
+                                📧
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu align="end">
+                                <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
+                                  <FaBell className="me-2" />
+                                  Enviar Notificación
+                                </Dropdown.Item>
+                                <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
+                                  <FaWhatsapp className="me-2 text-success" />
+                                  Confirmar por WhatsApp
+                                </Dropdown.Item>
+                                <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
+                                  <FaEnvelope className="me-2 text-primary" />
+                                  Recordatorio WhatsApp
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
+                                  <FaWhatsapp className="me-2 text-success" />
+                                  Traspaso a Humano
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                            
+                            {/* Botón ver detalles */}
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => navigate('/appointments')}
+                            >
+                              Ver detalles
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -65,4 +65,33 @@ export const appointmentsApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/appointments/${id}`);
   },
+
+  /**
+   * Reenviar notificación manualmente
+   */
+  sendNotification: async (id: number): Promise<void> => {
+    await apiClient.post(`/api/appointments/${id}/notify`);
+  },
+
+  /**
+   * WhatsApp Handoff - Obtener URL para transferir a agente humano
+   */
+  whatsappHandoff: async (id: number): Promise<string> => {
+    const response = await apiClient.post<{ url: string }>(`/api/appointments/${id}/whatsapp-handoff`);
+    return response.data.url;
+  },
+
+  /**
+   * Enviar confirmación por WhatsApp manualmente
+   */
+  sendWhatsAppConfirmation: async (id: number): Promise<void> => {
+    await apiClient.post(`/api/appointments/${id}/whatsapp/confirmation`);
+  },
+
+  /**
+   * Enviar recordatorio por WhatsApp manualmente
+   */
+  sendWhatsAppReminder: async (id: number): Promise<void> => {
+    await apiClient.post(`/api/appointments/${id}/whatsapp/reminder`);
+  },
 };

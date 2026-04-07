@@ -4,12 +4,14 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Row, Col, Button, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
+import { Row, Col, Button, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
+import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { AppointmentStatus, AppointmentCreateRequest } from '../../types/appointment.types';
+import { appointmentsApi } from '../../api/appointments.api';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/useToast';
@@ -116,9 +118,55 @@ export default function AppointmentsPage() {
         await deleteAppointment(id);
         toast.success('Cita eliminada');
         fetchAppointments();
-      } catch (err: any) {
-        toast.error(err.message || 'Error al eliminar la cita');
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        toast.error(error.message || 'Error al eliminar la cita');
       }
+    }
+  };
+
+  // Enviar notificación manualmente
+  const handleSendNotification = async (id: number) => {
+    try {
+      await appointmentsApi.sendNotification(id);
+      toast.success('📧 Notificación enviada correctamente');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al enviar notificación');
+    }
+  };
+
+  // WhatsApp Handoff - Transferir a agente humano
+  const handleWhatsAppHandoff = async (id: number) => {
+    try {
+      const url = await appointmentsApi.whatsappHandoff(id);
+      window.open(url, '_blank');
+      toast.success('✅ Abriendo WhatsApp para traspaso');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al generar handoff');
+    }
+  };
+
+  // Enviar confirmación por WhatsApp
+  const handleSendWhatsAppConfirmation = async (id: number) => {
+    try {
+      await appointmentsApi.sendWhatsAppConfirmation(id);
+      toast.success('✅ Confirmación enviada por WhatsApp');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al enviar confirmación');
+    }
+  };
+
+  // Enviar recordatorio por WhatsApp
+  const handleSendWhatsAppReminder = async (id: number) => {
+    try {
+      await appointmentsApi.sendWhatsAppReminder(id);
+      toast.success('✅ Recordatorio enviado por WhatsApp');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al enviar recordatorio');
     }
   };
 
@@ -240,7 +288,8 @@ export default function AppointmentsPage() {
                     <td>{apt.service.name}</td>
                     <td>{getStatusBadge(apt.status)}</td>
                     <td>
-                      <div className="d-flex gap-2">
+                      <div className="d-flex gap-1 flex-wrap">
+                        {/* Botones de cambio de estado */}
                         {apt.status === AppointmentStatus.PENDING && (
                           <Button
                             size="sm"
@@ -268,6 +317,34 @@ export default function AppointmentsPage() {
                             Cancelar
                           </Button>
                         )}
+                        
+                        {/* Dropdown de notificaciones y WhatsApp */}
+                        <Dropdown>
+                          <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
+                            📧
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu>
+                            <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
+                              <FaBell className="me-2" />
+                              Enviar Notificación
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
+                              <FaWhatsapp className="me-2 text-success" />
+                              Confirmar por WhatsApp
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
+                              <FaEnvelope className="me-2 text-primary" />
+                              Recordatorio WhatsApp
+                            </Dropdown.Item>
+                            <Dropdown.Divider />
+                            <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
+                              <FaWhatsapp className="me-2 text-success" />
+                              Traspaso a Humano
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+
+                        {/* Botón eliminar */}
                         <Button
                           size="sm"
                           variant="danger"
