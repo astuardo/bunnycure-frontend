@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import LoginPage from '../pages/auth/LoginPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import AppointmentsPage from '../pages/appointments/AppointmentsPage';
 import CustomersPage from '../pages/customers/CustomersPage';
@@ -9,6 +11,7 @@ import ServicesPage from '../pages/services/ServicesPage';
 import BookingRequestsPage from '../pages/booking-requests/BookingRequestsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import CalendarPage from '../pages/calendar/CalendarPage';
+import RemindersPage from '../pages/reminders/RemindersPage';
 import InstallPage from '../pages/InstallPage';
 import TestApiPage from '../pages/TestApiPage';
 
@@ -19,6 +22,8 @@ export default function AppRouter() {
                 {/* Public routes */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/test" element={<TestApiPage />} />
 
@@ -91,6 +96,15 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <BookingRequestsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/reminders"
+                    element={
+                        <ProtectedRoute>
+                            <RemindersPage />
                         </ProtectedRoute>
                     }
                 />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -165,9 +165,9 @@ export default function LoginPage() {
                                 </Button>
 
                                 <div className="text-center">
-                                    <a href="/forgot-password" className="text-muted small">
+                                    <Link to="/forgot-password" className="text-muted small text-decoration-none">
                                         ¿Olvidaste tu contraseña?
-                                    </a>
+                                    </Link>
                                 </div>
                             </Form>
                         </Card.Body>

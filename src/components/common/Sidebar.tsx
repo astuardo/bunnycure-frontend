@@ -27,6 +27,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             description: 'Vista mensual'
         },
         { 
+            path: '/reminders', 
+            icon: '🔔', 
+            label: 'Recordatorios',
+            description: 'Envío de avisos'
+        },
+        { 
             path: '/customers', 
             icon: '👥', 
             label: 'Clientes',

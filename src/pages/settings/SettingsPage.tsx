@@ -5,12 +5,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
 import { FiSave, FiSettings } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
+import { FaWhatsapp, FaBell } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
 import { settingsApi, SettingsData } from '../../api/settings.api';
+import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 
 interface BusinessSettings {
   businessName: string;
@@ -79,6 +80,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const { permission, isSupported, requestPermission, sendTestNotification } = useNotificationPermission();
 
   useEffect(() => {
     loadSettings();
@@ -235,6 +237,27 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRequestNotificationPermission = async () => {
+    try {
+      const result = await requestPermission();
+      if (result === 'granted') {
+        toast.success('✅ Permisos de notificaciones concedidos');
+      } else if (result === 'denied') {
+        toast.error('❌ Permisos de notificaciones denegados');
+      }
+    } catch (error) {
+      toast.error('Error al solicitar permisos');
+    }
+  };
+
+  const handleSendTestNotification = () => {
+    sendTestNotification(
+      '🐰 BunnyCure',
+      'Esta es una notificación de prueba. Las notificaciones están funcionando correctamente!'
+    );
+    toast.success('Notificación de prueba enviada');
   };
 
   return (
@@ -488,6 +511,84 @@ export default function SettingsPage() {
         </Row>
 
         <Row>
+          <Col lg={6} className="mb-4">
+            <Card>
+              <Card.Header>
+                <h5 className="mb-0">
+                  <FaBell className="me-2" />
+                  Notificaciones Push (PWA)
+                </h5>
+              </Card.Header>
+              <Card.Body>
+                {!isSupported && (
+                  <Alert variant="warning">
+                    <strong>⚠️ No soportado</strong><br />
+                    Tu navegador no soporta notificaciones push. Prueba con Chrome o Safari moderno.
+                  </Alert>
+                )}
+
+                {isSupported && (
+                  <>
+                    <div className="mb-3">
+                      <strong>Estado de Permisos:</strong>{' '}
+                      {permission === 'default' && (
+                        <Badge bg="secondary">No solicitados</Badge>
+                      )}
+                      {permission === 'granted' && (
+                        <Badge bg="success">✅ Concedidos</Badge>
+                      )}
+                      {permission === 'denied' && (
+                        <Badge bg="danger">❌ Denegados</Badge>
+                      )}
+                    </div>
+
+                    {permission === 'default' && (
+                      <div className="d-grid gap-2 mb-3">
+                        <Button 
+                          variant="primary" 
+                          onClick={handleRequestNotificationPermission}
+                        >
+                          <FaBell className="me-2" />
+                          Solicitar Permisos de Notificaciones
+                        </Button>
+                      </div>
+                    )}
+
+                    {permission === 'granted' && (
+                      <div className="d-grid gap-2 mb-3">
+                        <Button 
+                          variant="success" 
+                          onClick={handleSendTestNotification}
+                        >
+                          🔔 Enviar Notificación de Prueba
+                        </Button>
+                      </div>
+                    )}
+
+                    {permission === 'denied' && (
+                      <Alert variant="danger">
+                        <strong>Permisos denegados</strong><br />
+                        Debes habilitar las notificaciones manualmente en la configuración de tu navegador.
+                      </Alert>
+                    )}
+
+                    <hr />
+
+                    <div className="small text-muted">
+                      <strong>💡 Sobre las notificaciones PWA:</strong>
+                      <ul className="mt-2 mb-0">
+                        <li>Funciona en Chrome Android, Safari iOS 16.4+</li>
+                        <li>Requiere HTTPS (ya configurado en Vercel)</li>
+                        <li>Las notificaciones aparecen incluso con la app cerrada</li>
+                        <li>Ideal para recordatorios de citas</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+
           <Col lg={12}>
             <Card>
               <Card.Header>

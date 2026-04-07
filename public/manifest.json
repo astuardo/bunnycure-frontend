@@ -30,6 +30,11 @@
   ],
   "screenshots": [],
   "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
+  "gcm_sender_id": "103953800507",
+  "permissions": [
+    "notifications"
+  ],
   "shortcuts": [
     {
       "name": "Dashboard",
