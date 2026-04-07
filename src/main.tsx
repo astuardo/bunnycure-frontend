@@ -8,9 +8,23 @@ import './styles/mobile.css';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register('/sw.js', { scope: '/' })
       .then((registration) => {
         console.log('✅ Service Worker registrado correctamente:', registration);
+        
+        // Configurar listener para mensajes del Service Worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
+            // Enviar token al Service Worker
+            const token = localStorage.getItem('token');
+            if (token && registration.active) {
+              registration.active.postMessage({
+                type: 'AUTH_TOKEN_RESPONSE',
+                token: token,
+              });
+            }
+          }
+        });
       })
       .catch((error) => {
         console.error('❌ Error al registrar Service Worker:', error);

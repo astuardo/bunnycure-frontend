@@ -94,4 +94,18 @@ export const appointmentsApi = {
   sendWhatsAppReminder: async (id: number): Promise<void> => {
     await apiClient.post(`/api/appointments/${id}/whatsapp/reminder`);
   },
+
+  /**
+   * Obtener citas próximas en ventana de tiempo.
+   * Retorna citas confirmadas que ocurrirán en las próximas N horas.
+   * Solo incluye citas que NO tienen reminderSent = true.
+   * Útil para notificaciones push automáticas.
+   */
+  getUpcomingInWindow: async (hours: number = 2): Promise<Appointment[]> => {
+    const response = await apiClient.get<ApiResponse<Appointment[]>>(
+      '/api/appointments/upcoming-in-window',
+      { params: { hours } }
+    );
+    return response.data.data || [];
+  },
 };
