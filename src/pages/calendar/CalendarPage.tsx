@@ -65,15 +65,6 @@ export default function CalendarPage() {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // Debug: log appointments cuando cambien
-  useEffect(() => {
-    console.log('📅 Calendar - Total appointments:', appointments.length);
-    if (appointments.length > 0) {
-      console.log('📅 Calendar - First appointment:', appointments[0]);
-      console.log('📅 Calendar - Appointment dates:', appointments.map(a => a.appointmentDate));
-    }
-  }, [appointments]);
-
   // Handlers para notificaciones y WhatsApp
   const handleSendNotification = async (id: number) => {
     try {
@@ -128,10 +119,7 @@ export default function CalendarPage() {
     
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
     
-    console.log('📅 Generating calendar for:', format(currentMonth, 'MMMM yyyy', { locale: es }));
-    console.log('📅 Total appointments to check:', appointments.length);
-    
-    const cells = days.map(day => {
+    return days.map(day => {
       const dayAppointments = appointments.filter(apt => {
         // Parsear fecha del backend (puede venir como "2026-04-07" o "2026-04-07T00:00:00")
         const aptDateStr = apt.appointmentDate;
@@ -145,17 +133,7 @@ export default function CalendarPage() {
           aptDate = new Date(aptDateStr + 'T00:00:00');
         }
         
-        const matches = isSameDay(aptDate, day);
-        
-        if (matches) {
-          console.log('✅ Match found:', {
-            aptDate: format(aptDate, 'yyyy-MM-dd'),
-            dayDate: format(day, 'yyyy-MM-dd'),
-            customer: apt.customer.fullName,
-          });
-        }
-        
-        return matches;
+        return isSameDay(aptDate, day);
       });
       
       return {
@@ -167,20 +145,13 @@ export default function CalendarPage() {
         appointments: dayAppointments,
       };
     });
-    
-    const totalAppointmentsInMonth = cells.reduce((sum, cell) => sum + cell.appointmentCount, 0);
-    console.log('📅 Total appointments in this month view:', totalAppointmentsInMonth);
-    
-    return cells;
   }, [currentMonth, appointments, selectedDate]);
 
   // Citas del día seleccionado
   const selectedDayAppointments = useMemo(() => {
     if (!selectedDate) return [];
     
-    console.log('📅 Selected date:', format(selectedDate, 'yyyy-MM-dd'));
-    
-    const filtered = appointments
+    return appointments
       .filter(apt => {
         const aptDateStr = apt.appointmentDate;
         let aptDate: Date;
@@ -197,10 +168,6 @@ export default function CalendarPage() {
         // Ordenar por hora
         return a.appointmentTime.localeCompare(b.appointmentTime);
       });
-    
-    console.log('📅 Appointments for selected day:', filtered.length);
-    
-    return filtered;
   }, [appointments, selectedDate]);
 
   const handlePrevMonth = () => {
