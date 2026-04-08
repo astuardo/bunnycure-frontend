@@ -7,7 +7,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../api/auth.api';
 import * as authApi from '../api/auth.api';
-import { APP_BUILD_ID } from '../config/buildInfo';
+import { getAppBuildId } from '../config/buildInfo';
+
+const APP_BUILD_ID = getAppBuildId();
 
 interface AuthState {
   user: User | null;

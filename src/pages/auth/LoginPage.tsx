@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -21,9 +21,9 @@ export default function LoginPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
-    const [showError, setShowError] = useState(false);
-    const [sessionExpired, setSessionExpired] = useState(false);
-    const [versionChanged, setVersionChanged] = useState(false);
+    const [dismissedSessionExpired, setDismissedSessionExpired] = useState(false);
+    const [dismissedVersionChanged, setDismissedVersionChanged] = useState(false);
+    const [dismissedErrorMessage, setDismissedErrorMessage] = useState<string | null>(null);
 
     const {
         register,
@@ -33,28 +33,19 @@ export default function LoginPage() {
         resolver: yupResolver(loginSchema),
     });
 
-    // Detectar si venimos de una sesión expirada
-    useEffect(() => {
+    const { sessionExpired, versionChanged } = useMemo(() => {
         const params = new URLSearchParams(location.search);
-        const isExpired = params.get('expired') === 'true';
-        const isVersionChanged = params.get('version') === 'true';
-        if (isExpired && !sessionExpired) {
-            setSessionExpired(true);
-        }
-        if (isVersionChanged && !versionChanged) {
-            setVersionChanged(true);
-        }
-    }, [location.search, sessionExpired, versionChanged]);
+        return {
+            sessionExpired: params.get('expired') === 'true',
+            versionChanged: params.get('version') === 'true',
+        };
+    }, [location.search]);
+
+    const shouldShowError = Boolean(error) && error !== dismissedErrorMessage;
 
     useEffect(() => {
         return () => clearError();
     }, [clearError]);
-
-    useEffect(() => {
-        if (error && !showError) {
-            setShowError(true);
-        }
-    }, [error, showError]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -72,11 +63,11 @@ export default function LoginPage() {
     }, [isAuthenticated, navigate, location]);
 
     const onSubmit = async (data: LoginFormData) => {
+        setDismissedErrorMessage(null);
         try {
-            setShowError(false);
             await login(data.username, data.password);
         } catch {
-            setShowError(true);
+            // El mensaje de error se obtiene desde el authStore
         }
     };
 
@@ -91,11 +82,11 @@ export default function LoginPage() {
                                 <p className="text-muted">Sistema de Gestión</p>
                             </div>
 
-                            {sessionExpired && (
+                            {sessionExpired && !dismissedSessionExpired && (
                                 <Alert 
                                     variant="warning" 
                                     dismissible 
-                                    onClose={() => setSessionExpired(false)}
+                                    onClose={() => setDismissedSessionExpired(true)}
                                     className="mb-3"
                                 >
                                     <i className="bi bi-clock-history me-2"></i>
@@ -103,11 +94,11 @@ export default function LoginPage() {
                                 </Alert>
                             )}
 
-                            {versionChanged && (
+                            {versionChanged && !dismissedVersionChanged && (
                                 <Alert
                                     variant="info"
                                     dismissible
-                                    onClose={() => setVersionChanged(false)}
+                                    onClose={() => setDismissedVersionChanged(true)}
                                     className="mb-3"
                                 >
                                     <i className="bi bi-arrow-repeat me-2"></i>
@@ -115,12 +106,12 @@ export default function LoginPage() {
                                 </Alert>
                             )}
 
-                            {showError && error && (
+                            {shouldShowError && error && (
                                 <Alert
                                     variant="danger"
                                     dismissible
                                     onClose={() => {
-                                        setShowError(false);
+                                        setDismissedErrorMessage(error);
                                         clearError();
                                     }}
                                 >
