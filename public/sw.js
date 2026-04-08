@@ -16,6 +16,16 @@ const API_BASE_URL = 'https://bunnycure-04c4c179be8f.herokuapp.com';
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
 const NOTIFICATION_WINDOW_HOURS = 2; // Notificar 2 horas antes
 const NOTIFIED_APPOINTMENTS_KEY = 'notified_appointments';
+const TEMPLATES_CACHE_KEY = 'notification_templates';
+const TEMPLATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
+
+// Templates por defecto (fallback)
+const DEFAULT_TEMPLATES = {
+  defaultTitle: 'Recordatorio de Cita',
+  defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time}.',
+  twoHourTitle: '¡Tu cita es pronto!',
+  twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}). ¡Te esperamos!',
+};
 
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
@@ -234,15 +244,32 @@ async function processAppointment(appointment) {
 }
 
 /**
- * Muestra notificación de recordatorio de cita
+ * Muestra notificación de recordatorio de cita usando templates configurables
  */
 async function showAppointmentNotification(appointment, hoursUntil) {
-  const customerName = `${appointment.customer.firstName} ${appointment.customer.lastName}`;
-  const serviceName = appointment.service.name;
-  const timeStr = appointment.appointmentTime;
+  const minutesUntil = Math.round(hoursUntil * 60);
   
-  const title = '🔔 Recordatorio de Cita';
-  const body = `${customerName} tiene ${serviceName} a las ${timeStr} (en ${Math.round(hoursUntil * 60)} minutos)`;
+  // Obtener templates del backend
+  const templates = await getNotificationTemplates();
+  
+  // Usar template de 2 horas si está en ventana
+  const titleTemplate = templates.twoHourTitle;
+  const bodyTemplate = templates.twoHourBody;
+  
+  // Parsear variables
+  const variables = {
+    customerName: `${appointment.customer.firstName} ${appointment.customer.lastName}`,
+    firstName: appointment.customer.firstName,
+    serviceName: appointment.service.name,
+    time: appointment.appointmentTime,
+    date: formatDate(appointment.appointmentDate),
+    minutesUntil: String(minutesUntil),
+    hoursUntil: hoursUntil.toFixed(1),
+    businessName: 'BunnyCure',
+  };
+  
+  const title = parseTemplate(titleTemplate, variables);
+  const body = parseTemplate(bodyTemplate, variables);
   
   console.log(`[SW-AUTO] Mostrando notificación para cita ${appointment.id}`);
   
@@ -349,6 +376,81 @@ async function saveToIndexedDB(key, value) {
   const cache = await caches.open('bunnycure-data');
   const response = new Response(JSON.stringify(value));
   await cache.put(`/data/${key}`, response);
+}
+
+/**
+ * Obtiene templates de notificaciones del backend con cache
+ */
+async function getNotificationTemplates() {
+  try {
+    // Intentar obtener del cache
+    const cached = await getFromIndexedDB(TEMPLATES_CACHE_KEY);
+    if (cached && cached.timestamp && (Date.now() - cached.timestamp < TEMPLATES_CACHE_TTL)) {
+      console.log('[SW-AUTO] Usando templates desde cache');
+      return cached.data;
+    }
+    
+    // Obtener del backend
+    const token = await getAuthToken();
+    if (!token) {
+      console.log('[SW-AUTO] No hay token, usando templates default');
+      return DEFAULT_TEMPLATES;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/settings`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.warn('[SW-AUTO] Error obteniendo templates del backend, usando default');
+      return DEFAULT_TEMPLATES;
+    }
+    
+    const result = await response.json();
+    const templates = result.data?.notificationTemplates || DEFAULT_TEMPLATES;
+    
+    // Cachear templates
+    await saveToIndexedDB(TEMPLATES_CACHE_KEY, {
+      timestamp: Date.now(),
+      data: templates,
+    });
+    
+    console.log('[SW-AUTO] Templates obtenidos del backend y cacheados');
+    return templates;
+    
+  } catch (error) {
+    console.error('[SW-AUTO] Error obteniendo templates:', error);
+    return DEFAULT_TEMPLATES;
+  }
+}
+
+/**
+ * Parsea un template reemplazando variables
+ */
+function parseTemplate(template, variables) {
+  let result = template;
+  
+  for (const [key, value] of Object.entries(variables)) {
+    const placeholder = `{${key}}`;
+    result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+  }
+  
+  return result;
+}
+
+/**
+ * Formatea una fecha YYYY-MM-DD a DD/MM/YYYY
+ */
+function formatDate(dateStr) {
+  try {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    return dateStr;
+  }
 }
 
 console.log('[SW] Service Worker cargado correctamente');
