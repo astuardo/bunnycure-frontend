@@ -70,7 +70,7 @@ export const appointmentsApi = {
    * Reenviar notificación manualmente
    */
   sendNotification: async (id: number): Promise<void> => {
-    await apiClient.post(`/api/appointments/${id}/notify`);
+    await apiClient.post(`/admin/reminders/send/${id}`);
   },
 
   /**

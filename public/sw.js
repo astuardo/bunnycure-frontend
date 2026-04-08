@@ -57,14 +57,15 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Tomar control inmediatamente
+      return self.clients.claim();
+    }).then(() => {
+      // Iniciar chequeo periódico de citas próximas DESPUÉS de tomar control
+      console.log('[SW] 🚀 Iniciando chequeo periódico de notificaciones...');
+      startPeriodicCheck();
     })
   );
-  
-  // Iniciar chequeo periódico de citas próximas
-  startPeriodicCheck();
-  
-  // Tomar control inmediatamente
-  return self.clients.claim();
 });
 
 // Estrategia de cache: Network First, fallback a Cache
