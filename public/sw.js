@@ -160,30 +160,45 @@ self.addEventListener('notificationclose', (event) => {
  * Inicia el chequeo periódico de citas próximas
  */
 function startPeriodicCheck() {
-  console.log('[SW-AUTO] Iniciando chequeo periódico de citas (cada 5 min)');
+  console.log('[SW-AUTO] ╔════════════════════════════════════════════╗');
+  console.log('[SW-AUTO] ║  Iniciando chequeo periódico de citas     ║');
+  console.log('[SW-AUTO] ║  Intervalo: cada 5 minutos                 ║');
+  console.log('[SW-AUTO] ║  Ventana: 2 horas antes de la cita         ║');
+  console.log('[SW-AUTO] ╚════════════════════════════════════════════╝');
   
   // Ejecutar inmediatamente
+  console.log('[SW-AUTO] ⏰ Ejecutando primer chequeo inmediato...');
   checkUpcomingAppointments();
   
   // Luego cada 5 minutos
-  setInterval(() => {
+  const intervalId = setInterval(() => {
+    console.log('[SW-AUTO] ⏰ Ejecutando chequeo programado (5 min)...');
     checkUpcomingAppointments();
   }, CHECK_INTERVAL);
+  
+  console.log(`[SW-AUTO] ✅ Interval ID: ${intervalId} - Service Worker activo`);
 }
 
 /**
  * Chequea si hay citas próximas y muestra notificación si corresponde
  */
 async function checkUpcomingAppointments() {
+  const now = new Date().toISOString();
+  console.log(`[SW-AUTO] ╔════════════════════════════════════════════╗`);
+  console.log(`[SW-AUTO] ║  🔍 CHEQUEO AUTOMÁTICO DE CITAS           ║`);
+  console.log(`[SW-AUTO] ║  ${now}                  ║`);
+  console.log(`[SW-AUTO] ╚════════════════════════════════════════════╝`);
+  
   try {
-    console.log('[SW-AUTO] Verificando citas próximas...');
-    
-    // Obtener token de autenticación desde el cliente
     const token = await getAuthToken();
+    
     if (!token) {
-      console.log('[SW-AUTO] No hay usuario autenticado, omitiendo chequeo');
+      console.warn('[SW-AUTO] ❌ NO HAY TOKEN - Usuario no autenticado');
+      console.warn('[SW-AUTO] 💡 Solución: Abrir app y hacer login');
       return;
     }
+    
+    console.log('[SW-AUTO] ✅ Token obtenido, haciendo request...');
     
     // Consultar API
     const response = await fetch(
@@ -197,22 +212,33 @@ async function checkUpcomingAppointments() {
     );
     
     if (!response.ok) {
-      console.error('[SW-AUTO] Error al obtener citas:', response.status);
+      console.error(`[SW-AUTO] ❌ Error en request: ${response.status} ${response.statusText}`);
       return;
     }
     
     const result = await response.json();
     const appointments = result.data || [];
     
-    console.log(`[SW-AUTO] Encontradas ${appointments.length} citas en ventana de 2h`);
+    console.log(`[SW-AUTO] 📊 Respuesta del servidor:`);
+    console.log(`[SW-AUTO]    • Citas en ventana de ${NOTIFICATION_WINDOW_HOURS}h: ${appointments.length}`);
+    
+    if (appointments.length === 0) {
+      console.log('[SW-AUTO] ✅ No hay citas próximas en las próximas 2 horas');
+      return;
+    }
+    
+    console.log(`[SW-AUTO] 🔔 Procesando ${appointments.length} cita(s)...`);
     
     // Procesar cada cita
     for (const appointment of appointments) {
       await processAppointment(appointment);
     }
     
+    console.log('[SW-AUTO] ✅ Chequeo completado exitosamente');
+    
   } catch (error) {
-    console.error('[SW-AUTO] Error en chequeo automático:', error);
+    console.error('[SW-AUTO] ❌ ERROR CRÍTICO en chequeo automático:');
+    console.error('[SW-AUTO]', error);
   }
 }
 
@@ -222,10 +248,16 @@ async function checkUpcomingAppointments() {
 async function processAppointment(appointment) {
   const appointmentId = appointment.id;
   
+  console.log(`[SW-AUTO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  console.log(`[SW-AUTO] 📅 Procesando cita ID: ${appointmentId}`);
+  console.log(`[SW-AUTO]    Cliente: ${appointment.customer.firstName} ${appointment.customer.lastName}`);
+  console.log(`[SW-AUTO]    Servicio: ${appointment.service.name}`);
+  console.log(`[SW-AUTO]    Fecha/Hora: ${appointment.appointmentDate} ${appointment.appointmentTime}`);
+  
   // Verificar si ya notificamos esta cita
   const notifiedIds = await getNotifiedAppointments();
   if (notifiedIds.includes(appointmentId)) {
-    console.log(`[SW-AUTO] Cita ${appointmentId} ya fue notificada anteriormente`);
+    console.log(`[SW-AUTO] ⏭️  Cita ${appointmentId} ya fue notificada (skip)`);
     return;
   }
   
@@ -233,13 +265,18 @@ async function processAppointment(appointment) {
   const appointmentDateTime = new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}`);
   const now = new Date();
   const hoursUntil = (appointmentDateTime - now) / (1000 * 60 * 60);
+  const minutesUntil = Math.round(hoursUntil * 60);
   
-  console.log(`[SW-AUTO] Cita ${appointmentId} en ${hoursUntil.toFixed(1)} horas`);
+  console.log(`[SW-AUTO]    ⏰ Tiempo restante: ${hoursUntil.toFixed(2)}h (${minutesUntil} min)`);
   
   // Si está dentro de la ventana de 2 horas, notificar
   if (hoursUntil <= NOTIFICATION_WINDOW_HOURS && hoursUntil > 0) {
+    console.log(`[SW-AUTO]    ✅ DENTRO DE VENTANA → Mostrando notificación`);
     await showAppointmentNotification(appointment, hoursUntil);
     await markAsNotified(appointmentId);
+    console.log(`[SW-AUTO]    ✅ Notificación mostrada y marcada`);
+  } else {
+    console.log(`[SW-AUTO]    ⏸️  FUERA DE VENTANA (skip)`);
   }
 }
 
