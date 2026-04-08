@@ -16,6 +16,7 @@ const API_BASE_URL = 'https://bunnycure-04c4c179be8f.herokuapp.com';
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
 const NOTIFICATION_WINDOW_HOURS = 2; // Notificar 2 horas antes
 const NOTIFIED_APPOINTMENTS_KEY = 'notified_appointments';
+const AUTH_TOKEN_CACHE_KEY = 'auth_token';
 const TEMPLATES_CACHE_KEY = 'notification_templates';
 const TEMPLATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
@@ -248,11 +249,13 @@ async function checkUpcomingAppointments() {
  */
 async function processAppointment(appointment) {
   const appointmentId = appointment.id;
+  const customerName = resolveCustomerName(appointment);
+  const serviceName = resolveServiceName(appointment);
   
   console.log(`[SW-AUTO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`[SW-AUTO] 📅 Procesando cita ID: ${appointmentId}`);
-  console.log(`[SW-AUTO]    Cliente: ${appointment.customer.firstName} ${appointment.customer.lastName}`);
-  console.log(`[SW-AUTO]    Servicio: ${appointment.service.name}`);
+  console.log(`[SW-AUTO]    Cliente: ${customerName}`);
+  console.log(`[SW-AUTO]    Servicio: ${serviceName}`);
   console.log(`[SW-AUTO]    Fecha/Hora: ${appointment.appointmentDate} ${appointment.appointmentTime}`);
   
   // Verificar si ya notificamos esta cita
@@ -286,6 +289,10 @@ async function processAppointment(appointment) {
  */
 async function showAppointmentNotification(appointment, hoursUntil) {
   const minutesUntil = Math.round(hoursUntil * 60);
+  const customerName = resolveCustomerName(appointment);
+  const firstName = customerName.split(' ')[0] || customerName;
+  const serviceName = resolveServiceName(appointment);
+  const appointmentTime = resolveAppointmentTime(appointment);
   
   // Obtener templates del backend
   const templates = await getNotificationTemplates();
@@ -296,10 +303,10 @@ async function showAppointmentNotification(appointment, hoursUntil) {
   
   // Parsear variables
   const variables = {
-    customerName: `${appointment.customer.firstName} ${appointment.customer.lastName}`,
-    firstName: appointment.customer.firstName,
-    serviceName: appointment.service.name,
-    time: appointment.appointmentTime,
+    customerName,
+    firstName,
+    serviceName,
+    time: appointmentTime,
     date: formatDate(appointment.appointmentDate),
     minutesUntil: String(minutesUntil),
     hoursUntil: hoursUntil.toFixed(1),
@@ -338,8 +345,11 @@ self.addEventListener('message', (event) => {
   }
 
   if (event.data && event.data.type === 'AUTH_TOKEN_RESPONSE') {
-    cachedToken = event.data.token;
+    cachedToken = event.data.token || null;
     console.log('[SW-AUTO] Token recibido desde cliente');
+    saveToIndexedDB(AUTH_TOKEN_CACHE_KEY, cachedToken).catch((error) => {
+      console.error('[SW-AUTO] Error persistiendo token:', error);
+    });
   }
 });
 
@@ -347,6 +357,12 @@ async function getAuthToken() {
   try {
     // Si ya tenemos el token en cache, usarlo
     if (cachedToken) {
+      return cachedToken;
+    }
+
+    const persistedToken = await getFromIndexedDB(AUTH_TOKEN_CACHE_KEY);
+    if (persistedToken) {
+      cachedToken = persistedToken;
       return cachedToken;
     }
     
@@ -495,6 +511,33 @@ function formatDate(dateStr) {
   } catch (error) {
     return dateStr;
   }
+}
+
+function resolveCustomerName(appointment) {
+  if (appointment?.customer?.fullName) {
+    return appointment.customer.fullName;
+  }
+
+  const firstName = appointment?.customer?.firstName || '';
+  const lastName = appointment?.customer?.lastName || '';
+  const composed = `${firstName} ${lastName}`.trim();
+
+  if (composed) {
+    return composed;
+  }
+
+  return 'Cliente';
+}
+
+function resolveServiceName(appointment) {
+  return appointment?.service?.name || appointment?.serviceName || 'Servicio';
+}
+
+function resolveAppointmentTime(appointment) {
+  if (typeof appointment?.appointmentTime === 'string') {
+    return appointment.appointmentTime.slice(0, 5);
+  }
+  return 'Horario por confirmar';
 }
 
 console.log('[SW] Service Worker cargado correctamente');
