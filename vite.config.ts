@@ -3,8 +3,17 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+const appBuildId =
+  process.env.VITE_APP_BUILD_ID ||
+  process.env.VERCEL_DEPLOYMENT_ID ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  `local-${Date.now()}`
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(appBuildId),
+  },
   plugins: [
     react(),
     VitePWA({

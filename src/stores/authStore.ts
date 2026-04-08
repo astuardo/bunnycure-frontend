@@ -7,12 +7,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../api/auth.api';
 import * as authApi from '../api/auth.api';
+import { APP_BUILD_ID } from '../config/buildInfo';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  authBuildId: string | null;
   
   // Actions
   login: (username: string, password: string) => Promise<void>;
@@ -21,6 +23,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   clearError: () => void;
   handleSessionExpired: () => void;
+  handleVersionMismatch: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -30,6 +33,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      authBuildId: null,
 
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
@@ -41,7 +45,8 @@ export const useAuthStore = create<AuthState>()(
             user: loginResponse.user, 
             isAuthenticated: true, 
             isLoading: false,
-            error: null 
+            error: null,
+            authBuildId: APP_BUILD_ID,
           });
           
           // TODO: Manejar requiresPasswordChange cuando se implemente
@@ -73,11 +78,12 @@ export const useAuthStore = create<AuthState>()(
           console.error('Error al hacer logout:', error);
         } finally {
           // Limpiar estado
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
-            error: null 
-          });
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              error: null,
+              authBuildId: null,
+            });
           
           // IMPORTANTE: Limpiar localStorage para forzar re-login
           localStorage.removeItem('auth-storage');
@@ -96,14 +102,14 @@ export const useAuthStore = create<AuthState>()(
           set({ 
             user, 
             isAuthenticated: true, 
-            isLoading: false 
+            isLoading: false,
+            authBuildId: APP_BUILD_ID,
           });
         } catch (error) {
-          // Solo limpiar estado si es un error real de autenticación (401/403)
+          // Solo limpiar estado si es un error real de autenticación (401/302)
           // NO limpiar si es error de red o servidor (500, timeout, etc.)
           const err = error as { response?: { status?: number }; message?: string };
           const isAuthenticationError = err.response?.status === 401 || 
-                                       err.response?.status === 403 ||
                                        err.response?.status === 302;
           
           if (isAuthenticationError) {
@@ -112,7 +118,8 @@ export const useAuthStore = create<AuthState>()(
             set({ 
               user: null, 
               isAuthenticated: false, 
-              isLoading: false 
+              isLoading: false,
+              authBuildId: null,
             });
           } else {
             // Error de red u otro - mantener estado actual y solo quitar loading
@@ -126,7 +133,8 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: User | null) => {
         set({ 
           user, 
-          isAuthenticated: user !== null 
+          isAuthenticated: user !== null,
+          authBuildId: user ? APP_BUILD_ID : null,
         });
       },
 
@@ -141,7 +149,8 @@ export const useAuthStore = create<AuthState>()(
         set({ 
           user: null, 
           isAuthenticated: false,
-          error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+          error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          authBuildId: null,
         });
         
         // Limpiar localStorage
@@ -158,6 +167,26 @@ export const useAuthStore = create<AuthState>()(
         // Redirigir a login con parámetro de sesión expirada
         window.location.href = '/login?expired=true';
       },
+
+      handleVersionMismatch: () => {
+        console.warn('♻️ Nueva versión detectada - forzando re-login');
+
+        set({
+          user: null,
+          isAuthenticated: false,
+          error: null,
+          authBuildId: APP_BUILD_ID,
+        });
+
+        localStorage.removeItem('auth-storage');
+        localStorage.removeItem('session_backup');
+        localStorage.removeItem('jwt_token');
+        sessionStorage.removeItem('redirectAfterLogin');
+
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login?version=true';
+        }
+      },
     }),
     {
       name: 'auth-storage',
@@ -165,9 +194,17 @@ export const useAuthStore = create<AuthState>()(
         // Solo persistir user e isAuthenticated
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        authBuildId: state.authBuildId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state || !state.isAuthenticated) return;
+
+        if (state.authBuildId !== APP_BUILD_ID) {
+          state.handleVersionMismatch();
+        }
+      },
       // IMPORTANTE: Versión para forzar reset cuando cambie la estructura
-      version: 1,
+      version: 2,
     }
   )
 );

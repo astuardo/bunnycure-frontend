@@ -5,6 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
+import { APP_BUILD_ID_SHORT } from '../../config/buildInfo';
 
 const loginSchema = yup.object({
     username: yup.string().required('El usuario es requerido'),
@@ -22,6 +23,7 @@ export default function LoginPage() {
     const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
     const [showError, setShowError] = useState(false);
     const [sessionExpired, setSessionExpired] = useState(false);
+    const [versionChanged, setVersionChanged] = useState(false);
 
     const {
         register,
@@ -35,10 +37,14 @@ export default function LoginPage() {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const isExpired = params.get('expired') === 'true';
+        const isVersionChanged = params.get('version') === 'true';
         if (isExpired && !sessionExpired) {
             setSessionExpired(true);
         }
-    }, [location.search, sessionExpired]);
+        if (isVersionChanged && !versionChanged) {
+            setVersionChanged(true);
+        }
+    }, [location.search, sessionExpired, versionChanged]);
 
     useEffect(() => {
         return () => clearError();
@@ -94,6 +100,18 @@ export default function LoginPage() {
                                 >
                                     <i className="bi bi-clock-history me-2"></i>
                                     Tu sesión ha expirado. Por favor, inicia sesión nuevamente.
+                                </Alert>
+                            )}
+
+                            {versionChanged && (
+                                <Alert
+                                    variant="info"
+                                    dismissible
+                                    onClose={() => setVersionChanged(false)}
+                                    className="mb-3"
+                                >
+                                    <i className="bi bi-arrow-repeat me-2"></i>
+                                    Se detectó una nueva versión de la app. Inicia sesión para continuar.
                                 </Alert>
                             )}
 
@@ -173,7 +191,7 @@ export default function LoginPage() {
                         </Card.Body>
 
                         <Card.Footer className="text-center text-muted small">
-                            <p className="mb-0">BunnyCure v1.0 - PWA</p>
+                            <p className="mb-0">BunnyCure v1.0 - PWA | Build {APP_BUILD_ID_SHORT}</p>
                         </Card.Footer>
                     </Card>
                 </Col>

@@ -5,12 +5,20 @@
 
 import axios from 'axios';
 
+const getCookieValue = (name: string): string | null => {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = document.cookie.match(new RegExp(`(?:^|; )${escapedName}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Importante para cookies de sesión (fallback)
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
 // Variable para evitar múltiples redirects simultáneos
@@ -29,6 +37,16 @@ apiClient.interceptors.request.use(
       // Agregar header Authorization con el token
       config.headers.Authorization = `Bearer ${token}`;
       console.log(`🔑 JWT incluido en request: ${config.method?.toUpperCase()} ${config.url}`);
+    }
+
+    // Adjuntar CSRF token cuando esté disponible (backend Spring Security)
+    const csrfToken =
+      getCookieValue('XSRF-TOKEN') ||
+      getCookieValue('CSRF-TOKEN') ||
+      getCookieValue('_csrf');
+    if (csrfToken) {
+      config.headers['X-XSRF-TOKEN'] = csrfToken;
+      config.headers['X-CSRF-TOKEN'] = csrfToken;
     }
     
     return config;
@@ -60,9 +78,9 @@ apiClient.interceptors.response.use(
     const isAuthRequest = error.config?.url?.includes('/api/auth/login') || 
                           error.config?.url?.includes('/api/auth/me');
     
-    // Detectar error de autenticación (401, 403, o redirect a login)
+    // Detectar error de autenticación (401 o redirect a login)
+    // Nota: 403 puede ser CSRF o permisos, no siempre sesión expirada.
     const isAuthError = error.response?.status === 401 || 
-                        error.response?.status === 403 ||
                         error.response?.status === 302 ||
                         (error.request?.responseURL?.includes('/login') && 
                          error.request?.responseType !== 'json');
