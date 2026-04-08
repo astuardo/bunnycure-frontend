@@ -1,23 +1,12 @@
 import * as React from 'react'
-import { useRegisterSW } from 'virtual:pwa-register/react'
 
 /**
  * Hook para registrar el Service Worker y manejar actualizaciones
  * Se ejecuta automáticamente cuando hay una nueva versión disponible
  */
 export function usePWA() {
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    offlineReady: [offlineReady, setOfflineReady],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegistered(registration: ServiceWorkerRegistration | undefined) {
-      console.log('✅ Service Worker registrado:', registration)
-    },
-    onRegisterError(error: Error) {
-      console.error('❌ Error al registrar Service Worker:', error)
-    },
-  })
+  const [needRefresh, setNeedRefresh] = React.useState(false)
+  const [offlineReady, setOfflineReady] = React.useState(false)
 
   const close = () => {
     setOfflineReady(false)
@@ -25,7 +14,7 @@ export function usePWA() {
   }
 
   const update = () => {
-    updateServiceWorker(true)
+    window.location.reload()
   }
 
   return {
