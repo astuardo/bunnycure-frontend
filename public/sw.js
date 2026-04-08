@@ -331,6 +331,12 @@ let cachedToken = null;
 
 // Listener para recibir respuestas de los clientes
 self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CHECK_APPOINTMENTS_NOW') {
+    console.log('[SW-AUTO] Check manual solicitado desde cliente');
+    checkUpcomingAppointments();
+    return;
+  }
+
   if (event.data && event.data.type === 'AUTH_TOKEN_RESPONSE') {
     cachedToken = event.data.token;
     console.log('[SW-AUTO] Token recibido desde cliente');
