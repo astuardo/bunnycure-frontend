@@ -95,7 +95,7 @@ self.addEventListener('push', (event) => {
   console.log('[SW] Push recibido:', event);
   
   let notificationData = {
-    title: 'BunnyCure',
+    title: 'Recordatorio de Agenda',
     body: 'Nueva notificación',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
@@ -105,7 +105,7 @@ self.addEventListener('push', (event) => {
     try {
       const data = event.data.json();
       notificationData = {
-        title: data.title || notificationData.title,
+        title: sanitizePushTitle(data.title) || notificationData.title,
         body: data.body || notificationData.body,
         icon: data.icon || notificationData.icon,
         badge: data.badge || notificationData.badge,
@@ -137,6 +137,17 @@ self.addEventListener('push', (event) => {
     })
   );
 });
+
+function sanitizePushTitle(title) {
+  if (!title || typeof title !== 'string') {
+    return 'Recordatorio de Agenda';
+  }
+  const normalizedTitle = title.replace(/\s+from\s+BunnyCure$/i, '').trim();
+  if (/^recordatorio de agenda$/i.test(normalizedTitle)) {
+    return 'Recordatorio de Agenda';
+  }
+  return normalizedTitle;
+}
 
 // Manejo de clicks en notificaciones
 self.addEventListener('notificationclick', (event) => {

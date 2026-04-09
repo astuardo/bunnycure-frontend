@@ -12,6 +12,7 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
 import { settingsApi, SettingsData } from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
+import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
 
 interface BusinessSettings {
   businessName: string;
@@ -247,7 +248,7 @@ export default function SettingsPage() {
       } else if (result === 'denied') {
         toast.error('❌ Permisos de notificaciones denegados');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error al solicitar permisos');
     }
   };
@@ -269,25 +270,36 @@ export default function SettingsPage() {
               <FiSettings className="me-2" />
               Configuración
             </h2>
-            <p className="text-muted mb-0">Administra la configuración de tu negocio</p>
+            <p className="text-muted mb-0">Ajustes de identidad, portal de reservas y WhatsApp</p>
           </div>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={!hasChanges || loading}
-          >
-            {loading ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <FiSave className="me-2" />
-                Guardar Cambios
-              </>
-            )}
-          </Button>
+          <div className="d-flex gap-2">
+            <Button
+              as="a"
+              href="/reservar"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outline-secondary"
+            >
+              Ver portal público
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={!hasChanges || loading}
+            >
+              {loading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <FiSave className="me-2" />
+                  Guardar Configuración
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {hasChanges && (
@@ -298,9 +310,9 @@ export default function SettingsPage() {
 
         <Row>
           <Col lg={6} className="mb-4">
-            <Card>
+              <Card>
               <Card.Header>
-                <h5 className="mb-0">Información del Negocio</h5>
+                <h5 className="mb-0">Identidad del Negocio</h5>
               </Card.Header>
               <Card.Body>
                 <Form.Group className="mb-3">
@@ -348,11 +360,15 @@ export default function SettingsPage() {
           </Col>
 
           <Col lg={6} className="mb-4">
-            <Card>
+              <Card>
               <Card.Header>
                 <h5 className="mb-0">Configuración de Citas</h5>
               </Card.Header>
               <Card.Body>
+                <Alert variant="info" className="small">
+                  Esta sección configura el WhatsApp de atención humana y recordatorios de citas.
+                </Alert>
+
                 <Form.Group className="mb-3">
                   <Form.Label>Duración por defecto de citas (minutos)</Form.Label>
                   <Form.Select
@@ -382,7 +398,7 @@ export default function SettingsPage() {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Estrategia de Recordatorios</Form.Label>
+                  <Form.Label>Cuándo enviar el recordatorio</Form.Label>
                   <Form.Select
                     value={settings.reminderStrategy}
                     onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
@@ -401,7 +417,7 @@ export default function SettingsPage() {
 
                 <h6 className="mb-3">
                   <FaWhatsapp className="me-2" />
-                  WhatsApp Integration
+                  Portal de Reservas y WhatsApp
                 </h6>
 
                 <Form.Group className="mb-3">
@@ -417,7 +433,7 @@ export default function SettingsPage() {
                 {settings.whatsappEnabled && (
                   <>
                     <Form.Group className="mb-3">
-                      <Form.Label>Número de WhatsApp Business</Form.Label>
+                      <Form.Label>Número WhatsApp del negocio</Form.Label>
                       <Form.Control
                         type="tel"
                         value={settings.whatsappPhone}
@@ -449,7 +465,7 @@ export default function SettingsPage() {
                     {settings.whatsappHandoffEnabled && (
                       <>
                         <Form.Group className="mb-3">
-                          <Form.Label>Número Agente Humano</Form.Label>
+                          <Form.Label>Número WhatsApp humano</Form.Label>
                           <Form.Control
                             type="tel"
                             value={settings.whatsappHumanNumber}
@@ -462,7 +478,7 @@ export default function SettingsPage() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                          <Form.Label>Nombre del Equipo</Form.Label>
+                          <Form.Label>Nombre visible del canal humano</Form.Label>
                           <Form.Control
                             type="text"
                             value={settings.whatsappHumanDisplayName}
@@ -489,7 +505,7 @@ export default function SettingsPage() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                          <Form.Label>Texto Pre-escrito Admin</Form.Label>
+                          <Form.Label>Mensaje pre-escrito para admin</Form.Label>
                           <Form.Control
                             as="textarea"
                             rows={3}
@@ -592,7 +608,7 @@ export default function SettingsPage() {
           <Col lg={12}>
             <Card>
               <Card.Header>
-                <h5 className="mb-0">Horario de Atención</h5>
+                <h5 className="mb-0">Bloques Horarios</h5>
               </Card.Header>
               <Card.Body>
                 {Object.entries(settings.workingHours).map(([day, hours]) => (
@@ -652,6 +668,8 @@ export default function SettingsPage() {
             </Card>
           </Col>
         </Row>
+
+        <NotificationTemplatesSection />
       </Container>
     </DashboardLayout>
   );

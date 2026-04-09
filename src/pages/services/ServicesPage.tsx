@@ -168,58 +168,63 @@ export default function ServicesPage() {
               No hay servicios {showInactiveServices ? '' : 'activos'} para mostrar. Crea tu primer servicio.
             </Alert>
           ) : (
-            <Table striped bordered hover responsive>
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Duración</th>
-                  <th>Precio</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map((service) => (
-                  <tr key={service.id}>
-                    <td><strong>{service.name}</strong></td>
-                    <td>{service.description || '-'}</td>
-                    <td>{service.durationMinutes} min</td>
-                    <td>${service.price.toLocaleString('es-CL')}</td>
-                    <td>
-                      <Badge bg={service.active ? 'success' : 'secondary'}>
-                        {service.active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <div className="d-flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline-primary"
-                          onClick={() => openEditModal(service)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={service.active ? 'warning' : 'success'}
-                          onClick={() => handleToggleActive(service.id)}
-                        >
-                          {service.active ? 'Desactivar' : 'Activar'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => handleDeleteService(service.id)}
-                        >
-                          Eliminar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+            <>
+              <p className="small text-muted d-md-none mb-2">↔️ Desliza horizontalmente para ver todas las columnas.</p>
+              <div className="table-responsive">
+                <Table striped bordered hover className="mb-0">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Descripción</th>
+                      <th>Duración</th>
+                      <th>Precio</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {services.map((service) => (
+                      <tr key={service.id}>
+                        <td><strong>{service.name}</strong></td>
+                        <td>{service.description || '-'}</td>
+                        <td>{service.durationMinutes} min</td>
+                        <td>${service.price.toLocaleString('es-CL')}</td>
+                        <td>
+                          <Badge bg={service.active ? 'success' : 'secondary'}>
+                            {service.active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => openEditModal(service)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={service.active ? 'warning' : 'success'}
+                              onClick={() => handleToggleActive(service.id)}
+                            >
+                              {service.active ? 'Desactivar' : 'Activar'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleDeleteService(service.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </>
           )}
         </Col>
       </Row>

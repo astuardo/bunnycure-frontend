@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Table, Badge, Spinner, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,6 +11,7 @@ import { useCustomersStore } from '../../stores/customersStore';
 import { AppointmentStatus } from '../../types/appointment.types';
 
 export default function DashboardPage() {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { 
         appointments, 
@@ -48,10 +49,6 @@ export default function DashboardPage() {
         apt.appointmentDate && isToday(new Date(apt.appointmentDate))
     );
 
-    const pendingAppointments = appointments.filter(apt => 
-        apt.status === 'PENDING'
-    );
-
     const thisWeekAppointments = appointments.filter(apt => {
         if (!apt.appointmentDate) return false;
         const date = new Date(apt.appointmentDate);
@@ -61,6 +58,45 @@ export default function DashboardPage() {
     });
 
     const pendingRequests = bookingRequests.filter((req: any) => req.status === 'PENDING');
+    const revenueAppointments = appointments.filter((apt) => apt.status !== AppointmentStatus.CANCELLED);
+    const totalAppointmentsValue = revenueAppointments.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
+
+    const serviceStats = revenueAppointments.reduce<Record<number, { name: string; count: number; total: number }>>((acc, apt) => {
+        const serviceId = apt.service?.id;
+        if (!serviceId) return acc;
+        if (!acc[serviceId]) {
+            acc[serviceId] = {
+                name: apt.service.name,
+                count: 0,
+                total: 0,
+            };
+        }
+        acc[serviceId].count += 1;
+        acc[serviceId].total += apt.service?.price || 0;
+        return acc;
+    }, {});
+
+    const topServices = Object.values(serviceStats)
+        .sort((a, b) => b.count - a.count || b.total - a.total)
+        .slice(0, 3);
+
+    const customerStats = revenueAppointments.reduce<Record<number, { name: string; count: number; total: number }>>((acc, apt) => {
+        const customerId = apt.customer?.id;
+        if (!customerId) return acc;
+        if (!acc[customerId]) {
+            acc[customerId] = {
+                name: apt.customer.fullName,
+                count: 0,
+                total: 0,
+            };
+        }
+        acc[customerId].count += 1;
+        acc[customerId].total += apt.service?.price || 0;
+        return acc;
+    }, {});
+
+    const topCustomer = Object.values(customerStats)
+        .sort((a, b) => b.count - a.count || b.total - a.total)[0];
 
     const getStatusBadge = (status: AppointmentStatus) => {
         switch (status) {
@@ -111,13 +147,13 @@ export default function DashboardPage() {
                 <Col xs={12} md={6} lg={3} className="mb-4">
                     <Card className="shadow-sm h-100">
                         <Card.Body>
-                            <Card.Title className="text-muted small">Citas Pendientes</Card.Title>
+                            <Card.Title className="text-muted small">Valor Citas Creadas</Card.Title>
                             {statsLoading ? (
                                 <Spinner animation="border" size="sm" />
                             ) : (
                                 <>
-                                    <h2 className="mb-0 text-warning">{pendingAppointments.length}</h2>
-                                    <small className="text-muted">Por confirmar</small>
+                                    <h2 className="mb-0 text-warning">${totalAppointmentsValue.toLocaleString('es-CL')}</h2>
+                                    <small className="text-muted">{revenueAppointments.length} citas registradas</small>
                                 </>
                             )}
                         </Card.Body>
@@ -224,9 +260,14 @@ export default function DashboardPage() {
                                                 <th>Estado</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            {todayAppointments.slice(0, 5).map((apt) => (
-                                                <tr key={apt.id}>
+                                            <tbody>
+                                                {todayAppointments.slice(0, 5).map((apt) => (
+                                                <tr
+                                                    key={apt.id}
+                                                    role="button"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => navigate('/appointments')}
+                                                >
                                                     <td>{apt.appointmentTime || '-'}</td>
                                                     <td>{apt.customer.fullName}</td>
                                                     <td>{apt.service?.name || '-'}</td>
@@ -294,19 +335,37 @@ export default function DashboardPage() {
                 <Col md={6} className="mb-4">
                     <Card className="shadow-sm">
                         <Card.Header>
-                            <h5 className="mb-0">✅ Estado del Sistema</h5>
+                            <h5 className="mb-0">💼 Insights de negocio</h5>
                         </Card.Header>
                         <Card.Body>
-                            <ul className="list-unstyled mb-0">
-                                <li className="mb-2">✅ Sistema de autenticación</li>
-                                <li className="mb-2">✅ Gestión de Citas</li>
-                                <li className="mb-2">✅ Gestión de Clientes</li>
-                                <li className="mb-2">✅ Catálogo de Servicios</li>
-                                <li className="mb-2">✅ Solicitudes de Reserva</li>
-                                <li className="mb-2">⏳ Notificaciones WhatsApp</li>
-                                <li className="mb-2">⏳ Calendario Interactivo</li>
-                                <li className="mb-2">⏳ Reportes y Analytics</li>
-                            </ul>
+                            <div className="mb-3">
+                                <div className="d-flex justify-content-between">
+                                    <span>Cliente que más asiste:</span>
+                                    <strong>
+                                        {topCustomer ? `${topCustomer.name} (${topCustomer.count})` : 'Sin datos'}
+                                    </strong>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="d-flex justify-content-between mb-2">
+                                    <span>Top servicios:</span>
+                                    <strong>Uso / Valor</strong>
+                                </div>
+                                {topServices.length === 0 ? (
+                                    <small className="text-muted">Aún no hay datos de servicios.</small>
+                                ) : (
+                                    <ul className="list-unstyled mb-0">
+                                        {topServices.map((service) => (
+                                            <li key={service.name} className="d-flex justify-content-between mb-2">
+                                                <span>{service.name}</span>
+                                                <strong>
+                                                    {service.count} / ${service.total.toLocaleString('es-CL')}
+                                                </strong>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>

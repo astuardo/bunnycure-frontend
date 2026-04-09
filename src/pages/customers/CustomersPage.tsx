@@ -88,6 +88,11 @@ export default function CustomersPage() {
         }
     };
 
+    const formatHealthNotes = (notes?: string) => {
+        if (!notes || !notes.trim()) return <span className="text-muted">Sin notas</span>;
+        return notes.length > 60 ? `${notes.slice(0, 60)}...` : notes;
+    };
+
     return (
         <DashboardLayout>
             <Row className="mb-3 mb-md-4">
@@ -184,38 +189,24 @@ export default function CustomersPage() {
                                         <Table responsive hover className="mb-0">
                                             <thead className="table-light">
                                                 <tr>
-                                                    <th>ID</th>
-                                                    <th>Nombre Completo</th>
+                                                    <th>Nombre</th>
                                                     <th>Teléfono</th>
-                                                    <th>Email</th>
                                                     <th>Notificaciones</th>
+                                                    <th>Notas de Salud</th>
                                                     <th className="text-center">Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {customers.map((customer) => (
                                                     <tr key={customer.id}>
-                                                        <td>
-                                                            <code className="text-muted small">
-                                                                #{customer.publicId}
-                                                            </code>
-                                                        </td>
                                                         <td className="fw-semibold">{customer.fullName}</td>
                                                         <td>
                                                             <a href={`tel:${customer.phone}`} className="text-decoration-none">
                                                                 📱 {customer.phone}
                                                             </a>
                                                         </td>
-                                                        <td>
-                                                            {customer.email ? (
-                                                                <a href={`mailto:${customer.email}`} className="text-decoration-none">
-                                                                    {customer.email}
-                                                                </a>
-                                                            ) : (
-                                                                <span className="text-muted">-</span>
-                                                            )}
-                                                        </td>
                                                         <td>{getNotificationBadge(customer.notificationPreference)}</td>
+                                                        <td>{formatHealthNotes(customer.healthNotes)}</td>
                                                         <td className="text-center">
                                                             <Button 
                                                                 variant="outline-primary" 
@@ -255,27 +246,16 @@ export default function CustomersPage() {
                                                     <div className="d-flex justify-content-between align-items-start mb-2">
                                                         <div>
                                                             <h6 className="mb-1 fw-bold">{customer.fullName}</h6>
-                                                            <code className="text-muted small">#{customer.publicId}</code>
+                                                            <small className="text-muted d-block">📱 {customer.phone}</small>
                                                         </div>
                                                         {getNotificationBadge(customer.notificationPreference)}
                                                     </div>
                                                     
                                                     <div className="mb-2">
-                                                        <small className="text-muted d-block">Teléfono:</small>
-                                                        <a href={`tel:${customer.phone}`} className="text-decoration-none">
-                                                            📱 {customer.phone}
-                                                        </a>
+                                                        <small className="text-muted d-block">Notas de Salud:</small>
+                                                        <small>{formatHealthNotes(customer.healthNotes)}</small>
                                                     </div>
-                                                    
-                                                    {customer.email && (
-                                                        <div className="mb-3">
-                                                            <small className="text-muted d-block">Email:</small>
-                                                            <a href={`mailto:${customer.email}`} className="text-decoration-none small">
-                                                                {customer.email}
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                    
+                                                     
                                                     <div className="d-flex gap-2">
                                                         <Button 
                                                             variant="outline-primary" 

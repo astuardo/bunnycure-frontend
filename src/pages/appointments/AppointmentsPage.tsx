@@ -10,7 +10,7 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
-import { AppointmentStatus, AppointmentCreateRequest } from '../../types/appointment.types';
+import { AppointmentStatus, AppointmentCreateRequest, AppointmentUpdateRequest, Appointment } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -24,6 +24,7 @@ export default function AppointmentsPage() {
     error,
     fetchAppointments,
     createAppointment,
+    updateAppointment,
     updateAppointmentStatus,
     deleteAppointment,
     clearError,
@@ -34,6 +35,8 @@ export default function AppointmentsPage() {
 
   // State local para modales y formularios
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | ''>('');
   const [dateFilter, setDateFilter] = useState<string>('');
 
@@ -44,6 +47,14 @@ export default function AppointmentsPage() {
     appointmentDate: '',
     appointmentTime: '',
     notes: '',
+  });
+  const [editFormData, setEditFormData] = useState<AppointmentUpdateRequest>({
+    customerId: 0,
+    serviceId: 0,
+    appointmentDate: '',
+    appointmentTime: '',
+    notes: '',
+    status: AppointmentStatus.PENDING,
   });
 
   // Cargar datos al montar
@@ -82,6 +93,34 @@ export default function AppointmentsPage() {
       fetchAppointments(); // Recargar lista
     } catch (err: any) {
       toast.error(err.message || 'Error al crear la cita');
+    }
+  };
+
+  const openEditModal = (appointment: Appointment) => {
+    setEditingAppointmentId(appointment.id);
+    setEditFormData({
+      customerId: appointment.customer.id,
+      serviceId: appointment.service.id,
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.appointmentTime,
+      notes: appointment.notes || '',
+      status: appointment.status,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAppointmentId) return;
+    try {
+      await updateAppointment(editingAppointmentId, editFormData);
+      toast.success('Cita actualizada exitosamente');
+      setShowEditModal(false);
+      setEditingAppointmentId(null);
+      fetchAppointments();
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Error al actualizar la cita');
     }
   };
 
@@ -268,96 +307,107 @@ export default function AppointmentsPage() {
               No hay citas que mostrar. {dateFilter || statusFilter ? 'Intenta cambiar los filtros.' : 'Crea tu primera cita.'}
             </Alert>
           ) : (
-            <Table striped bordered hover responsive>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Hora</th>
-                  <th>Cliente</th>
-                  <th>Servicio</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appointments.map((apt) => (
-                  <tr key={apt.id}>
-                    <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
-                    <td>{apt.appointmentTime}</td>
-                    <td>{apt.customer.fullName}</td>
-                    <td>{apt.service.name}</td>
-                    <td>{getStatusBadge(apt.status)}</td>
-                    <td>
-                      <div className="d-flex gap-1 flex-wrap">
-                        {/* Botones de cambio de estado */}
-                        {apt.status === AppointmentStatus.PENDING && (
-                          <Button
-                            size="sm"
-                            variant="success"
-                            onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
-                          >
-                            Confirmar
-                          </Button>
-                        )}
-                        {apt.status === AppointmentStatus.CONFIRMED && (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
-                          >
-                            Completar
-                          </Button>
-                        )}
-                        {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
-                          <Button
-                            size="sm"
-                            variant="warning"
-                            onClick={() => handleCancelAppointment(apt.id)}
-                          >
-                            Cancelar
-                          </Button>
-                        )}
-                        
-                        {/* Dropdown de notificaciones y WhatsApp */}
-                        <Dropdown>
-                          <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
-                            📧
-                          </Dropdown.Toggle>
-                          <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
-                              <FaBell className="me-2" />
-                              Enviar Notificación
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
-                              <FaWhatsapp className="me-2 text-success" />
-                              Confirmar por WhatsApp
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
-                              <FaEnvelope className="me-2 text-primary" />
-                              Recordatorio WhatsApp
-                            </Dropdown.Item>
-                            <Dropdown.Divider />
-                            <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
-                              <FaWhatsapp className="me-2 text-success" />
-                              Traspaso a Humano
-                            </Dropdown.Item>
-                          </Dropdown.Menu>
-                        </Dropdown>
+            <>
+              <p className="small text-muted d-md-none mb-2">↔️ Desliza horizontalmente para ver todas las columnas.</p>
+              <div className="table-responsive">
+                <Table striped bordered hover className="mb-0">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Cliente</th>
+                      <th>Servicio</th>
+                      <th>Valor</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appointments.map((apt) => (
+                      <tr key={apt.id}>
+                        <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
+                        <td>{apt.appointmentTime}</td>
+                        <td>{apt.customer.fullName}</td>
+                        <td>{apt.service.name}</td>
+                        <td>${apt.service.price.toLocaleString('es-CL')}</td>
+                        <td>{getStatusBadge(apt.status)}</td>
+                        <td>
+                          <div className="d-flex gap-1 flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => openEditModal(apt)}
+                            >
+                              Editar
+                            </Button>
+                            {apt.status === AppointmentStatus.PENDING && (
+                              <Button
+                                size="sm"
+                                variant="success"
+                                onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
+                              >
+                                Confirmar
+                              </Button>
+                            )}
+                            {apt.status === AppointmentStatus.CONFIRMED && (
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
+                              >
+                                Completar
+                              </Button>
+                            )}
+                            {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
+                              <Button
+                                size="sm"
+                                variant="warning"
+                                onClick={() => handleCancelAppointment(apt.id)}
+                              >
+                                Cancelar
+                              </Button>
+                            )}
 
-                        {/* Botón eliminar */}
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => handleDeleteAppointment(apt.id)}
-                        >
-                          Eliminar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+                            <Dropdown>
+                              <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
+                                📧
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
+                                  <FaBell className="me-2" />
+                                  Enviar Notificación
+                                </Dropdown.Item>
+                                <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
+                                  <FaWhatsapp className="me-2 text-success" />
+                                  Confirmar por WhatsApp
+                                </Dropdown.Item>
+                                <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
+                                  <FaEnvelope className="me-2 text-primary" />
+                                  Recordatorio WhatsApp
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
+                                  <FaWhatsapp className="me-2 text-success" />
+                                  Traspaso a Humano
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleDeleteAppointment(apt.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </>
           )}
         </Col>
       </Row>
@@ -446,6 +496,118 @@ export default function AppointmentsPage() {
             </Button>
             <Button variant="primary" type="submit">
               Crear Cita
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Editar Cita</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleEditAppointment}>
+          <Modal.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Cliente *</Form.Label>
+                  <Form.Select
+                    required
+                    value={editFormData.customerId}
+                    onChange={(e) => setEditFormData({ ...editFormData, customerId: parseInt(e.target.value) })}
+                  >
+                    <option value={0}>Seleccionar cliente...</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.fullName} - {customer.phone}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Servicio *</Form.Label>
+                  <Form.Select
+                    required
+                    value={editFormData.serviceId}
+                    onChange={(e) => setEditFormData({ ...editFormData, serviceId: parseInt(e.target.value) })}
+                  >
+                    <option value={0}>Seleccionar servicio...</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name} - ${service.price} ({service.durationMinutes} min)
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Fecha *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    required
+                    value={editFormData.appointmentDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, appointmentDate: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Hora *</Form.Label>
+                  <Form.Control
+                    type="time"
+                    required
+                    value={editFormData.appointmentTime}
+                    onChange={(e) => setEditFormData({ ...editFormData, appointmentTime: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Estado</Form.Label>
+                  <Form.Select
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as AppointmentStatus })}
+                  >
+                    <option value={AppointmentStatus.PENDING}>Pendiente</option>
+                    <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
+                    <option value={AppointmentStatus.COMPLETED}>Completada</option>
+                    <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6} className="d-flex align-items-center">
+                <div className="text-muted small">
+                  Valor estimado: {
+                    services.find((service) => service.id === editFormData.serviceId)?.price
+                      ?.toLocaleString('es-CL') || '0'
+                  } CLP
+                </div>
+              </Col>
+            </Row>
+            <Form.Group className="mb-3">
+              <Form.Label>Notas</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={editFormData.notes || ''}
+                onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                placeholder="Observaciones, preferencias, etc..."
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit">
+              Guardar Cambios
             </Button>
           </Modal.Footer>
         </Form>
