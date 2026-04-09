@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { toast, ToastOptions } from 'react-toastify';
 
 const defaultOptions: ToastOptions = {
@@ -10,23 +11,23 @@ const defaultOptions: ToastOptions = {
 };
 
 export const useToast = () => {
-  const success = (message: string, options?: ToastOptions) => {
+  const success = useCallback((message: string, options?: ToastOptions) => {
     toast.success(message, { ...defaultOptions, ...options });
-  };
+  }, []);
 
-  const error = (message: string, options?: ToastOptions) => {
+  const error = useCallback((message: string, options?: ToastOptions) => {
     toast.error(message, { ...defaultOptions, ...options });
-  };
+  }, []);
 
-  const info = (message: string, options?: ToastOptions) => {
+  const info = useCallback((message: string, options?: ToastOptions) => {
     toast.info(message, { ...defaultOptions, ...options });
-  };
+  }, []);
 
-  const warning = (message: string, options?: ToastOptions) => {
+  const warning = useCallback((message: string, options?: ToastOptions) => {
     toast.warning(message, { ...defaultOptions, ...options });
-  };
+  }, []);
 
-  const promise = <T,>(
+  const promise = useCallback(<T,>(
       promise: Promise<T>,
       messages: {
         pending: string;
@@ -35,13 +36,13 @@ export const useToast = () => {
       }
   ) => {
     return toast.promise(promise, messages, defaultOptions);
-  };
+  }, []);
 
-  return {
+  return useMemo(() => ({
     success,
     error,
     info,
     warning,
     promise,
-  };
+  }), [success, error, info, warning, promise]);
 };
