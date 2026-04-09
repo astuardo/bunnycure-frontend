@@ -41,7 +41,10 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     
     emergencyPhone: yup
         .string()
-        .matches(/^\+?[0-9\s\-()]+$/, 'Formato de teléfono inválido')
+        .matches(/^\+?[0-9\s\-()]+$/, {
+            message: 'Formato de teléfono inválido',
+            excludeEmptyString: true
+        })
         .optional(),
     
     healthNotes: yup
