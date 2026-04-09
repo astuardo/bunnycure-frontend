@@ -4,7 +4,7 @@
  * Ahora con persistencia en servidor vía API
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
 import { FiSave, FiSettings } from 'react-icons/fi';
 import { FaWhatsapp, FaBell } from 'react-icons/fa';
@@ -83,11 +83,7 @@ export default function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const { permission, isSupported, requestPermission, sendTestNotification } = useNotificationPermission();
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     setLoading(true);
     try {
       const serverSettings = await settingsApi.getAll();
@@ -154,7 +150,11 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const handleChange = (field: keyof BusinessSettings, value: string | number | boolean) => {
     setSettings(prev => ({ ...prev, [field]: value }));

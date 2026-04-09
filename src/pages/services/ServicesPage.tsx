@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Row, Col, Button, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useServicesStore } from '../../stores/servicesStore';
-import { ServiceFormData } from '../../types/service.types';
+import { ServiceCatalog, ServiceFormData } from '../../types/service.types';
 import { useToast } from '../../hooks/useToast';
 
 export default function ServicesPage() {
@@ -40,10 +40,17 @@ export default function ServicesPage() {
     displayOrder: 0,
   });
 
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
+    return fallback;
+  };
+
   // Cargar servicios al montar
   useEffect(() => {
     fetchServices();
-  }, []);
+  }, [fetchServices]);
 
   // Crear servicio
   const handleCreateService = async (e: React.FormEvent) => {
@@ -54,8 +61,8 @@ export default function ServicesPage() {
       setShowCreateModal(false);
       resetForm();
       fetchServices();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al crear el servicio');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Error al crear el servicio'));
     }
   };
 
@@ -70,13 +77,13 @@ export default function ServicesPage() {
       setEditingServiceId(null);
       resetForm();
       fetchServices();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al actualizar el servicio');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Error al actualizar el servicio'));
     }
   };
 
   // Abrir modal de edición
-  const openEditModal = (service: any) => {
+  const openEditModal = (service: ServiceCatalog) => {
     setEditingServiceId(service.id);
     setFormData({
       name: service.name,
@@ -94,8 +101,8 @@ export default function ServicesPage() {
       await toggleServiceActive(id);
       toast.success('Estado actualizado');
       fetchServices();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al cambiar el estado');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Error al cambiar el estado'));
     }
   };
 
@@ -106,8 +113,8 @@ export default function ServicesPage() {
         await deleteService(id);
         toast.success('Servicio eliminado');
         fetchServices();
-      } catch (err: any) {
-        toast.error(err.message || 'Error al eliminar el servicio');
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, 'Error al eliminar el servicio'));
       }
     }
   };

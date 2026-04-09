@@ -57,16 +57,23 @@ export default function AppointmentsPage() {
     status: AppointmentStatus.PENDING,
   });
 
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
+    return fallback;
+  };
+
   // Cargar datos al montar
   useEffect(() => {
     fetchAppointments();
     fetchCustomers();
     fetchServices(true); // Solo servicios activos
-  }, []);
+  }, [fetchAppointments, fetchCustomers, fetchServices]);
 
   // Aplicar filtros
   const handleApplyFilters = () => {
-    const filters: any = {};
+    const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
     if (statusFilter) filters.status = statusFilter;
     if (dateFilter) {
       filters.startDate = dateFilter;
@@ -91,8 +98,8 @@ export default function AppointmentsPage() {
       setShowCreateModal(false);
       resetForm();
       fetchAppointments(); // Recargar lista
-    } catch (err: any) {
-      toast.error(err.message || 'Error al crear la cita');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Error al crear la cita'));
     }
   };
 
@@ -131,8 +138,8 @@ export default function AppointmentsPage() {
         await updateAppointmentStatus(id, status);
         toast.success('Estado actualizado correctamente');
         fetchAppointments(); // Recargar lista
-      } catch (err: any) {
-        toast.error(err.message || 'Error al actualizar el estado');
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, 'Error al actualizar el estado'));
       }
     }
   };
@@ -144,8 +151,8 @@ export default function AppointmentsPage() {
         await updateAppointmentStatus(id, AppointmentStatus.CANCELLED);
         toast.success('Cita cancelada');
         fetchAppointments();
-      } catch (err: any) {
-        toast.error(err.message || 'Error al cancelar la cita');
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, 'Error al cancelar la cita'));
       }
     }
   };

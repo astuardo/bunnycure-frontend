@@ -9,6 +9,7 @@ import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useBookingRequestsStore } from '../../stores/bookingRequestsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { AppointmentStatus } from '../../types/appointment.types';
+import { BookingRequest } from '../../types/booking.types';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -57,7 +58,7 @@ export default function DashboardPage() {
         return date >= weekStart && date <= weekEnd;
     });
 
-    const pendingRequests = bookingRequests.filter((req: any) => req.status === 'PENDING');
+    const pendingRequests = bookingRequests.filter((req: BookingRequest) => req.status === 'PENDING');
     const revenueAppointments = appointments.filter((apt) => apt.status !== AppointmentStatus.CANCELLED);
     const totalAppointmentsValue = revenueAppointments.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
 
