@@ -20,13 +20,17 @@ export interface Appointment {
   notes?: string;
   customer: CustomerSummary;
   service: ServiceSummary;
+  services?: ServiceSummary[];
+  totalPrice?: number;
+  totalDurationMinutes?: number;
   reminderSent: boolean;
   whatsAppConfirmationSent: boolean; // Campo no existe en modelo, por ahora incluido en DTO
 }
 
 export interface AppointmentCreateRequest {
   customerId: number;
-  serviceId: number;
+  serviceId?: number;
+  serviceIds?: number[];
   appointmentDate: string;
   appointmentTime: string;
   notes?: string;
@@ -35,6 +39,7 @@ export interface AppointmentCreateRequest {
 export interface AppointmentUpdateRequest {
   customerId?: number;
   serviceId?: number;
+  serviceIds?: number[];
   appointmentDate?: string;
   appointmentTime?: string;
   status?: AppointmentStatus;

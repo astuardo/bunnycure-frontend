@@ -3,7 +3,7 @@
  * Incluye lista, filtros, CRUD completo y cambio de estados.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Row, Col, Button, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
 import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -15,6 +15,20 @@ import { appointmentsApi } from '../../api/appointments.api';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/useToast';
+
+interface AppointmentFormState {
+  customerId: number;
+  serviceIds: number[];
+  appointmentDate: string;
+  appointmentTime: string;
+  notes: string;
+}
+
+interface AppointmentEditFormState extends AppointmentFormState {
+  status: AppointmentStatus;
+}
+
+const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
 export default function AppointmentsPage() {
   const toast = useToast();
@@ -33,24 +47,27 @@ export default function AppointmentsPage() {
   const { customers, fetchCustomers } = useCustomersStore();
   const { services, fetchServices } = useServicesStore();
 
-  // State local para modales y formularios
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | ''>('');
   const [dateFilter, setDateFilter] = useState<string>('');
 
-  // Form state
-  const [formData, setFormData] = useState<AppointmentCreateRequest>({
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [editCustomerSearch, setEditCustomerSearch] = useState('');
+  const [editServiceSearch, setEditServiceSearch] = useState('');
+
+  const [formData, setFormData] = useState<AppointmentFormState>({
     customerId: 0,
-    serviceId: 0,
+    serviceIds: [],
     appointmentDate: '',
     appointmentTime: '',
     notes: '',
   });
-  const [editFormData, setEditFormData] = useState<AppointmentUpdateRequest>({
+  const [editFormData, setEditFormData] = useState<AppointmentEditFormState>({
     customerId: 0,
-    serviceId: 0,
+    serviceIds: [],
     appointmentDate: '',
     appointmentTime: '',
     notes: '',
@@ -64,14 +81,81 @@ export default function AppointmentsPage() {
     return fallback;
   };
 
-  // Cargar datos al montar
   useEffect(() => {
     fetchAppointments();
     fetchCustomers();
-    fetchServices(true); // Solo servicios activos
+    fetchServices(true);
   }, [fetchAppointments, fetchCustomers, fetchServices]);
 
-  // Aplicar filtros
+  const filteredCustomers = useMemo(() => {
+    const search = customerSearch.trim().toLowerCase();
+    if (!search) return customers;
+    return customers.filter((customer) =>
+      `${customer.fullName} ${customer.phone}`.toLowerCase().includes(search)
+    );
+  }, [customers, customerSearch]);
+
+  const filteredServices = useMemo(() => {
+    const search = serviceSearch.trim().toLowerCase();
+    if (!search) return services;
+    return services.filter((service) =>
+      `${service.name} ${service.description || ''}`.toLowerCase().includes(search)
+    );
+  }, [services, serviceSearch]);
+
+  const filteredEditCustomers = useMemo(() => {
+    const search = editCustomerSearch.trim().toLowerCase();
+    if (!search) return customers;
+    return customers.filter((customer) =>
+      `${customer.fullName} ${customer.phone}`.toLowerCase().includes(search)
+    );
+  }, [customers, editCustomerSearch]);
+
+  const filteredEditServices = useMemo(() => {
+    const search = editServiceSearch.trim().toLowerCase();
+    if (!search) return services;
+    return services.filter((service) =>
+      `${service.name} ${service.description || ''}`.toLowerCase().includes(search)
+    );
+  }, [services, editServiceSearch]);
+
+  const selectedCreateCustomer = useMemo(
+    () => customers.find((customer) => customer.id === formData.customerId),
+    [customers, formData.customerId]
+  );
+
+  const selectedEditCustomer = useMemo(
+    () => customers.find((customer) => customer.id === editFormData.customerId),
+    [customers, editFormData.customerId]
+  );
+
+  const selectedCreateServices = useMemo(
+    () => services.filter((service) => formData.serviceIds.includes(service.id)),
+    [services, formData.serviceIds]
+  );
+
+  const selectedEditServices = useMemo(
+    () => services.filter((service) => editFormData.serviceIds.includes(service.id)),
+    [services, editFormData.serviceIds]
+  );
+
+  const createTotal = useMemo(
+    () => selectedCreateServices.reduce((sum, service) => sum + service.price, 0),
+    [selectedCreateServices]
+  );
+  const createDuration = useMemo(
+    () => selectedCreateServices.reduce((sum, service) => sum + service.durationMinutes, 0),
+    [selectedCreateServices]
+  );
+  const editTotal = useMemo(
+    () => selectedEditServices.reduce((sum, service) => sum + service.price, 0),
+    [selectedEditServices]
+  );
+  const editDuration = useMemo(
+    () => selectedEditServices.reduce((sum, service) => sum + service.durationMinutes, 0),
+    [selectedEditServices]
+  );
+
   const handleApplyFilters = () => {
     const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
     if (statusFilter) filters.status = statusFilter;
@@ -82,69 +166,110 @@ export default function AppointmentsPage() {
     fetchAppointments(filters);
   };
 
-  // Limpiar filtros
   const handleClearFilters = () => {
     setStatusFilter('');
     setDateFilter('');
     fetchAppointments();
   };
 
-  // Crear cita
+  const normalizeNotes = (notes: string) => {
+    const trimmed = notes.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const buildCreatePayload = (): AppointmentCreateRequest => ({
+    customerId: formData.customerId,
+    serviceId: formData.serviceIds[0],
+    serviceIds: formData.serviceIds,
+    appointmentDate: formData.appointmentDate,
+    appointmentTime: formData.appointmentTime,
+    notes: normalizeNotes(formData.notes),
+  });
+
+  const buildEditPayload = (): AppointmentUpdateRequest => ({
+    customerId: editFormData.customerId,
+    serviceId: editFormData.serviceIds[0],
+    serviceIds: editFormData.serviceIds,
+    appointmentDate: editFormData.appointmentDate,
+    appointmentTime: editFormData.appointmentTime,
+    status: editFormData.status,
+    notes: normalizeNotes(editFormData.notes),
+  });
+
+  const validateForm = (customerId: number, serviceIds: number[]): boolean => {
+    if (customerId <= 0) {
+      toast.error('Debes seleccionar un cliente');
+      return false;
+    }
+    if (serviceIds.length === 0) {
+      toast.error('Debes seleccionar al menos un servicio');
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm(formData.customerId, formData.serviceIds)) return;
+
     try {
-      await createAppointment(formData);
+      await createAppointment(buildCreatePayload());
       toast.success('Cita creada exitosamente');
       setShowCreateModal(false);
       resetForm();
-      fetchAppointments(); // Recargar lista
+      fetchAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al crear la cita'));
     }
   };
 
   const openEditModal = (appointment: Appointment) => {
+    const selectedIds = appointment.services?.length
+      ? appointment.services.map((service) => service.id)
+      : [appointment.service.id];
+
     setEditingAppointmentId(appointment.id);
     setEditFormData({
       customerId: appointment.customer.id,
-      serviceId: appointment.service.id,
+      serviceIds: selectedIds,
       appointmentDate: appointment.appointmentDate,
       appointmentTime: appointment.appointmentTime,
       notes: appointment.notes || '',
       status: appointment.status,
     });
+    setEditCustomerSearch('');
+    setEditServiceSearch('');
     setShowEditModal(true);
   };
 
   const handleEditAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingAppointmentId) return;
+    if (!validateForm(editFormData.customerId, editFormData.serviceIds)) return;
+
     try {
-      await updateAppointment(editingAppointmentId, editFormData);
+      await updateAppointment(editingAppointmentId, buildEditPayload());
       toast.success('Cita actualizada exitosamente');
       setShowEditModal(false);
       setEditingAppointmentId(null);
       fetchAppointments();
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      toast.error(error.message || 'Error al actualizar la cita');
+      toast.error(getErrorMessage(err, 'Error al actualizar la cita'));
     }
   };
 
-  // Cambiar estado
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
     if (confirm(`¿Cambiar estado a ${status}?`)) {
       try {
         await updateAppointmentStatus(id, status);
         toast.success('Estado actualizado correctamente');
-        fetchAppointments(); // Recargar lista
+        fetchAppointments();
       } catch (err: unknown) {
         toast.error(getErrorMessage(err, 'Error al actualizar el estado'));
       }
     }
   };
 
-  // Cancelar cita
   const handleCancelAppointment = async (id: number) => {
     if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
       try {
@@ -157,7 +282,6 @@ export default function AppointmentsPage() {
     }
   };
 
-  // Eliminar cita
   const handleDeleteAppointment = async (id: number) => {
     if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
       try {
@@ -165,68 +289,78 @@ export default function AppointmentsPage() {
         toast.success('Cita eliminada');
         fetchAppointments();
       } catch (err: unknown) {
-        const error = err as { message?: string };
-        toast.error(error.message || 'Error al eliminar la cita');
+        toast.error(getErrorMessage(err, 'Error al eliminar la cita'));
       }
     }
   };
 
-  // Enviar notificación manualmente
   const handleSendNotification = async (id: number) => {
     try {
       await appointmentsApi.sendNotification(id);
       toast.success('📧 Notificación enviada correctamente');
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      toast.error(error.message || 'Error al enviar notificación');
+      toast.error(getErrorMessage(err, 'Error al enviar notificación'));
     }
   };
 
-  // WhatsApp Handoff - Transferir a agente humano
   const handleWhatsAppHandoff = async (id: number) => {
     try {
       const url = await appointmentsApi.whatsappHandoff(id);
       window.open(url, '_blank');
       toast.success('✅ Abriendo WhatsApp para traspaso');
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      toast.error(error.message || 'Error al generar handoff');
+      toast.error(getErrorMessage(err, 'Error al generar handoff'));
     }
   };
 
-  // Enviar confirmación por WhatsApp
   const handleSendWhatsAppConfirmation = async (id: number) => {
     try {
       await appointmentsApi.sendWhatsAppConfirmation(id);
       toast.success('✅ Confirmación enviada por WhatsApp');
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      toast.error(error.message || 'Error al enviar confirmación');
+      toast.error(getErrorMessage(err, 'Error al enviar confirmación'));
     }
   };
 
-  // Enviar recordatorio por WhatsApp
   const handleSendWhatsAppReminder = async (id: number) => {
     try {
       await appointmentsApi.sendWhatsAppReminder(id);
       toast.success('✅ Recordatorio enviado por WhatsApp');
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      toast.error(error.message || 'Error al enviar recordatorio');
+      toast.error(getErrorMessage(err, 'Error al enviar recordatorio'));
     }
   };
 
   const resetForm = () => {
     setFormData({
       customerId: 0,
-      serviceId: 0,
+      serviceIds: [],
       appointmentDate: '',
       appointmentTime: '',
       notes: '',
     });
+    setCustomerSearch('');
+    setServiceSearch('');
   };
 
-  // Badge de estado
+  const toggleCreateService = (serviceId: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      serviceIds: prev.serviceIds.includes(serviceId)
+        ? prev.serviceIds.filter((id) => id !== serviceId)
+        : [...prev.serviceIds, serviceId],
+    }));
+  };
+
+  const toggleEditService = (serviceId: number) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      serviceIds: prev.serviceIds.includes(serviceId)
+        ? prev.serviceIds.filter((id) => id !== serviceId)
+        : [...prev.serviceIds, serviceId],
+    }));
+  };
+
   const getStatusBadge = (status: AppointmentStatus) => {
     const variants: Record<AppointmentStatus, string> = {
       PENDING: 'warning',
@@ -241,6 +375,16 @@ export default function AppointmentsPage() {
       CANCELLED: 'Cancelada',
     };
     return <Badge bg={variants[status]}>{labels[status]}</Badge>;
+  };
+
+  const getAppointmentServices = (appointment: Appointment) =>
+    appointment.services && appointment.services.length > 0
+      ? appointment.services
+      : [appointment.service];
+
+  const getAppointmentTotal = (appointment: Appointment) => {
+    if (typeof appointment.totalPrice === 'number') return appointment.totalPrice;
+    return getAppointmentServices(appointment).reduce((sum, service) => sum + service.price, 0);
   };
 
   return (
@@ -263,7 +407,6 @@ export default function AppointmentsPage() {
         </Alert>
       )}
 
-      {/* Filtros */}
       <Row className="mb-4">
         <Col md={4}>
           <Form.Group>
@@ -300,7 +443,6 @@ export default function AppointmentsPage() {
         </Col>
       </Row>
 
-      {/* Tabla de citas */}
       <Row>
         <Col>
           {isLoading ? (
@@ -323,94 +465,97 @@ export default function AppointmentsPage() {
                       <th>Fecha</th>
                       <th>Hora</th>
                       <th>Cliente</th>
-                      <th>Servicio</th>
+                      <th>Servicio(s)</th>
                       <th>Valor</th>
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {appointments.map((apt) => (
-                      <tr key={apt.id}>
-                        <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
-                        <td>{apt.appointmentTime}</td>
-                        <td>{apt.customer.fullName}</td>
-                        <td>{apt.service.name}</td>
-                        <td>${apt.service.price.toLocaleString('es-CL')}</td>
-                        <td>{getStatusBadge(apt.status)}</td>
-                        <td>
-                          <div className="d-flex gap-1 flex-wrap">
-                            <Button
-                              size="sm"
-                              variant="outline-primary"
-                              onClick={() => openEditModal(apt)}
-                            >
-                              Editar
-                            </Button>
-                            {apt.status === AppointmentStatus.PENDING && (
+                    {appointments.map((apt) => {
+                      const appointmentServices = getAppointmentServices(apt);
+                      return (
+                        <tr key={apt.id}>
+                          <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
+                          <td>{apt.appointmentTime}</td>
+                          <td>{apt.customer.fullName}</td>
+                          <td>{appointmentServices.map((service) => service.name).join(' + ')}</td>
+                          <td>{formatCurrency(getAppointmentTotal(apt))}</td>
+                          <td>{getStatusBadge(apt.status)}</td>
+                          <td>
+                            <div className="d-flex gap-1 flex-wrap">
                               <Button
                                 size="sm"
-                                variant="success"
-                                onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
+                                variant="outline-primary"
+                                onClick={() => openEditModal(apt)}
                               >
-                                Confirmar
+                                Editar
                               </Button>
-                            )}
-                            {apt.status === AppointmentStatus.CONFIRMED && (
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
-                              >
-                                Completar
-                              </Button>
-                            )}
-                            {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
-                              <Button
-                                size="sm"
-                                variant="warning"
-                                onClick={() => handleCancelAppointment(apt.id)}
-                              >
-                                Cancelar
-                              </Button>
-                            )}
+                              {apt.status === AppointmentStatus.PENDING && (
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
+                                >
+                                  Confirmar
+                                </Button>
+                              )}
+                              {apt.status === AppointmentStatus.CONFIRMED && (
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
+                                >
+                                  Completar
+                                </Button>
+                              )}
+                              {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
+                                <Button
+                                  size="sm"
+                                  variant="warning"
+                                  onClick={() => handleCancelAppointment(apt.id)}
+                                >
+                                  Cancelar
+                                </Button>
+                              )}
 
-                            <Dropdown>
-                              <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
-                                📧
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu>
-                                <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
-                                  <FaBell className="me-2" />
-                                  Enviar Notificación
-                                </Dropdown.Item>
-                                <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
-                                  <FaWhatsapp className="me-2 text-success" />
-                                  Confirmar por WhatsApp
-                                </Dropdown.Item>
-                                <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
-                                  <FaEnvelope className="me-2 text-primary" />
-                                  Recordatorio WhatsApp
-                                </Dropdown.Item>
-                                <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
-                                  <FaWhatsapp className="me-2 text-success" />
-                                  Traspaso a Humano
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
+                              <Dropdown>
+                                <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
+                                  📧
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu>
+                                  <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
+                                    <FaBell className="me-2" />
+                                    Enviar Notificación
+                                  </Dropdown.Item>
+                                  <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
+                                    <FaWhatsapp className="me-2 text-success" />
+                                    Confirmar por WhatsApp
+                                  </Dropdown.Item>
+                                  <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
+                                    <FaEnvelope className="me-2 text-primary" />
+                                    Recordatorio WhatsApp
+                                  </Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
+                                    <FaWhatsapp className="me-2 text-success" />
+                                    Traspaso a Humano
+                                  </Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
 
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => handleDeleteAppointment(apt.id)}
-                            >
-                              Eliminar
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => handleDeleteAppointment(apt.id)}
+                              >
+                                Eliminar
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
@@ -419,7 +564,6 @@ export default function AppointmentsPage() {
         </Col>
       </Row>
 
-      {/* Modal Crear Cita */}
       <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Nueva Cita</Modal.Title>
@@ -430,35 +574,69 @@ export default function AppointmentsPage() {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Cliente *</Form.Label>
-                  <Form.Select
-                    required
-                    value={formData.customerId}
-                    onChange={(e) => setFormData({ ...formData, customerId: parseInt(e.target.value) })}
-                  >
-                    <option value={0}>Seleccionar cliente...</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.fullName} - {customer.phone}
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Control
+                    type="text"
+                    placeholder="Buscar cliente por nombre o teléfono..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="border rounded" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                    {filteredCustomers.length > 0 ? (
+                      filteredCustomers.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          className={`btn w-100 text-start border-bottom rounded-0 ${
+                            formData.customerId === customer.id ? 'btn-primary' : 'btn-light'
+                          }`}
+                          onClick={() => setFormData((prev) => ({ ...prev, customerId: customer.id }))}
+                        >
+                          <div className="fw-semibold">{customer.fullName}</div>
+                          <small>{customer.phone}</small>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-3 text-muted">No se encontraron clientes</div>
+                    )}
+                  </div>
+                  <Form.Text className="text-muted">
+                    {selectedCreateCustomer
+                      ? `Seleccionado: ${selectedCreateCustomer.fullName}`
+                      : 'Selecciona un cliente de la lista'}
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Servicio *</Form.Label>
-                  <Form.Select
-                    required
-                    value={formData.serviceId}
-                    onChange={(e) => setFormData({ ...formData, serviceId: parseInt(e.target.value) })}
-                  >
-                    <option value={0}>Seleccionar servicio...</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name} - ${service.price} ({service.durationMinutes} min)
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Label>Servicio(s) *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Buscar servicios..."
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="border rounded p-2" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                    {filteredServices.length > 0 ? (
+                      filteredServices.map((service) => (
+                        <Form.Check
+                          key={service.id}
+                          id={`create-service-${service.id}`}
+                          type="checkbox"
+                          className="mb-2"
+                          label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
+                          checked={formData.serviceIds.includes(service.id)}
+                          onChange={() => toggleCreateService(service.id)}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-muted">No se encontraron servicios</div>
+                    )}
+                  </div>
+                  <Form.Text className="text-muted d-block mt-2">
+                    Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | Duración: {createDuration} min
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>
@@ -470,7 +648,7 @@ export default function AppointmentsPage() {
                     type="date"
                     required
                     value={formData.appointmentDate}
-                    onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, appointmentDate: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
@@ -481,18 +659,26 @@ export default function AppointmentsPage() {
                     type="time"
                     required
                     value={formData.appointmentTime}
-                    onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, appointmentTime: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
             </Row>
+            <Form.Group className="mb-3">
+              <Form.Label>Detalle de servicios</Form.Label>
+              <Form.Control
+                plaintext
+                readOnly
+                value={selectedCreateServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
+              />
+            </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Notas</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder="Observaciones, preferencias, etc..."
               />
             </Form.Group>
@@ -518,35 +704,69 @@ export default function AppointmentsPage() {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Cliente *</Form.Label>
-                  <Form.Select
-                    required
-                    value={editFormData.customerId}
-                    onChange={(e) => setEditFormData({ ...editFormData, customerId: parseInt(e.target.value) })}
-                  >
-                    <option value={0}>Seleccionar cliente...</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.fullName} - {customer.phone}
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Control
+                    type="text"
+                    placeholder="Buscar cliente por nombre o teléfono..."
+                    value={editCustomerSearch}
+                    onChange={(e) => setEditCustomerSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="border rounded" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                    {filteredEditCustomers.length > 0 ? (
+                      filteredEditCustomers.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          className={`btn w-100 text-start border-bottom rounded-0 ${
+                            editFormData.customerId === customer.id ? 'btn-primary' : 'btn-light'
+                          }`}
+                          onClick={() => setEditFormData((prev) => ({ ...prev, customerId: customer.id }))}
+                        >
+                          <div className="fw-semibold">{customer.fullName}</div>
+                          <small>{customer.phone}</small>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-3 text-muted">No se encontraron clientes</div>
+                    )}
+                  </div>
+                  <Form.Text className="text-muted">
+                    {selectedEditCustomer
+                      ? `Seleccionado: ${selectedEditCustomer.fullName}`
+                      : 'Selecciona un cliente de la lista'}
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Servicio *</Form.Label>
-                  <Form.Select
-                    required
-                    value={editFormData.serviceId}
-                    onChange={(e) => setEditFormData({ ...editFormData, serviceId: parseInt(e.target.value) })}
-                  >
-                    <option value={0}>Seleccionar servicio...</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name} - ${service.price} ({service.durationMinutes} min)
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Label>Servicio(s) *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Buscar servicios..."
+                    value={editServiceSearch}
+                    onChange={(e) => setEditServiceSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="border rounded p-2" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                    {filteredEditServices.length > 0 ? (
+                      filteredEditServices.map((service) => (
+                        <Form.Check
+                          key={service.id}
+                          id={`edit-service-${service.id}`}
+                          type="checkbox"
+                          className="mb-2"
+                          label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
+                          checked={editFormData.serviceIds.includes(service.id)}
+                          onChange={() => toggleEditService(service.id)}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-muted">No se encontraron servicios</div>
+                    )}
+                  </div>
+                  <Form.Text className="text-muted d-block mt-2">
+                    Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | Duración: {editDuration} min
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>
@@ -558,7 +778,7 @@ export default function AppointmentsPage() {
                     type="date"
                     required
                     value={editFormData.appointmentDate}
-                    onChange={(e) => setEditFormData({ ...editFormData, appointmentDate: e.target.value })}
+                    onChange={(e) => setEditFormData((prev) => ({ ...prev, appointmentDate: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
@@ -569,7 +789,7 @@ export default function AppointmentsPage() {
                     type="time"
                     required
                     value={editFormData.appointmentTime}
-                    onChange={(e) => setEditFormData({ ...editFormData, appointmentTime: e.target.value })}
+                    onChange={(e) => setEditFormData((prev) => ({ ...prev, appointmentTime: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
@@ -580,7 +800,7 @@ export default function AppointmentsPage() {
                   <Form.Label>Estado</Form.Label>
                   <Form.Select
                     value={editFormData.status}
-                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as AppointmentStatus })}
+                    onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as AppointmentStatus }))}
                   >
                     <option value={AppointmentStatus.PENDING}>Pendiente</option>
                     <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
@@ -591,20 +811,25 @@ export default function AppointmentsPage() {
               </Col>
               <Col md={6} className="d-flex align-items-center">
                 <div className="text-muted small">
-                  Valor estimado: {
-                    services.find((service) => service.id === editFormData.serviceId)?.price
-                      ?.toLocaleString('es-CL') || '0'
-                  } CLP
+                  Valor estimado: {formatCurrency(editTotal)} CLP
                 </div>
               </Col>
             </Row>
+            <Form.Group className="mb-3">
+              <Form.Label>Detalle de servicios</Form.Label>
+              <Form.Control
+                plaintext
+                readOnly
+                value={selectedEditServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
+              />
+            </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Notas</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
-                value={editFormData.notes || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                value={editFormData.notes}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder="Observaciones, preferencias, etc..."
               />
             </Form.Group>

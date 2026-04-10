@@ -54,6 +54,11 @@ const statusLabels: Record<AppointmentStatus, string> = {
 
 const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
+const getAppointmentServiceLabel = (apt: Appointment) => {
+  const services = apt.services && apt.services.length > 0 ? apt.services : [apt.service];
+  return services.map((service) => service.name).join(' + ');
+};
+
 export default function CalendarPage() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -357,7 +362,7 @@ export default function CalendarPage() {
                             {apt.customer.fullName}
                           </a>
                         </td>
-                        <td>{apt.service.name}</td>
+                        <td>{getAppointmentServiceLabel(apt)}</td>
                         <td>
                           <span className={`status-badge ${apt.status}`}>
                             {statusLabels[apt.status]}

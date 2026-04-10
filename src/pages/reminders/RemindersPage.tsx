@@ -28,6 +28,11 @@ const statusLabels: Record<AppointmentStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
+const getAppointmentServiceLabel = (apt: Appointment) => {
+  const services = apt.services && apt.services.length > 0 ? apt.services : [apt.service];
+  return services.map((service) => service.name).join(' + ');
+};
+
 export default function RemindersPage() {
   const toast = useToast();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
@@ -253,7 +258,7 @@ export default function RemindersPage() {
                         <div>{apt.customer.fullName}</div>
                         <div className="small text-muted">{apt.customer.phone}</div>
                       </td>
-                      <td>{apt.service.name}</td>
+                      <td>{getAppointmentServiceLabel(apt)}</td>
                       <td>
                         <Badge bg={statusColors[apt.status]}>
                           {statusLabels[apt.status]}

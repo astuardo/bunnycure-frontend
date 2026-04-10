@@ -71,6 +71,11 @@ export default function CustomerDetailsPage() {
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
 
+  const getAppointmentServiceLabel = (apt: any) => {
+    const services = apt.services && apt.services.length > 0 ? apt.services : [apt.service];
+    return services.map((service: any) => service.name).join(' + ');
+  };
+
   if (customersLoading || appointmentsLoading) {
     return (
       <DashboardLayout>
@@ -256,7 +261,7 @@ export default function CustomerDetailsPage() {
                                 {format(new Date(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}
                               </td>
                               <td>{apt.appointmentTime}</td>
-                              <td>{apt.service.name}</td>
+                              <td>{getAppointmentServiceLabel(apt)}</td>
                               <td>{getStatusBadge(apt.status)}</td>
                               <td>
                                 {apt.notes ? (

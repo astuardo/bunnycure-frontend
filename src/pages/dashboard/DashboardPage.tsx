@@ -8,7 +8,7 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useBookingRequestsStore } from '../../stores/bookingRequestsStore';
 import { useCustomersStore } from '../../stores/customersStore';
-import { AppointmentStatus } from '../../types/appointment.types';
+import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { BookingRequest } from '../../types/booking.types';
 
 export default function DashboardPage() {
@@ -45,6 +45,16 @@ export default function DashboardPage() {
         loadData();
     }, [fetchAppointments, fetchBookingRequests, fetchCustomers]);
 
+    const getAppointmentServices = (apt: Appointment) => {
+        if (apt.services && apt.services.length > 0) return apt.services;
+        return apt.service ? [apt.service] : [];
+    };
+
+    const getAppointmentTotal = (apt: Appointment) => {
+        if (typeof apt.totalPrice === 'number') return apt.totalPrice;
+        return getAppointmentServices(apt).reduce((sum, service) => sum + service.price, 0);
+    };
+
     // Calculate stats
     const todayAppointments = appointments.filter(apt => 
         apt.appointmentDate && isToday(new Date(apt.appointmentDate))
@@ -60,20 +70,22 @@ export default function DashboardPage() {
 
     const pendingRequests = bookingRequests.filter((req: BookingRequest) => req.status === 'PENDING');
     const revenueAppointments = appointments.filter((apt) => apt.status !== AppointmentStatus.CANCELLED);
-    const totalAppointmentsValue = revenueAppointments.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
+    const totalAppointmentsValue = revenueAppointments.reduce((acc, apt) => acc + getAppointmentTotal(apt), 0);
 
     const serviceStats = revenueAppointments.reduce<Record<number, { name: string; count: number; total: number }>>((acc, apt) => {
-        const serviceId = apt.service?.id;
-        if (!serviceId) return acc;
-        if (!acc[serviceId]) {
-            acc[serviceId] = {
-                name: apt.service.name,
-                count: 0,
-                total: 0,
-            };
-        }
-        acc[serviceId].count += 1;
-        acc[serviceId].total += apt.service?.price || 0;
+        const appointmentServices = getAppointmentServices(apt);
+        appointmentServices.forEach((service) => {
+            const serviceId = service.id;
+            if (!acc[serviceId]) {
+                acc[serviceId] = {
+                    name: service.name,
+                    count: 0,
+                    total: 0,
+                };
+            }
+            acc[serviceId].count += 1;
+            acc[serviceId].total += service.price;
+        });
         return acc;
     }, {});
 
@@ -92,7 +104,7 @@ export default function DashboardPage() {
             };
         }
         acc[customerId].count += 1;
-        acc[customerId].total += apt.service?.price || 0;
+        acc[customerId].total += getAppointmentTotal(apt);
         return acc;
     }, {});
 
@@ -271,7 +283,9 @@ export default function DashboardPage() {
                                                 >
                                                     <td>{apt.appointmentTime || '-'}</td>
                                                     <td>{apt.customer.fullName}</td>
-                                                    <td>{apt.service?.name || '-'}</td>
+                                                    <td>
+                                                        {getAppointmentServices(apt).map((service) => service.name).join(' + ') || '-'}
+                                                    </td>
                                                     <td>{getStatusBadge(apt.status)}</td>
                                                 </tr>
                                             ))}
