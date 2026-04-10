@@ -28,6 +28,8 @@ interface AppointmentEditFormState extends AppointmentFormState {
   status: AppointmentStatus;
 }
 
+type AppointmentStatusFilter = AppointmentStatus | 'ACTIVE' | 'ALL';
+
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
 export default function AppointmentsPage() {
@@ -50,7 +52,7 @@ export default function AppointmentsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<AppointmentStatusFilter>('ACTIVE');
   const [dateFilter, setDateFilter] = useState<string>('');
 
   const [customerSearch, setCustomerSearch] = useState('');
@@ -156,9 +158,23 @@ export default function AppointmentsPage() {
     [selectedEditServices]
   );
 
+  const displayedAppointments = useMemo(() => {
+    if (statusFilter === 'ALL') {
+      return appointments;
+    }
+    if (statusFilter === 'ACTIVE') {
+      return appointments.filter(
+        (apt) => apt.status === AppointmentStatus.PENDING || apt.status === AppointmentStatus.CONFIRMED
+      );
+    }
+    return appointments.filter((apt) => apt.status === statusFilter);
+  }, [appointments, statusFilter]);
+
   const handleApplyFilters = () => {
     const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
-    if (statusFilter) filters.status = statusFilter;
+    if (statusFilter !== 'ACTIVE' && statusFilter !== 'ALL') {
+      filters.status = statusFilter;
+    }
     if (dateFilter) {
       filters.startDate = dateFilter;
       filters.endDate = dateFilter;
@@ -167,7 +183,7 @@ export default function AppointmentsPage() {
   };
 
   const handleClearFilters = () => {
-    setStatusFilter('');
+    setStatusFilter('ACTIVE');
     setDateFilter('');
     fetchAppointments();
   };
@@ -423,9 +439,10 @@ export default function AppointmentsPage() {
             <Form.Label>Estado</Form.Label>
             <Form.Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as AppointmentStatus | '')}
+              onChange={(e) => setStatusFilter(e.target.value as AppointmentStatusFilter)}
             >
-              <option value="">Todos</option>
+              <option value="ACTIVE">Pendientes y confirmadas</option>
+              <option value="ALL">Todos</option>
               <option value={AppointmentStatus.PENDING}>Pendiente</option>
               <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
               <option value={AppointmentStatus.COMPLETED}>Completada</option>
@@ -451,9 +468,9 @@ export default function AppointmentsPage() {
                 <span className="visually-hidden">Cargando...</span>
               </div>
             </div>
-          ) : appointments.length === 0 ? (
+          ) : displayedAppointments.length === 0 ? (
             <Alert variant="info">
-              No hay citas que mostrar. {dateFilter || statusFilter ? 'Intenta cambiar los filtros.' : 'Crea tu primera cita.'}
+              No hay citas que mostrar. {dateFilter || statusFilter !== 'ACTIVE' ? 'Intenta cambiar los filtros.' : 'Crea tu primera cita.'}
             </Alert>
           ) : (
             <>
@@ -472,7 +489,7 @@ export default function AppointmentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {appointments.map((apt) => {
+                    {displayedAppointments.map((apt) => {
                       const appointmentServices = getAppointmentServices(apt);
                       return (
                         <tr key={apt.id}>
