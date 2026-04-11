@@ -43,7 +43,7 @@ function statusLabel(status: AppointmentStatus): string {
 }
 
 function statusPill(status: AppointmentStatus): string {
-    const base = 'inline-block rounded-full text-xs font-semibold px-3 py-1';
+    const base = 'inline-block rounded-full text-xs font-semibold px-3 py-1 whitespace-nowrap';
     switch (status) {
         case AppointmentStatus.PENDING:
             return `${base} bg-orange-100 text-orange-800`;
@@ -58,7 +58,7 @@ function statusPill(status: AppointmentStatus): string {
     }
 }
 
-// ─── stat entry type ─────────────────────────────────────────────────────────
+// ─── types ───────────────────────────────────────────────────────────────────
 
 interface StatEntry {
     name: string;
@@ -68,44 +68,46 @@ interface StatEntry {
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-/** Decorative centred title with rose hairline dividers */
+/** Líneas decorativas a ambos lados del título — igual que en front.jpeg */
 function SectionTitle({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex items-center gap-3 mb-5">
-            <span className="flex-1 h-px bg-rose-200/70" />
-            <span className="text-stone-500 text-base font-medium tracking-wide whitespace-nowrap select-none">
+            <span className="flex-1 h-px" style={{ background: '#d4a89a' }} />
+            <span
+                className="text-base font-medium tracking-wide whitespace-nowrap"
+                style={{ color: '#8b6f5e' }}
+            >
                 {children}
             </span>
-            <span className="flex-1 h-px bg-rose-200/70" />
+            <span className="flex-1 h-px" style={{ background: '#d4a89a' }} />
         </div>
     );
 }
 
-/** Frosted-glass card */
+/** Tarjeta blanca con bordes redondeados y sombra suave */
 function DashCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
     return (
         <div
-            className={`
-                bg-white/80 backdrop-blur-sm
-                rounded-3xl
-                border border-rose-100/50
-                shadow-sm
-                ${className}
-            `}
+            className={`rounded-3xl border ${className}`}
+            style={{
+                background: 'rgba(255,255,255,0.85)',
+                borderColor: 'rgba(240,224,216,0.6)',
+                boxShadow: '0 2px 16px rgba(180,120,100,0.08)',
+            }}
         >
             {children}
         </div>
     );
 }
 
-/** Quick-action button — each with its own pastel colour */
+/** Botón de acción rápida — grid 2×2 con colores pastel distintos */
 type ActionVariant = 'rose' | 'mint' | 'beige' | 'sky';
 
-const actionColors: Record<ActionVariant, string> = {
-    rose:  'bg-rose-100   hover:bg-rose-200/70  text-rose-700',
-    mint:  'bg-emerald-50 hover:bg-emerald-100   text-emerald-700',
-    beige: 'bg-amber-50   hover:bg-amber-100     text-amber-800',
-    sky:   'bg-sky-50     hover:bg-sky-100       text-sky-700',
+const variantStyles: Record<ActionVariant, { bg: string; hover: string; text: string; iconColor: string }> = {
+    rose:  { bg: '#fce8e4', hover: '#f9d5cf', text: '#7c3a2d', iconColor: '#c9897a' },
+    mint:  { bg: '#e8f5f0', hover: '#d4ede6', text: '#2d6b55', iconColor: '#5a9e82' },
+    beige: { bg: '#f5ede8', hover: '#eeddd6', text: '#6b4c38', iconColor: '#b07a5e' },
+    sky:   { bg: '#e8f0f8', hover: '#d4e4f2', text: '#2d4f7c', iconColor: '#5a7eb0' },
 };
 
 function ActionButton({
@@ -119,28 +121,29 @@ function ActionButton({
     to: string;
     variant: ActionVariant;
 }) {
+    const s = variantStyles[variant];
     return (
-        <Link to={to}>
+        <Link to={to} className="block">
             <button
-                className={`
-                    flex items-center gap-3 w-full
-                    px-4 py-3.5 rounded-xl
-                    text-sm font-medium
-                    transition-all duration-150 active:scale-95
-                    ${actionColors[variant]}
-                `}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 active:scale-95"
+                style={{ background: s.bg, color: s.text }}
+                onMouseEnter={e => (e.currentTarget.style.background = s.hover)}
+                onMouseLeave={e => (e.currentTarget.style.background = s.bg)}
             >
-                <span className="shrink-0">{icon}</span>
+                <span style={{ color: s.iconColor }} className="shrink-0">{icon}</span>
                 <span className="text-left leading-tight">{label}</span>
             </button>
         </Link>
     );
 }
 
-/** Inline spinner */
+/** Spinner rosa */
 function Spinner() {
     return (
-        <div className="w-7 h-7 rounded-full border-[3px] border-rose-300 border-t-rose-500 animate-spin" />
+        <div
+            className="w-7 h-7 rounded-full animate-spin"
+            style={{ border: '3px solid #f0d0c8', borderTopColor: '#c9897a' }}
+        />
     );
 }
 
@@ -177,7 +180,8 @@ export default function DashboardPage() {
         return d >= weekStart && d <= weekEnd;
     });
 
-    const pendingRequests    = bookingRequests.filter((r: BookingRequest) => r.status === 'PENDING');
+    const pendingRequests = bookingRequests.filter((r: BookingRequest) => r.status === 'PENDING');
+
     const revenueAppointments = appointments.filter(
         (a: Appointment) => a.status !== AppointmentStatus.CANCELLED
     );
@@ -222,43 +226,49 @@ export default function DashboardPage() {
         {
             label: 'Confirmadas',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CONFIRMED).length,
-            pill: 'bg-emerald-100 text-emerald-700',
+            pillBg: '#d4edda', pillText: '#155724',
         },
         {
             label: 'Completadas',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.COMPLETED).length,
-            pill: 'bg-teal-100 text-teal-700',
+            pillBg: '#c8e6e0', pillText: '#0d5c4a',
         },
         {
             label: 'Pendientes',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.PENDING).length,
-            pill: 'bg-orange-100 text-orange-700',
+            pillBg: '#fde8cc', pillText: '#7c4a00',
         },
         {
             label: 'Canceladas',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CANCELLED).length,
-            pill: 'bg-rose-100 text-rose-700',
+            pillBg: '#fce4e4', pillText: '#7c1c1c',
         },
     ];
 
     // ── render ─────────────────────────────────────────────────────────────
     return (
         <DashboardLayout>
-            {/* ── page shell ── */}
-            <div className="min-h-screen bg-rose-50 px-4 py-6 space-y-4 max-w-2xl mx-auto">
-
+            {/* Fondo rosa pastel general */}
+            <div
+                className="min-h-screen px-4 py-6 space-y-4"
+                style={{ background: '#fdf0ec' }}
+            >
                 {/* ══ 1. Clientes Activos ══════════════════════════════════ */}
                 <DashCard className="px-6 py-7 text-center">
                     <SectionTitle>Clientes Activos</SectionTitle>
-
                     {statsLoading ? (
                         <div className="flex justify-center py-4"><Spinner /></div>
                     ) : (
                         <>
-                            <p className="text-8xl font-extralight text-emerald-600 leading-none tracking-tight mb-1">
+                            <p
+                                className="font-light leading-none tracking-tight mb-1"
+                                style={{ fontSize: '5rem', color: '#5a8f7b' }}
+                            >
                                 {customers.length}
                             </p>
-                            <p className="text-stone-400 text-sm mt-2">Total registrados</p>
+                            <p className="text-sm mt-2" style={{ color: '#9e7b6e' }}>
+                                Total registrados
+                            </p>
                         </>
                     )}
                 </DashCard>
@@ -266,10 +276,9 @@ export default function DashboardPage() {
                 {/* ══ 2. Acciones Rápidas ══════════════════════════════════ */}
                 <DashCard className="px-5 py-6">
                     <SectionTitle>
-                        <Zap size={15} className="inline-block text-amber-400 mr-1.5 -mt-px" />
+                        <Zap size={15} className="inline-block mr-1.5 -mt-px" style={{ color: '#e8a838' }} />
                         Acciones Rápidas
                     </SectionTitle>
-
                     <div className="grid grid-cols-2 gap-3">
                         <ActionButton
                             icon={<CalendarDays size={18} />}
@@ -303,12 +312,18 @@ export default function DashboardPage() {
                     {/* header */}
                     <div className="flex items-center justify-between px-5 pt-5 pb-4">
                         <div className="flex items-center gap-2">
-                            <CalendarDays size={20} className="text-rose-400" />
-                            <h2 className="text-stone-700 font-semibold text-base">Citas de Hoy</h2>
+                            <CalendarDays size={20} style={{ color: '#c9897a' }} />
+                            <h2
+                                className="font-semibold text-base m-0"
+                                style={{ color: '#5c3d2e' }}
+                            >
+                                Citas de Hoy
+                            </h2>
                         </div>
                         <Link
                             to="/appointments"
-                            className="text-stone-400 text-sm hover:text-rose-500 transition-colors underline underline-offset-2"
+                            className="text-sm underline underline-offset-2 transition-colors"
+                            style={{ color: '#9e7b6e' }}
                         >
                             Ver todas
                         </Link>
@@ -318,26 +333,26 @@ export default function DashboardPage() {
                     {appointmentsLoading ? (
                         <div className="flex justify-center py-10"><Spinner /></div>
                     ) : todayAppointments.length === 0 ? (
-                        <p className="text-center text-stone-400 text-sm py-10 px-5">
+                        <p
+                            className="text-center text-sm py-10 px-5"
+                            style={{ color: '#b09080' }}
+                        >
                             No hay citas programadas para hoy.
                         </p>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr className="border-t border-rose-100/60">
-                                        <th className="text-left px-5 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
-                                            Hora
-                                        </th>
-                                        <th className="text-left px-3 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
-                                            Cliente
-                                        </th>
-                                        <th className="text-left px-3 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
-                                            Servicio
-                                        </th>
-                                        <th className="text-left px-3 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
-                                            Estado
-                                        </th>
+                                    <tr style={{ borderTop: '1px solid #f0e0d8' }}>
+                                        {['Hora', 'Cliente', 'Servicio', 'Estado'].map(h => (
+                                            <th
+                                                key={h}
+                                                className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide"
+                                                style={{ color: '#5c3d2e' }}
+                                            >
+                                                {h}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -345,25 +360,29 @@ export default function DashboardPage() {
                                         <tr
                                             key={apt.id}
                                             onClick={() => navigate('/appointments')}
-                                            className={`
-                                                cursor-pointer transition-colors
-                                                hover:bg-rose-50/80
-                                                border-t border-rose-100/40
-                                                ${idx % 2 !== 0 ? 'bg-rose-50/30' : 'bg-white/60'}
-                                            `}
+                                            className="cursor-pointer transition-colors"
+                                            style={{
+                                                borderTop: '1px solid #f0e0d8',
+                                                background: idx % 2 !== 0 ? '#fdf6f3' : '#ffffff',
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = '#fdeae4')}
+                                            onMouseLeave={e => (e.currentTarget.style.background = idx % 2 !== 0 ? '#fdf6f3' : '#ffffff')}
                                         >
-                                            <td className="px-5 py-4 text-stone-600 whitespace-nowrap font-mono text-xs">
+                                            <td
+                                                className="px-4 py-4 whitespace-nowrap font-mono text-xs"
+                                                style={{ color: '#5c3d2e' }}
+                                            >
                                                 {apt.appointmentTime || '-'}
                                             </td>
-                                            <td className="px-3 py-4 text-stone-700 font-medium">
+                                            <td className="px-4 py-4 font-medium" style={{ color: '#5c3d2e' }}>
                                                 {apt.customer.fullName}
                                             </td>
-                                            <td className="px-3 py-4 text-stone-500">
+                                            <td className="px-4 py-4" style={{ color: '#7a5c50' }}>
                                                 {getAppointmentServices(apt)
                                                     .map((s: ServiceSummary) => s.name)
                                                     .join(' + ') || '-'}
                                             </td>
-                                            <td className="px-3 py-4">
+                                            <td className="px-4 py-4">
                                                 <span className={statusPill(apt.status)}>
                                                     {statusLabel(apt.status)}
                                                 </span>
@@ -372,12 +391,15 @@ export default function DashboardPage() {
                                     ))}
                                 </tbody>
                             </table>
-
                             {todayAppointments.length > 5 && (
-                                <div className="text-center py-3 border-t border-rose-100/40">
+                                <div
+                                    className="text-center py-3"
+                                    style={{ borderTop: '1px solid #f0e0d8' }}
+                                >
                                     <Link
                                         to="/appointments"
-                                        className="text-stone-400 text-xs hover:text-rose-500 underline underline-offset-2"
+                                        className="text-xs underline underline-offset-2"
+                                        style={{ color: '#9e7b6e' }}
                                     >
                                         Ver {todayAppointments.length - 5} más…
                                     </Link>
@@ -389,26 +411,29 @@ export default function DashboardPage() {
 
                 {/* ══ 4. Resumen Semanal ═══════════════════════════════════ */}
                 <DashCard className="px-5 py-5">
-                    {/* header */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <BarChart3 size={18} className="text-rose-400" />
-                            <h2 className="text-stone-700 font-semibold text-base">Resumen Semanal</h2>
+                            <BarChart3 size={18} style={{ color: '#c9897a' }} />
+                            <h2 className="font-semibold text-base m-0" style={{ color: '#5c3d2e' }}>
+                                Resumen Semanal
+                            </h2>
                         </div>
-                        <span className="text-emerald-600 font-bold text-xl leading-none">
+                        <span className="font-bold text-xl leading-none" style={{ color: '#5a8f7b' }}>
                             {thisWeekAppointments.length}
                         </span>
                     </div>
-
-                    {/* rows */}
                     <div className="space-y-1">
-                        {weekStats.map(({ label, count, pill }) => (
+                        {weekStats.map(({ label, count, pillBg, pillText }) => (
                             <div
                                 key={label}
-                                className="flex justify-between items-center py-2 border-b border-rose-100/50 last:border-0"
+                                className="flex justify-between items-center py-2"
+                                style={{ borderBottom: '1px solid #f0e0d8' }}
                             >
-                                <span className="text-stone-500 text-sm">{label}</span>
-                                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${pill}`}>
+                                <span className="text-sm" style={{ color: '#9e7b6e' }}>{label}</span>
+                                <span
+                                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                    style={{ background: pillBg, color: pillText }}
+                                >
                                     {count}
                                 </span>
                             </div>
@@ -419,42 +444,57 @@ export default function DashboardPage() {
                 {/* ══ 5. Insights de negocio ═══════════════════════════════ */}
                 <DashCard className="px-5 py-5">
                     <div className="flex items-center gap-2 mb-4">
-                        <TrendingUp size={18} className="text-rose-400" />
-                        <h2 className="text-stone-700 font-semibold text-base">Insights de negocio</h2>
+                        <TrendingUp size={18} style={{ color: '#c9897a' }} />
+                        <h2 className="font-semibold text-base m-0" style={{ color: '#5c3d2e' }}>
+                            Insights de negocio
+                        </h2>
                     </div>
 
-                    {/* valor total */}
-                    <div className="flex justify-between items-center py-2.5 border-b border-rose-100/50">
-                        <span className="text-stone-500 text-sm">Valor citas creadas</span>
-                        <span className="text-emerald-600 font-bold text-sm">
+                    <div
+                        className="flex justify-between items-center py-2.5"
+                        style={{ borderBottom: '1px solid #f0e0d8' }}
+                    >
+                        <span className="text-sm" style={{ color: '#9e7b6e' }}>Valor citas creadas</span>
+                        <span className="font-bold text-sm" style={{ color: '#5a8f7b' }}>
                             ${totalValue.toLocaleString('es-CL')}
                         </span>
                     </div>
 
-                    {/* top customer */}
-                    <div className="flex justify-between items-center py-2.5 border-b border-rose-100/50">
+                    <div
+                        className="flex justify-between items-center py-2.5"
+                        style={{ borderBottom: '1px solid #f0e0d8' }}
+                    >
                         <div className="flex items-center gap-1.5">
-                            <Users size={14} className="text-stone-400 shrink-0" />
-                            <span className="text-stone-500 text-sm">Cliente más frecuente</span>
+                            <Users size={14} style={{ color: '#b09080' }} className="shrink-0" />
+                            <span className="text-sm" style={{ color: '#9e7b6e' }}>Cliente más frecuente</span>
                         </div>
-                        <span className="text-stone-700 font-semibold text-sm text-right max-w-[55%] truncate">
+                        <span
+                            className="font-semibold text-sm text-right max-w-[55%] truncate"
+                            style={{ color: '#5c3d2e' }}
+                        >
                             {topCustomer ? `${topCustomer.name} (${topCustomer.count})` : 'Sin datos'}
                         </span>
                     </div>
 
-                    {/* top services */}
                     <div className="pt-3">
-                        <p className="text-stone-400 text-xs uppercase tracking-widest mb-3">
+                        <p
+                            className="text-xs uppercase tracking-widest mb-3"
+                            style={{ color: '#b09080' }}
+                        >
                             Top servicios
                         </p>
                         {topServices.length === 0 ? (
-                            <p className="text-stone-300 text-xs">Aún no hay datos de servicios.</p>
+                            <p className="text-xs" style={{ color: '#c9a898' }}>
+                                Aún no hay datos de servicios.
+                            </p>
                         ) : (
                             <ul className="space-y-2.5">
                                 {topServices.map((s: StatEntry) => (
                                     <li key={s.name} className="flex justify-between items-center gap-2">
-                                        <span className="text-stone-600 text-sm truncate">{s.name}</span>
-                                        <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">
+                                        <span className="text-sm truncate" style={{ color: '#5c3d2e' }}>
+                                            {s.name}
+                                        </span>
+                                        <span className="text-xs whitespace-nowrap shrink-0" style={{ color: '#9e7b6e' }}>
                                             {s.count} uso{s.count !== 1 ? 's' : ''} · ${s.total.toLocaleString('es-CL')}
                                         </span>
                                     </li>
