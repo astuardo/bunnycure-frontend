@@ -10,6 +10,7 @@ import {
     Zap,
     BarChart3,
     Users,
+    TrendingUp,
 } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
@@ -33,7 +34,7 @@ function getAppointmentTotal(apt: Appointment): number {
 
 function statusLabel(status: AppointmentStatus): string {
     const map: Record<AppointmentStatus, string> = {
-        PENDING: 'Pendiente',
+        PENDING:   'Pendiente',
         CONFIRMED: 'Confirmada',
         COMPLETED: 'Completada',
         CANCELLED: 'Cancelada',
@@ -41,83 +42,106 @@ function statusLabel(status: AppointmentStatus): string {
     return map[status] ?? status;
 }
 
-function statusClasses(status: AppointmentStatus): string {
+function statusPill(status: AppointmentStatus): string {
+    const base = 'inline-block rounded-full text-xs font-semibold px-3 py-1';
     switch (status) {
         case AppointmentStatus.PENDING:
-            return 'bg-[#f5c9a0] text-[#8b5e3c] font-semibold';
+            return `${base} bg-orange-100 text-orange-800`;
         case AppointmentStatus.CONFIRMED:
-            return 'bg-[#c8e6c9] text-[#2e7d32] font-semibold';
+            return `${base} bg-emerald-100 text-emerald-800`;
         case AppointmentStatus.COMPLETED:
-            return 'bg-[#b2dfdb] text-[#00695c] font-semibold';
+            return `${base} bg-teal-100 text-teal-800`;
         case AppointmentStatus.CANCELLED:
-            return 'bg-[#ffcdd2] text-[#c62828] font-semibold';
+            return `${base} bg-rose-100 text-rose-700`;
         default:
-            return 'bg-gray-200 text-gray-700 font-semibold';
+            return `${base} bg-stone-100 text-stone-600`;
     }
 }
 
-// ─── sub-components ─────────────────────────────────────────────────────────
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-    return (
-        <div className="flex items-center gap-3 mb-4">
-            <span className="flex-1 h-px bg-[#d4a89a]" />
-            <span className="text-[#8b6f5e] text-lg font-medium tracking-wide whitespace-nowrap">
-                {children}
-            </span>
-            <span className="flex-1 h-px bg-[#d4a89a]" />
-        </div>
-    );
-}
-
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-    return (
-        <div className={`bg-white rounded-2xl shadow-[0_2px_16px_rgba(180,120,100,0.10)] border border-[#f0e0d8] ${className}`}>
-            {children}
-        </div>
-    );
-}
-
-function ActionButton({
-    icon,
-    label,
-    to,
-    variant = 'pink',
-}: {
-    icon: React.ReactNode;
-    label: string;
-    to: string;
-    variant?: 'pink' | 'beige';
-}) {
-    const base =
-        'flex items-center gap-3 px-4 py-3 rounded-xl text-[#5c3d2e] font-medium text-sm transition-all active:scale-95 w-full';
-    const colors =
-        variant === 'pink'
-            ? 'bg-[#f9ddd8] hover:bg-[#f5ccc5]'
-            : 'bg-[#f5ede8] hover:bg-[#eeddd6]';
-
-    return (
-        <Link to={to} className="flex-1 min-w-[140px]">
-            <button className={`${base} ${colors}`}>
-                <span className="text-xl leading-none">{icon}</span>
-                <span>{label}</span>
-            </button>
-        </Link>
-    );
-}
-
-function Spinner() {
-    return (
-        <div className="w-8 h-8 rounded-full border-4 border-[#c9897a] border-t-transparent animate-spin" />
-    );
-}
-
-// ─── stat row type ───────────────────────────────────────────────────────────
+// ─── stat entry type ─────────────────────────────────────────────────────────
 
 interface StatEntry {
     name: string;
     count: number;
     total: number;
+}
+
+// ─── sub-components ──────────────────────────────────────────────────────────
+
+/** Decorative centred title with rose hairline dividers */
+function SectionTitle({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex items-center gap-3 mb-5">
+            <span className="flex-1 h-px bg-rose-200/70" />
+            <span className="text-stone-500 text-base font-medium tracking-wide whitespace-nowrap select-none">
+                {children}
+            </span>
+            <span className="flex-1 h-px bg-rose-200/70" />
+        </div>
+    );
+}
+
+/** Frosted-glass card */
+function DashCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+    return (
+        <div
+            className={`
+                bg-white/80 backdrop-blur-sm
+                rounded-3xl
+                border border-rose-100/50
+                shadow-sm
+                ${className}
+            `}
+        >
+            {children}
+        </div>
+    );
+}
+
+/** Quick-action button — each with its own pastel colour */
+type ActionVariant = 'rose' | 'mint' | 'beige' | 'sky';
+
+const actionColors: Record<ActionVariant, string> = {
+    rose:  'bg-rose-100   hover:bg-rose-200/70  text-rose-700',
+    mint:  'bg-emerald-50 hover:bg-emerald-100   text-emerald-700',
+    beige: 'bg-amber-50   hover:bg-amber-100     text-amber-800',
+    sky:   'bg-sky-50     hover:bg-sky-100       text-sky-700',
+};
+
+function ActionButton({
+    icon,
+    label,
+    to,
+    variant,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    to: string;
+    variant: ActionVariant;
+}) {
+    return (
+        <Link to={to}>
+            <button
+                className={`
+                    flex items-center gap-3 w-full
+                    px-4 py-3.5 rounded-xl
+                    text-sm font-medium
+                    transition-all duration-150 active:scale-95
+                    ${actionColors[variant]}
+                `}
+            >
+                <span className="shrink-0">{icon}</span>
+                <span className="text-left leading-tight">{label}</span>
+            </button>
+        </Link>
+    );
+}
+
+/** Inline spinner */
+function Spinner() {
+    return (
+        <div className="w-7 h-7 rounded-full border-[3px] border-rose-300 border-t-rose-500 animate-spin" />
+    );
 }
 
 // ─── main page ───────────────────────────────────────────────────────────────
@@ -149,11 +173,11 @@ export default function DashboardPage() {
         if (!apt.appointmentDate) return false;
         const d = new Date(apt.appointmentDate);
         const weekStart = startOfWeek(new Date(), { locale: es });
-        const weekEnd = endOfWeek(new Date(), { locale: es });
+        const weekEnd   = endOfWeek(new Date(),   { locale: es });
         return d >= weekStart && d <= weekEnd;
     });
 
-    const pendingRequests = bookingRequests.filter((r: BookingRequest) => r.status === 'PENDING');
+    const pendingRequests    = bookingRequests.filter((r: BookingRequest) => r.status === 'PENDING');
     const revenueAppointments = appointments.filter(
         (a: Appointment) => a.status !== AppointmentStatus.CANCELLED
     );
@@ -198,113 +222,122 @@ export default function DashboardPage() {
         {
             label: 'Confirmadas',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CONFIRMED).length,
-            color: 'text-[#5a8f7b]',
+            pill: 'bg-emerald-100 text-emerald-700',
         },
         {
             label: 'Completadas',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.COMPLETED).length,
-            color: 'text-[#5a8f7b]',
+            pill: 'bg-teal-100 text-teal-700',
         },
         {
             label: 'Pendientes',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.PENDING).length,
-            color: 'text-[#e8a838]',
+            pill: 'bg-orange-100 text-orange-700',
         },
         {
             label: 'Canceladas',
             count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CANCELLED).length,
-            color: 'text-[#c9897a]',
+            pill: 'bg-rose-100 text-rose-700',
         },
     ];
 
     // ── render ─────────────────────────────────────────────────────────────
     return (
         <DashboardLayout>
-            <div className="min-h-screen bg-[#fdf6f3] px-4 py-6 space-y-5">
+            {/* ── page shell ── */}
+            <div className="min-h-screen bg-rose-50 px-4 py-6 space-y-4 max-w-2xl mx-auto">
 
-                {/* ── 1. Clientes Activos ─────────────────────────────────── */}
-                <Card className="px-6 py-6 text-center">
+                {/* ══ 1. Clientes Activos ══════════════════════════════════ */}
+                <DashCard className="px-6 py-7 text-center">
                     <SectionTitle>Clientes Activos</SectionTitle>
+
                     {statsLoading ? (
-                        <div className="h-16 flex items-center justify-center">
-                            <Spinner />
-                        </div>
+                        <div className="flex justify-center py-4"><Spinner /></div>
                     ) : (
                         <>
-                            <p className="text-7xl font-light text-[#5a8f7b] leading-none mb-2">
+                            <p className="text-8xl font-extralight text-emerald-600 leading-none tracking-tight mb-1">
                                 {customers.length}
                             </p>
-                            <p className="text-[#9e7b6e] text-sm">Total registrados</p>
+                            <p className="text-stone-400 text-sm mt-2">Total registrados</p>
                         </>
                     )}
-                </Card>
+                </DashCard>
 
-                {/* ── 2. Acciones Rápidas ─────────────────────────────────── */}
-                <Card className="px-5 py-5">
+                {/* ══ 2. Acciones Rápidas ══════════════════════════════════ */}
+                <DashCard className="px-5 py-6">
                     <SectionTitle>
-                        <Zap size={18} className="inline-block text-[#e8a838] mr-1 -mt-0.5" />
+                        <Zap size={15} className="inline-block text-amber-400 mr-1.5 -mt-px" />
                         Acciones Rápidas
                     </SectionTitle>
+
                     <div className="grid grid-cols-2 gap-3">
                         <ActionButton
-                            icon={<CalendarDays size={20} className="text-[#c9897a]" />}
+                            icon={<CalendarDays size={18} />}
                             label="Nueva Cita"
                             to="/appointments"
-                            variant="pink"
+                            variant="rose"
                         />
                         <ActionButton
-                            icon={<UserPlus size={20} className="text-[#7a9e8e]" />}
+                            icon={<UserPlus size={18} />}
                             label="Nuevo Cliente"
                             to="/customers"
-                            variant="beige"
+                            variant="mint"
                         />
                         <ActionButton
-                            icon={<Mail size={20} className="text-[#c9897a]" />}
+                            icon={<Mail size={18} />}
                             label={`Ver Solicitudes${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}`}
                             to="/booking-requests"
                             variant="beige"
                         />
                         <ActionButton
-                            icon={<Scissors size={20} className="text-[#c9897a]" />}
+                            icon={<Scissors size={18} />}
                             label="Gestionar Servicios"
                             to="/services"
-                            variant="beige"
+                            variant="sky"
                         />
                     </div>
-                </Card>
+                </DashCard>
 
-                {/* ── 3. Citas de Hoy ─────────────────────────────────────── */}
-                <Card className="overflow-hidden">
-                    <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                {/* ══ 3. Citas de Hoy ══════════════════════════════════════ */}
+                <DashCard className="overflow-hidden">
+                    {/* header */}
+                    <div className="flex items-center justify-between px-5 pt-5 pb-4">
                         <div className="flex items-center gap-2">
-                            <CalendarDays size={22} className="text-[#c9897a]" />
-                            <h2 className="text-[#5c3d2e] font-semibold text-base">Citas de Hoy</h2>
+                            <CalendarDays size={20} className="text-rose-400" />
+                            <h2 className="text-stone-700 font-semibold text-base">Citas de Hoy</h2>
                         </div>
                         <Link
                             to="/appointments"
-                            className="text-[#9e7b6e] text-sm underline underline-offset-2 hover:text-[#c9897a] transition-colors"
+                            className="text-stone-400 text-sm hover:text-rose-500 transition-colors underline underline-offset-2"
                         >
                             Ver todas
                         </Link>
                     </div>
 
+                    {/* body */}
                     {appointmentsLoading ? (
-                        <div className="flex justify-center py-8">
-                            <Spinner />
-                        </div>
+                        <div className="flex justify-center py-10"><Spinner /></div>
                     ) : todayAppointments.length === 0 ? (
-                        <p className="text-center text-[#b09080] text-sm py-8 px-5">
+                        <p className="text-center text-stone-400 text-sm py-10 px-5">
                             No hay citas programadas para hoy.
                         </p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="border-t border-[#f0e0d8]">
-                                        <th className="text-left px-5 py-3 text-[#5c3d2e] font-semibold">Hora</th>
-                                        <th className="text-left px-3 py-3 text-[#5c3d2e] font-semibold">Cliente</th>
-                                        <th className="text-left px-3 py-3 text-[#5c3d2e] font-semibold">Servicio</th>
-                                        <th className="text-left px-3 py-3 text-[#5c3d2e] font-semibold">Estado</th>
+                                    <tr className="border-t border-rose-100/60">
+                                        <th className="text-left px-5 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
+                                            Hora
+                                        </th>
+                                        <th className="text-left px-3 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
+                                            Cliente
+                                        </th>
+                                        <th className="text-left px-3 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
+                                            Servicio
+                                        </th>
+                                        <th className="text-left px-3 py-3 text-stone-600 font-semibold text-xs uppercase tracking-wide">
+                                            Estado
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -312,23 +345,26 @@ export default function DashboardPage() {
                                         <tr
                                             key={apt.id}
                                             onClick={() => navigate('/appointments')}
-                                            className={`cursor-pointer transition-colors hover:bg-[#fdf0ec] ${
-                                                idx % 2 === 0 ? 'bg-white' : 'bg-[#fdf6f3]'
-                                            } border-t border-[#f0e0d8]`}
+                                            className={`
+                                                cursor-pointer transition-colors
+                                                hover:bg-rose-50/80
+                                                border-t border-rose-100/40
+                                                ${idx % 2 !== 0 ? 'bg-rose-50/30' : 'bg-white/60'}
+                                            `}
                                         >
-                                            <td className="px-5 py-4 text-[#5c3d2e] whitespace-nowrap">
+                                            <td className="px-5 py-4 text-stone-600 whitespace-nowrap font-mono text-xs">
                                                 {apt.appointmentTime || '-'}
                                             </td>
-                                            <td className="px-3 py-4 text-[#5c3d2e]">
+                                            <td className="px-3 py-4 text-stone-700 font-medium">
                                                 {apt.customer.fullName}
                                             </td>
-                                            <td className="px-3 py-4 text-[#5c3d2e]">
+                                            <td className="px-3 py-4 text-stone-500">
                                                 {getAppointmentServices(apt)
                                                     .map((s: ServiceSummary) => s.name)
                                                     .join(' + ') || '-'}
                                             </td>
                                             <td className="px-3 py-4">
-                                                <span className={`inline-block px-3 py-1 rounded-full text-xs ${statusClasses(apt.status)}`}>
+                                                <span className={statusPill(apt.status)}>
                                                     {statusLabel(apt.status)}
                                                 </span>
                                             </td>
@@ -336,11 +372,12 @@ export default function DashboardPage() {
                                     ))}
                                 </tbody>
                             </table>
+
                             {todayAppointments.length > 5 && (
-                                <div className="text-center py-3">
+                                <div className="text-center py-3 border-t border-rose-100/40">
                                     <Link
                                         to="/appointments"
-                                        className="text-[#9e7b6e] text-xs underline hover:text-[#c9897a]"
+                                        className="text-stone-400 text-xs hover:text-rose-500 underline underline-offset-2"
                                     >
                                         Ver {todayAppointments.length - 5} más…
                                     </Link>
@@ -348,63 +385,76 @@ export default function DashboardPage() {
                             )}
                         </div>
                     )}
-                </Card>
+                </DashCard>
 
-                {/* ── 4. Resumen Semanal ──────────────────────────────────── */}
-                <Card className="px-5 py-5">
+                {/* ══ 4. Resumen Semanal ═══════════════════════════════════ */}
+                <DashCard className="px-5 py-5">
+                    {/* header */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <BarChart3 size={20} className="text-[#c9897a]" />
-                            <h2 className="text-[#5c3d2e] font-semibold text-base">Resumen Semanal</h2>
+                            <BarChart3 size={18} className="text-rose-400" />
+                            <h2 className="text-stone-700 font-semibold text-base">Resumen Semanal</h2>
                         </div>
-                        <span className="text-[#5a8f7b] font-bold text-lg">
+                        <span className="text-emerald-600 font-bold text-xl leading-none">
                             {thisWeekAppointments.length}
                         </span>
                     </div>
+
+                    {/* rows */}
                     <div className="space-y-1">
-                        {weekStats.map(({ label, count, color }) => (
+                        {weekStats.map(({ label, count, pill }) => (
                             <div
                                 key={label}
-                                className="flex justify-between items-center py-2 border-b border-[#f0e0d8] last:border-0"
+                                className="flex justify-between items-center py-2 border-b border-rose-100/50 last:border-0"
                             >
-                                <span className="text-[#9e7b6e] text-sm">{label}</span>
-                                <span className={`font-semibold text-sm ${color}`}>{count}</span>
+                                <span className="text-stone-500 text-sm">{label}</span>
+                                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${pill}`}>
+                                    {count}
+                                </span>
                             </div>
                         ))}
                     </div>
-                </Card>
+                </DashCard>
 
-                {/* ── 5. Insights de negocio ──────────────────────────────── */}
-                <Card className="px-5 py-5">
+                {/* ══ 5. Insights de negocio ═══════════════════════════════ */}
+                <DashCard className="px-5 py-5">
                     <div className="flex items-center gap-2 mb-4">
-                        <Users size={20} className="text-[#c9897a]" />
-                        <h2 className="text-[#5c3d2e] font-semibold text-base">Insights de negocio</h2>
+                        <TrendingUp size={18} className="text-rose-400" />
+                        <h2 className="text-stone-700 font-semibold text-base">Insights de negocio</h2>
                     </div>
 
-                    <div className="flex justify-between items-center py-2 border-b border-[#f0e0d8]">
-                        <span className="text-[#9e7b6e] text-sm">Valor citas creadas</span>
-                        <span className="text-[#5a8f7b] font-bold text-sm">
+                    {/* valor total */}
+                    <div className="flex justify-between items-center py-2.5 border-b border-rose-100/50">
+                        <span className="text-stone-500 text-sm">Valor citas creadas</span>
+                        <span className="text-emerald-600 font-bold text-sm">
                             ${totalValue.toLocaleString('es-CL')}
                         </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-2 border-b border-[#f0e0d8]">
-                        <span className="text-[#9e7b6e] text-sm">Cliente más frecuente</span>
-                        <span className="text-[#5c3d2e] font-semibold text-sm text-right max-w-[55%]">
+                    {/* top customer */}
+                    <div className="flex justify-between items-center py-2.5 border-b border-rose-100/50">
+                        <div className="flex items-center gap-1.5">
+                            <Users size={14} className="text-stone-400 shrink-0" />
+                            <span className="text-stone-500 text-sm">Cliente más frecuente</span>
+                        </div>
+                        <span className="text-stone-700 font-semibold text-sm text-right max-w-[55%] truncate">
                             {topCustomer ? `${topCustomer.name} (${topCustomer.count})` : 'Sin datos'}
                         </span>
                     </div>
 
+                    {/* top services */}
                     <div className="pt-3">
-                        <p className="text-[#9e7b6e] text-xs mb-2 uppercase tracking-wide">Top servicios</p>
+                        <p className="text-stone-400 text-xs uppercase tracking-widest mb-3">
+                            Top servicios
+                        </p>
                         {topServices.length === 0 ? (
-                            <p className="text-[#b09080] text-xs">Aún no hay datos de servicios.</p>
+                            <p className="text-stone-300 text-xs">Aún no hay datos de servicios.</p>
                         ) : (
-                            <ul className="space-y-2">
+                            <ul className="space-y-2.5">
                                 {topServices.map((s: StatEntry) => (
-                                    <li key={s.name} className="flex justify-between items-center">
-                                        <span className="text-[#5c3d2e] text-sm">{s.name}</span>
-                                        <span className="text-[#9e7b6e] text-xs">
+                                    <li key={s.name} className="flex justify-between items-center gap-2">
+                                        <span className="text-stone-600 text-sm truncate">{s.name}</span>
+                                        <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">
                                             {s.count} uso{s.count !== 1 ? 's' : ''} · ${s.total.toLocaleString('es-CL')}
                                         </span>
                                     </li>
@@ -412,7 +462,7 @@ export default function DashboardPage() {
                             </ul>
                         )}
                     </div>
-                </Card>
+                </DashCard>
 
             </div>
         </DashboardLayout>
