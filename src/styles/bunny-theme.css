@@ -197,7 +197,9 @@ body {
   }
 
   .create-appointment-modal .create-appointment-list {
-    max-height: none !important;
-    overflow: visible !important;
+    max-height: 34vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
