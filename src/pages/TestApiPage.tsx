@@ -44,7 +44,7 @@ export default function TestApiPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem' }}>
+      <div className="bunny-public-page" style={{ padding: '2rem' }}>
         <h1>🔄 Cargando...</h1>
       </div>
     );
@@ -52,7 +52,7 @@ export default function TestApiPage() {
 
   if (error) {
     return (
-      <div style={{ padding: '2rem', color: 'red' }}>
+      <div className="bunny-public-page" style={{ padding: '2rem', color: '#7c1c1c' }}>
         <h1>❌ Error</h1>
         <p>{error}</p>
         <button onClick={loadData}>Reintentar</button>
@@ -61,7 +61,7 @@ export default function TestApiPage() {
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div className="bunny-public-page" style={{ padding: '2rem' }}>
       <h1>✅ Conexión con API Exitosa!</h1>
       
       <div style={{ marginTop: '2rem' }}>

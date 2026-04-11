@@ -131,6 +131,7 @@ export default function ServicesPage() {
 
   return (
     <DashboardLayout>
+      <div className="bunny-page">
       <Row className="mb-4">
         <Col>
           <h1>💅 Gestión de Servicios</h1>
@@ -394,6 +395,7 @@ export default function ServicesPage() {
           </Modal.Footer>
         </Form>
       </Modal>
+      </div>
     </DashboardLayout>
   );
 }

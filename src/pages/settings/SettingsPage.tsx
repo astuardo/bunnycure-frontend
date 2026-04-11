@@ -263,7 +263,7 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="py-4">
+      <Container fluid className="bunny-page">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 className="mb-1">

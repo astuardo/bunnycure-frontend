@@ -32,11 +32,11 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div className="bunny-auth-page d-flex align-items-center">
       <Container>
         <Row className="justify-content-center">
           <Col md={6} lg={5}>
-            <Card className="shadow-lg">
+            <Card>
               <Card.Body className="p-5">
                 <div className="text-center mb-4">
                   <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
               </Card.Body>
             </Card>
 
-            <div className="text-center mt-3 text-white">
+            <div className="text-center mt-3 text-muted">
               <small>
                 ¿Necesitas ayuda? Contacta al administrador del sistema
               </small>

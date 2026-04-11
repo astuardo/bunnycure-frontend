@@ -65,10 +65,11 @@ export default function InstallPage() {
   };
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={8} lg={6}>
-          <Card className="shadow-sm">
+    <div className="bunny-public-page">
+      <Container className="py-5">
+        <Row className="justify-content-center">
+          <Col md={8} lg={6}>
+            <Card>
             <Card.Body className="p-4 p-md-5">
               <div className="text-center mb-4">
                 <div 
@@ -207,17 +208,18 @@ export default function InstallPage() {
                 </>
               )}
             </Card.Body>
-          </Card>
+            </Card>
 
-          <div className="text-center mt-3">
-            <small className="text-muted">
-              <a href="/" className="text-decoration-none">
-                Volver al inicio
-              </a>
-            </small>
-          </div>
-        </Col>
-      </Row>
-    </Container>
+            <div className="text-center mt-3">
+              <small className="text-muted">
+                <a href="/" className="text-decoration-none">
+                  Volver al inicio
+                </a>
+              </small>
+            </div>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 }

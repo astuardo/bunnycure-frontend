@@ -1,5 +1,5 @@
 .booking-requests-page {
-  /* Additional styles if needed */
+  color: #5c3d2e;
 }
 
 .table-responsive {
@@ -9,6 +9,15 @@
 
 .d-flex.gap-2 {
   gap: 0.5rem;
+}
+
+.booking-requests-page .table th {
+  background: #fdf6f3;
+  color: #5c3d2e;
+}
+
+.booking-requests-page .table td {
+  vertical-align: middle;
 }
 
 @media (max-width: 768px) {

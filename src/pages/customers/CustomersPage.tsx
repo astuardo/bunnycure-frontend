@@ -95,6 +95,7 @@ export default function CustomersPage() {
 
     return (
         <DashboardLayout>
+            <div className="bunny-page">
             <Row className="mb-3 mb-md-4">
                 <Col>
                     <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
@@ -306,6 +307,7 @@ export default function CustomersPage() {
                 onConfirm={confirmDelete}
                 loading={loading}
             />
+            </div>
         </DashboardLayout>
     );
 }

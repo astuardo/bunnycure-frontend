@@ -72,10 +72,11 @@ export default function LoginPage() {
     };
 
     return (
-        <Container fluid className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
-            <Row className="w-100">
-                <Col xs={12} sm={10} md={6} lg={4} className="mx-auto">
-                    <Card className="shadow">
+        <div className="bunny-auth-page d-flex align-items-center justify-content-center">
+            <Container fluid>
+                <Row className="w-100">
+                    <Col xs={12} sm={10} md={6} lg={4} className="mx-auto">
+                        <Card>
                         <Card.Body className="p-4">
                             <div className="text-center mb-4">
                                 <h2 className="fw-bold text-primary">💅 BunnyCure</h2>
@@ -184,9 +185,10 @@ export default function LoginPage() {
                         <Card.Footer className="text-center text-muted small">
                             <p className="mb-0">BunnyCure v1.0 - PWA | Build {APP_BUILD_ID_SHORT}</p>
                         </Card.Footer>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+                        </Card>
+                    </Col>
+                </Row>
+            </Container>
+        </div>
     );
 }

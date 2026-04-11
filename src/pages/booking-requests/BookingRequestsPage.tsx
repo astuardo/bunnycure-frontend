@@ -154,7 +154,7 @@ const BookingRequestsPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <Container fluid>
+      <Container fluid className="bunny-page booking-requests-page">
         <Row className="mb-4">
           <Col>
             <h2>Solicitudes de Citas</h2>

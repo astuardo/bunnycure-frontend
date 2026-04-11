@@ -79,7 +79,7 @@ export default function CustomerDetailsPage() {
   if (customersLoading || appointmentsLoading) {
     return (
       <DashboardLayout>
-        <Container fluid className="text-center py-5">
+        <Container fluid className="bunny-page text-center py-5">
           <Spinner animation="border" />
           <p className="mt-3">Cargando información del cliente...</p>
         </Container>
@@ -90,7 +90,7 @@ export default function CustomerDetailsPage() {
   if (!customer) {
     return (
       <DashboardLayout>
-        <Container fluid>
+        <Container fluid className="bunny-page">
           <Alert variant="danger">
             Cliente no encontrado
           </Alert>
@@ -114,7 +114,7 @@ export default function CustomerDetailsPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid>
+      <Container fluid className="bunny-page">
         {/* Header */}
         <Row className="mb-4">
           <Col>

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import './styles/mobile.css';
+import './styles/bunny-theme.css';
 import apiClient from './api/client';
 
 const WEB_PUSH_SYNC_KEY = 'webpush_subscription_synced_endpoint';

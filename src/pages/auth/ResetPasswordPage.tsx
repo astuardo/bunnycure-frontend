@@ -76,8 +76,8 @@ export default function ResetPasswordPage() {
 
   if (validatingToken) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <div className="text-center text-white">
+      <div className="bunny-auth-page d-flex align-items-center justify-content-center">
+        <div className="text-center">
           <Spinner animation="border" />
           <p className="mt-3">Validando enlace...</p>
         </div>
@@ -87,11 +87,11 @@ export default function ResetPasswordPage() {
 
   if (!tokenValid) {
     return (
-      <div className="min-vh-100 d-flex align-items-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <div className="bunny-auth-page d-flex align-items-center">
         <Container>
           <Row className="justify-content-center">
             <Col md={6} lg={5}>
-              <Card className="shadow-lg">
+              <Card>
                 <Card.Body className="p-5 text-center">
                   <div className="text-danger mb-3">
                     <FaKey size={60} />
@@ -119,11 +119,11 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div className="bunny-auth-page d-flex align-items-center">
       <Container>
         <Row className="justify-content-center">
           <Col md={6} lg={5}>
-            <Card className="shadow-lg">
+            <Card>
               <Card.Body className="p-5">
                 <div className="text-center mb-4">
                   <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
@@ -205,7 +205,7 @@ export default function ResetPasswordPage() {
             </Card>
 
             <div className="text-center mt-3">
-              <Link to="/login" className="text-white text-decoration-none">
+              <Link to="/login" className="text-decoration-none">
                 <small>← Volver al login</small>
               </Link>
             </div>

@@ -19,21 +19,23 @@
   min-width: 200px;
   text-align: center;
   text-transform: capitalize;
+  color: #5c3d2e;
 }
 
 .nav-button {
   background: #fff;
-  border: 1px solid #dee2e6;
+  border: 1px solid #e8cfc4;
   border-radius: 8px;
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 1rem;
+  color: #7c3a2d;
 }
 
 .nav-button:hover {
-  background: #f8f9fa;
-  border-color: #8b5cf6;
+  background: #fce8e4;
+  border-color: #c9897a;
 }
 
 .nav-button:disabled {
@@ -53,7 +55,7 @@
   text-align: center;
   font-weight: 600;
   font-size: 0.875rem;
-  color: #6c757d;
+  color: #9e7b6e;
   padding: 0.5rem;
 }
 
@@ -66,10 +68,10 @@
 
 .month-day-card {
   min-height: 78px;
-  border: 1px solid #e8e8ef;
+  border: 1px solid #f0e0d8;
   border-radius: 14px;
   padding: 0.55rem;
-  background: #fff;
+  background: #fffdfc;
   cursor: pointer;
   transition: all 0.12s ease;
   position: relative;
@@ -77,19 +79,19 @@
 
 .month-day-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #8b5cf6;
+  box-shadow: 0 4px 12px rgba(180, 120, 100, 0.12);
+  border-color: #c9897a;
 }
 
 .month-day-card.is-today {
-  background: linear-gradient(135deg, #f3f0ff 0%, #e9d5ff 100%);
-  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #fdf6f3 0%, #fce8e4 100%);
+  border-color: #c9897a;
   font-weight: 600;
 }
 
 .month-day-card.is-selected {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  border-color: #7c3aed;
+  background: linear-gradient(135deg, #d8a496 0%, #c9897a 100%);
+  border-color: #b97b6d;
   color: white;
 }
 
@@ -99,14 +101,14 @@
 }
 
 .month-day-card.is-outside {
-  background: #f9fafb;
+  background: #fdf6f3;
   opacity: 0.5;
 }
 
 .month-day-number {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #5c3d2e;
   margin-bottom: 0.3rem;
 }
 
@@ -125,7 +127,7 @@
   width: 0.38rem;
   height: 0.38rem;
   border-radius: 999px;
-  background: #8b5cf6;
+  background: #c9897a;
   display: inline-block;
 }
 
@@ -135,7 +137,7 @@
 
 .month-day-dot-fallback {
   font-size: 1.2rem;
-  color: #8b5cf6;
+  color: #c9897a;
   line-height: 1;
 }
 
@@ -146,7 +148,7 @@
 .month-day-mini-label {
   margin-top: 0.2rem;
   font-size: 0.63rem;
-  color: #6b7280;
+  color: #9e7b6e;
   font-weight: 600;
   text-align: center;
 }
@@ -158,10 +160,11 @@
 
 .selected-day-header {
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #f3f0ff 0%, #e9d5ff 100%);
-  border-bottom: 2px solid #8b5cf6;
+  background: linear-gradient(135deg, #fdf6f3 0%, #fce8e4 100%);
+  border-bottom: 2px solid #c9897a;
   font-weight: 600;
   font-size: 1rem;
+  color: #5c3d2e;
 }
 
 .appointments-table {
@@ -169,33 +172,34 @@
 }
 
 .appointments-table th {
-  background: #f8f9fa;
+  background: #fdf6f3;
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.75rem;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 1px solid #f0e0d8;
+  color: #5c3d2e;
 }
 
 .appointments-table td {
   padding: 0.75rem;
   vertical-align: middle;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid #f0e0d8;
 }
 
 .appointments-table tr:hover {
-  background: #f8f9fa;
+  background: #fdf6f3;
 }
 
 .appointment-time {
   font-weight: 600;
   font-size: 1rem;
-  color: #1f2937;
+  color: #5c3d2e;
 }
 
 .no-appointments-message {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
+  color: #9e7b6e;
   font-style: italic;
 }
 
@@ -209,23 +213,23 @@
 }
 
 .status-badge.PENDING {
-  background: #fef3c7;
-  color: #92400e;
+  background: #fde8cc;
+  color: #7c4a00;
 }
 
 .status-badge.CONFIRMED {
-  background: #dbeafe;
-  color: #1e40af;
+  background: #d4edda;
+  color: #155724;
 }
 
 .status-badge.COMPLETED {
-  background: #d1fae5;
-  color: #065f46;
+  background: #c8e6e0;
+  color: #0d5c4a;
 }
 
 .status-badge.CANCELLED {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #fce4e4;
+  color: #7c1c1c;
 }
 
 /* Responsive */

@@ -197,7 +197,7 @@ export default function CalendarPage() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <Container fluid className="py-4">
+        <Container fluid className="bunny-page">
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
             <p className="mt-3 text-muted">Cargando calendario...</p>
@@ -209,7 +209,7 @@ export default function CalendarPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="py-4">
+      <Container fluid className="bunny-page">
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
