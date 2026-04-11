@@ -688,7 +688,7 @@ export default function AppointmentsPage() {
           </Modal.Title>
         </Modal.Header>
         {createStep === 'form' ? (
-          <Form onSubmit={handleGoToCreateSummary}>
+          <Form onSubmit={handleGoToCreateSummary} className="create-appointment-form">
             <Modal.Body>
             <Row>
               <Col md={6}>
