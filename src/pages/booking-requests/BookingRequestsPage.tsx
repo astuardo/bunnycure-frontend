@@ -35,6 +35,13 @@ const BookingRequestsPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
+    return fallback;
+  };
+
   useEffect(() => {
     fetchBookingRequests();
   }, [fetchBookingRequests]);
@@ -101,8 +108,8 @@ const BookingRequestsPage: React.FC = () => {
       
       // Refresh list
       await fetchBookingRequests();
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error al aprobar la solicitud';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error al aprobar la solicitud');
       setActionError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -127,8 +134,8 @@ const BookingRequestsPage: React.FC = () => {
       
       // Refresh list
       await fetchBookingRequests();
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error al rechazar la solicitud';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error al rechazar la solicitud');
       setActionError(errorMessage);
       toast.error(errorMessage);
     } finally {

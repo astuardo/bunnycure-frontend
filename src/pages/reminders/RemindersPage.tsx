@@ -3,7 +3,7 @@
  * Dashboard para ver y enviar recordatorios de citas
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 import { FaBell, FaClock, FaCheckCircle, FaPaperPlane } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -41,16 +41,7 @@ export default function RemindersPage() {
   const [sendingBulk, setSendingBulk] = useState(false);
   const [sendingIds, setSendingIds] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    await fetchAppointments();
-    await loadStats();
-  };
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     setLoadingStats(true);
     try {
       const data = await remindersApi.getStats();
@@ -61,7 +52,16 @@ export default function RemindersPage() {
     } finally {
       setLoadingStats(false);
     }
-  };
+  }, [toast]);
+
+  const loadData = useCallback(async () => {
+    await fetchAppointments();
+    await loadStats();
+  }, [fetchAppointments, loadStats]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Filtrar citas pendientes de recordatorio (hoy y futuras, no canceladas ni completadas)
   const pendingReminders = appointments.filter(apt => {

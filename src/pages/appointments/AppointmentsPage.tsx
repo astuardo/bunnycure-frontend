@@ -90,6 +90,7 @@ export default function AppointmentsPage() {
     status: AppointmentStatus.PENDING,
   });
   const isQuickCreateMode = searchParams.get('create') === '1';
+  const showCreateAppointmentModal = showCreateModal || isQuickCreateMode;
 
   const getErrorMessage = (err: unknown, fallback: string) => {
     if (err instanceof Error && err.message) {
@@ -507,12 +508,6 @@ export default function AppointmentsPage() {
     return getAppointmentServices(appointment).reduce((sum, service) => sum + service.price, 0);
   };
 
-  useEffect(() => {
-    if (isQuickCreateMode && !showCreateModal) {
-      openCreateModal();
-    }
-  }, [isQuickCreateMode, showCreateModal]);
-
   return (
     <DashboardLayout>
       <div className="bunny-page">
@@ -693,7 +688,7 @@ export default function AppointmentsPage() {
       </Row>
 
       <Modal
-        show={showCreateModal}
+        show={showCreateAppointmentModal}
         onHide={closeCreateModal}
         size="lg"
         className="bunny-modal create-appointment-modal"

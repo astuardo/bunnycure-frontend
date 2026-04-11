@@ -3,7 +3,7 @@
  * Permite establecer una nueva contraseña usando un token válido
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { FaKey, FaCheckCircle } from 'react-icons/fa';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -22,11 +22,7 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    validateToken();
-  }, [token]);
-
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
     if (!token) {
       setTokenValid(false);
       setValidatingToken(false);
@@ -42,7 +38,11 @@ export default function ResetPasswordPage() {
     } finally {
       setValidatingToken(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    validateToken();
+  }, [validateToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

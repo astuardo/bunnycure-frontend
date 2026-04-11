@@ -30,12 +30,7 @@ export default function CustomersPage() {
         }
     }, [isAuthenticated, user, fetchCustomers]);
 
-    useEffect(() => {
-        if (isQuickCreateMode && !showFormModal) {
-            setSelectedCustomer(null);
-            setShowFormModal(true);
-        }
-    }, [isQuickCreateMode, showFormModal]);
+    const showCustomerFormModal = showFormModal || isQuickCreateMode;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -314,7 +309,7 @@ export default function CustomersPage() {
 
             {/* Modales */}
             <CustomerFormModal
-                show={showFormModal}
+                show={showCustomerFormModal}
                 onHide={handleCloseFormModal}
                 customer={selectedCustomer}
                 onSuccess={handleCustomerFormSuccess}
