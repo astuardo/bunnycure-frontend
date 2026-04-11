@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner } from 'react-bootstrap';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useCustomersStore } from '../../stores/customersStore';
@@ -25,6 +25,23 @@ export default function CustomerDetailsPage() {
   const [customerAppointments, setCustomerAppointments] = useState<any[]>([]);
   const [notes, setNotes] = useState('');
   const [editingNotes, setEditingNotes] = useState(false);
+
+  const parseDateSafe = (value: unknown): Date | null => {
+    if (!value) return null;
+    const date = new Date(value as string | number | Date);
+    return isValid(date) ? date : null;
+  };
+
+  const formatDateSafe = (value: unknown, pattern: string = 'dd/MM/yyyy'): string => {
+    const date = parseDateSafe(value);
+    if (!date) return '-';
+    return format(date, pattern, { locale: es });
+  };
+
+  const toTimestampSafe = (value: unknown): number => {
+    const date = parseDateSafe(value);
+    return date ? date.getTime() : Number.NEGATIVE_INFINITY;
+  };
 
   useEffect(() => {
     if (id) {
@@ -108,7 +125,7 @@ export default function CustomerDetailsPage() {
   const cancelledAppointments = customerAppointments.filter((a: any) => a.status === 'CANCELLED').length;
   const lastAppointment = customerAppointments.length > 0 
     ? customerAppointments.sort((a: any, b: any) => 
-        new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
+        toTimestampSafe(b.appointmentDate) - toTimestampSafe(a.appointmentDate)
       )[0]
     : null;
 
@@ -149,12 +166,12 @@ export default function CustomerDetailsPage() {
                 {customer.birthDate && (
                   <div className="mb-3">
                     <strong>🎂 Fecha de Nacimiento:</strong>
-                    <p className="mb-0">{format(new Date(customer.birthDate), 'dd/MM/yyyy', { locale: es })}</p>
+                    <p className="mb-0">{formatDateSafe(customer.birthDate)}</p>
                   </div>
                 )}
                 <div className="mb-3">
                   <strong>📅 Cliente desde:</strong>
-                  <p className="mb-0">{format(new Date(customer.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
+                  <p className="mb-0">{formatDateSafe(customer.createdAt)}</p>
                 </div>
               </Card.Body>
             </Card>
@@ -181,7 +198,7 @@ export default function CustomerDetailsPage() {
                   <div className="mt-3 pt-3 border-top">
                     <small className="text-muted">Última visita:</small>
                     <p className="mb-0">
-                      {format(new Date(lastAppointment.appointmentDate), 'dd/MM/yyyy', { locale: es })}
+                      {formatDateSafe(lastAppointment.appointmentDate)}
                     </p>
                   </div>
                 )}
@@ -253,12 +270,12 @@ export default function CustomerDetailsPage() {
                       <tbody>
                         {customerAppointments
                           .sort((a: any, b: any) => 
-                            new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
+                            toTimestampSafe(b.appointmentDate) - toTimestampSafe(a.appointmentDate)
                           )
                           .map((apt: any) => (
                             <tr key={apt.id}>
                               <td>
-                                {format(new Date(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}
+                                {formatDateSafe(apt.appointmentDate)}
                               </td>
                               <td>{apt.appointmentTime}</td>
                               <td>{getAppointmentServiceLabel(apt)}</td>
