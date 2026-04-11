@@ -28,6 +28,13 @@ interface AppointmentEditFormState extends AppointmentFormState {
   status: AppointmentStatus;
 }
 
+interface CustomChargeItem {
+  id: number;
+  description: string;
+  amount: number;
+}
+
+type CreateStep = 'form' | 'summary';
 type AppointmentStatusFilter = AppointmentStatus | 'ACTIVE' | 'ALL';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
@@ -51,12 +58,16 @@ export default function AppointmentsPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [createStep, setCreateStep] = useState<CreateStep>('form');
+  const [customChargeItems, setCustomChargeItems] = useState<CustomChargeItem[]>([]);
+  const [nextCustomChargeId, setNextCustomChargeId] = useState(1);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatusFilter>('ACTIVE');
   const [dateFilter, setDateFilter] = useState<string>('');
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [serviceSearch, setServiceSearch] = useState('');
+  const [summaryServiceSearch, setSummaryServiceSearch] = useState('');
   const [editCustomerSearch, setEditCustomerSearch] = useState('');
   const [editServiceSearch, setEditServiceSearch] = useState('');
 
@@ -121,6 +132,14 @@ export default function AppointmentsPage() {
     );
   }, [services, editServiceSearch]);
 
+  const filteredSummaryServices = useMemo(() => {
+    const search = summaryServiceSearch.trim().toLowerCase();
+    if (!search) return services;
+    return services.filter((service) =>
+      `${service.name} ${service.description || ''}`.toLowerCase().includes(search)
+    );
+  }, [services, summaryServiceSearch]);
+
   const selectedCreateCustomer = useMemo(
     () => customers.find((customer) => customer.id === formData.customerId),
     [customers, formData.customerId]
@@ -148,6 +167,18 @@ export default function AppointmentsPage() {
   const createDuration = useMemo(
     () => selectedCreateServices.reduce((sum, service) => sum + service.durationMinutes, 0),
     [selectedCreateServices]
+  );
+  const customChargesTotal = useMemo(
+    () =>
+      customChargeItems.reduce((sum, item) => {
+        if (!item.description.trim() || item.amount <= 0) return sum;
+        return sum + item.amount;
+      }, 0),
+    [customChargeItems]
+  );
+  const createFinalTotal = useMemo(
+    () => createTotal + customChargesTotal,
+    [createTotal, customChargesTotal]
   );
   const editTotal = useMemo(
     () => selectedEditServices.reduce((sum, service) => sum + service.price, 0),
@@ -193,13 +224,34 @@ export default function AppointmentsPage() {
     return trimmed.length > 0 ? trimmed : undefined;
   };
 
+  const buildCreateNotes = () => {
+    const baseNotes = normalizeNotes(formData.notes);
+    const validCustomItems = customChargeItems.filter(
+      (item) => item.description.trim().length > 0 && item.amount > 0
+    );
+
+    if (validCustomItems.length === 0) {
+      return baseNotes;
+    }
+
+    const extrasBlock = [
+      'Extras personalizados:',
+      ...validCustomItems.map((item) => `- ${item.description.trim()}: ${formatCurrency(item.amount)}`),
+      `Subtotal servicios: ${formatCurrency(createTotal)}`,
+      `Total extras: ${formatCurrency(customChargesTotal)}`,
+      `Total final estimado: ${formatCurrency(createFinalTotal)}`,
+    ].join('\n');
+
+    return baseNotes ? `${baseNotes}\n\n${extrasBlock}` : extrasBlock;
+  };
+
   const buildCreatePayload = (): AppointmentCreateRequest => ({
     customerId: formData.customerId,
     serviceId: formData.serviceIds[0],
     serviceIds: formData.serviceIds,
     appointmentDate: formData.appointmentDate,
     appointmentTime: formData.appointmentTime,
-    notes: normalizeNotes(formData.notes),
+    notes: buildCreateNotes(),
   });
 
   const buildEditPayload = (): AppointmentUpdateRequest => ({
@@ -224,15 +276,35 @@ export default function AppointmentsPage() {
     return true;
   };
 
-  const handleCreateAppointment = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    resetForm();
+    setCustomChargeItems([]);
+    setSummaryServiceSearch('');
+    setCreateStep('form');
+    setShowCreateModal(true);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateStep('form');
+    resetForm();
+    setCustomChargeItems([]);
+    setSummaryServiceSearch('');
+  };
+
+  const handleGoToCreateSummary = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm(formData.customerId, formData.serviceIds)) return;
+    setCreateStep('summary');
+  };
+
+  const handleConfirmCreateAppointment = async () => {
     if (!validateForm(formData.customerId, formData.serviceIds)) return;
 
     try {
       await createAppointment(buildCreatePayload());
       toast.success('Cita creada exitosamente');
-      setShowCreateModal(false);
-      resetForm();
+      closeCreateModal();
       fetchAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al crear la cita'));
@@ -357,6 +429,8 @@ export default function AppointmentsPage() {
     });
     setCustomerSearch('');
     setServiceSearch('');
+    setSummaryServiceSearch('');
+    setCustomChargeItems([]);
   };
 
   const toggleCreateService = (serviceId: number) => {
@@ -375,6 +449,24 @@ export default function AppointmentsPage() {
         ? prev.serviceIds.filter((id) => id !== serviceId)
         : [...prev.serviceIds, serviceId],
     }));
+  };
+
+  const addCustomChargeItem = () => {
+    setCustomChargeItems((prev) => [
+      ...prev,
+      { id: nextCustomChargeId, description: '', amount: 0 },
+    ]);
+    setNextCustomChargeId((prev) => prev + 1);
+  };
+
+  const updateCustomChargeItem = (id: number, patch: Partial<CustomChargeItem>) => {
+    setCustomChargeItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    );
+  };
+
+  const removeCustomChargeItem = (id: number) => {
+    setCustomChargeItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const getStatusBadge = (status: AppointmentStatus) => {
@@ -412,7 +504,7 @@ export default function AppointmentsPage() {
           <p className="text-muted">Administra las citas y agenda del salón</p>
         </Col>
         <Col xs="auto">
-          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+          <Button variant="primary" onClick={openCreateModal}>
             + Nueva Cita
           </Button>
         </Col>
@@ -582,12 +674,15 @@ export default function AppointmentsPage() {
         </Col>
       </Row>
 
-      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
+      <Modal show={showCreateModal} onHide={closeCreateModal} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Nueva Cita</Modal.Title>
+          <Modal.Title>
+            {createStep === 'form' ? 'Nueva Cita' : 'Resumen de Nueva Cita'}
+          </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleCreateAppointment}>
-          <Modal.Body>
+        {createStep === 'form' ? (
+          <Form onSubmit={handleGoToCreateSummary}>
+            <Modal.Body>
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -700,16 +795,159 @@ export default function AppointmentsPage() {
                 placeholder="Observaciones, preferencias, etc..."
               />
             </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
-              Cancelar
-            </Button>
-            <Button variant="primary" type="submit">
-              Crear Cita
-            </Button>
-          </Modal.Footer>
-        </Form>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={closeCreateModal}>
+                Cancelar
+              </Button>
+              <Button variant="primary" type="submit">
+                Continuar al resumen
+              </Button>
+            </Modal.Footer>
+          </Form>
+        ) : (
+          <>
+            <Modal.Body>
+              <Alert variant="info">
+                Revisa el detalle antes de crear la cita. Desde aquí puedes ajustar servicios y agregar cargos extra.
+              </Alert>
+
+              <Row className="mb-3">
+                <Col md={6}>
+                  <h6 className="mb-1">Cliente</h6>
+                  <p className="mb-0">{selectedCreateCustomer?.fullName || 'Sin cliente'}</p>
+                  <small className="text-muted">{selectedCreateCustomer?.phone || '-'}</small>
+                </Col>
+                <Col md={6}>
+                  <h6 className="mb-1">Fecha y hora</h6>
+                  <p className="mb-0">
+                    {formData.appointmentDate} · {formData.appointmentTime}
+                  </p>
+                </Col>
+              </Row>
+              <div className="mb-3">
+                <h6 className="mb-1">Notas</h6>
+                <p className="mb-0 text-muted">{formData.notes.trim() || 'Sin notas'}</p>
+              </div>
+
+              <hr />
+
+              <h6 className="mb-2">Servicios seleccionados</h6>
+              <Form.Control
+                type="text"
+                placeholder="Buscar y ajustar servicios..."
+                value={summaryServiceSearch}
+                onChange={(e) => setSummaryServiceSearch(e.target.value)}
+                className="mb-2"
+              />
+              <div className="border rounded p-2 mb-2" style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                {filteredSummaryServices.length > 0 ? (
+                  filteredSummaryServices.map((service) => (
+                    <Form.Check
+                      key={`summary-service-${service.id}`}
+                      id={`summary-service-${service.id}`}
+                      type="checkbox"
+                      className="mb-2"
+                      label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
+                      checked={formData.serviceIds.includes(service.id)}
+                      onChange={() => toggleCreateService(service.id)}
+                    />
+                  ))
+                ) : (
+                  <div className="text-muted">No se encontraron servicios</div>
+                )}
+              </div>
+              <div className="small text-muted mb-3">
+                Subtotal servicios: <strong>{formatCurrency(createTotal)}</strong> · Duración estimada: <strong>{createDuration} min</strong>
+              </div>
+
+              <h6 className="mb-2">Cargos extra personalizados</h6>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <small className="text-muted">
+                  Agrega ítems como cristalería, decoración u otros cobros adicionales.
+                </small>
+                <Button size="sm" variant="outline-primary" onClick={addCustomChargeItem}>
+                  + Agregar ítem
+                </Button>
+              </div>
+
+              {customChargeItems.length === 0 ? (
+                <p className="text-muted small mb-3">No hay cargos extra agregados.</p>
+              ) : (
+                <div className="d-flex flex-column gap-2 mb-3">
+                  {customChargeItems.map((item) => (
+                    <Row key={item.id} className="g-2 align-items-center">
+                      <Col md={7}>
+                        <Form.Control
+                          type="text"
+                          placeholder="Descripción del ítem (ej: Cristalería)"
+                          value={item.description}
+                          onChange={(e) =>
+                            updateCustomChargeItem(item.id, { description: e.target.value })
+                          }
+                        />
+                      </Col>
+                      <Col md={3}>
+                        <Form.Control
+                          type="number"
+                          min={0}
+                          step={100}
+                          value={item.amount}
+                          onChange={(e) =>
+                            updateCustomChargeItem(item.id, {
+                              amount: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                        />
+                      </Col>
+                      <Col md={2} className="d-grid">
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => removeCustomChargeItem(item.id)}
+                        >
+                          Eliminar
+                        </Button>
+                      </Col>
+                    </Row>
+                  ))}
+                </div>
+              )}
+
+              <hr />
+
+              <div className="d-flex flex-column gap-1">
+                <div className="d-flex justify-content-between">
+                  <span>Subtotal servicios</span>
+                  <strong>{formatCurrency(createTotal)}</strong>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span>Total extras</span>
+                  <strong>{formatCurrency(customChargesTotal)}</strong>
+                </div>
+                <div className="d-flex justify-content-between fs-5 mt-1">
+                  <span>Total final estimado</span>
+                  <strong>{formatCurrency(createFinalTotal)}</strong>
+                </div>
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="outline-secondary" onClick={() => setCreateStep('form')}>
+                Volver a editar datos
+              </Button>
+              <Button variant="secondary" onClick={closeCreateModal}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirmCreateAppointment}
+                disabled={formData.serviceIds.length === 0}
+              >
+                Crear cita
+              </Button>
+            </Modal.Footer>
+          </>
+        )}
       </Modal>
 
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
