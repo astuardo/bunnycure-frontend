@@ -674,7 +674,7 @@ export default function AppointmentsPage() {
         </Col>
       </Row>
 
-      <Modal show={showCreateModal} onHide={closeCreateModal} size="lg">
+      <Modal show={showCreateModal} onHide={closeCreateModal} size="lg" className="create-appointment-modal">
         <Modal.Header closeButton>
           <Modal.Title>
             {createStep === 'form' ? 'Nueva Cita' : 'Resumen de Nueva Cita'}
