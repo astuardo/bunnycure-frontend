@@ -131,17 +131,10 @@ body {
 
 .create-appointment-modal .modal-content {
   background: #fffdfc;
-  max-height: calc(100vh - 32px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 .create-appointment-modal .modal-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
@@ -195,32 +188,16 @@ body {
   }
 
   .create-appointment-modal .modal-content {
-    height: 100dvh;
-    max-height: 100dvh;
     border-radius: 0;
-  }
-
-  .create-appointment-modal .modal-dialog {
-    margin: 0;
-    max-width: 100%;
-    height: 100dvh;
-  }
-
-  .create-appointment-modal.modal {
-    touch-action: pan-y;
-  }
-
-  .create-appointment-modal .modal-header,
-  .create-appointment-modal .modal-footer {
-    flex-shrink: 0;
-  }
-
-  .create-appointment-modal .modal-body {
-    padding-bottom: 16px;
   }
 
   .create-appointment-modal .modal-footer .btn {
     flex: 1 1 100%;
     min-width: 0;
+  }
+
+  .create-appointment-modal .create-appointment-list {
+    max-height: none !important;
+    overflow: visible !important;
   }
 }

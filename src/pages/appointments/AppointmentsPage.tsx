@@ -674,7 +674,14 @@ export default function AppointmentsPage() {
         </Col>
       </Row>
 
-      <Modal show={showCreateModal} onHide={closeCreateModal} size="lg" className="create-appointment-modal">
+      <Modal
+        show={showCreateModal}
+        onHide={closeCreateModal}
+        size="lg"
+        className="create-appointment-modal"
+        scrollable
+        fullscreen="sm-down"
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             {createStep === 'form' ? 'Nueva Cita' : 'Resumen de Nueva Cita'}
@@ -694,7 +701,7 @@ export default function AppointmentsPage() {
                     onChange={(e) => setCustomerSearch(e.target.value)}
                     className="mb-2"
                   />
-                  <div className="border rounded" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                  <div className="border rounded create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
                     {filteredCustomers.length > 0 ? (
                       filteredCustomers.map((customer) => (
                         <button
@@ -730,7 +737,7 @@ export default function AppointmentsPage() {
                     onChange={(e) => setServiceSearch(e.target.value)}
                     className="mb-2"
                   />
-                  <div className="border rounded p-2" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                  <div className="border rounded p-2 create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
                     {filteredServices.length > 0 ? (
                       filteredServices.map((service) => (
                         <Form.Check
@@ -840,7 +847,7 @@ export default function AppointmentsPage() {
                 onChange={(e) => setSummaryServiceSearch(e.target.value)}
                 className="mb-2"
               />
-              <div className="border rounded p-2 mb-2" style={{ maxHeight: '180px', overflowY: 'auto' }}>
+              <div className="border rounded p-2 mb-2 create-appointment-list" style={{ maxHeight: '180px', overflowY: 'auto' }}>
                 {filteredSummaryServices.length > 0 ? (
                   filteredSummaryServices.map((service) => (
                     <Form.Check
