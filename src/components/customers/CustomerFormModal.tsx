@@ -131,7 +131,15 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" backdrop="static">
+        <Modal
+            show={show}
+            onHide={handleClose}
+            size="lg"
+            backdrop="static"
+            className="bunny-modal customer-form-modal"
+            scrollable
+            fullscreen="sm-down"
+        >
             <Modal.Header closeButton>
                 <Modal.Title>
                     {customer ? '✏️ Editar Cliente' : '➕ Nuevo Cliente'}

@@ -696,7 +696,7 @@ export default function AppointmentsPage() {
         show={showCreateModal}
         onHide={closeCreateModal}
         size="lg"
-        className="create-appointment-modal"
+        className="bunny-modal create-appointment-modal"
         scrollable
         fullscreen="sm-down"
       >
@@ -975,7 +975,14 @@ export default function AppointmentsPage() {
         )}
       </Modal>
 
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+      <Modal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        size="lg"
+        className="bunny-modal appointment-edit-modal"
+        scrollable
+        fullscreen="sm-down"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Editar Cita</Modal.Title>
         </Modal.Header>

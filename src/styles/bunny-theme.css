@@ -129,6 +129,52 @@ body {
   border-color: var(--bc-border);
 }
 
+.bunny-modal .modal-content {
+  border-radius: 16px;
+  border: 1px solid var(--bc-border);
+  background: #fffdfc;
+  box-shadow: 0 8px 28px rgba(180, 120, 100, 0.12);
+}
+
+.bunny-modal .modal-header {
+  background: #fdf6f3;
+  border-bottom: 1px solid var(--bc-border);
+}
+
+.bunny-modal .modal-footer {
+  background: #fffdfc;
+  border-top: 1px solid var(--bc-border);
+  gap: 8px;
+}
+
+.bunny-modal .form-control,
+.bunny-modal .form-select {
+  border-radius: 10px;
+  border-color: var(--bc-border-strong);
+}
+
+.bunny-modal .form-control:focus,
+.bunny-modal .form-select:focus {
+  border-color: #d6a493;
+  box-shadow: 0 0 0 0.25rem rgba(201, 137, 122, 0.2);
+}
+
+.bunny-modal .btn-primary {
+  --bs-btn-bg: #c9897a;
+  --bs-btn-border-color: #c9897a;
+  --bs-btn-hover-bg: #b97b6d;
+  --bs-btn-hover-border-color: #b97b6d;
+}
+
+.bunny-modal .btn-secondary,
+.bunny-modal .btn-outline-secondary {
+  --bs-btn-bg: #f5ede8;
+  --bs-btn-border-color: #e8d3c8;
+  --bs-btn-hover-bg: #efe2db;
+  --bs-btn-hover-border-color: #dcc4b8;
+  --bs-btn-color: #6b4c38;
+}
+
 .create-appointment-modal .modal-content {
   background: #fffdfc;
 }
@@ -200,7 +246,17 @@ body {
     border-radius: 0;
   }
 
+  .bunny-modal .modal-content {
+    border-radius: 0;
+  }
+
   .create-appointment-modal .modal-footer .btn {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .customer-form-modal .modal-footer .btn,
+  .appointment-edit-modal .modal-footer .btn {
     flex: 1 1 100%;
     min-width: 0;
   }

@@ -23,7 +23,13 @@ export default function DeleteCustomerModal({
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered backdrop="static">
+        <Modal
+            show={show}
+            onHide={onHide}
+            centered
+            backdrop="static"
+            className="bunny-modal delete-customer-modal"
+        >
             <Modal.Header closeButton>
                 <Modal.Title>🗑️ Confirmar Eliminación</Modal.Title>
             </Modal.Header>
