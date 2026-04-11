@@ -248,8 +248,8 @@ export default function DashboardPage() {
                     </SectionTitle>
                     {/* Grid 2×2 — ícono arriba, texto abajo para evitar desborde */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <ActionButton icon={<CalendarDays size={22} />} label="Nueva Cita"          to="/appointments"    variant="rose" />
-                        <ActionButton icon={<UserPlus    size={22} />} label="Nuevo Cliente"        to="/customers"       variant="mint" />
+                        <ActionButton icon={<CalendarDays size={22} />} label="Nueva Cita"          to="/appointments?create=1&returnTo=%2Fdashboard"    variant="rose" />
+                        <ActionButton icon={<UserPlus    size={22} />} label="Nuevo Cliente"        to="/customers?create=1&returnTo=%2Fdashboard"       variant="mint" />
                         <ActionButton
                             icon={<Mail size={22} />}
                             label={`Ver Solicitudes${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}`}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
 import DeleteCustomerModal from '../../components/customers/DeleteCustomerModal';
@@ -10,6 +10,7 @@ import { Customer, NotificationPreference } from '../../types/customer.types';
 
 export default function CustomersPage() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [search, setSearch] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -17,6 +18,7 @@ export default function CustomersPage() {
     
     const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomersStore();
     const { isAuthenticated, user } = useAuthStore();
+    const isQuickCreateMode = searchParams.get('create') === '1';
 
     useEffect(() => {
         // Solo fetch si está autenticado y tiene usuario
@@ -27,6 +29,13 @@ export default function CustomersPage() {
             console.warn('⚠️ Usuario no autenticado en CustomersPage');
         }
     }, [isAuthenticated, user, fetchCustomers]);
+
+    useEffect(() => {
+        if (isQuickCreateMode && !showFormModal) {
+            setSelectedCustomer(null);
+            setShowFormModal(true);
+        }
+    }, [isQuickCreateMode, showFormModal]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,11 +75,21 @@ export default function CustomersPage() {
     const handleCloseFormModal = () => {
         setShowFormModal(false);
         setSelectedCustomer(null);
+        if (isQuickCreateMode) {
+            setSearchParams({}, { replace: true });
+        }
     };
 
     const handleCloseDeleteModal = () => {
         setShowDeleteModal(false);
         setSelectedCustomer(null);
+    };
+
+    const handleCustomerFormSuccess = () => {
+        const returnTo = searchParams.get('returnTo');
+        if (isQuickCreateMode && returnTo) {
+            navigate(returnTo, { replace: true });
+        }
     };
 
     const getNotificationBadge = (pref: NotificationPreference) => {
@@ -298,6 +317,7 @@ export default function CustomersPage() {
                 show={showFormModal}
                 onHide={handleCloseFormModal}
                 customer={selectedCustomer}
+                onSuccess={handleCustomerFormSuccess}
             />
 
             <DeleteCustomerModal

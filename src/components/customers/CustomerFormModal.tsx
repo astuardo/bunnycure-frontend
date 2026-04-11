@@ -10,6 +10,7 @@ interface CustomerFormModalProps {
     show: boolean;
     onHide: () => void;
     customer?: Customer | null;
+    onSuccess?: (customer: Customer) => void;
 }
 
 // Esquema de validación
@@ -63,7 +64,7 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
         .required('La preferencia de notificación es requerida')
 }) as yup.ObjectSchema<CustomerFormData>;
 
-export default function CustomerFormModal({ show, onHide, customer }: CustomerFormModalProps) {
+export default function CustomerFormModal({ show, onHide, customer, onSuccess }: CustomerFormModalProps) {
     const { createCustomer, updateCustomer, loading } = useCustomersStore();
     
     const {
@@ -109,6 +110,7 @@ export default function CustomerFormModal({ show, onHide, customer }: CustomerFo
             // Actualizar
             const result = await updateCustomer(customer.id, data);
             if (result) {
+                onSuccess?.(result);
                 onHide();
                 reset();
             }
@@ -116,6 +118,7 @@ export default function CustomerFormModal({ show, onHide, customer }: CustomerFo
             // Crear nuevo
             const result = await createCustomer(data);
             if (result) {
+                onSuccess?.(result);
                 onHide();
                 reset();
             }

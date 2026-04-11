@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Row, Col, Button, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
 import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
@@ -40,6 +41,8 @@ type AppointmentStatusFilter = AppointmentStatus | 'ACTIVE' | 'ALL';
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
 export default function AppointmentsPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const {
     appointments,
@@ -86,6 +89,7 @@ export default function AppointmentsPage() {
     notes: '',
     status: AppointmentStatus.PENDING,
   });
+  const isQuickCreateMode = searchParams.get('create') === '1';
 
   const getErrorMessage = (err: unknown, fallback: string) => {
     if (err instanceof Error && err.message) {
@@ -290,6 +294,9 @@ export default function AppointmentsPage() {
     resetForm();
     setCustomChargeItems([]);
     setSummaryServiceSearch('');
+    if (searchParams.get('create') === '1') {
+      setSearchParams({}, { replace: true });
+    }
   };
 
   const handleGoToCreateSummary = (e: React.FormEvent) => {
@@ -304,7 +311,12 @@ export default function AppointmentsPage() {
     try {
       await createAppointment(buildCreatePayload());
       toast.success('Cita creada exitosamente');
+      const returnTo = searchParams.get('returnTo');
       closeCreateModal();
+      if (searchParams.get('create') === '1' && returnTo) {
+        navigate(returnTo, { replace: true });
+        return;
+      }
       fetchAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al crear la cita'));
@@ -494,6 +506,12 @@ export default function AppointmentsPage() {
     if (typeof appointment.totalPrice === 'number') return appointment.totalPrice;
     return getAppointmentServices(appointment).reduce((sum, service) => sum + service.price, 0);
   };
+
+  useEffect(() => {
+    if (isQuickCreateMode && !showCreateModal) {
+      openCreateModal();
+    }
+  }, [isQuickCreateMode, showCreateModal]);
 
   return (
     <DashboardLayout>
