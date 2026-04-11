@@ -130,16 +130,25 @@ body {
 }
 
 .create-appointment-modal .modal-content {
+  background: #fffdfc;
   max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .create-appointment-modal .modal-body {
+  flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .create-appointment-modal .modal-footer {
+  flex-shrink: 0;
   background: #fffdfc;
   border-top: 1px solid var(--bc-border);
+  gap: 8px;
 }
 
 .bunny-auth-page,
@@ -184,26 +193,28 @@ body {
   }
 
   .create-appointment-modal .modal-content {
-    height: 100%;
-    max-height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .create-appointment-modal .modal-dialog {
+    margin: 0;
+    max-width: 100%;
+    height: 100dvh;
   }
 
   .create-appointment-modal .modal-header,
   .create-appointment-modal .modal-footer {
-    position: sticky;
-    z-index: 3;
-    background: #fffdfc;
-  }
-
-  .create-appointment-modal .modal-header {
-    top: 0;
-  }
-
-  .create-appointment-modal .modal-footer {
-    bottom: 0;
+    flex-shrink: 0;
   }
 
   .create-appointment-modal .modal-body {
-    padding-bottom: 96px;
+    padding-bottom: 16px;
+  }
+
+  .create-appointment-modal .modal-footer .btn {
+    flex: 1 1 100%;
+    min-width: 0;
   }
 }
