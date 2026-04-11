@@ -1,20 +1,19 @@
-/* Sidebar container */
+/* ── Sidebar container ─────────────────────────────────────────────────── */
 .sidebar {
     min-height: calc(100vh - 56px);
     width: 100%;
     max-width: 250px;
-    transition: width 0.3s ease;
+    background: #fdf6f3;
+    border-right: 1px solid #f0e0d8;
 }
 
-/* Desktop: sticky sidebar */
 @media (min-width: 768px) {
     .sidebar {
         position: sticky;
-        top: 56px; /* Height of navbar */
+        top: 56px;
         overflow-y: auto;
         overflow-x: hidden;
     }
-    
     .sidebar-col {
         width: 250px;
         max-width: 250px;
@@ -23,7 +22,6 @@
     }
 }
 
-/* Mobile: full width in offcanvas */
 @media (max-width: 767px) {
     .sidebar {
         max-width: 100%;
@@ -33,36 +31,41 @@
     }
 }
 
+/* ── Content ───────────────────────────────────────────────────────────── */
 .sidebar-content {
     height: 100%;
-    padding: 1rem;
+    padding: 12px;
 }
 
-/* Sidebar links */
+/* ── Links ─────────────────────────────────────────────────────────────── */
 .sidebar-link {
-    transition: all 0.2s ease;
-    text-decoration: none;
-    color: #495057;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none !important;
+    color: #7a5c50 !important;
     border: 1px solid transparent;
+    border-radius: 12px !important;
     white-space: nowrap;
+    margin-bottom: 4px;
 }
 
 .sidebar-link:hover {
-    background-color: #e9ecef !important;
-    color: #212529;
-    border-color: #dee2e6;
+    background-color: #fce8e4 !important;
+    color: #5c3d2e !important;
+    border-color: #f0d8d0 !important;
 }
 
 .sidebar-link.active {
-    background-color: #0d6efd !important;
-    color: white !important;
-    border-color: #0d6efd;
+    background-color: #fce8e4 !important;
+    color: #5c3d2e !important;
+    border-color: #e8c4b8 !important;
+    font-weight: 600;
 }
 
 .sidebar-link.active .sidebar-description {
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: #9e7b6e !important;
 }
 
+/* ── Icon & text ───────────────────────────────────────────────────────── */
 .sidebar-icon {
     min-width: 30px;
     text-align: center;
@@ -76,15 +79,17 @@
 }
 
 .sidebar-label {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: inherit;
 }
 
 .sidebar-description {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     display: block;
     margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #b09080;
 }

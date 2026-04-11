@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ReactNode } from 'react';
-import { Container, Row, Col, Offcanvas, Button } from 'react-bootstrap';
+import { Container, Row, Col, Offcanvas } from 'react-bootstrap';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import './DashboardLayout.css';
@@ -13,51 +13,73 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [showSidebar, setShowSidebar] = useState(false);
 
     const handleCloseSidebar = () => setShowSidebar(false);
-    const handleShowSidebar = () => setShowSidebar(true);
+    const handleShowSidebar  = () => setShowSidebar(true);
 
     return (
         <div className="dashboard-layout">
             <Navbar />
-            
-            {/* Botón hamburguesa para móvil */}
-            <div className="d-md-none p-3 border-bottom bg-white">
-                <Button 
-                    variant="outline-primary" 
+
+            {/* ── Botón hamburguesa móvil — estilo BunnyCure ── */}
+            <div
+                className="d-md-none"
+                style={{
+                    padding: '10px 16px',
+                    borderBottom: '1px solid #f0e0d8',
+                    background: '#fdf6f3',
+                }}
+            >
+                <button
                     onClick={handleShowSidebar}
-                    className="d-flex align-items-center gap-2"
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: '#fff',
+                        border: '1px solid #f0d8d0',
+                        borderRadius: '10px',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#5c3d2e',
+                        boxShadow: '0 1px 4px rgba(180,120,100,0.08)',
+                    }}
                 >
-                    <span style={{ fontSize: '1.5rem' }}>☰</span>
+                    <span style={{ fontSize: '18px', lineHeight: 1 }}>☰</span>
                     <span>Menú</span>
-                </Button>
+                </button>
             </div>
 
-            {/* Offcanvas sidebar para móvil */}
-            <Offcanvas 
-                show={showSidebar} 
+            {/* ── Offcanvas sidebar móvil — estilo BunnyCure ── */}
+            <Offcanvas
+                show={showSidebar}
                 onHide={handleCloseSidebar}
                 className="d-md-none"
                 placement="start"
             >
-                <Offcanvas.Header closeButton>
+                <Offcanvas.Header
+                    closeButton
+                    style={{ borderBottom: '1px solid #f0e0d8', background: '#fdf6f3' }}
+                >
                     <Offcanvas.Title>
-                        <span className="text-primary fw-bold">💅 BunnyCure</span>
+                        <span style={{ fontWeight: 700, color: '#5c3d2e', fontSize: '17px' }}>
+                            🐰 BunnyCure
+                        </span>
                     </Offcanvas.Title>
                 </Offcanvas.Header>
-                <Offcanvas.Body className="p-0">
+                <Offcanvas.Body className="p-0" style={{ background: '#fdf6f3' }}>
                     <Sidebar onNavigate={handleCloseSidebar} />
                 </Offcanvas.Body>
             </Offcanvas>
-            
+
             <Container fluid className="px-0">
                 <Row className="g-0">
-                    {/* Sidebar fijo para desktop */}
+                    {/* Sidebar fijo desktop */}
                     <Col className="d-none d-md-block sidebar-col">
                         <Sidebar />
                     </Col>
 
                     {/* Main content */}
                     <Col className="main-content-col">
-                        <main className="p-3 p-md-4">
+                        <main className="p-0">
                             {children}
                         </main>
                     </Col>
