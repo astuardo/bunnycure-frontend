@@ -25,7 +25,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                                                               loading = false,
                                                             }) => {
   return (
-      <Modal show={show} onHide={onCancel} centered>
+      <Modal show={show} onHide={onCancel} centered className="bunny-modal confirm-dialog-modal">
         <Modal.Header closeButton>
           <Modal.Title>{title}</Modal.Title>
         </Modal.Header>

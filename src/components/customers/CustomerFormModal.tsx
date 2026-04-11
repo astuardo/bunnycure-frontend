@@ -146,7 +146,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                 </Modal.Title>
             </Modal.Header>
 
-            <Form onSubmit={handleSubmit(onSubmit)}>
+            <Form onSubmit={handleSubmit(onSubmit)} className="customer-form-inner">
                 <Modal.Body>
                     <Row>
                         {/* Nombre Completo */}

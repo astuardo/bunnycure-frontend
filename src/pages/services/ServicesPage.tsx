@@ -238,7 +238,13 @@ export default function ServicesPage() {
       </Row>
 
       {/* Modal Crear Servicio */}
-      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
+      <Modal
+        show={showCreateModal}
+        onHide={() => setShowCreateModal(false)}
+        className="bunny-modal service-modal"
+        scrollable
+        fullscreen="sm-down"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Nuevo Servicio</Modal.Title>
         </Modal.Header>
@@ -320,7 +326,13 @@ export default function ServicesPage() {
       </Modal>
 
       {/* Modal Editar Servicio */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      <Modal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        className="bunny-modal service-modal"
+        scrollable
+        fullscreen="sm-down"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Editar Servicio</Modal.Title>
         </Modal.Header>

@@ -298,7 +298,14 @@ const BookingRequestsPage: React.FC = () => {
         )}
 
         {/* Approve Modal */}
-        <Modal show={showApproveModal} onHide={handleCloseApproveModal} size="lg">
+        <Modal
+          show={showApproveModal}
+          onHide={handleCloseApproveModal}
+          size="lg"
+          className="bunny-modal booking-request-modal"
+          scrollable
+          fullscreen="sm-down"
+        >
           <Modal.Header closeButton>
             <Modal.Title>Aprobar Solicitud y Crear Cita</Modal.Title>
           </Modal.Header>
@@ -375,7 +382,13 @@ const BookingRequestsPage: React.FC = () => {
         </Modal>
 
         {/* Reject Modal */}
-        <Modal show={showRejectModal} onHide={handleCloseRejectModal}>
+        <Modal
+          show={showRejectModal}
+          onHide={handleCloseRejectModal}
+          className="bunny-modal booking-request-modal"
+          scrollable
+          fullscreen="sm-down"
+        >
           <Modal.Header closeButton>
             <Modal.Title>Rechazar Solicitud</Modal.Title>
           </Modal.Header>
