@@ -504,7 +504,7 @@ export default function AppointmentsPage() {
       : [appointment.service];
 
   const getAppointmentTotal = (appointment: Appointment) => {
-    if (typeof appointment.totalPrice === 'number') return appointment.totalPrice;
+    if (typeof appointment.totalPrice === 'number' && appointment.totalPrice > 0) return appointment.totalPrice;
     return getAppointmentServices(appointment).reduce((sum, service) => sum + service.price, 0);
   };
 

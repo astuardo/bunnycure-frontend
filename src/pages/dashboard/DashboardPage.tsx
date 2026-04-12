@@ -307,7 +307,7 @@ export default function DashboardPage() {
                                             onMouseLeave={e => (e.currentTarget.style.background = idx % 2 !== 0 ? '#fdf6f3' : '#fff')}
                                         >
                                             <td style={{ padding: '12px', color: TEXT_DARK, whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: '12px' }}>
-                                                {apt.appointmentTime || '-'}
+                                                {apt.appointmentTime ? apt.appointmentTime.slice(0, 5) : '-'}
                                             </td>
                                             <td style={{ padding: '12px', color: TEXT_DARK, fontWeight: 500 }}>
                                                 {apt.customer.fullName}
