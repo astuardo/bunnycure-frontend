@@ -1,7 +1,7 @@
-/**
+﻿/**
  * Service Worker para notificaciones PWA y cache offline
  * Maneja notificaciones en segundo plano y cache de recursos
- * Incluye chequeo automático de citas próximas para notificaciones
+ * Incluye chequeo automÃ¡tico de citas prÃ³ximas para notificaciones
  */
 
 const CACHE_NAME = 'bunnycure-v1';
@@ -22,13 +22,13 @@ const TEMPLATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
 // Templates por defecto (fallback)
 const DEFAULT_TEMPLATES = {
-  defaultTitle: 'Recordatorio de Cita',
+  defaultTitle: 'Recordatorio de Agenda',
   defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time}.',
   twoHourTitle: '¡Tu cita es pronto!',
   twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}). ¡Te esperamos!',
 };
 
-// Instalación del Service Worker
+// InstalaciÃ³n del Service Worker
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando Service Worker...');
   event.waitUntil(
@@ -45,7 +45,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activación del Service Worker
+// ActivaciÃ³n del Service Worker
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activando Service Worker...');
   event.waitUntil(
@@ -62,8 +62,8 @@ self.addEventListener('activate', (event) => {
       // Tomar control inmediatamente
       return self.clients.claim();
     }).then(() => {
-      // Iniciar chequeo periódico de citas próximas DESPUÉS de tomar control
-      console.log('[SW] 🚀 Iniciando chequeo periódico de notificaciones...');
+      // Iniciar chequeo periÃ³dico de citas prÃ³ximas DESPUÃ‰S de tomar control
+      console.log('[SW] ðŸš€ Iniciando chequeo periÃ³dico de notificaciones...');
       startPeriodicCheck();
     })
   );
@@ -96,7 +96,7 @@ self.addEventListener('push', (event) => {
   
   let notificationData = {
     title: 'Recordatorio de Agenda',
-    body: 'Nueva notificación',
+    body: 'Nueva notificaciÃ³n',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
   };
@@ -151,7 +151,7 @@ function sanitizePushTitle(title) {
 
 // Manejo de clicks en notificaciones
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Click en notificación:', event);
+  console.log('[SW] Click en notificaciÃ³n:', event);
   
   event.notification.close();
 
@@ -164,54 +164,54 @@ self.addEventListener('notificationclick', (event) => {
 
 // Manejo de cierre de notificaciones
 self.addEventListener('notificationclose', (event) => {
-  console.log('[SW] Notificación cerrada:', event);
+  console.log('[SW] NotificaciÃ³n cerrada:', event);
 });
 
-// ========== FUNCIONES DE CHEQUEO AUTOMÁTICO DE CITAS ==========
+// ========== FUNCIONES DE CHEQUEO AUTOMÃTICO DE CITAS ==========
 
 /**
- * Inicia el chequeo periódico de citas próximas
+ * Inicia el chequeo periÃ³dico de citas prÃ³ximas
  */
 function startPeriodicCheck() {
-  console.log('[SW-AUTO] ╔════════════════════════════════════════════╗');
-  console.log('[SW-AUTO] ║  Iniciando chequeo periódico de citas     ║');
-  console.log('[SW-AUTO] ║  Intervalo: cada 5 minutos                 ║');
-  console.log('[SW-AUTO] ║  Ventana: 2 horas antes de la cita         ║');
-  console.log('[SW-AUTO] ╚════════════════════════════════════════════╝');
+  console.log('[SW-AUTO] â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
+  console.log('[SW-AUTO] â•‘  Iniciando chequeo periÃ³dico de citas     â•‘');
+  console.log('[SW-AUTO] â•‘  Intervalo: cada 5 minutos                 â•‘');
+  console.log('[SW-AUTO] â•‘  Ventana: 2 horas antes de la cita         â•‘');
+  console.log('[SW-AUTO] â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
   
   // Ejecutar inmediatamente
-  console.log('[SW-AUTO] ⏰ Ejecutando primer chequeo inmediato...');
+  console.log('[SW-AUTO] â° Ejecutando primer chequeo inmediato...');
   checkUpcomingAppointments();
   
   // Luego cada 5 minutos
   const intervalId = setInterval(() => {
-    console.log('[SW-AUTO] ⏰ Ejecutando chequeo programado (5 min)...');
+    console.log('[SW-AUTO] â° Ejecutando chequeo programado (5 min)...');
     checkUpcomingAppointments();
   }, CHECK_INTERVAL);
   
-  console.log(`[SW-AUTO] ✅ Interval ID: ${intervalId} - Service Worker activo`);
+  console.log(`[SW-AUTO] âœ… Interval ID: ${intervalId} - Service Worker activo`);
 }
 
 /**
- * Chequea si hay citas próximas y muestra notificación si corresponde
+ * Chequea si hay citas prÃ³ximas y muestra notificaciÃ³n si corresponde
  */
 async function checkUpcomingAppointments() {
   const now = new Date().toISOString();
-  console.log(`[SW-AUTO] ╔════════════════════════════════════════════╗`);
-  console.log(`[SW-AUTO] ║  🔍 CHEQUEO AUTOMÁTICO DE CITAS           ║`);
-  console.log(`[SW-AUTO] ║  ${now}                  ║`);
-  console.log(`[SW-AUTO] ╚════════════════════════════════════════════╝`);
+  console.log(`[SW-AUTO] â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—`);
+  console.log(`[SW-AUTO] â•‘  ðŸ” CHEQUEO AUTOMÃTICO DE CITAS           â•‘`);
+  console.log(`[SW-AUTO] â•‘  ${now}                  â•‘`);
+  console.log(`[SW-AUTO] â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•`);
   
   try {
     const token = await getAuthToken();
     
     if (!token) {
-      console.warn('[SW-AUTO] ❌ NO HAY TOKEN - Usuario no autenticado');
-      console.warn('[SW-AUTO] 💡 Solución: Abrir app y hacer login');
+      console.warn('[SW-AUTO] âŒ NO HAY TOKEN - Usuario no autenticado');
+      console.warn('[SW-AUTO] ðŸ’¡ SoluciÃ³n: Abrir app y hacer login');
       return;
     }
     
-    console.log('[SW-AUTO] ✅ Token obtenido, haciendo request...');
+    console.log('[SW-AUTO] âœ… Token obtenido, haciendo request...');
     
     // Consultar API
     const response = await fetch(
@@ -225,46 +225,46 @@ async function checkUpcomingAppointments() {
     );
     
     if (!response.ok) {
-      console.error(`[SW-AUTO] ❌ Error en request: ${response.status} ${response.statusText}`);
+      console.error(`[SW-AUTO] âŒ Error en request: ${response.status} ${response.statusText}`);
       return;
     }
     
     const result = await response.json();
     const appointments = result.data || [];
     
-    console.log(`[SW-AUTO] 📊 Respuesta del servidor:`);
-    console.log(`[SW-AUTO]    • Citas en ventana de ${NOTIFICATION_WINDOW_HOURS}h: ${appointments.length}`);
+    console.log(`[SW-AUTO] ðŸ“Š Respuesta del servidor:`);
+    console.log(`[SW-AUTO]    â€¢ Citas en ventana de ${NOTIFICATION_WINDOW_HOURS}h: ${appointments.length}`);
     
     if (appointments.length === 0) {
-      console.log('[SW-AUTO] ✅ No hay citas próximas en las próximas 2 horas');
+      console.log('[SW-AUTO] âœ… No hay citas prÃ³ximas en las prÃ³ximas 2 horas');
       return;
     }
     
-    console.log(`[SW-AUTO] 🔔 Procesando ${appointments.length} cita(s)...`);
+    console.log(`[SW-AUTO] ðŸ”” Procesando ${appointments.length} cita(s)...`);
     
     // Procesar cada cita
     for (const appointment of appointments) {
       await processAppointment(appointment);
     }
     
-    console.log('[SW-AUTO] ✅ Chequeo completado exitosamente');
+    console.log('[SW-AUTO] âœ… Chequeo completado exitosamente');
     
   } catch (error) {
-    console.error('[SW-AUTO] ❌ ERROR CRÍTICO en chequeo automático:');
+    console.error('[SW-AUTO] âŒ ERROR CRÃTICO en chequeo automÃ¡tico:');
     console.error('[SW-AUTO]', error);
   }
 }
 
 /**
- * Procesa una cita y decide si mostrar notificación
+ * Procesa una cita y decide si mostrar notificaciÃ³n
  */
 async function processAppointment(appointment) {
   const appointmentId = appointment.id;
   const customerName = resolveCustomerName(appointment);
   const serviceName = resolveServiceName(appointment);
   
-  console.log(`[SW-AUTO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`[SW-AUTO] 📅 Procesando cita ID: ${appointmentId}`);
+  console.log(`[SW-AUTO] â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”`);
+  console.log(`[SW-AUTO] ðŸ“… Procesando cita ID: ${appointmentId}`);
   console.log(`[SW-AUTO]    Cliente: ${customerName}`);
   console.log(`[SW-AUTO]    Servicio: ${serviceName}`);
   console.log(`[SW-AUTO]    Fecha/Hora: ${appointment.appointmentDate} ${appointment.appointmentTime}`);
@@ -272,7 +272,7 @@ async function processAppointment(appointment) {
   // Verificar si ya notificamos esta cita
   const notifiedIds = await getNotifiedAppointments();
   if (notifiedIds.includes(appointmentId)) {
-    console.log(`[SW-AUTO] ⏭️  Cita ${appointmentId} ya fue notificada (skip)`);
+    console.log(`[SW-AUTO] â­ï¸  Cita ${appointmentId} ya fue notificada (skip)`);
     return;
   }
   
@@ -282,21 +282,21 @@ async function processAppointment(appointment) {
   const hoursUntil = (appointmentDateTime - now) / (1000 * 60 * 60);
   const minutesUntil = Math.round(hoursUntil * 60);
   
-  console.log(`[SW-AUTO]    ⏰ Tiempo restante: ${hoursUntil.toFixed(2)}h (${minutesUntil} min)`);
+  console.log(`[SW-AUTO]    â° Tiempo restante: ${hoursUntil.toFixed(2)}h (${minutesUntil} min)`);
   
-  // Si está dentro de la ventana de 2 horas, notificar
+  // Si estÃ¡ dentro de la ventana de 2 horas, notificar
   if (hoursUntil <= NOTIFICATION_WINDOW_HOURS && hoursUntil > 0) {
-    console.log(`[SW-AUTO]    ✅ DENTRO DE VENTANA → Mostrando notificación`);
+    console.log(`[SW-AUTO]    âœ… DENTRO DE VENTANA â†’ Mostrando notificaciÃ³n`);
     await showAppointmentNotification(appointment, hoursUntil);
     await markAsNotified(appointmentId);
-    console.log(`[SW-AUTO]    ✅ Notificación mostrada y marcada`);
+    console.log(`[SW-AUTO]    âœ… NotificaciÃ³n mostrada y marcada`);
   } else {
-    console.log(`[SW-AUTO]    ⏸️  FUERA DE VENTANA (skip)`);
+    console.log(`[SW-AUTO]    â¸ï¸  FUERA DE VENTANA (skip)`);
   }
 }
 
 /**
- * Muestra notificación de recordatorio de cita usando templates configurables
+ * Muestra notificaciÃ³n de recordatorio de cita usando templates configurables
  */
 async function showAppointmentNotification(appointment, hoursUntil) {
   const minutesUntil = Math.round(hoursUntil * 60);
@@ -308,7 +308,7 @@ async function showAppointmentNotification(appointment, hoursUntil) {
   // Obtener templates del backend
   const templates = await getNotificationTemplates();
   
-  // Usar template de 2 horas si está en ventana
+  // Usar template de 2 horas si estÃ¡ en ventana
   const titleTemplate = templates.twoHourTitle;
   const bodyTemplate = templates.twoHourBody;
   
@@ -324,7 +324,7 @@ async function showAppointmentNotification(appointment, hoursUntil) {
     businessName: 'BunnyCure',
   };
   
-  const title = parseTemplate(titleTemplate, variables);
+  const title = sanitizePushTitle(parseTemplate(titleTemplate, variables));
   const body = parseTemplate(bodyTemplate, variables);
   
   console.log(`[SW-AUTO] Mostrando notificación para cita ${appointment.id}`);
@@ -343,7 +343,7 @@ async function showAppointmentNotification(appointment, hoursUntil) {
 }
 
 /**
- * Obtiene el token de autenticación desde los clientes conectados
+ * Obtiene el token de autenticaciÃ³n desde los clientes conectados
  */
 let cachedToken = null;
 
@@ -552,3 +552,4 @@ function resolveAppointmentTime(appointment) {
 }
 
 console.log('[SW] Service Worker cargado correctamente');
+

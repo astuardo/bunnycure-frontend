@@ -28,7 +28,7 @@ const VARIABLES = [
 ];
 
 const DEFAULT_TEMPLATES: NotificationTemplates = {
-  defaultTitle: 'Recordatorio de Cita',
+  defaultTitle: 'Recordatorio de Agenda',
   defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time}.',
   twoHourTitle: '¡Tu cita es pronto!',
   twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}). ¡Te esperamos!',

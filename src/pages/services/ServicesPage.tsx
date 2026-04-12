@@ -1,10 +1,10 @@
-/**
- * Página de gestión de servicios.
- * CRUD completo del catálogo de servicios.
+﻿/**
+ * PÃ¡gina de gestiÃ³n de servicios.
+ * CRUD completo del catÃ¡logo de servicios.
  */
 
 import { useEffect, useState } from 'react';
-import { Row, Col, Button, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
+import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useServicesStore } from '../../stores/servicesStore';
 import { ServiceCatalog, ServiceFormData } from '../../types/service.types';
@@ -82,7 +82,7 @@ export default function ServicesPage() {
     }
   };
 
-  // Abrir modal de edición
+  // Abrir modal de ediciÃ³n
   const openEditModal = (service: ServiceCatalog) => {
     setEditingServiceId(service.id);
     setFormData({
@@ -108,7 +108,7 @@ export default function ServicesPage() {
 
   // Eliminar servicio
   const handleDeleteService = async (id: number) => {
-    if (confirm('¿Estás seguro de eliminar este servicio? Esta acción no se puede deshacer.')) {
+    if (confirm('Â¿EstÃ¡s seguro de eliminar este servicio? Esta acciÃ³n no se puede deshacer.')) {
       try {
         await deleteService(id);
         toast.success('Servicio eliminado');
@@ -134,8 +134,8 @@ export default function ServicesPage() {
       <div className="bunny-page">
       <Row className="mb-4">
         <Col>
-          <h1>💅 Gestión de Servicios</h1>
-          <p className="text-muted">Administra el catálogo de servicios ofrecidos</p>
+          <h1>ðŸ’… GestiÃ³n de Servicios</h1>
+          <p className="text-muted">Administra el catÃ¡logo de servicios ofrecidos</p>
         </Col>
         <Col xs="auto">
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
@@ -177,14 +177,14 @@ export default function ServicesPage() {
             </Alert>
           ) : (
             <>
-              <p className="small text-muted d-md-none mb-2">↔️ Desliza horizontalmente para ver todas las columnas.</p>
-              <div className="table-responsive">
+              
+              {/* Vista Desktop: Tabla */}<div className="d-none d-md-block"><div className="table-responsive">
                 <Table striped bordered hover className="mb-0">
                   <thead>
                     <tr>
                       <th>Nombre</th>
-                      <th>Descripción</th>
-                      <th>Duración</th>
+                      <th>DescripciÃ³n</th>
+                      <th>DuraciÃ³n</th>
                       <th>Precio</th>
                       <th>Estado</th>
                       <th>Acciones</th>
@@ -231,6 +231,37 @@ export default function ServicesPage() {
                     ))}
                   </tbody>
                 </Table>
+              </div></div>
+
+              {/* Vista MÃ³vil: Cards */}
+              <div className="d-md-none">
+                {services.map((service) => (
+                  <Card key={service.id} className="mb-3 border-peach shadow-sm">
+                    <Card.Body className="p-3">
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <h6 className="mb-0 fw-bold text-bunny-dark">{service.name}</h6>
+                        <Badge bg={service.active ? "success" : "secondary"}>
+                          {service.active ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </div>
+                      
+                      <div className="text-muted small mb-2">{service.description || "Sin descripciÃ³n"}</div>
+                      
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <span className="text-bunny-mid small">{service.durationMinutes} min</span>
+                        <span className="fw-bold text-success">${service.price.toLocaleString('es-CL')}</span>
+                      </div>
+
+                      <div className="d-flex gap-2">
+                        <Button size="sm" variant="outline-primary" className="flex-fill" onClick={() => openEditModal(service)}>Editar</Button>
+                        <Button size="sm" variant={service.active ? "warning" : "success"} className="flex-fill" onClick={() => handleToggleActive(service.id)}>
+                          {service.active ? "Desactivar" : "Activar"}
+                        </Button>
+                        <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>ELIMINAR</Button>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                ))}
               </div>
             </>
           )}
@@ -262,20 +293,20 @@ export default function ServicesPage() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Descripción</Form.Label>
+              <Form.Label>DescripciÃ³n</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descripción del servicio..."
+                placeholder="DescripciÃ³n del servicio..."
               />
             </Form.Group>
 
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Duración (minutos) *</Form.Label>
+                  <Form.Label>DuraciÃ³n (minutos) *</Form.Label>
                   <Form.Control
                     type="number"
                     required
@@ -302,7 +333,7 @@ export default function ServicesPage() {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Orden de visualización</Form.Label>
+              <Form.Label>Orden de visualizaciÃ³n</Form.Label>
               <Form.Control
                 type="number"
                 min={0}
@@ -310,7 +341,7 @@ export default function ServicesPage() {
                 onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
               />
               <Form.Text className="text-muted">
-                Número menor aparece primero en la lista
+                NÃºmero menor aparece primero en la lista
               </Form.Text>
             </Form.Group>
           </Modal.Body>
@@ -349,7 +380,7 @@ export default function ServicesPage() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Descripción</Form.Label>
+              <Form.Label>DescripciÃ³n</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
@@ -361,7 +392,7 @@ export default function ServicesPage() {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Duración (minutos) *</Form.Label>
+                  <Form.Label>DuraciÃ³n (minutos) *</Form.Label>
                   <Form.Control
                     type="number"
                     required
@@ -388,7 +419,7 @@ export default function ServicesPage() {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Orden de visualización</Form.Label>
+              <Form.Label>Orden de visualizaciÃ³n</Form.Label>
               <Form.Control
                 type="number"
                 min={0}
@@ -411,3 +442,4 @@ export default function ServicesPage() {
     </DashboardLayout>
   );
 }
+

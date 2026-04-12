@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { isToday, startOfWeek, endOfWeek } from 'date-fns';
+import { isToday, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
     CalendarDays,
@@ -166,11 +166,11 @@ export default function DashboardPage() {
     }, [fetchAppointments, fetchBookingRequests, fetchCustomers]);
 
     const todayAppointments = appointments.filter(
-        (apt: Appointment) => apt.appointmentDate && isToday(new Date(apt.appointmentDate))
+        (apt: Appointment) => apt.appointmentDate && isToday(parseISO(apt.appointmentDate))
     );
     const thisWeekAppointments = appointments.filter((apt: Appointment) => {
         if (!apt.appointmentDate) return false;
-        const d = new Date(apt.appointmentDate);
+        const d = parseISO(apt.appointmentDate);
         const weekStart = startOfWeek(new Date(), { locale: es });
         const weekEnd   = endOfWeek(new Date(),   { locale: es });
         return d >= weekStart && d <= weekEnd;

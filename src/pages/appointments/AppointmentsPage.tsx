@@ -1,10 +1,10 @@
-/**
- * Página principal de gestión de citas.
+﻿/**
+ * PÃ¡gina principal de gestiÃ³n de citas.
  * Incluye lista, filtros, CRUD completo y cambio de estados.
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Row, Col, Button, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
+import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
 import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -360,7 +360,7 @@ export default function AppointmentsPage() {
   };
 
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
-    if (confirm(`¿Cambiar estado a ${status}?`)) {
+    if (confirm(`Â¿Cambiar estado a ${status}?`)) {
       try {
         await updateAppointmentStatus(id, status);
         toast.success('Estado actualizado correctamente');
@@ -372,7 +372,7 @@ export default function AppointmentsPage() {
   };
 
   const handleCancelAppointment = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
+    if (confirm('Â¿EstÃ¡s seguro de que deseas cancelar esta cita?')) {
       try {
         await updateAppointmentStatus(id, AppointmentStatus.CANCELLED);
         toast.success('Cita cancelada');
@@ -384,7 +384,7 @@ export default function AppointmentsPage() {
   };
 
   const handleDeleteAppointment = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
+    if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta cita? Esta acciÃ³n no se puede deshacer.')) {
       try {
         await deleteAppointment(id);
         toast.success('Cita eliminada');
@@ -398,9 +398,9 @@ export default function AppointmentsPage() {
   const handleSendNotification = async (id: number) => {
     try {
       await appointmentsApi.sendNotification(id);
-      toast.success('📧 Notificación enviada correctamente');
+      toast.success('ðŸ“§ NotificaciÃ³n enviada correctamente');
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al enviar notificación'));
+      toast.error(getErrorMessage(err, 'Error al enviar notificaciÃ³n'));
     }
   };
 
@@ -408,7 +408,7 @@ export default function AppointmentsPage() {
     try {
       const url = await appointmentsApi.whatsappHandoff(id);
       window.open(url, '_blank');
-      toast.success('✅ Abriendo WhatsApp para traspaso');
+      toast.success('âœ… Abriendo WhatsApp para traspaso');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al generar handoff'));
     }
@@ -417,16 +417,16 @@ export default function AppointmentsPage() {
   const handleSendWhatsAppConfirmation = async (id: number) => {
     try {
       await appointmentsApi.sendWhatsAppConfirmation(id);
-      toast.success('✅ Confirmación enviada por WhatsApp');
+      toast.success('âœ… ConfirmaciÃ³n enviada por WhatsApp');
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al enviar confirmación'));
+      toast.error(getErrorMessage(err, 'Error al enviar confirmaciÃ³n'));
     }
   };
 
   const handleSendWhatsAppReminder = async (id: number) => {
     try {
       await appointmentsApi.sendWhatsAppReminder(id);
-      toast.success('✅ Recordatorio enviado por WhatsApp');
+      toast.success('âœ… Recordatorio enviado por WhatsApp');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al enviar recordatorio'));
     }
@@ -513,8 +513,8 @@ export default function AppointmentsPage() {
       <div className="bunny-page">
       <Row className="mb-4">
         <Col>
-          <h1>📅 Gestión de Citas</h1>
-          <p className="text-muted">Administra las citas y agenda del salón</p>
+          <h1>ðŸ“… GestiÃ³n de Citas</h1>
+          <p className="text-muted">Administra las citas y agenda del salÃ³n</p>
         </Col>
         <Col xs="auto">
           <Button variant="primary" onClick={openCreateModal}>
@@ -580,8 +580,8 @@ export default function AppointmentsPage() {
             </Alert>
           ) : (
             <>
-              <p className="small text-muted d-md-none mb-2">↔️ Desliza horizontalmente para ver todas las columnas.</p>
-              <div className="table-responsive">
+              
+              {/* Vista Desktop: Tabla */}<div className="d-none d-md-block"><div className="table-responsive">
                 <Table striped bordered hover className="mb-0">
                   <thead>
                     <tr>
@@ -644,12 +644,12 @@ export default function AppointmentsPage() {
 
                               <Dropdown>
                                 <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
-                                  📧
+                                  ðŸ“§
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu>
                                   <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
                                     <FaBell className="me-2" />
-                                    Enviar Notificación
+                                    Enviar NotificaciÃ³n
                                   </Dropdown.Item>
                                   <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
                                     <FaWhatsapp className="me-2 text-success" />
@@ -681,6 +681,53 @@ export default function AppointmentsPage() {
                     })}
                   </tbody>
                 </Table>
+              </div></div>
+
+              {/* Vista MÃ³vil: Cards */}
+              <div className="d-md-none">
+                {displayedAppointments.map((apt) => {
+                  const appointmentServices = getAppointmentServices(apt);
+                  return (
+                    <Card key={apt.id} className="mb-3 border-peach shadow-sm">
+                      <Card.Body className="p-3">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <div>
+                            <div className="text-muted small mb-1">
+                              {format(parseISO(apt.appointmentDate), 'EEEE d MMMM', { locale: es })}
+                            </div>
+                            <h6 className="mb-0 fw-bold text-bunny-dark">
+                              {apt.appointmentTime} Â· {apt.customer.fullName}
+                            </h6>
+                          </div>
+                          {getStatusBadge(apt.status)}
+                        </div>
+
+                        <div className="mb-3">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="text-bunny-mid small">
+                              {appointmentServices.map((service) => service.name).join(' + ')}
+                            </span>
+                            <span className="fw-bold text-success">
+                              {formatCurrency(getAppointmentTotal(apt))}
+                            </span>
+                          </div>
+                          {apt.notes && (
+                            <div className="mt-1 p-2 bg-light rounded small text-muted italic">
+                              {apt.notes}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="d-flex gap-2 flex-wrap">
+                          <Button size="sm" variant="outline-secondary" className="flex-fill" onClick={() => openEditModal(apt)}>Editar</Button>
+                          {apt.status === "PENDING" && (<Button size="sm" variant="success" className="flex-fill" onClick={() => handleChangeStatus(apt.id, "CONFIRMED")}>Confirmar</Button>)}
+                          {apt.status === "CONFIRMED" && (<Button size="sm" variant="primary" className="flex-fill" onClick={() => handleChangeStatus(apt.id, "COMPLETED")}>Completar</Button>)}
+                          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteAppointment(apt.id)}>Eliminar</Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  );
+                })}
               </div>
             </>
           )}
@@ -709,7 +756,7 @@ export default function AppointmentsPage() {
                   <Form.Label>Cliente *</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Buscar cliente por nombre o teléfono..."
+                    placeholder="Buscar cliente por nombre o telÃ©fono..."
                     value={customerSearch}
                     onChange={(e) => setCustomerSearch(e.target.value)}
                     className="mb-2"
@@ -768,7 +815,7 @@ export default function AppointmentsPage() {
                     )}
                   </div>
                   <Form.Text className="text-muted d-block mt-2">
-                    Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | Duración: {createDuration} min
+                    Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | DuraciÃ³n: {createDuration} min
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -829,7 +876,7 @@ export default function AppointmentsPage() {
           <>
             <Modal.Body>
               <Alert variant="info">
-                Revisa el detalle antes de crear la cita. Desde aquí puedes ajustar servicios y agregar cargos extra.
+                Revisa el detalle antes de crear la cita. Desde aquÃ­ puedes ajustar servicios y agregar cargos extra.
               </Alert>
 
               <Row className="mb-3">
@@ -841,7 +888,7 @@ export default function AppointmentsPage() {
                 <Col md={6}>
                   <h6 className="mb-1">Fecha y hora</h6>
                   <p className="mb-0">
-                    {formData.appointmentDate} · {formData.appointmentTime}
+                    {formData.appointmentDate} Â· {formData.appointmentTime}
                   </p>
                 </Col>
               </Row>
@@ -878,16 +925,16 @@ export default function AppointmentsPage() {
                 )}
               </div>
               <div className="small text-muted mb-3">
-                Subtotal servicios: <strong>{formatCurrency(createTotal)}</strong> · Duración estimada: <strong>{createDuration} min</strong>
+                Subtotal servicios: <strong>{formatCurrency(createTotal)}</strong> Â· DuraciÃ³n estimada: <strong>{createDuration} min</strong>
               </div>
 
               <h6 className="mb-2">Cargos extra personalizados</h6>
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <small className="text-muted">
-                  Agrega ítems como cristalería, decoración u otros cobros adicionales.
+                  Agrega Ã­tems como cristalerÃ­a, decoraciÃ³n u otros cobros adicionales.
                 </small>
                 <Button size="sm" variant="outline-primary" onClick={addCustomChargeItem}>
-                  + Agregar ítem
+                  + Agregar Ã­tem
                 </Button>
               </div>
 
@@ -900,7 +947,7 @@ export default function AppointmentsPage() {
                       <Col md={7}>
                         <Form.Control
                           type="text"
-                          placeholder="Descripción del ítem (ej: Cristalería)"
+                          placeholder="DescripciÃ³n del Ã­tem (ej: CristalerÃ­a)"
                           value={item.description}
                           onChange={(e) =>
                             updateCustomChargeItem(item.id, { description: e.target.value })
@@ -989,7 +1036,7 @@ export default function AppointmentsPage() {
                   <Form.Label>Cliente *</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Buscar cliente por nombre o teléfono..."
+                    placeholder="Buscar cliente por nombre o telÃ©fono..."
                     value={editCustomerSearch}
                     onChange={(e) => setEditCustomerSearch(e.target.value)}
                     className="mb-2"
@@ -1048,7 +1095,7 @@ export default function AppointmentsPage() {
                     )}
                   </div>
                   <Form.Text className="text-muted d-block mt-2">
-                    Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | Duración: {editDuration} min
+                    Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | DuraciÃ³n: {editDuration} min
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -1131,3 +1178,4 @@ export default function AppointmentsPage() {
     </DashboardLayout>
   );
 }
+

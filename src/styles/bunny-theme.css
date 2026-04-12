@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bc-page-bg: #fdf0ec;
   --bc-surface: rgba(255, 255, 255, 0.9);
   --bc-surface-strong: #ffffff;
@@ -297,4 +297,25 @@ body {
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* Utilidades de estilo BunnyCure */
+.text-bunny-dark {
+  color: var(--bc-text) !important;
+}
+
+.text-bunny-mid {
+  color: var(--bc-text-muted) !important;
+}
+
+.border-peach {
+  border-color: var(--bc-border) !important;
+}
+
+.bg-bunny-soft {
+  background-color: #fdf6f3 !important;
+}
+
+.italic {
+  font-style: italic;
 }
