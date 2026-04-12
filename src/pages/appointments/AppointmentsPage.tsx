@@ -74,6 +74,9 @@ export default function AppointmentsPage() {
   const [editCustomerSearch, setEditCustomerSearch] = useState('');
   const [editServiceSearch, setEditServiceSearch] = useState('');
 
+  const [isCustomerListCollapsed, setIsCustomerListCollapsed] = useState(false);
+  const [isServiceListCollapsed, setIsServiceListCollapsed] = useState(false);
+
   const [formData, setFormData] = useState<AppointmentFormState>({
     customerId: 0,
     serviceIds: [],
@@ -444,6 +447,8 @@ export default function AppointmentsPage() {
     setServiceSearch('');
     setSummaryServiceSearch('');
     setCustomChargeItems([]);
+    setIsCustomerListCollapsed(false);
+    setIsServiceListCollapsed(false);
   };
 
   const toggleCreateService = (serviceId: number) => {
@@ -764,69 +769,101 @@ export default function AppointmentsPage() {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Cliente *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Buscar cliente por nombre o teléfono..."
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                    className="mb-2"
-                  />
-                  <div className="border rounded create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
-                    {filteredCustomers.length > 0 ? (
-                      filteredCustomers.map((customer) => (
-                        <button
-                          key={customer.id}
-                          type="button"
-                          className={`btn w-100 text-start border-bottom rounded-0 ${
-                            formData.customerId === customer.id ? 'btn-primary' : 'btn-light'
-                          }`}
-                          onClick={() => setFormData((prev) => ({ ...prev, customerId: customer.id }))}
-                        >
-                          <div className="fw-semibold">{customer.fullName}</div>
-                          <small>{customer.phone}</small>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="p-3 text-muted">No se encontraron clientes</div>
-                    )}
-                  </div>
-                  <Form.Text className="text-muted">
-                    {selectedCreateCustomer
-                      ? `Seleccionado: ${selectedCreateCustomer.fullName}`
-                      : 'Selecciona un cliente de la lista'}
-                  </Form.Text>
+                  {isCustomerListCollapsed && selectedCreateCustomer ? (
+                    <div className="p-3 border rounded mb-2 d-flex justify-content-between align-items-center bg-light" style={{ borderColor: '#c9897a' }}>
+                      <div>
+                        <div className="fw-semibold text-bunny-dark">{selectedCreateCustomer.fullName}</div>
+                        <small className="text-muted">{selectedCreateCustomer.phone}</small>
+                      </div>
+                      <Button variant="outline-primary" size="sm" onClick={() => setIsCustomerListCollapsed(false)}>Cambiar</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Form.Control
+                        type="text"
+                        placeholder="Buscar cliente por nombre o teléfono..."
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                        className="mb-2"
+                      />
+                      <div className="border rounded create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                        {filteredCustomers.length > 0 ? (
+                          filteredCustomers.map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              className={`btn w-100 text-start border-bottom rounded-0 ${
+                                formData.customerId === customer.id ? 'btn-primary' : 'btn-light'
+                              }`}
+                              onClick={() => {
+                                setFormData((prev) => ({ ...prev, customerId: customer.id }));
+                                setIsCustomerListCollapsed(true);
+                              }}
+                            >
+                              <div className="fw-semibold">{customer.fullName}</div>
+                              <small>{customer.phone}</small>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-muted">No se encontraron clientes</div>
+                        )}
+                      </div>
+                      <Form.Text className="text-muted">
+                        {selectedCreateCustomer
+                          ? `Seleccionado: ${selectedCreateCustomer.fullName}`
+                          : 'Selecciona un cliente de la lista'}
+                      </Form.Text>
+                    </>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Servicio(s) *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Buscar servicios..."
-                    value={serviceSearch}
-                    onChange={(e) => setServiceSearch(e.target.value)}
-                    className="mb-2"
-                  />
-                  <div className="border rounded p-2 create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
-                    {filteredServices.length > 0 ? (
-                      filteredServices.map((service) => (
-                        <Form.Check
-                          key={service.id}
-                          id={`create-service-${service.id}`}
-                          type="checkbox"
-                          className="mb-2"
-                          label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
-                          checked={formData.serviceIds.includes(service.id)}
-                          onChange={() => toggleCreateService(service.id)}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-muted">No se encontraron servicios</div>
-                    )}
-                  </div>
-                  <Form.Text className="text-muted d-block mt-2">
-                    Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | Duración: {createDuration} min
-                  </Form.Text>
+                  {isServiceListCollapsed && selectedCreateServices.length > 0 ? (
+                    <div className="p-3 border rounded mb-2 d-flex justify-content-between align-items-center bg-light" style={{ borderColor: '#c9897a' }}>
+                      <div>
+                        <div className="fw-semibold text-bunny-dark">{selectedCreateServices.length} servicio(s) seleccionado(s)</div>
+                        <small className="text-muted">{formatCurrency(createTotal)} ({createDuration} min)</small>
+                      </div>
+                      <Button variant="outline-primary" size="sm" onClick={() => setIsServiceListCollapsed(false)}>Modificar</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Form.Control
+                        type="text"
+                        placeholder="Buscar servicios..."
+                        value={serviceSearch}
+                        onChange={(e) => setServiceSearch(e.target.value)}
+                        className="mb-2"
+                      />
+                      <div className="border rounded p-2 create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                        {filteredServices.length > 0 ? (
+                          filteredServices.map((service) => (
+                            <Form.Check
+                              key={service.id}
+                              id={`create-service-${service.id}`}
+                              type="checkbox"
+                              className="mb-2"
+                              label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
+                              checked={formData.serviceIds.includes(service.id)}
+                              onChange={() => toggleCreateService(service.id)}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-muted">No se encontraron servicios</div>
+                        )}
+                      </div>
+                      {formData.serviceIds.length > 0 && (
+                        <Button variant="outline-primary" size="sm" className="mt-2 w-100" onClick={() => setIsServiceListCollapsed(true)}>
+                          Ocultar lista
+                        </Button>
+                      )}
+                      <Form.Text className="text-muted d-block mt-2">
+                        Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | Duración: {createDuration} min
+                      </Form.Text>
+                    </>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
