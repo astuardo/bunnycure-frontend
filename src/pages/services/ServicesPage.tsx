@@ -32,7 +32,6 @@ export default function ServicesPage() {
     description: '',
     durationMinutes: 60,
     price: 0,
-    active: true,
     displayOrder: 0,
   });
 
@@ -57,7 +56,6 @@ export default function ServicesPage() {
       description: '',
       durationMinutes: 60,
       price: 0,
-      active: true,
       displayOrder: 0,
     });
   };
@@ -94,7 +92,6 @@ export default function ServicesPage() {
       description: service.description || '',
       durationMinutes: service.durationMinutes,
       price: service.price,
-      active: service.active,
       displayOrder: service.displayOrder || 0,
     });
     setShowEditModal(true);
