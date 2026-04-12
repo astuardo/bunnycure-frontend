@@ -202,21 +202,21 @@ export default function ServicesPage() {
                 {services.map((service) => (
                   <Card key={service.id} className="mb-3 border-peach shadow-sm">
                     <Card.Body className="p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <h6 className="mb-0 fw-bold text-bunny-dark">{service.name}</h6>
-                        <Badge bg={service.active ? "success" : "secondary"}>
+                      <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                        <h6 className="mb-0 fw-bold text-bunny-dark text-break" style={{ minWidth: 0 }}>{service.name}</h6>
+                        <Badge bg={service.active ? "success" : "secondary"} className="flex-shrink-0">
                           {service.active ? "Activo" : "Inactivo"}
                         </Badge>
                       </div>
 
-                      <div className="text-muted small mb-2">{service.description || "Sin descripción"}</div> 
+                      <div className="text-muted small mb-2 text-break">{service.description || "Sin descripción"}</div> 
 
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <span className="text-bunny-mid small">{service.durationMinutes} min</span>
-                        <span className="fw-bold text-success">${service.price.toLocaleString('es-CL')}</span> 
+                      <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
+                        <span className="text-bunny-mid small text-break" style={{ minWidth: 0 }}>{service.durationMinutes} min</span>
+                        <span className="fw-bold text-success flex-shrink-0">${service.price.toLocaleString('es-CL')}</span> 
                       </div>
 
-                      <div className="d-flex gap-2">
+                      <div className="d-flex gap-2 flex-wrap">
                         <Button size="sm" variant="outline-primary" className="flex-fill" onClick={() => openEditModal(service)}>Editar</Button>
                         <Button size="sm" variant={service.active ? "warning" : "success"} className="flex-fill" onClick={() => handleToggleActive(service.id)}>
                           {service.active ? "Desactivar" : "Activar"}

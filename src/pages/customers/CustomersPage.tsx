@@ -258,20 +258,22 @@ export default function CustomersPage() {
                                         {customers.map((customer) => (
                                             <Card key={customer.id} className="mb-3 mx-3 mt-3">
                                                 <Card.Body>
-                                                    <div className="d-flex justify-content-between align-items-start mb-2">
-                                                        <div>
-                                                            <h6 className="mb-1 fw-bold">{customer.fullName}</h6>
-                                                            <small className="text-muted d-block">📱 {customer.phone}</small>
+                                                    <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                                                        <div style={{ minWidth: 0 }}>
+                                                            <h6 className="mb-1 fw-bold text-break">{customer.fullName}</h6>
+                                                            <small className="text-muted d-block text-break">📱 {customer.phone}</small>
                                                         </div>
-                                                        {getNotificationBadge(customer.notificationPreference)}
+                                                        <div className="flex-shrink-0">
+                                                            {getNotificationBadge(customer.notificationPreference)}
+                                                        </div>
                                                     </div>
                                                     
                                                     <div className="mb-2">
                                                         <small className="text-muted d-block">Notas de Salud:</small>
-                                                        <small>{formatHealthNotes(customer.healthNotes)}</small>
+                                                        <small className="text-break">{formatHealthNotes(customer.healthNotes)}</small>
                                                     </div>
                                                      
-                                                    <div className="d-flex gap-2">
+                                                    <div className="d-flex gap-2 flex-wrap">
                                                         <Button 
                                                             variant="outline-primary" 
                                                             size="sm"

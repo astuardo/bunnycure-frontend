@@ -705,29 +705,31 @@ export default function AppointmentsPage() {
                   return (
                     <Card key={apt.id} className="mb-3 border-peach shadow-sm">
                       <Card.Body className="p-3">
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <div>
-                            <div className="text-muted small mb-1">
+                        <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                          <div style={{ minWidth: 0 }}>
+                            <div className="text-muted small mb-1 text-truncate">
                               {format(parseISO(apt.appointmentDate), 'EEEE d MMMM', { locale: es })}
                             </div>
-                            <h6 className="mb-0 fw-bold text-bunny-dark">
+                            <h6 className="mb-0 fw-bold text-bunny-dark text-break">
                               {apt.appointmentTime.slice(0, 5)} · {apt.customer.fullName}
                             </h6>
                           </div>
-                          {getStatusBadge(apt.status)}
+                          <div className="flex-shrink-0">
+                            {getStatusBadge(apt.status)}
+                          </div>
                         </div>
 
                         <div className="mb-3">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <span className="text-bunny-mid small">
+                          <div className="d-flex justify-content-between align-items-center gap-2">
+                            <span className="text-bunny-mid small text-break" style={{ minWidth: 0 }}>
                               {appointmentServices.map((service) => service.name).join(' + ')}
                             </span>
-                            <span className="fw-bold text-success">
+                            <span className="fw-bold text-success flex-shrink-0">
                               {formatCurrency(getAppointmentTotal(apt))}
                             </span>
                           </div>
                           {apt.notes && (
-                            <div className="mt-1 p-2 bg-light rounded small text-muted italic">
+                            <div className="mt-1 p-2 bg-light rounded small text-muted italic text-break">
                               {apt.notes}
                             </div>
                           )}
