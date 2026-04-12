@@ -19,17 +19,14 @@ import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { BookingRequest } from '@/types/booking.types';
 import { ServiceSummary } from '@/types/service.types';
+import { statsApi } from '@/api/stats.api';
+import { DashboardStats } from '@/types/stats.types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function getAppointmentServices(apt: Appointment): ServiceSummary[] {
     if (apt.services && apt.services.length > 0) return apt.services;
     return apt.service ? [apt.service] : [];
-}
-
-function getAppointmentTotal(apt: Appointment): number {
-    if (typeof apt.totalPrice === 'number') return apt.totalPrice;
-    return getAppointmentServices(apt).reduce((sum: number, s: ServiceSummary) => sum + s.price, 0);
 }
 
 function statusLabel(status: AppointmentStatus): string {
@@ -56,8 +53,6 @@ function statusPillStyle(status: AppointmentStatus): React.CSSProperties {
             return { background: '#e9ecef', color: '#495057' };
     }
 }
-
-interface StatEntry { name: string; count: number; total: number; }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
@@ -155,12 +150,24 @@ export default function DashboardPage() {
     const { bookingRequests, fetchBookingRequests } = useBookingRequestsStore();
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
+    const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
 
     useEffect(() => {
         const load = async () => {
             setStatsLoading(true);
-            await Promise.all([fetchAppointments(), fetchBookingRequests(), fetchCustomers()]);
-            setStatsLoading(false);
+            try {
+                const [stats] = await Promise.all([
+                    statsApi.getDashboardStats(),
+                    fetchAppointments(), 
+                    fetchBookingRequests(), 
+                    fetchCustomers()
+                ]);
+                setDashboardStats(stats);
+            } catch (error) {
+                console.error("Error loading dashboard stats:", error);
+            } finally {
+                setStatsLoading(false);
+            }
         };
         load();
     }, [fetchAppointments, fetchBookingRequests, fetchCustomers]);
@@ -176,34 +183,6 @@ export default function DashboardPage() {
         return d >= weekStart && d <= weekEnd;
     });
     const pendingRequests = bookingRequests.filter((r: BookingRequest) => r.status === 'PENDING');
-    const revenueAppointments = appointments.filter((a: Appointment) => a.status !== AppointmentStatus.CANCELLED);
-    const totalValue = revenueAppointments.reduce((acc: number, apt: Appointment) => acc + getAppointmentTotal(apt), 0);
-
-    const serviceStats = revenueAppointments.reduce<Record<number, StatEntry>>(
-        (acc, apt: Appointment) => {
-            getAppointmentServices(apt).forEach((s: ServiceSummary) => {
-                if (!acc[s.id]) acc[s.id] = { name: s.name, count: 0, total: 0 };
-                acc[s.id].count += 1;
-                acc[s.id].total += s.price;
-            });
-            return acc;
-        }, {}
-    );
-    const topServices: StatEntry[] = Object.values(serviceStats)
-        .sort((a, b) => b.count - a.count || b.total - a.total).slice(0, 3);
-
-    const customerStats = revenueAppointments.reduce<Record<number, StatEntry>>(
-        (acc, apt: Appointment) => {
-            const cid = apt.customer?.id;
-            if (!cid) return acc;
-            if (!acc[cid]) acc[cid] = { name: apt.customer.fullName, count: 0, total: 0 };
-            acc[cid].count += 1;
-            acc[cid].total += getAppointmentTotal(apt);
-            return acc;
-        }, {}
-    );
-    const topCustomer: StatEntry | undefined = Object.values(customerStats)
-        .sort((a, b) => b.count - a.count || b.total - a.total)[0];
 
     const weekStats = [
         { label: 'Confirmadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CONFIRMED).length, bg: '#d4edda', color: '#155724' },
@@ -380,7 +359,7 @@ export default function DashboardPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: DIVIDER }}>
                         <span style={{ fontSize: '14px', color: TEXT_MID }}>Valor citas creadas</span>
                         <span style={{ fontWeight: 700, fontSize: '14px', color: '#5a8f7b' }}>
-                            ${totalValue.toLocaleString('es-CL')}
+                            ${(dashboardStats?.totalRevenueMonth || 0).toLocaleString('es-CL')}
                         </span>
                     </div>
 
@@ -390,7 +369,7 @@ export default function DashboardPage() {
                             <span style={{ fontSize: '14px', color: TEXT_MID }}>Cliente más frecuente</span>
                         </div>
                         <span style={{ fontWeight: 600, fontSize: '13px', color: TEXT_DARK, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }}>
-                            {topCustomer ? `${topCustomer.name} (${topCustomer.count})` : 'Sin datos'}
+                            {dashboardStats?.topCustomer ? `${dashboardStats.topCustomer.name} (${dashboardStats.topCustomer.appointmentCount})` : 'Sin datos'}
                         </span>
                     </div>
 
@@ -398,17 +377,17 @@ export default function DashboardPage() {
                         <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#b09080', marginBottom: '10px' }}>
                             Top servicios
                         </div>
-                        {topServices.length === 0 ? (
+                        {!dashboardStats?.topServices || dashboardStats.topServices.length === 0 ? (
                             <p style={{ fontSize: '13px', color: '#c9a898' }}>Aún no hay datos de servicios.</p>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {topServices.map((s: StatEntry) => (
+                                {dashboardStats.topServices.map((s) => (
                                     <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ fontSize: '13px', color: TEXT_DARK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {s.name}
                                         </span>
                                         <span style={{ fontSize: '12px', color: TEXT_MID, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                            {s.count} uso{s.count !== 1 ? 's' : ''} · ${s.total.toLocaleString('es-CL')}
+                                            {s.count} uso{s.count !== 1 ? 's' : ''} · ${s.revenue.toLocaleString('es-CL')}
                                         </span>
                                     </div>
                                 ))}
