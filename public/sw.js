@@ -22,10 +22,10 @@ const TEMPLATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
 // Templates por defecto (fallback)
 const DEFAULT_TEMPLATES = {
-  defaultTitle: 'Recordatorio de Agenda',
-  defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time} ({totalPrice}).',
-  twoHourTitle: '¡Tu cita es pronto!',
-  twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}) por {totalPrice}. ¡Te esperamos!',
+  defaultTitle: 'Próxima Cita Agendada',
+  defaultBody: 'Tienes una cita con {customerName} para {serviceName} el {date} a las {time}. Total: {totalPrice}.',
+  twoHourTitle: 'Cita en 2 horas',
+  twoHourBody: 'Atención: Cita con {customerName} para {serviceName} en {minutesUntil} minutos ({time}). Total estimado: {totalPrice}.',
 };
 
 // InstalaciÃ³n del Service Worker
