@@ -25,13 +25,14 @@ const VARIABLES = [
   { name: '{minutesUntil}', description: 'Minutos hasta la cita' },
   { name: '{hoursUntil}', description: 'Horas hasta la cita' },
   { name: '{businessName}', description: 'Nombre del negocio' },
+  { name: '{totalPrice}', description: 'Valor total de la cita' },
 ];
 
 const DEFAULT_TEMPLATES: NotificationTemplates = {
   defaultTitle: 'Recordatorio de Agenda',
-  defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time}.',
+  defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time} ({totalPrice}).',
   twoHourTitle: '¡Tu cita es pronto!',
-  twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}). ¡Te esperamos!',
+  twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}) por {totalPrice}. ¡Te esperamos!',
 };
 
 export function NotificationTemplatesSection() {
@@ -98,7 +99,8 @@ export function NotificationTemplatesSection() {
       .replace('{date}', '15/04/2026')
       .replace('{minutesUntil}', '120')
       .replace('{hoursUntil}', '2')
-      .replace('{businessName}', 'BunnyCure');
+      .replace('{businessName}', 'BunnyCure')
+      .replace('{totalPrice}', '$29.000');
   };
 
   if (loading) {

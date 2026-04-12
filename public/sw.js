@@ -23,9 +23,9 @@ const TEMPLATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 // Templates por defecto (fallback)
 const DEFAULT_TEMPLATES = {
   defaultTitle: 'Recordatorio de Agenda',
-  defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time}.',
+  defaultBody: 'Hola {customerName}, tienes una cita de {serviceName} el {date} a las {time} ({totalPrice}).',
   twoHourTitle: '¡Tu cita es pronto!',
-  twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}). ¡Te esperamos!',
+  twoHourBody: 'Hola {customerName}, tu cita de {serviceName} es en {minutesUntil} minutos ({time}) por {totalPrice}. ¡Te esperamos!',
 };
 
 // InstalaciÃ³n del Service Worker
@@ -319,6 +319,7 @@ async function showAppointmentNotification(appointment, hoursUntil) {
     minutesUntil: String(minutesUntil),
     hoursUntil: hoursUntil.toFixed(1),
     businessName: 'BunnyCure',
+    totalPrice: formatCurrency(getAppointmentTotal(appointment)),
   };
   
   const title = sanitizePushTitle(parseTemplate(titleTemplate, variables));
@@ -546,6 +547,24 @@ function resolveAppointmentTime(appointment) {
     return appointment.appointmentTime.slice(0, 5);
   }
   return 'Horario por confirmar';
+}
+
+function getAppointmentTotal(appointment) {
+  if (appointment.notes) {
+    const match = appointment.notes.match(/Total final estimado:\s*\$([\d.]+)/);
+    if (match && match[1]) {
+      const parsedTotal = parseInt(match[1].replace(/\./g, ''), 10);
+      if (!isNaN(parsedTotal) && parsedTotal > 0) return parsedTotal;
+    }
+  }
+  if (typeof appointment.totalPrice === 'number' && appointment.totalPrice > 0) return appointment.totalPrice;
+  const services = appointment.services && appointment.services.length > 0 ? appointment.services : [appointment.service];
+  return services.reduce((sum, service) => sum + (service ? service.price : 0), 0);
+}
+
+function formatCurrency(value) {
+  if (!value) return '$0';
+  return `$${value.toLocaleString('es-CL')}`;
 }
 
 console.log('[SW] Service Worker cargado correctamente');
