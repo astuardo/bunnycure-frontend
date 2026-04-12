@@ -720,8 +720,8 @@ export default function AppointmentsPage() {
 
                         <div className="d-flex gap-2 flex-wrap">
                           <Button size="sm" variant="outline-secondary" className="flex-fill" onClick={() => openEditModal(apt)}>Editar</Button>
-                          {apt.status === "PENDING" && (<Button size="sm" variant="success" className="flex-fill" onClick={() => handleChangeStatus(apt.id, "CONFIRMED")}>Confirmar</Button>)}
-                          {apt.status === "CONFIRMED" && (<Button size="sm" variant="primary" className="flex-fill" onClick={() => handleChangeStatus(apt.id, "COMPLETED")}>Completar</Button>)}
+                          {apt.status === AppointmentStatus.PENDING && (<Button size="sm" variant="success" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}>Confirmar</Button>)}
+                          {apt.status === AppointmentStatus.CONFIRMED && (<Button size="sm" variant="primary" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}>Completar</Button>)}
                           <Button size="sm" variant="outline-danger" onClick={() => handleDeleteAppointment(apt.id)}>Eliminar</Button>
                         </div>
                       </Card.Body>
