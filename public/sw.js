@@ -105,8 +105,8 @@ self.addEventListener('push', (event) => {
     try {
       const data = event.data.json();
       notificationData = {
-        title: sanitizePushTitle(data.title) || notificationData.title,
-        body: data.body || notificationData.body,
+        title: sanitizePushText(data.title) || notificationData.title,
+        body: sanitizePushText(data.body) || notificationData.body,
         icon: data.icon || notificationData.icon,
         badge: data.badge || notificationData.badge,
         data: data.data || {},
@@ -138,15 +138,12 @@ self.addEventListener('push', (event) => {
   );
 });
 
-function sanitizePushTitle(title) {
-  if (!title || typeof title !== 'string') {
-    return 'Recordatorio de Agenda';
+function sanitizePushText(text) {
+  if (!text || typeof text !== 'string') {
+    return '';
   }
-  const normalizedTitle = title.replace(/\s+from\s+BunnyCure$/i, '').trim();
-  if (/^recordatorio de agenda$/i.test(normalizedTitle)) {
-    return 'Recordatorio de Agenda';
-  }
-  return normalizedTitle;
+  // Remove "from BunnyCure" anywhere in the text, case insensitive, with possible newlines
+  return text.replace(/from\s+BunnyCure/ig, '').trim();
 }
 
 // Manejo de clicks en notificaciones
