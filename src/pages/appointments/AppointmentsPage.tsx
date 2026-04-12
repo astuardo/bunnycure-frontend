@@ -1,5 +1,5 @@
-﻿/**
- * PÃ¡gina principal de gestiÃ³n de citas.
+/**
+ * Página principal de gestión de citas.
  * Incluye lista, filtros, CRUD completo y cambio de estados.
  */
 
@@ -360,7 +360,7 @@ export default function AppointmentsPage() {
   };
 
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
-    if (confirm(`Â¿Cambiar estado a ${status}?`)) {
+    if (confirm(`¿Cambiar estado a ${status}?`)) {
       try {
         await updateAppointmentStatus(id, status);
         toast.success('Estado actualizado correctamente');
@@ -372,7 +372,7 @@ export default function AppointmentsPage() {
   };
 
   const handleCancelAppointment = async (id: number) => {
-    if (confirm('Â¿EstÃ¡s seguro de que deseas cancelar esta cita?')) {
+    if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
       try {
         await updateAppointmentStatus(id, AppointmentStatus.CANCELLED);
         toast.success('Cita cancelada');
@@ -384,7 +384,7 @@ export default function AppointmentsPage() {
   };
 
   const handleDeleteAppointment = async (id: number) => {
-    if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta cita? Esta acciÃ³n no se puede deshacer.')) {
+    if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
       try {
         await deleteAppointment(id);
         toast.success('Cita eliminada');
@@ -398,9 +398,9 @@ export default function AppointmentsPage() {
   const handleSendNotification = async (id: number) => {
     try {
       await appointmentsApi.sendNotification(id);
-      toast.success('ðŸ“§ NotificaciÃ³n enviada correctamente');
+      toast.success('📧 Notificación enviada correctamente');
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al enviar notificaciÃ³n'));
+      toast.error(getErrorMessage(err, 'Error al enviar notificación'));
     }
   };
 
@@ -408,7 +408,7 @@ export default function AppointmentsPage() {
     try {
       const url = await appointmentsApi.whatsappHandoff(id);
       window.open(url, '_blank');
-      toast.success('âœ… Abriendo WhatsApp para traspaso');
+      toast.success('✅ Abriendo WhatsApp para traspaso');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al generar handoff'));
     }
@@ -417,16 +417,16 @@ export default function AppointmentsPage() {
   const handleSendWhatsAppConfirmation = async (id: number) => {
     try {
       await appointmentsApi.sendWhatsAppConfirmation(id);
-      toast.success('âœ… ConfirmaciÃ³n enviada por WhatsApp');
+      toast.success('✅ Confirmación enviada por WhatsApp');
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al enviar confirmaciÃ³n'));
+      toast.error(getErrorMessage(err, 'Error al enviar confirmación'));
     }
   };
 
   const handleSendWhatsAppReminder = async (id: number) => {
     try {
       await appointmentsApi.sendWhatsAppReminder(id);
-      toast.success('âœ… Recordatorio enviado por WhatsApp');
+      toast.success('✅ Recordatorio enviado por WhatsApp');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al enviar recordatorio'));
     }
@@ -513,8 +513,8 @@ export default function AppointmentsPage() {
       <div className="bunny-page">
       <Row className="mb-4">
         <Col>
-          <h1>ðŸ“… GestiÃ³n de Citas</h1>
-          <p className="text-muted">Administra las citas y agenda del salÃ³n</p>
+          <h1>📅 Gestión de Citas</h1>
+          <p className="text-muted">Administra las citas y agenda del salón</p>
         </Col>
         <Col xs="auto">
           <Button variant="primary" onClick={openCreateModal}>
@@ -600,7 +600,7 @@ export default function AppointmentsPage() {
                       return (
                         <tr key={apt.id}>
                           <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
-                          <td>{apt.appointmentTime}</td>
+                          <td>{apt.appointmentTime.slice(0, 5)}</td>
                           <td>{apt.customer.fullName}</td>
                           <td>{appointmentServices.map((service) => service.name).join(' + ')}</td>
                           <td>{formatCurrency(getAppointmentTotal(apt))}</td>
@@ -644,12 +644,12 @@ export default function AppointmentsPage() {
 
                               <Dropdown>
                                 <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
-                                  ðŸ“§
+                                  📩
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu>
                                   <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
                                     <FaBell className="me-2" />
-                                    Enviar NotificaciÃ³n
+                                    Enviar Notificación
                                   </Dropdown.Item>
                                   <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
                                     <FaWhatsapp className="me-2 text-success" />
@@ -683,7 +683,7 @@ export default function AppointmentsPage() {
                 </Table>
               </div></div>
 
-              {/* Vista MÃ³vil: Cards */}
+              {/* Vista Móvil: Cards */}
               <div className="d-md-none">
                 {displayedAppointments.map((apt) => {
                   const appointmentServices = getAppointmentServices(apt);
@@ -696,7 +696,7 @@ export default function AppointmentsPage() {
                               {format(parseISO(apt.appointmentDate), 'EEEE d MMMM', { locale: es })}
                             </div>
                             <h6 className="mb-0 fw-bold text-bunny-dark">
-                              {apt.appointmentTime} Â· {apt.customer.fullName}
+                              {apt.appointmentTime.slice(0, 5)} · {apt.customer.fullName}
                             </h6>
                           </div>
                           {getStatusBadge(apt.status)}
@@ -756,7 +756,7 @@ export default function AppointmentsPage() {
                   <Form.Label>Cliente *</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Buscar cliente por nombre o telÃ©fono..."
+                    placeholder="Buscar cliente por nombre o teléfono..."
                     value={customerSearch}
                     onChange={(e) => setCustomerSearch(e.target.value)}
                     className="mb-2"
@@ -815,7 +815,7 @@ export default function AppointmentsPage() {
                     )}
                   </div>
                   <Form.Text className="text-muted d-block mt-2">
-                    Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | DuraciÃ³n: {createDuration} min
+                    Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | Duración: {createDuration} min
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -876,7 +876,7 @@ export default function AppointmentsPage() {
           <>
             <Modal.Body>
               <Alert variant="info">
-                Revisa el detalle antes de crear la cita. Desde aquÃ­ puedes ajustar servicios y agregar cargos extra.
+                Revisa el detalle antes de crear la cita. Desde aquí puedes ajustar servicios y agregar cargos extra.
               </Alert>
 
               <Row className="mb-3">
@@ -888,7 +888,7 @@ export default function AppointmentsPage() {
                 <Col md={6}>
                   <h6 className="mb-1">Fecha y hora</h6>
                   <p className="mb-0">
-                    {formData.appointmentDate} Â· {formData.appointmentTime}
+                    {formData.appointmentDate} · {formData.appointmentTime}
                   </p>
                 </Col>
               </Row>
@@ -925,16 +925,16 @@ export default function AppointmentsPage() {
                 )}
               </div>
               <div className="small text-muted mb-3">
-                Subtotal servicios: <strong>{formatCurrency(createTotal)}</strong> Â· DuraciÃ³n estimada: <strong>{createDuration} min</strong>
+                Subtotal servicios: <strong>{formatCurrency(createTotal)}</strong> · Duración estimada: <strong>{createDuration} min</strong>
               </div>
 
               <h6 className="mb-2">Cargos extra personalizados</h6>
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <small className="text-muted">
-                  Agrega Ã­tems como cristalerÃ­a, decoraciÃ³n u otros cobros adicionales.
+                  Agrega ítems como cristalería, decoración u otros cobros adicionales.
                 </small>
                 <Button size="sm" variant="outline-primary" onClick={addCustomChargeItem}>
-                  + Agregar Ã­tem
+                  + Agregar ítem
                 </Button>
               </div>
 
@@ -947,7 +947,7 @@ export default function AppointmentsPage() {
                       <Col md={7}>
                         <Form.Control
                           type="text"
-                          placeholder="DescripciÃ³n del Ã­tem (ej: CristalerÃ­a)"
+                          placeholder="Descripción del ítem (ej: Cristalería)"
                           value={item.description}
                           onChange={(e) =>
                             updateCustomChargeItem(item.id, { description: e.target.value })
@@ -1036,7 +1036,7 @@ export default function AppointmentsPage() {
                   <Form.Label>Cliente *</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Buscar cliente por nombre o telÃ©fono..."
+                    placeholder="Buscar cliente por nombre o teléfono..."
                     value={editCustomerSearch}
                     onChange={(e) => setEditCustomerSearch(e.target.value)}
                     className="mb-2"
@@ -1095,7 +1095,7 @@ export default function AppointmentsPage() {
                     )}
                   </div>
                   <Form.Text className="text-muted d-block mt-2">
-                    Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | DuraciÃ³n: {editDuration} min
+                    Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | Duración: {editDuration} min
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -1178,4 +1178,3 @@ export default function AppointmentsPage() {
     </DashboardLayout>
   );
 }
-

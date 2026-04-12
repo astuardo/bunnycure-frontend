@@ -1,6 +1,6 @@
-﻿/**
- * PÃ¡gina de gestiÃ³n de servicios.
- * CRUD completo del catÃ¡logo de servicios.
+/**
+ * Página de gestión de servicios.
+ * CRUD completo del catálogo de servicios.
  */
 
 import { useEffect, useState } from 'react';
@@ -12,111 +12,43 @@ import { useToast } from '../../hooks/useToast';
 
 export default function ServicesPage() {
   const toast = useToast();
-  const {
-    services,
-    isLoading,
-    error,
-    showInactiveServices,
-    fetchServices,
-    createService,
-    updateService,
-    toggleServiceActive,
+  const { 
+    services, 
+    isLoading, 
+    error, 
+    fetchServices, 
+    createService, 
+    updateService, 
     deleteService,
-    setShowInactiveServices,
-    clearError,
+    toggleServiceActive,
+    clearError 
   } = useServicesStore();
 
-  // State local
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
-
-  // Form state
   const [formData, setFormData] = useState<ServiceFormData>({
     name: '',
     description: '',
     durationMinutes: 60,
     price: 0,
+    active: true,
     displayOrder: 0,
   });
 
-  const getErrorMessage = (err: unknown, fallback: string) => {
-    if (err instanceof Error && err.message) {
-      return err.message;
-    }
-    return fallback;
-  };
-
-  // Cargar servicios al montar
   useEffect(() => {
     fetchServices();
   }, [fetchServices]);
 
-  // Crear servicio
-  const handleCreateService = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createService(formData);
-      toast.success('Servicio creado exitosamente');
-      setShowCreateModal(false);
-      resetForm();
-      fetchServices();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al crear el servicio'));
-    }
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    resetForm();
   };
 
-  // Editar servicio
-  const handleEditService = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingServiceId) return;
-    try {
-      await updateService(editingServiceId, formData);
-      toast.success('Servicio actualizado exitosamente');
-      setShowEditModal(false);
-      setEditingServiceId(null);
-      resetForm();
-      fetchServices();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al actualizar el servicio'));
-    }
-  };
-
-  // Abrir modal de ediciÃ³n
-  const openEditModal = (service: ServiceCatalog) => {
-    setEditingServiceId(service.id);
-    setFormData({
-      name: service.name,
-      description: service.description || '',
-      durationMinutes: service.durationMinutes,
-      price: service.price,
-      displayOrder: service.displayOrder,
-    });
-    setShowEditModal(true);
-  };
-
-  // Toggle activo/inactivo
-  const handleToggleActive = async (id: number) => {
-    try {
-      await toggleServiceActive(id);
-      toast.success('Estado actualizado');
-      fetchServices();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al cambiar el estado'));
-    }
-  };
-
-  // Eliminar servicio
-  const handleDeleteService = async (id: number) => {
-    if (confirm('Â¿EstÃ¡s seguro de eliminar este servicio? Esta acciÃ³n no se puede deshacer.')) {
-      try {
-        await deleteService(id);
-        toast.success('Servicio eliminado');
-        fetchServices();
-      } catch (err: unknown) {
-        toast.error(getErrorMessage(err, 'Error al eliminar el servicio'));
-      }
-    }
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingServiceId(null);
+    resetForm();
   };
 
   const resetForm = () => {
@@ -125,8 +57,68 @@ export default function ServicesPage() {
       description: '',
       durationMinutes: 60,
       price: 0,
+      active: true,
       displayOrder: 0,
     });
+  };
+
+  const handleCreateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createService(formData);
+      toast.success('Servicio creado exitosamente');
+      handleCloseCreateModal();
+    } catch (err: unknown) {
+      console.error('Error creating service:', err);
+    }
+  };
+
+  const handleUpdateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingServiceId) {
+      try {
+        await updateService(editingServiceId, formData);
+        toast.success('Servicio actualizado exitosamente');
+        handleCloseEditModal();
+      } catch (err: unknown) {
+        console.error('Error updating service:', err);
+      }
+    }
+  };
+
+  // Abrir modal de edición
+  const openEditModal = (service: ServiceCatalog) => {
+    setEditingServiceId(service.id);
+    setFormData({
+      name: service.name,
+      description: service.description || '',
+      durationMinutes: service.durationMinutes,
+      price: service.price,
+      active: service.active,
+      displayOrder: service.displayOrder || 0,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleToggleActive = async (id: number) => {
+    try {
+      await toggleServiceActive(id);
+      toast.success('Estado del servicio actualizado');
+    } catch (err: unknown) {
+      console.error('Error toggling service active:', err);
+    }
+  };
+
+  // Eliminar servicio
+  const handleDeleteService = async (id: number) => {
+    if (confirm('¿Estás seguro de eliminar este servicio? Esta acción no se puede deshacer.')) {
+      try {
+        await deleteService(id);
+        toast.success('Servicio eliminado');
+      } catch (err: unknown) {
+        console.error('Error deleting service:', err);
+      }
+    }
   };
 
   return (
@@ -134,8 +126,8 @@ export default function ServicesPage() {
       <div className="bunny-page">
       <Row className="mb-4">
         <Col>
-          <h1>ðŸ’… GestiÃ³n de Servicios</h1>
-          <p className="text-muted">Administra el catÃ¡logo de servicios ofrecidos</p>
+          <h1>💅 Gestión de Servicios</h1>
+          <p className="text-muted">Administra el catálogo de servicios ofrecidos</p>
         </Col>
         <Col xs="auto">
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
@@ -150,19 +142,6 @@ export default function ServicesPage() {
         </Alert>
       )}
 
-      {/* Filtro activos/inactivos */}
-      <Row className="mb-4">
-        <Col>
-          <Form.Check
-            type="switch"
-            label="Mostrar servicios inactivos"
-            checked={showInactiveServices}
-            onChange={(e) => setShowInactiveServices(e.target.checked)}
-          />
-        </Col>
-      </Row>
-
-      {/* Lista de servicios */}
       <Row>
         <Col>
           {isLoading ? (
@@ -173,18 +152,18 @@ export default function ServicesPage() {
             </div>
           ) : services.length === 0 ? (
             <Alert variant="info">
-              No hay servicios {showInactiveServices ? '' : 'activos'} para mostrar. Crea tu primer servicio.
+              No hay servicios configurados. Crea el primero para comenzar.
             </Alert>
           ) : (
             <>
-              
+
               {/* Vista Desktop: Tabla */}<div className="d-none d-md-block"><div className="table-responsive">
                 <Table striped bordered hover className="mb-0">
                   <thead>
                     <tr>
                       <th>Nombre</th>
-                      <th>DescripciÃ³n</th>
-                      <th>DuraciÃ³n</th>
+                      <th>Descripción</th>
+                      <th>Duración</th>
                       <th>Precio</th>
                       <th>Estado</th>
                       <th>Acciones</th>
@@ -193,36 +172,24 @@ export default function ServicesPage() {
                   <tbody>
                     {services.map((service) => (
                       <tr key={service.id}>
-                        <td><strong>{service.name}</strong></td>
-                        <td>{service.description || '-'}</td>
+                        <td className="fw-bold">{service.name}</td>
+                        <td>{service.description || <span className="text-muted small">Sin descripción</span>}</td>
                         <td>{service.durationMinutes} min</td>
                         <td>${service.price.toLocaleString('es-CL')}</td>
                         <td>
-                          <Badge bg={service.active ? 'success' : 'secondary'}>
-                            {service.active ? 'Activo' : 'Inactivo'}
+                          <Badge bg={service.active ? "success" : "secondary"}>
+                            {service.active ? "Activo" : "Inactivo"}
                           </Badge>
                         </td>
                         <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline-primary"
-                              onClick={() => openEditModal(service)}
-                            >
+                          <div className="d-flex gap-1">
+                            <Button size="sm" variant="outline-primary" onClick={() => openEditModal(service)}>
                               Editar
                             </Button>
-                            <Button
-                              size="sm"
-                              variant={service.active ? 'warning' : 'success'}
-                              onClick={() => handleToggleActive(service.id)}
-                            >
-                              {service.active ? 'Desactivar' : 'Activar'}
+                            <Button size="sm" variant={service.active ? "outline-warning" : "outline-success"} onClick={() => handleToggleActive(service.id)}>
+                              {service.active ? "Desactivar" : "Activar"}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => handleDeleteService(service.id)}
-                            >
+                            <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>
                               Eliminar
                             </Button>
                           </div>
@@ -233,7 +200,7 @@ export default function ServicesPage() {
                 </Table>
               </div></div>
 
-              {/* Vista MÃ³vil: Cards */}
+              {/* Vista Móvil: Cards */}
               <div className="d-md-none">
                 {services.map((service) => (
                   <Card key={service.id} className="mb-3 border-peach shadow-sm">
@@ -244,12 +211,12 @@ export default function ServicesPage() {
                           {service.active ? "Activo" : "Inactivo"}
                         </Badge>
                       </div>
-                      
-                      <div className="text-muted small mb-2">{service.description || "Sin descripciÃ³n"}</div>
-                      
+
+                      <div className="text-muted small mb-2">{service.description || "Sin descripción"}</div> 
+
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <span className="text-bunny-mid small">{service.durationMinutes} min</span>
-                        <span className="fw-bold text-success">${service.price.toLocaleString('es-CL')}</span>
+                        <span className="fw-bold text-success">${service.price.toLocaleString('es-CL')}</span> 
                       </div>
 
                       <div className="d-flex gap-2">
@@ -257,7 +224,7 @@ export default function ServicesPage() {
                         <Button size="sm" variant={service.active ? "warning" : "success"} className="flex-fill" onClick={() => handleToggleActive(service.id)}>
                           {service.active ? "Desactivar" : "Activar"}
                         </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>ELIMINAR</Button>
+                        <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>Eliminar</Button>
                       </div>
                     </Card.Body>
                   </Card>
@@ -268,45 +235,39 @@ export default function ServicesPage() {
         </Col>
       </Row>
 
-      {/* Modal Crear Servicio */}
-      <Modal
-        show={showCreateModal}
-        onHide={() => setShowCreateModal(false)}
-        className="bunny-modal service-modal"
-        scrollable
-        fullscreen="sm-down"
-      >
+      {/* Modal Crear */}
+      <Modal show={showCreateModal} onHide={handleCloseCreateModal} className="bunny-modal">
         <Modal.Header closeButton>
           <Modal.Title>Nuevo Servicio</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleCreateService}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Nombre *</Form.Label>
+              <Form.Label>Nombre del servicio *</Form.Label>
               <Form.Control
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ej: Corte de cabello"
+                placeholder="Ej: Esmaltado Permanente"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>DescripciÃ³n</Form.Label>
+              <Form.Label>Descripción</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="DescripciÃ³n del servicio..."
+                placeholder="Descripción del servicio..."
               />
             </Form.Group>
 
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>DuraciÃ³n (minutos) *</Form.Label>
+                  <Form.Label>Duración (minutos) *</Form.Label>
                   <Form.Control
                     type="number"
                     required
@@ -319,21 +280,21 @@ export default function ServicesPage() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Precio ($) *</Form.Label>
+                  <Form.Label>Precio *</Form.Label>
                   <Form.Control
                     type="number"
                     required
                     min={0}
                     step={100}
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
                   />
                 </Form.Group>
               </Col>
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Orden de visualizaciÃ³n</Form.Label>
+              <Form.Label>Orden de visualización</Form.Label>
               <Form.Control
                 type="number"
                 min={0}
@@ -341,12 +302,12 @@ export default function ServicesPage() {
                 onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
               />
               <Form.Text className="text-muted">
-                NÃºmero menor aparece primero en la lista
+                Número menor aparece primero en la lista
               </Form.Text>
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+            <Button variant="secondary" onClick={handleCloseCreateModal}>
               Cancelar
             </Button>
             <Button variant="primary" type="submit">
@@ -356,21 +317,15 @@ export default function ServicesPage() {
         </Form>
       </Modal>
 
-      {/* Modal Editar Servicio */}
-      <Modal
-        show={showEditModal}
-        onHide={() => setShowEditModal(false)}
-        className="bunny-modal service-modal"
-        scrollable
-        fullscreen="sm-down"
-      >
+      {/* Modal Editar */}
+      <Modal show={showEditModal} onHide={handleCloseEditModal} className="bunny-modal">
         <Modal.Header closeButton>
           <Modal.Title>Editar Servicio</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleEditService}>
+        <Form onSubmit={handleUpdateService}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Nombre *</Form.Label>
+              <Form.Label>Nombre del servicio *</Form.Label>
               <Form.Control
                 type="text"
                 required
@@ -380,7 +335,7 @@ export default function ServicesPage() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>DescripciÃ³n</Form.Label>
+              <Form.Label>Descripción</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
@@ -392,7 +347,7 @@ export default function ServicesPage() {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>DuraciÃ³n (minutos) *</Form.Label>
+                  <Form.Label>Duración (minutos) *</Form.Label>
                   <Form.Control
                     type="number"
                     required
@@ -405,21 +360,21 @@ export default function ServicesPage() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Precio ($) *</Form.Label>
+                  <Form.Label>Precio *</Form.Label>
                   <Form.Control
                     type="number"
                     required
                     min={0}
                     step={100}
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
                   />
                 </Form.Group>
               </Col>
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Orden de visualizaciÃ³n</Form.Label>
+              <Form.Label>Orden de visualización</Form.Label>
               <Form.Control
                 type="number"
                 min={0}
@@ -429,7 +384,7 @@ export default function ServicesPage() {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            <Button variant="secondary" onClick={handleCloseEditModal}>
               Cancelar
             </Button>
             <Button variant="primary" type="submit">
@@ -442,4 +397,3 @@ export default function ServicesPage() {
     </DashboardLayout>
   );
 }
-
