@@ -550,6 +550,10 @@ function resolveAppointmentTime(appointment) {
 }
 
 function getAppointmentTotal(appointment) {
+  // 1. Priorizar el precio editado manualmente vía campo totalPrice
+  if (typeof appointment.totalPrice === 'number' && appointment.totalPrice > 0) return appointment.totalPrice;
+
+  // 2. Intentar extraer de las notas (generado por el resumen de creación)
   if (appointment.notes) {
     const match = appointment.notes.match(/Total final estimado:\s*\$([\d.]+)/);
     if (match && match[1]) {
@@ -557,7 +561,8 @@ function getAppointmentTotal(appointment) {
       if (!isNaN(parsedTotal) && parsedTotal > 0) return parsedTotal;
     }
   }
-  if (typeof appointment.totalPrice === 'number' && appointment.totalPrice > 0) return appointment.totalPrice;
+
+  // 3. Fallback a la suma de servicios
   const services = appointment.services && appointment.services.length > 0 ? appointment.services : [appointment.service];
   return services.reduce((sum, service) => sum + (service ? service.price : 0), 0);
 }

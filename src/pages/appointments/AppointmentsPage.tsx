@@ -27,6 +27,7 @@ interface AppointmentFormState {
 
 interface AppointmentEditFormState extends AppointmentFormState {
   status: AppointmentStatus;
+  totalPrice?: number;
 }
 
 interface CustomChargeItem {
@@ -63,7 +64,9 @@ export default function AppointmentsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [createStep, setCreateStep] = useState<CreateStep>('form');
   const [customChargeItems, setCustomChargeItems] = useState<CustomChargeItem[]>([]);
+  const [editCustomChargeItems, setEditCustomChargeItems] = useState<CustomChargeItem[]>([]);
   const [nextCustomChargeId, setNextCustomChargeId] = useState(1);
+  const [nextEditCustomChargeId, setNextEditCustomChargeId] = useState(1);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatusFilter>('ACTIVE');
   const [dateFilter, setDateFilter] = useState<string>('');
@@ -107,6 +110,22 @@ export default function AppointmentsPage() {
     fetchCustomers();
     fetchServices(true);
   }, [fetchAppointments, fetchCustomers, fetchServices]);
+
+  // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && appointments.length > 0) {
+      const apt = appointments.find((a) => a.id === Number(editId));
+      if (apt) {
+        openEditModal(apt);
+        // Limpiar el parámetro de la URL sin recargar para no reabrirlo al refrescar
+        setSearchParams((prev) => {
+          prev.delete('edit');
+          return prev;
+        }, { replace: true });
+      }
+    }
+  }, [searchParams, appointments, setSearchParams]);
 
   const filteredCustomers = useMemo(() => {
     const search = customerSearch.trim().toLowerCase();
@@ -260,6 +279,7 @@ export default function AppointmentsPage() {
     appointmentDate: formData.appointmentDate,
     appointmentTime: formData.appointmentTime,
     notes: buildCreateNotes(),
+    totalPrice: createFinalTotal,
   });
 
   const buildEditPayload = (): AppointmentUpdateRequest => ({
@@ -270,6 +290,7 @@ export default function AppointmentsPage() {
     appointmentTime: editFormData.appointmentTime,
     status: editFormData.status,
     notes: normalizeNotes(editFormData.notes),
+    totalPrice: editFormData.totalPrice,
   });
 
   const validateForm = (customerId: number, serviceIds: number[]): boolean => {
@@ -327,23 +348,83 @@ export default function AppointmentsPage() {
     }
   };
 
+  const buildEditNotes = () => {
+    // 1. Extraer las notas originales (anteriores al bloque de extras)
+    const notesParts = editFormData.notes.split('Extras personalizados:');
+    const baseNotes = normalizeNotes(notesParts[0]);
+
+    const validCustomItems = editCustomChargeItems.filter(
+      (item) => item.description.trim().length > 0 && item.amount > 0
+    );
+
+    if (validCustomItems.length === 0) {
+      return baseNotes;
+    }
+
+    const extrasBlock = [
+      'Extras personalizados:',
+      ...validCustomItems.map((item) => `- ${item.description.trim()}: ${formatCurrency(item.amount)}`),
+      `Subtotal servicios: ${formatCurrency(editTotal)}`,
+      `Total extras: ${formatCurrency(editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}`,
+      `Total final estimado: ${formatCurrency(editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}`,
+    ].join('\n');
+
+    return baseNotes ? `${baseNotes}\n\n${extrasBlock}` : extrasBlock;
+  };
+
   const openEditModal = (appointment: Appointment) => {
     const selectedIds = appointment.services?.length
       ? appointment.services.map((service) => service.id)
       : [appointment.service.id];
 
+    // Parser de extras desde las notas
+    const parsedExtras: CustomChargeItem[] = [];
+    let nextId = 1;
+    if (appointment.notes) {
+      const extrasSection = appointment.notes.match(/Extras personalizados:([\s\S]*?)Subtotal servicios:/i);
+      if (extrasSection && extrasSection[1]) {
+        const lines = extrasSection[1].trim().split('\n');
+        lines.forEach(line => {
+          const match = line.match(/-\s*(.*?):\s*\$?\s*([\d.]+)/);
+          if (match) {
+            parsedExtras.push({
+              id: nextId++,
+              description: match[1].trim(),
+              amount: parseInt(match[2].replace(/\./g, ''), 10)
+            });
+          }
+        });
+      }
+    }
+
     setEditingAppointmentId(appointment.id);
+    setEditCustomChargeItems(parsedExtras);
+    setNextEditCustomChargeId(nextId);
+    
+    // Limpiar notas del bloque de extras para el campo de texto base
+    const cleanNotes = appointment.notes?.split('Extras personalizados:')[0].trim() || '';
+
     setEditFormData({
       customerId: appointment.customer.id,
       serviceIds: selectedIds,
       appointmentDate: appointment.appointmentDate,
       appointmentTime: appointment.appointmentTime,
-      notes: appointment.notes || '',
+      notes: cleanNotes,
       status: appointment.status,
+      totalPrice: getAppointmentTotal(appointment),
     });
     setEditCustomerSearch('');
     setEditServiceSearch('');
     setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingAppointmentId(null);
+    const returnTo = searchParams.get('returnTo');
+    if (returnTo) {
+      navigate(returnTo, { replace: true });
+    }
   };
 
   const handleEditAppointment = async (e: React.FormEvent) => {
@@ -351,11 +432,17 @@ export default function AppointmentsPage() {
     if (!editingAppointmentId) return;
     if (!validateForm(editFormData.customerId, editFormData.serviceIds)) return;
 
+    const finalNotes = buildEditNotes();
+    const finalTotal = editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0);
+
     try {
-      await updateAppointment(editingAppointmentId, buildEditPayload());
+      await updateAppointment(editingAppointmentId, {
+        ...buildEditPayload(),
+        notes: finalNotes,
+        totalPrice: finalTotal,
+      });
       toast.success('Cita actualizada exitosamente');
-      setShowEditModal(false);
-      setEditingAppointmentId(null);
+      closeEditModal();
       fetchAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al actualizar la cita'));
@@ -509,16 +596,20 @@ export default function AppointmentsPage() {
       : [appointment.service];
 
   const getAppointmentTotal = (appointment: Appointment) => {
-    // 1. Try to extract total from notes (generated by our summary)
+    // 1. Try to extract total from notes (generated by our creation summary)
+    // This takes precedence because it includes manually added extras
     if (appointment.notes) {
-      const match = appointment.notes.match(/Total final estimado:\s*\$([\d.]+)/);
+      // Regex robusta para capturar el total ignorando puntos de miles y espacios
+      const match = appointment.notes.match(/Total final estimado:\s*\$?\s*([\d.]+)/i);
       if (match && match[1]) {
         const parsedTotal = parseInt(match[1].replace(/\./g, ''), 10);
         if (!isNaN(parsedTotal) && parsedTotal > 0) return parsedTotal;
       }
     }
-    // 2. Fallback to API totalPrice
+
+    // 2. Fallback to API totalPrice field (manual edits saved)
     if (typeof appointment.totalPrice === 'number' && appointment.totalPrice > 0) return appointment.totalPrice;
+
     // 3. Fallback to sum of services
     return getAppointmentServices(appointment).reduce((sum, service) => sum + service.price, 0);
   };
@@ -1068,7 +1159,7 @@ export default function AppointmentsPage() {
 
       <Modal
         show={showEditModal}
-        onHide={() => setShowEditModal(false)}
+        onHide={closeEditModal}
         size="lg"
         className="bunny-modal appointment-edit-modal"
         scrollable
@@ -1203,6 +1294,19 @@ export default function AppointmentsPage() {
               />
             </Form.Group>
             <Form.Group className="mb-3">
+              <Form.Label>Precio Final (CLP)</Form.Label>
+              <Form.Control
+                type="number"
+                min={0}
+                step={100}
+                value={editFormData.totalPrice || 0}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, totalPrice: Number(e.target.value) }))}
+              />
+              <Form.Text className="text-muted">
+                Valor calculado según servicios: {formatCurrency(editTotal)}
+              </Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-3">
               <Form.Label>Notas</Form.Label>
               <Form.Control
                 as="textarea"
@@ -1212,9 +1316,68 @@ export default function AppointmentsPage() {
                 placeholder="Observaciones, preferencias, etc..."
               />
             </Form.Group>
+
+            <hr />
+            <h6 className="mb-2">Cargos extra personalizados</h6>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <small className="text-muted">Gestión de ítems adicionales para esta cita.</small>
+              <Button size="sm" variant="outline-primary" onClick={() => {
+                setEditCustomChargeItems(prev => [...prev, { id: nextEditCustomChargeId, description: '', amount: 0 }]);
+                setNextEditCustomChargeId(prev => prev + 1);
+              }}>
+                + Agregar ítem
+              </Button>
+            </div>
+
+            {editCustomChargeItems.length > 0 && (
+              <div className="d-flex flex-column gap-2 mb-3">
+                {editCustomChargeItems.map((item) => (
+                  <Row key={item.id} className="g-2 align-items-center">
+                    <Col md={7}>
+                      <Form.Control
+                        type="text"
+                        placeholder="Descripción (ej: Cristalería)"
+                        value={item.description}
+                        onChange={(e) => setEditCustomChargeItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
+                      />
+                    </Col>
+                    <Col md={3}>
+                      <Form.Control
+                        type="number"
+                        min={0}
+                        step={100}
+                        value={item.amount}
+                        onChange={(e) => setEditCustomChargeItems(prev => prev.map(i => i.id === item.id ? { ...i, amount: Number(e.target.value) || 0 } : i))}
+                      />
+                    </Col>
+                    <Col md={2} className="d-grid">
+                      <Button size="sm" variant="outline-danger" onClick={() => setEditCustomChargeItems(prev => prev.filter(i => i.id !== item.id))}>
+                        Eliminar
+                      </Button>
+                    </Col>
+                  </Row>
+                ))}
+              </div>
+            )}
+
+            <hr />
+            <div className="d-flex flex-column gap-1">
+              <div className="d-flex justify-content-between">
+                <span>Subtotal servicios</span>
+                <strong>{formatCurrency(editTotal)}</strong>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span>Total extras</span>
+                <strong>{formatCurrency(editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}</strong>
+              </div>
+              <div className="d-flex justify-content-between fs-5 mt-1 text-bunny-dark">
+                <span>Total final estimado</span>
+                <strong>{formatCurrency(editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}</strong>
+              </div>
+            </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            <Button variant="secondary" onClick={closeEditModal}>
               Cancelar
             </Button>
             <Button variant="primary" type="submit">

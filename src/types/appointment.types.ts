@@ -44,4 +44,5 @@ export interface AppointmentUpdateRequest {
   appointmentTime?: string;
   status?: AppointmentStatus;
   notes?: string;
+  totalPrice?: number;
 }
