@@ -268,9 +268,15 @@ export default function DashboardPage() {
                             <CalendarDays size={20} style={{ color: '#c9897a' }} />
                             <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>Citas de Hoy</span>
                         </div>
-                        <Link to="/appointments" style={{ fontSize: '13px', color: TEXT_MID, textDecoration: 'underline' }}>
-                            Ver todas
-                        </Link>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }} className="d-none d-sm-flex">
+                                <span style={{ fontSize: '9px', textTransform: 'uppercase', color: TEXT_MID, fontWeight: 700, letterSpacing: '0.05em' }}>Total Hoy</span>
+                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#5a8f7b' }}>{formatCurrency(todayAppointments.reduce((sum, apt) => sum + getAppointmentTotal(apt), 0))}</span>
+                            </div>
+                            <Link to="/appointments" style={{ fontSize: '13px', color: TEXT_MID, textDecoration: 'underline' }}>
+                                Ver todas
+                            </Link>
+                        </div>
                     </div>
 
                     {appointmentsLoading ? (
@@ -377,44 +383,62 @@ export default function DashboardPage() {
                 <DashCard style={{ padding: CARD_PAD }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                         <TrendingUp size={18} style={{ color: '#c9897a' }} />
-                        <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>Insights de negocio</span>
+                        <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>Insights del Mes</span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: DIVIDER }}>
-                        <span style={{ fontSize: '14px', color: TEXT_MID }}>Valor citas creadas</span>
-                        <span style={{ fontWeight: 700, fontSize: '14px', color: '#5a8f7b' }}>
-                            ${(dashboardStats?.totalRevenueMonth || 0).toLocaleString('es-CL')}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: DIVIDER }}>
+                        <span style={{ fontSize: '14px', color: TEXT_MID }}>Ingresos Proyectados</span>
+                        <span style={{ fontWeight: 700, fontSize: '16px', color: '#5a8f7b' }}>
+                            {formatCurrency(dashboardStats?.totalRevenueMonth || 0)}
                         </span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: DIVIDER, gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: DIVIDER, gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                             <Users size={14} style={{ color: '#b09080' }} />
-                            <span style={{ fontSize: '14px', color: TEXT_MID }}>Cliente más frecuente</span>
+                            <span style={{ fontSize: '14px', color: TEXT_MID }}>Fidelidad</span>
                         </div>
-                        <span style={{ fontWeight: 600, fontSize: '13px', color: TEXT_DARK, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }}>
+                        <span style={{ fontWeight: 600, fontSize: '13px', color: TEXT_DARK, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }} title={dashboardStats?.topCustomer?.name}>
                             {dashboardStats?.topCustomer ? `${dashboardStats.topCustomer.name} (${dashboardStats.topCustomer.appointmentCount})` : 'Sin datos'}
                         </span>
                     </div>
 
-                    <div style={{ paddingTop: '12px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#b09080', marginBottom: '10px' }}>
-                            Top servicios
+                    <div style={{ paddingTop: '16px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#b09080', marginBottom: '12px' }}>
+                            Ranking de Servicios
                         </div>
                         {!dashboardStats?.topServices || dashboardStats.topServices.length === 0 ? (
                             <p style={{ fontSize: '13px', color: '#c9a898' }}>Aún no hay datos de servicios.</p>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {dashboardStats.topServices.map((s) => (
-                                    <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '13px', color: TEXT_DARK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {s.name}
-                                        </span>
-                                        <span style={{ fontSize: '12px', color: TEXT_MID, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                            {s.count} uso{s.count !== 1 ? 's' : ''} · ${s.revenue.toLocaleString('es-CL')}
-                                        </span>
-                                    </div>
-                                ))}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {dashboardStats.topServices.map((s) => {
+                                    const maxRevenue = Math.max(...dashboardStats.topServices.map(ts => ts.revenue), 1);
+                                    const percentage = (s.revenue / maxRevenue) * 100;
+                                    return (
+                                        <div key={s.name}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '13px', color: TEXT_DARK, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {s.name}
+                                                </span>
+                                                <span style={{ fontSize: '12px', fontWeight: 600, color: TEXT_DARK }}>
+                                                    {formatCurrency(s.revenue)}
+                                                </span>
+                                            </div>
+                                            <div style={{ height: '6px', background: '#f3e9e2', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ 
+                                                    height: '100%', 
+                                                    width: `${percentage}%`, 
+                                                    background: 'linear-gradient(90deg, #c9897a, #e5b2a7)',
+                                                    borderRadius: '3px',
+                                                    transition: 'width 1s ease-in-out'
+                                                }} />
+                                            </div>
+                                            <div style={{ fontSize: '10px', color: TEXT_MID, marginTop: '2px' }}>
+                                                {s.count} servicios realizados este mes
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
