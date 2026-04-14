@@ -29,12 +29,14 @@ export interface Appointment {
 
 export interface AppointmentCreateRequest {
   customerId: number;
-  serviceId?: number;
-  serviceIds?: number[];
+  serviceId: number;
+  serviceIds: number[];
   appointmentDate: string;
   appointmentTime: string;
   notes?: string;
+  totalPrice?: number;
 }
+
 
 export interface AppointmentUpdateRequest {
   customerId?: number;
