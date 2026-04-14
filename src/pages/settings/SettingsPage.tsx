@@ -241,6 +241,8 @@ export default function SettingsPage() {
         whatsappHumanDisplayName: settings.whatsappHumanDisplayName,
         whatsappHandoffClientMessage: settings.whatsappHandoffClientMessage,
         whatsappHandoffAdminPrefill: settings.whatsappHandoffAdminPrefill,
+        holidays: JSON.stringify(settings.holidays),
+        scheduleBlocks: JSON.stringify(settings.scheduleBlocks),
       };
       
       await settingsApi.saveAll(settingsData);
