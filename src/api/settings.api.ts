@@ -7,13 +7,10 @@ import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
 
 export interface SettingsData {
-  // Business Info
   businessName?: string;
   businessEmail?: string;
   businessPhone?: string;
   businessAddress?: string;
-
-  // Working Hours
   mondayEnabled?: boolean;
   mondayStart?: string;
   mondayEnd?: string;
@@ -35,23 +32,17 @@ export interface SettingsData {
   sundayEnabled?: boolean;
   sundayStart?: string;
   sundayEnd?: string;
-
-  // Appointment Settings
   appointmentDuration?: number;
-
-  // Notifications
   emailNotificationsEnabled?: boolean;
   whatsappNumber?: string;
-
-  // Reminder Settings
   reminderStrategy?: 'TWO_HOURS' | 'MORNING' | 'DAY_BEFORE' | 'BOTH';
-
-  // WhatsApp Handoff
   whatsappHandoffEnabled?: boolean;
   whatsappHumanNumber?: string;
   whatsappHumanDisplayName?: string;
   whatsappHandoffClientMessage?: string;
   whatsappHandoffAdminPrefill?: string;
+  holidays?: string;
+  scheduleBlocks?: string;
 }
 
 const readBoolean = (value?: string): boolean | undefined => {
@@ -150,6 +141,8 @@ export const settingsApi = {
       whatsappHumanDisplayName: flatSettings['whatsapp.human.display-name'],
       whatsappHandoffClientMessage: flatSettings['whatsapp.handoff.client-message'],
       whatsappHandoffAdminPrefill: flatSettings['whatsapp.handoff.admin-prefill'],
+      holidays: flatSettings['business.holidays'],
+      scheduleBlocks: flatSettings['business.schedule_blocks'],
     };
   },
 
@@ -211,6 +204,10 @@ export const settingsApi = {
     if (settings.whatsappHumanDisplayName !== undefined) flatSettings['whatsapp.human.display-name'] = settings.whatsappHumanDisplayName;
     if (settings.whatsappHandoffClientMessage !== undefined) flatSettings['whatsapp.handoff.client-message'] = settings.whatsappHandoffClientMessage;
     if (settings.whatsappHandoffAdminPrefill !== undefined) flatSettings['whatsapp.handoff.admin-prefill'] = settings.whatsappHandoffAdminPrefill;
+
+    // Holidays and Schedule Blocks
+    if (settings.holidays !== undefined) flatSettings['business.holidays'] = settings.holidays;
+    if (settings.scheduleBlocks !== undefined) flatSettings['business.schedule_blocks'] = settings.scheduleBlocks;
 
     await apiClient.post<ApiResponse<void>>('/api/settings', flatSettings);
   },
