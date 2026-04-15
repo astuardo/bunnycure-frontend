@@ -15,6 +15,7 @@ interface CustomersState {
     createCustomer: (data: CustomerFormData) => Promise<Customer | null>;
     updateCustomer: (id: number, data: CustomerFormData) => Promise<Customer | null>;
     deleteCustomer: (id: number) => Promise<boolean>;
+    adjustCustomerLoyalty: (id: number, delta: number) => Promise<Customer | null>;
     clearCurrentCustomer: () => void;
     clearError: () => void;
 }
@@ -130,6 +131,37 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             set({ error: errorMessage, loading: false });
             toast.error(errorMessage);
             return false;
+        }
+    },
+
+    adjustCustomerLoyalty: async (id: number, delta: number) => {
+        set({ loading: true, error: null });
+        try {
+            const updatedCustomer = await customersApi.adjustLoyalty(id, delta);
+            
+            // Actualizar en la lista y en el actual
+            set((state) => {
+                const updatedCustomers = state.customers.map((c) => 
+                    c.id === id ? updatedCustomer : c
+                );
+                
+                // Si el cliente actualizado es el que estamos viendo en detalles, lo actualizamos también
+                const currentCustomer = state.currentCustomer?.id === id ? updatedCustomer : state.currentCustomer;
+                
+                return {
+                    customers: updatedCustomers,
+                    currentCustomer,
+                    loading: false
+                };
+            });
+            
+            toast.success(delta > 0 ? `Sello(s) agregado(s)` : `Sello(s) removido(s)`);
+            return updatedCustomer;
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Error al ajustar sellos';
+            set({ error: errorMessage, loading: false });
+            toast.error(errorMessage);
+            return null;
         }
     },
 

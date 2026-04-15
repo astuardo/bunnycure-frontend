@@ -9,6 +9,7 @@ import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner }
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
+import StampCard from '../../components/customers/StampCard';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useToast } from '../../hooks/useToast';
@@ -22,7 +23,13 @@ export default function CustomerDetailsPage() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const { customers, loading: customersLoading, fetchCustomers } = useCustomersStore();
+  const { 
+    customers, 
+    loading: customersLoading, 
+    fetchCustomers,
+    adjustCustomerLoyalty 
+  } = useCustomersStore();
+
   const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
 
   const [notesDraft, setNotesDraft] = useState('');
@@ -75,6 +82,17 @@ export default function CustomerDetailsPage() {
     // TODO: Implementar actualización de notas en el backend
     toast.info('Notas guardadas localmente');
     setEditingNotes(false);
+  };
+
+  const handleLoyaltyAdjust = async (delta: number) => {
+    if (!customer) return;
+    const confirmMsg = delta > 0 
+      ? `¿Deseas agregar ${delta} sello(s) manualmente a ${customer.fullName}?` 
+      : `¿Deseas quitar ${Math.abs(delta)} sello(s) a ${customer.fullName}?`;
+    
+    if (window.confirm(confirmMsg)) {
+      await adjustCustomerLoyalty(customer.id, delta);
+    }
   };
 
   const getStatusBadge = (status: AppointmentStatus) => {
@@ -249,6 +267,12 @@ export default function CustomerDetailsPage() {
           </Col>
 
           <Col md={8}>
+            <StampCard 
+              loyaltyStamps={customer.loyaltyStamps} 
+              totalCompletedVisits={customer.totalCompletedVisits} 
+              onAdjust={handleLoyaltyAdjust}
+            />
+
             <Card>
               <Card.Header>
                 <h5 className="mb-0">Historial de Citas</h5>

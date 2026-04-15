@@ -62,4 +62,17 @@ export const customersApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/customers/${id}`);
   },
+
+  /**
+   * Ajustar sellos de fidelización manualmente
+   */
+  adjustLoyalty: async (id: number, delta: number): Promise<Customer> => {
+    const response = await apiClient.post<ApiResponse<Customer>>(
+      `/api/customers/${id}/loyalty/adjust`,
+      null,
+      { params: { delta } }
+    );
+    if (!response.data.data) throw new Error('Error al ajustar sellos');
+    return response.data.data;
+  },
 };

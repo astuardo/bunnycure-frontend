@@ -22,12 +22,15 @@ export interface Customer {
   notes?: string;
   instagram?: string;
   notificationPreference: NotificationPreference;
+  loyaltyStamps?: number;
+  totalCompletedVisits?: number;
 }
 
 export interface CustomerSummary {
   id: number;
   fullName: string;
   phone: string;
+  loyaltyStamps?: number;
 }
 
 export interface CustomerLookupResponse {
