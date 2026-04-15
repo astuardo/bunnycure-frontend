@@ -436,21 +436,25 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                <div className="border p-2 rounded bg-light shadow-inner">
+                <div className="border p-3 rounded bg-light shadow-inner">
                   <Row className="g-2">
-                    <Col xs={6}>
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small mb-1">Fecha</Form.Label>
                       <Form.Control size="sm" type="date" id="block-date" />
                     </Col>
-                    <Col xs={3}>
+                    <Col xs={6} sm={3}>
+                      <Form.Label className="small mb-1">Inicio</Form.Label>
                       <Form.Control size="sm" type="time" id="block-start" defaultValue="14:00" />
                     </Col>
-                    <Col xs={3}>
+                    <Col xs={6} sm={3}>
+                      <Form.Label className="small mb-1">Fin</Form.Label>
                       <Form.Control size="sm" type="time" id="block-end" defaultValue="16:00" />
                     </Col>
-                    <Col xs={9}>
-                      <Form.Control size="sm" type="text" id="block-reason" placeholder="Motivo" />
+                    <Col xs={12} sm={9}>
+                      <Form.Label className="small mb-1">Motivo</Form.Label>
+                      <Form.Control size="sm" type="text" id="block-reason" placeholder="Ej: Almuerzo, trámite..." />
                     </Col>
-                    <Col xs={3} className="d-grid">
+                    <Col xs={12} sm={3} className="d-grid align-items-end">
                       <Button variant="warning" size="sm" onClick={() => {
                         const d = document.getElementById('block-date') as HTMLInputElement;
                         const s = document.getElementById('block-start') as HTMLInputElement;
@@ -637,106 +641,6 @@ export default function SettingsPage() {
                     )}
                   </>
                 )}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col lg={6} className="mb-4">
-            <Card>
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">📅 Días Feriados (Cerrado)</h5>
-              </Card.Header>
-              <Card.Body>
-                <div className="d-flex gap-2 mb-3">
-                  <Form.Control 
-                    type="date" 
-                    id="new-holiday"
-                  />
-                  <Button size="sm" onClick={() => {
-                    const el = document.getElementById('new-holiday') as HTMLInputElement;
-                    if (el.value) {
-                      if (!settings.holidays.includes(el.value)) {
-                        handleChange('holidays', [...settings.holidays, el.value].sort());
-                      }
-                      el.value = '';
-                    }
-                  }}>Añadir</Button>
-                </div>
-                <div className="d-flex flex-wrap gap-2">
-                  {settings.holidays.length === 0 ? (
-                    <small className="text-muted">No hay feriados configurados</small>
-                  ) : (
-                    settings.holidays.map(h => (
-                      <Badge key={h} bg="danger" className="p-2 d-flex align-items-center gap-2">
-                        {new Date(h + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        <span style={{ cursor: 'pointer' }} onClick={() => handleChange('holidays', settings.holidays.filter(x => x !== h))}>✕</span>
-                      </Badge>
-                    ))
-                  )}
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col lg={6} className="mb-4">
-            <Card>
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">🚫 Bloqueos de Agenda</h5>
-              </Card.Header>
-              <Card.Body>
-                <div className="small text-muted mb-3">Bloquea rangos de horas específicos en fechas determinadas.</div>
-                
-                {settings.scheduleBlocks.length > 0 && (
-                  <div className="mb-3 border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {settings.scheduleBlocks.map(b => (
-                      <div key={b.id} className="d-flex justify-content-between align-items-center border-bottom py-2 px-1">
-                        <div>
-                          <div className="fw-bold small">{new Date(b.date + 'T12:00:00').toLocaleDateString('es-CL')}</div>
-                          <div className="small text-muted">{b.startTime} - {b.endTime} • {b.reason || 'Sin motivo'}</div>
-                        </div>
-                        <Button variant="link" size="sm" className="text-danger" onClick={() => handleChange('scheduleBlocks', settings.scheduleBlocks.filter(x => x.id !== b.id))}>Eliminar</Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="border p-2 rounded bg-light">
-                  <Row className="g-2">
-                    <Col xs={6}>
-                      <Form.Control size="sm" type="date" id="block-date" />
-                    </Col>
-                    <Col xs={3}>
-                      <Form.Control size="sm" type="time" id="block-start" defaultValue="14:00" />
-                    </Col>
-                    <Col xs={3}>
-                      <Form.Control size="sm" type="time" id="block-end" defaultValue="16:00" />
-                    </Col>
-                    <Col xs={9}>
-                      <Form.Control size="sm" type="text" id="block-reason" placeholder="Motivo (ej: Almuerzo)" />
-                    </Col>
-                    <Col xs={3} className="d-grid">
-                      <Button size="sm" onClick={() => {
-                        const d = document.getElementById('block-date') as HTMLInputElement;
-                        const s = document.getElementById('block-start') as HTMLInputElement;
-                        const e = document.getElementById('block-end') as HTMLInputElement;
-                        const r = document.getElementById('block-reason') as HTMLInputElement;
-                        if (d.value && s.value && e.value) {
-                          const newBlock: ScheduleBlock = {
-                            id: Date.now().toString(),
-                            date: d.value,
-                            startTime: s.value,
-                            endTime: e.value,
-                            reason: r.value
-                          };
-                          handleChange('scheduleBlocks', [...settings.scheduleBlocks, newBlock].sort((a,b) => a.date.localeCompare(b.date)));
-                          d.value = ''; r.value = '';
-                        }
-                      }}>Bloquear</Button>
-                    </Col>
-                  </Row>
-                </div>
               </Card.Body>
             </Card>
           </Col>

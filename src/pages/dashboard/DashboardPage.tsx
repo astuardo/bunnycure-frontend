@@ -268,10 +268,10 @@ export default function DashboardPage() {
                             <CalendarDays size={20} style={{ color: '#c9897a' }} />
                             <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>Citas de Hoy</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }} className="d-none d-sm-flex">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '9px', textTransform: 'uppercase', color: TEXT_MID, fontWeight: 700, letterSpacing: '0.05em' }}>Total Hoy</span>
-                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#5a8f7b' }}>{formatCurrency(todayAppointments.reduce((sum, apt) => sum + getAppointmentTotal(apt), 0))}</span>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#5a8f7b' }}>{formatCurrency(todayAppointments.reduce((sum, apt) => sum + getAppointmentTotal(apt), 0))}</span>
                             </div>
                             <Link to="/appointments" style={{ fontSize: '13px', color: TEXT_MID, textDecoration: 'underline' }}>
                                 Ver todas
@@ -287,7 +287,7 @@ export default function DashboardPage() {
                         </p>
                     ) : (
                         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '380px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '340px' }}>
                                 <thead>
                                     <tr style={{ borderTop: DIVIDER }}>
                                         {['Hora', 'Cliente', 'Servicio', 'Valor', 'Estado'].map(h => (
