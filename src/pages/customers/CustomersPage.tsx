@@ -205,7 +205,7 @@ export default function CustomersPage() {
                                             <thead className="table-light">
                                                 <tr>
                                                     <th>Nombre</th>
-                                                    <th>Teléfono</th>
+                                                    <th>Teléfono / Instagram</th>
                                                     <th>Notificaciones</th>
                                                     <th>Notas de Salud</th>
                                                     <th className="text-center">Acciones</th>
@@ -216,9 +216,16 @@ export default function CustomersPage() {
                                                     <tr key={customer.id}>
                                                         <td className="fw-semibold">{customer.fullName}</td>
                                                         <td>
-                                                            <a href={`tel:${customer.phone}`} className="text-decoration-none">
-                                                                📱 {customer.phone}
-                                                            </a>
+                                                            <div className="d-flex flex-column">
+                                                                <a href={`tel:${customer.phone}`} className="text-decoration-none small mb-1">
+                                                                    📱 {customer.phone}
+                                                                </a>
+                                                                {customer.instagram && (
+                                                                    <span className="text-primary small">
+                                                                        📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td>{getNotificationBadge(customer.notificationPreference)}</td>
                                                         <td>{formatHealthNotes(customer.healthNotes)}</td>

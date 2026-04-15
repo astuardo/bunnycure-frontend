@@ -57,6 +57,11 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
         .string()
         .max(500, 'Las notas no pueden tener más de 500 caracteres')
         .optional(),
+
+    instagram: yup
+        .string()
+        .max(50, 'El usuario de Instagram no puede tener más de 50 caracteres')
+        .optional(),
     
     notificationPreference: yup
         .mixed<NotificationPreference>()
@@ -84,6 +89,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
             emergencyPhone: '',
             healthNotes: '',
             notes: '',
+            instagram: '',
             notificationPreference: NotificationPreference.WHATSAPP
         }
     });
@@ -99,6 +105,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
             setValue('emergencyPhone', customer.emergencyPhone || '');
             setValue('healthNotes', customer.healthNotes || '');
             setValue('notes', customer.notes || '');
+            setValue('instagram', customer.instagram || '');
             setValue('notificationPreference', customer.notificationPreference);
         } else {
             reset();
@@ -197,6 +204,22 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                 />
                                 <Form.Control.Feedback type="invalid">
                                     {errors.email?.message}
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        </Col>
+
+                        {/* Instagram */}
+                        <Col md={6} className="mb-3">
+                            <Form.Group>
+                                <Form.Label>Instagram</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Ej: @usuario"
+                                    {...register('instagram')}
+                                    isInvalid={!!errors.instagram}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    {errors.instagram?.message}
                                 </Form.Control.Feedback>
                             </Form.Group>
                         </Col>

@@ -20,6 +20,7 @@ export interface Customer {
   emergencyPhone?: string;
   healthNotes?: string;
   notes?: string;
+  instagram?: string;
   notificationPreference: NotificationPreference;
 }
 
@@ -48,5 +49,6 @@ export interface CustomerFormData {
   emergencyPhone?: string;
   healthNotes?: string;
   notes?: string;
+  instagram?: string;
   notificationPreference: NotificationPreference;
 }
