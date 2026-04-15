@@ -51,6 +51,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             description: 'Reservas nuevas'
         },
         { 
+            path: '/settings/loyalty', 
+            icon: '⭐', 
+            label: 'Fidelización',
+            description: 'Ciclos de premios'
+        },
+        { 
             path: '/settings', 
             icon: '⚙️', 
             label: 'Configuración',
