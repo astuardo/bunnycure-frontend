@@ -1,72 +1,108 @@
+import { useEffect } from 'react';
 import { Card, Alert, Badge, Button, ButtonGroup } from 'react-bootstrap';
-import { Award, CheckCircle, Plus, Minus } from 'lucide-react';
+import { Award, Plus, Minus, Gift } from 'lucide-react';
+import { useLoyaltyStore } from '../../stores/loyaltyStore';
 
 interface StampCardProps {
   loyaltyStamps?: number;
   totalCompletedVisits?: number;
+  currentRewardIndex?: number;
   onAdjust?: (delta: number) => void;
 }
 
 export default function StampCard({ 
   loyaltyStamps = 0, 
   totalCompletedVisits = 0,
+  currentRewardIndex = 0,
   onAdjust 
 }: StampCardProps) {
+  const { rewards, fetchRewards } = useLoyaltyStore();
   const maxStamps = 10;
+
+  useEffect(() => {
+    fetchRewards();
+  }, [fetchRewards]);
   
   // Calculate how many stamps to show on the current card
-  const currentStamps = loyaltyStamps > 0 && loyaltyStamps % maxStamps === 0 
-    ? maxStamps 
-    : loyaltyStamps % maxStamps;
+  const currentStamps = loyaltyStamps >= maxStamps ? maxStamps : loyaltyStamps;
     
   const isRewardAvailable = loyaltyStamps >= maxStamps;
 
+  // Get current target reward
+  const currentReward = rewards.length > 0 
+    ? rewards[currentRewardIndex % rewards.length]
+    : null;
+
   return (
     <Card className="mb-4 shadow-sm border-0">
-      <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
-        <h5 className="mb-0 d-flex align-items-center gap-2">
+      <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center py-3">
+        <h5 className="mb-0 d-flex align-items-center gap-2 text-white">
           <Award size={20} />
           Tarjeta de Fidelización
         </h5>
-        <Badge bg="light" text="dark" className="rounded-pill">
-          Histórico: {totalCompletedVisits} visitas
+        <Badge bg="light" text="dark" className="rounded-pill px-3">
+          Visitas: {totalCompletedVisits}
         </Badge>
       </Card.Header>
       <Card.Body className="text-center">
-        {isRewardAvailable && (
-          <Alert variant="success" className="d-flex align-items-center justify-content-center gap-2 mb-4 py-2">
-            <CheckCircle size={20} />
-            <strong>¡Recompensa Disponible!</strong> Este cliente ha completado su tarjeta.
+        {isRewardAvailable ? (
+          <Alert variant="success" className="d-flex flex-column align-items-center gap-2 mb-4 py-3 border-0 shadow-sm">
+            <div className="d-flex align-items-center gap-2">
+              <Gift size={24} />
+              <strong className="fs-5">¡Recompensa Lista!</strong>
+            </div>
+            <p className="mb-0">Este cliente tiene 10 sellos. Su próxima cita es de beneficio:</p>
+            <Badge bg="success" className="fs-6 mt-1 p-2">
+              🎁 Premio: {currentReward?.name || 'Cargando...'}
+            </Badge>
           </Alert>
+        ) : (
+          <div className="mb-4 p-3 bg-light rounded-3 d-flex flex-column align-items-center gap-2">
+             <div className="d-flex align-items-center gap-2 text-primary fw-bold">
+               <Gift size={18} />
+               Siguiente objetivo:
+             </div>
+             <span className="fs-5 fw-bold text-dark">
+               {currentReward?.name || 'Premio BunnyCure'}
+             </span>
+          </div>
         )}
         
-        <div className="d-flex justify-content-center align-items-center gap-3 mb-4">
-          <p className="text-muted mb-0">
-            Progreso actual: <strong>{currentStamps} / {maxStamps}</strong> sellos
-          </p>
+        <div className="d-flex justify-content-center align-items-center gap-4 mb-4 mt-2">
+          <div className="text-center">
+             <div className="fs-3 fw-bold text-primary">{currentStamps}</div>
+             <div className="small text-muted text-uppercase tracking-wider">Sellos</div>
+          </div>
+          <div className="fs-2 text-light-emphasis">/</div>
+          <div className="text-center">
+             <div className="fs-3 fw-bold text-muted">{maxStamps}</div>
+             <div className="small text-muted text-uppercase tracking-wider">Meta</div>
+          </div>
           
           {onAdjust && (
-            <ButtonGroup size="sm">
-              <Button 
-                variant="outline-danger" 
-                onClick={() => onAdjust(-1)}
-                disabled={loyaltyStamps <= 0}
-                title="Quitar un sello manualmente"
-              >
-                <Minus size={14} />
-              </Button>
-              <Button 
-                variant="outline-success" 
-                onClick={() => onAdjust(1)}
-                title="Agregar un sello manualmente (Concursos, etc.)"
-              >
-                <Plus size={14} />
-              </Button>
-            </ButtonGroup>
+            <div className="ms-3">
+              <ButtonGroup size="sm">
+                <Button 
+                  variant="outline-danger" 
+                  onClick={() => onAdjust(-1)}
+                  disabled={loyaltyStamps <= 0}
+                  title="Quitar un sello manualmente"
+                >
+                  <Minus size={16} />
+                </Button>
+                <Button 
+                  variant="outline-success" 
+                  onClick={() => onAdjust(1)}
+                  title="Agregar un sello manualmente"
+                >
+                  <Plus size={16} />
+                </Button>
+              </ButtonGroup>
+            </div>
           )}
         </div>
 
-        <div className="d-flex flex-wrap justify-content-center gap-3">
+        <div className="d-flex flex-wrap justify-content-center gap-3 mb-2">
           {Array.from({ length: maxStamps }).map((_, index) => {
             const isFilled = index < currentStamps;
             return (
@@ -76,22 +112,23 @@ export default function StampCard({
                   isFilled ? 'bg-primary text-white shadow-sm' : 'bg-light text-muted border border-2'
                 }`}
                 style={{ 
-                  width: '50px', 
-                  height: '50px',
-                  transition: 'all 0.3s ease',
-                  transform: isFilled ? 'scale(1.05)' : 'scale(1)'
+                  width: '52px', 
+                  height: '52px',
+                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                  transform: isFilled ? 'scale(1.1)' : 'scale(1)'
                 }}
               >
-                {isFilled ? <Award size={24} /> : <span>{index + 1}</span>}
+                {isFilled ? <Award size={26} /> : <span className="small fw-bold">{index + 1}</span>}
               </div>
             );
           })}
         </div>
         
         <div className="mt-4 pt-3 border-top text-start">
-          <small className="text-muted">
-            <em>Nota:</em> Al marcar una cita como "Completada", se agregará automáticamente un sello.
-          </small>
+          <p className="text-muted small mb-0">
+            <strong>Lógica del programa:</strong> Las visitas 1 a 10 acumulan sellos. 
+            La visita #11 es de premio (no suma sello y reinicia el contador al siguiente objetivo).
+          </p>
         </div>
       </Card.Body>
     </Card>

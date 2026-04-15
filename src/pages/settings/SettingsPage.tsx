@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { FiSave, FiSettings } from 'react-icons/fi';
 import { FaWhatsapp, FaBell } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -89,6 +90,7 @@ const dayNames: Record<keyof BusinessSettings['workingHours'], string> = {
 };
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const toast = useToast();
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
@@ -326,7 +328,23 @@ export default function SettingsPage() {
 
         <Row>
           <Col lg={6} className="mb-4">
-              <Card>
+            <Card className="border-primary shadow-sm h-100">
+              <Card.Header className="bg-primary text-white">
+                <h5 className="mb-0 text-white">⭐ Programa de Fidelización</h5>
+              </Card.Header>
+              <Card.Body className="d-flex flex-column">
+                <p>Configura la lista de premios que tus clientes ganarán al completar ciclos de 10 visitas.</p>
+                <div className="mt-auto d-grid">
+                  <Button variant="outline-primary" onClick={() => navigate('/settings/loyalty')}>
+                    Gestionar Premios y Ciclos
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          <Col lg={6} className="mb-4">
+              <Card className="h-100">
               <Card.Header>
                 <h5 className="mb-0">Identidad del Negocio</h5>
               </Card.Header>

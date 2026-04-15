@@ -270,6 +270,7 @@ export default function CustomerDetailsPage() {
             <StampCard 
               loyaltyStamps={customer.loyaltyStamps} 
               totalCompletedVisits={customer.totalCompletedVisits} 
+              currentRewardIndex={customer.currentRewardIndex}
               onAdjust={handleLoyaltyAdjust}
             />
 

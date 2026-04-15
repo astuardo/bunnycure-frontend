@@ -24,6 +24,7 @@ export interface Customer {
   notificationPreference: NotificationPreference;
   loyaltyStamps?: number;
   totalCompletedVisits?: number;
+  currentRewardIndex?: number;
 }
 
 export interface CustomerSummary {

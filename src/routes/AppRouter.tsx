@@ -10,6 +10,7 @@ import CustomerDetailsPage from '../pages/customers/CustomerDetailsPage';
 import ServicesPage from '../pages/services/ServicesPage';
 import BookingRequestsPage from '../pages/booking-requests/BookingRequestsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import LoyaltySettingsPage from '../pages/settings/LoyaltySettingsPage';
 import CalendarPage from '../pages/calendar/CalendarPage';
 import RemindersPage from '../pages/reminders/RemindersPage';
 import InstallPage from '../pages/InstallPage';
@@ -87,6 +88,15 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <SettingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/settings/loyalty"
+                    element={
+                        <ProtectedRoute>
+                            <LoyaltySettingsPage />
                         </ProtectedRoute>
                     }
                 />
