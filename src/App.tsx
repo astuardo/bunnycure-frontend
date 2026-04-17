@@ -5,7 +5,6 @@ import { InstallPWA } from './components/InstallPWA'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
-import './App.css'
 import './styles/mobile.css'
 
 function App() {
