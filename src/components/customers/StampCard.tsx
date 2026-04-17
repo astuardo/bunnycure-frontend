@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
-import { Card, Alert, Badge, Button, ButtonGroup } from 'react-bootstrap';
-import { Award, Plus, Minus, Gift } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Card, Alert, Badge, Button, ButtonGroup, Modal } from 'react-bootstrap';
+import { Award, Plus, Minus, Gift, QrCode } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
 import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface StampCardProps {
   customerId?: number;
@@ -24,15 +25,45 @@ export default function StampCard({
   const toast = useToast();
   const maxStamps = 10;
 
+  const [walletUrl, setWalletUrl] = useState<string>('');
+  const [showQR, setShowQR] = useState(false);
+  const [loadingQR, setLoadingQR] = useState(false);
+
   useEffect(() => {
     fetchRewards();
   }, [fetchRewards]);
 
-  const handleAddToGoogleWallet = async () => {
+  const handleShowQR = async () => {
     if (!customerId) return;
+    
+    if (walletUrl) {
+      setShowQR(true);
+      return;
+    }
+
+    setLoadingQR(true);
     try {
       const url = await customersApi.getGoogleWalletLink(customerId);
       if (url) {
+        setWalletUrl(url);
+        setShowQR(true);
+      } else {
+        toast.error('No se pudo generar el enlace de Google Wallet');
+      }
+    } catch (error) {
+      console.error('Error getting Google Wallet link:', error);
+      toast.error('Error al conectar con Google Wallet');
+    } finally {
+      setLoadingQR(false);
+    }
+  };
+
+  const handleAddToGoogleWallet = async () => {
+    if (!customerId) return;
+    try {
+      const url = walletUrl || await customersApi.getGoogleWalletLink(customerId);
+      if (url) {
+        setWalletUrl(url);
         window.open(url, '_blank');
       } else {
         toast.error('No se pudo generar el enlace de Google Wallet');
@@ -150,24 +181,64 @@ export default function StampCard({
             La visita #11 es de premio.
           </p>
           {customerId && (
-            <div className="d-flex justify-content-center">
-              <button 
-                onClick={handleAddToGoogleWallet}
-                className="border-0 bg-transparent p-0"
-                title="Añadir a Google Wallet"
-                style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <img 
-                  src="/save-to-google-wallet.svg" 
-                  alt="Save to Google Wallet"
-                  style={{ height: '44px' }}
-                />
-              </button>
+            <div className="d-flex flex-column align-items-center gap-3">
+              <div className="d-flex justify-content-center align-items-center gap-2 w-100">
+                <button 
+                  onClick={handleAddToGoogleWallet}
+                  className="border-0 bg-transparent p-0"
+                  title="Añadir a Google Wallet"
+                  style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <img 
+                    src="/save-to-google-wallet.svg" 
+                    alt="Save to Google Wallet"
+                    style={{ height: '44px' }}
+                  />
+                </button>
+
+                <Button 
+                  variant="outline-primary" 
+                  className="d-flex align-items-center gap-2"
+                  onClick={handleShowQR}
+                  disabled={loadingQR}
+                  style={{ height: '44px', borderRadius: '22px' }}
+                >
+                  <QrCode size={20} />
+                  {loadingQR ? 'Cargando...' : 'Ver QR'}
+                </Button>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Modal para el Código QR */}
+        <Modal show={showQR} onHide={() => setShowQR(false)} centered size="sm">
+          <Modal.Header closeButton>
+            <Modal.Title className="fs-6">Escanea para descargar</Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="text-center py-4">
+            {walletUrl && (
+              <div className="bg-white p-3 d-inline-block rounded shadow-sm">
+                <QRCodeSVG 
+                  value={walletUrl} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+            )}
+            <p className="mt-3 mb-0 small text-muted">
+              Pide a la clienta que escanee este código con su cámara para añadir la tarjeta a su Google Wallet.
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowQR(false)} className="w-100">
+              Cerrar
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </Card.Body>
     </Card>
   );
