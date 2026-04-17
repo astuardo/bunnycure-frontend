@@ -72,9 +72,9 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="bunny-auth-page d-flex align-items-center justify-content-center">
+        <div className="bunny-auth-page d-flex align-items-center justify-content-center min-vh-100">
             <Container fluid>
-                <Row className="w-100">
+                <Row className="w-100 mx-0">
                     <Col xs={12} sm={10} md={6} lg={4} className="mx-auto">
                         <Card>
                         <Card.Body className="p-4">
