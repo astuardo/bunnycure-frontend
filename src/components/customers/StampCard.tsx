@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Card, Alert, Badge, Button, ButtonGroup } from 'react-bootstrap';
-import { Award, Plus, Minus, Gift, ExternalLink } from 'lucide-react';
+import { Award, Plus, Minus, Gift } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
 import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
