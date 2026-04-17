@@ -1,12 +1,5 @@
 # 🐰 BunnyCure Frontend
 
-<div align="center">
-  <img src="dashboard_pc.png" alt="Dashboard en Escritorio" width="600" />
-  <br />
-  <img src="dashboard_movil.png" alt="Dashboard en Móvil" width="200" />
-  <img src="settings_movil.png" alt="Ajustes en Móvil" width="200" />
-</div>
-
 BunnyCure Frontend es una aplicación PWA (Progressive Web App) construida con tecnologías web modernas. Sirve como la interfaz administrativa y de cliente para la gestión ágil de citas, clientes y servicios, comunicándose con un backend a través de una API REST protegida.
 
 ## 🚀 Stack Tecnológico
