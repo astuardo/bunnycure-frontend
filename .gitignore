@@ -28,3 +28,6 @@ dist-ssr
 
 .vercel
 .blackboxcli/
+# Google Secrets
+google_client_secret.json
+client_secret_*.json

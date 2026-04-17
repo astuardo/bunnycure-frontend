@@ -268,6 +268,7 @@ export default function CustomerDetailsPage() {
 
           <Col md={8}>
             <StampCard 
+              customerId={customer.id}
               loyaltyStamps={customer.loyaltyStamps} 
               totalCompletedVisits={customer.totalCompletedVisits} 
               currentRewardIndex={customer.currentRewardIndex}

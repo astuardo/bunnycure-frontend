@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { Card, Alert, Badge, Button, ButtonGroup } from 'react-bootstrap';
-import { Award, Plus, Minus, Gift } from 'lucide-react';
+import { Award, Plus, Minus, Gift, ExternalLink } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
+import { customersApi } from '../../api/customers.api';
+import { useToast } from '../../hooks/useToast';
 
 interface StampCardProps {
+  customerId?: number;
   loyaltyStamps?: number;
   totalCompletedVisits?: number;
   currentRewardIndex?: number;
@@ -11,17 +14,34 @@ interface StampCardProps {
 }
 
 export default function StampCard({ 
+  customerId,
   loyaltyStamps = 0, 
   totalCompletedVisits = 0,
   currentRewardIndex = 0,
   onAdjust 
 }: StampCardProps) {
   const { rewards, fetchRewards } = useLoyaltyStore();
+  const toast = useToast();
   const maxStamps = 10;
 
   useEffect(() => {
     fetchRewards();
   }, [fetchRewards]);
+
+  const handleAddToGoogleWallet = async () => {
+    if (!customerId) return;
+    try {
+      const url = await customersApi.getGoogleWalletLink(customerId);
+      if (url) {
+        window.open(url, '_blank');
+      } else {
+        toast.error('No se pudo generar el enlace de Google Wallet');
+      }
+    } catch (error) {
+      console.error('Error getting Google Wallet link:', error);
+      toast.error('Error al conectar con Google Wallet');
+    }
+  };
   
   // Calculate how many stamps to show on the current card
   const currentStamps = loyaltyStamps >= maxStamps ? maxStamps : loyaltyStamps;
@@ -124,11 +144,29 @@ export default function StampCard({
           })}
         </div>
         
-        <div className="mt-4 pt-3 border-top text-start">
-          <p className="text-muted small mb-0">
+        <div className="mt-4 pt-3 border-top">
+          <p className="text-muted small mb-3 text-start">
             <strong>Lógica del programa:</strong> Las visitas 1 a 10 acumulan sellos. 
-            La visita #11 es de premio (no suma sello y reinicia el contador al siguiente objetivo).
+            La visita #11 es de premio.
           </p>
+          {customerId && (
+            <div className="d-flex justify-content-center">
+              <button 
+                onClick={handleAddToGoogleWallet}
+                className="border-0 bg-transparent p-0"
+                title="Añadir a Google Wallet"
+                style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <img 
+                  src="/save-to-google-wallet.svg" 
+                  alt="Save to Google Wallet"
+                  style={{ height: '44px' }}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </Card.Body>
     </Card>

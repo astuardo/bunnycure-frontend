@@ -75,4 +75,12 @@ export const customersApi = {
     if (!response.data.data) throw new Error('Error al ajustar sellos');
     return response.data.data;
   },
+
+  /**
+   * Obtener enlace de Google Wallet para el cliente
+   */
+  getGoogleWalletLink: async (id: number): Promise<string> => {
+    const response = await apiClient.get<ApiResponse<{ url: string }>>(`/api/customers/${id}/wallet/google-link`);
+    return response.data.data?.url || '';
+  },
 };
