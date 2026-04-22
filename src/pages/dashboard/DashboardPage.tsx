@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { isToday, startOfWeek, endOfWeek, parseISO } from 'date-fns';
+import { isToday, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
     CalendarDays,
@@ -21,6 +21,8 @@ import { BookingRequest } from '@/types/booking.types';
 import { ServiceSummary } from '@/types/service.types';
 import { statsApi } from '@/api/stats.api';
 import { DashboardStats } from '@/types/stats.types';
+import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
+import { getDayDotColors } from '@/utils/calendarDisplay';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -163,6 +165,8 @@ function Spinner() {
     );
 }
 
+const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
 // ─── main page ───────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -172,6 +176,8 @@ export default function DashboardPage() {
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+    const [calendarMonth] = useState(new Date());
+    const calendarDisplayConfig = useCalendarDisplayConfig();
 
     useEffect(() => {
         const load = async () => {
@@ -211,6 +217,31 @@ export default function DashboardPage() {
         { label: 'Pendientes',  count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.PENDING).length,   bg: '#fde8cc', color: '#7c4a00' },
         { label: 'Canceladas',  count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CANCELLED).length,  bg: '#fce4e4', color: '#7c1c1c' },
     ];
+
+    const monthCalendarCells = useMemo(() => {
+        const monthStart = startOfMonth(calendarMonth);
+        const monthEnd = endOfMonth(calendarMonth);
+        const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+        const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+        const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+        return days.map((day) => {
+            const dayAppointments = appointments.filter((apt: Appointment) => {
+                const aptDate = apt.appointmentDate.includes('T')
+                    ? new Date(apt.appointmentDate)
+                    : new Date(`${apt.appointmentDate}T00:00:00`);
+                return isSameDay(aptDate, day);
+            });
+
+            return {
+                date: day,
+                isToday: isToday(day),
+                isOutsideMonth: !isSameMonth(day, calendarMonth),
+                appointmentCount: dayAppointments.length,
+                dotColors: getDayDotColors(dayAppointments, calendarDisplayConfig),
+            };
+        });
+    }, [appointments, calendarMonth, calendarDisplayConfig]);
 
     const PAGE_BG   = '#fdf0ec';
     const CARD_PAD  = '20px';
@@ -441,6 +472,85 @@ export default function DashboardPage() {
                                 })}
                             </div>
                         )}
+                    </div>
+                </DashCard>
+
+                {/* ══ 6. Calendario del Mes (no interactivo) ═══════════════ */}
+                <DashCard style={{ padding: CARD_PAD }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <CalendarDays size={18} style={{ color: '#c9897a' }} />
+                            <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>
+                                Calendario del Mes
+                            </span>
+                        </div>
+                        <span style={{ fontSize: '13px', color: TEXT_MID, textTransform: 'capitalize' }}>
+                            {format(calendarMonth, 'MMMM yyyy', { locale: es })}
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.9rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', color: TEXT_MID }}>
+                            <i style={{ width: '10px', height: '10px', borderRadius: '50%', background: calendarDisplayConfig.morning.color, display: 'inline-block' }} />
+                            {calendarDisplayConfig.morning.start}-{calendarDisplayConfig.morning.end}
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', color: TEXT_MID }}>
+                            <i style={{ width: '10px', height: '10px', borderRadius: '50%', background: calendarDisplayConfig.afternoon.color, display: 'inline-block' }} />
+                            {calendarDisplayConfig.afternoon.start}-{calendarDisplayConfig.afternoon.end}
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', color: TEXT_MID }}>
+                            <i style={{ width: '10px', height: '10px', borderRadius: '50%', background: calendarDisplayConfig.night.color, display: 'inline-block' }} />
+                            {calendarDisplayConfig.night.start}-{calendarDisplayConfig.night.end}
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '0.35rem', marginBottom: '0.4rem' }}>
+                        {weekDayNames.map((day) => (
+                            <div key={day} style={{ textAlign: 'center', fontWeight: 600, fontSize: '12px', color: TEXT_MID }}>
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '0.35rem' }}>
+                        {monthCalendarCells.map((cell, idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    minHeight: '62px',
+                                    border: '1px solid #f0e0d8',
+                                    borderRadius: '12px',
+                                    padding: '0.35rem',
+                                    background: cell.isToday ? 'linear-gradient(135deg, #fdf6f3 0%, #fce8e4 100%)' : '#fffdfc',
+                                    opacity: cell.isOutsideMonth ? 0.48 : 1,
+                                }}
+                            >
+                                <div style={{ fontSize: '12px', fontWeight: 600, color: TEXT_DARK, marginBottom: '0.2rem' }}>
+                                    {format(cell.date, 'd')}
+                                </div>
+                                {cell.appointmentCount > 0 && (
+                                    <>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.18rem', minHeight: '12px' }}>
+                                            {cell.dotColors.map((color, dotIndex) => (
+                                                <span
+                                                    key={dotIndex}
+                                                    style={{
+                                                        width: '0.34rem',
+                                                        height: '0.34rem',
+                                                        borderRadius: '999px',
+                                                        backgroundColor: color,
+                                                        display: 'inline-block',
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <div style={{ marginTop: '0.15rem', fontSize: '9px', color: TEXT_MID, fontWeight: 600 }}>
+                                            {cell.appointmentCount === 1 ? '1 cita' : `${cell.appointmentCount} citas`}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </DashCard>
 

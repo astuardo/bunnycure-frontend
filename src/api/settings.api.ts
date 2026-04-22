@@ -43,6 +43,15 @@ export interface SettingsData {
   whatsappHandoffAdminPrefill?: string;
   holidays?: string;
   scheduleBlocks?: string;
+  calendarMorningStart?: string;
+  calendarMorningEnd?: string;
+  calendarMorningColor?: string;
+  calendarAfternoonStart?: string;
+  calendarAfternoonEnd?: string;
+  calendarAfternoonColor?: string;
+  calendarNightStart?: string;
+  calendarNightEnd?: string;
+  calendarNightColor?: string;
 }
 
 const readBoolean = (value?: string): boolean | undefined => {
@@ -143,6 +152,15 @@ export const settingsApi = {
       whatsappHandoffAdminPrefill: flatSettings['whatsapp.handoff.admin-prefill'],
       holidays: flatSettings['business.holidays'],
       scheduleBlocks: flatSettings['business.schedule_blocks'],
+      calendarMorningStart: flatSettings['calendar.slot.morning.start'],
+      calendarMorningEnd: flatSettings['calendar.slot.morning.end'],
+      calendarMorningColor: flatSettings['calendar.slot.morning.color'],
+      calendarAfternoonStart: flatSettings['calendar.slot.afternoon.start'],
+      calendarAfternoonEnd: flatSettings['calendar.slot.afternoon.end'],
+      calendarAfternoonColor: flatSettings['calendar.slot.afternoon.color'],
+      calendarNightStart: flatSettings['calendar.slot.night.start'],
+      calendarNightEnd: flatSettings['calendar.slot.night.end'],
+      calendarNightColor: flatSettings['calendar.slot.night.color'],
     };
   },
 
@@ -208,6 +226,15 @@ export const settingsApi = {
     // Holidays and Schedule Blocks
     if (settings.holidays !== undefined) flatSettings['business.holidays'] = settings.holidays;
     if (settings.scheduleBlocks !== undefined) flatSettings['business.schedule_blocks'] = settings.scheduleBlocks;
+    if (settings.calendarMorningStart !== undefined) flatSettings['calendar.slot.morning.start'] = settings.calendarMorningStart;
+    if (settings.calendarMorningEnd !== undefined) flatSettings['calendar.slot.morning.end'] = settings.calendarMorningEnd;
+    if (settings.calendarMorningColor !== undefined) flatSettings['calendar.slot.morning.color'] = settings.calendarMorningColor;
+    if (settings.calendarAfternoonStart !== undefined) flatSettings['calendar.slot.afternoon.start'] = settings.calendarAfternoonStart;
+    if (settings.calendarAfternoonEnd !== undefined) flatSettings['calendar.slot.afternoon.end'] = settings.calendarAfternoonEnd;
+    if (settings.calendarAfternoonColor !== undefined) flatSettings['calendar.slot.afternoon.color'] = settings.calendarAfternoonColor;
+    if (settings.calendarNightStart !== undefined) flatSettings['calendar.slot.night.start'] = settings.calendarNightStart;
+    if (settings.calendarNightEnd !== undefined) flatSettings['calendar.slot.night.end'] = settings.calendarNightEnd;
+    if (settings.calendarNightColor !== undefined) flatSettings['calendar.slot.night.color'] = settings.calendarNightColor;
 
     await apiClient.post<ApiResponse<void>>('/api/settings', flatSettings);
   },

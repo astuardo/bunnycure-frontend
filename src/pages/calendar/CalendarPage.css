@@ -7,6 +7,31 @@
   margin-bottom: 1.5rem;
 }
 
+.calendar-time-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  font-size: 0.78rem;
+  color: #8a6a5d;
+}
+
+.calendar-time-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: #fff6f2;
+  border: 1px solid #f0e0d8;
+}
+
+.calendar-time-legend i {
+  display: inline-block;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+}
+
 .month-navigation {
   display: flex;
   align-items: center;

@@ -27,6 +27,8 @@ import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
+import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
+import { getDayDotColors } from '@/utils/calendarDisplay';
 import './CalendarPage.css';
 
 interface CalendarDayCell {
@@ -36,6 +38,7 @@ interface CalendarDayCell {
   isOutsideMonth: boolean;
   appointmentCount: number;
   appointments: Appointment[];
+  dotColors: string[];
 }
 
 const statusColors: Record<AppointmentStatus, string> = {
@@ -63,6 +66,7 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
+  const calendarDisplayConfig = useCalendarDisplayConfig();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -148,9 +152,10 @@ export default function CalendarPage() {
         isOutsideMonth: !isSameMonth(day, currentMonth),
         appointmentCount: dayAppointments.length,
         appointments: dayAppointments,
+        dotColors: getDayDotColors(dayAppointments, calendarDisplayConfig),
       };
     });
-  }, [currentMonth, appointments, selectedDate]);
+  }, [currentMonth, appointments, selectedDate, calendarDisplayConfig]);
 
   // Citas del día seleccionado
   const selectedDayAppointments = useMemo(() => {
@@ -215,6 +220,11 @@ export default function CalendarPage() {
           <div>
             <h2 className="mb-1">📅 Calendario de Citas</h2>
             <p className="text-muted mb-0">Vista mensual de todas las citas programadas</p>
+            <div className="calendar-time-legend mt-2">
+              <span><i style={{ background: calendarDisplayConfig.morning.color }} /> {calendarDisplayConfig.morning.start}–{calendarDisplayConfig.morning.end}</span>
+              <span><i style={{ background: calendarDisplayConfig.afternoon.color }} /> {calendarDisplayConfig.afternoon.start}–{calendarDisplayConfig.afternoon.end}</span>
+              <span><i style={{ background: calendarDisplayConfig.night.color }} /> {calendarDisplayConfig.night.start}–{calendarDisplayConfig.night.end}</span>
+            </div>
           </div>
           <div className="d-flex gap-2 flex-wrap">
             {Object.entries(statusLabels).map(([status, label]) => (
@@ -292,13 +302,9 @@ export default function CalendarPage() {
                     {/* Indicadores de citas (dots) */}
                     {cell.appointmentCount > 0 && (
                       <div className="month-day-dots">
-                        {cell.appointmentCount === 1 ? (
-                          <span className="month-day-dot-fallback">•</span>
-                        ) : (
-                          Array.from({ length: Math.min(cell.appointmentCount, 5) }).map((_, i) => (
-                            <span key={i} className="month-day-dot"></span>
-                          ))
-                        )}
+                        {cell.dotColors.map((color, i) => (
+                          <span key={i} className="month-day-dot" style={{ backgroundColor: color }}></span>
+                        ))}
                       </div>
                     )}
                     

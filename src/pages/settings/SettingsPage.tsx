@@ -14,6 +14,7 @@ import { useToast } from '../../hooks/useToast';
 import { settingsApi, SettingsData } from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
+import { DEFAULT_CALENDAR_DISPLAY_CONFIG } from '@/utils/calendarDisplay';
 
 interface ScheduleBlock {
   id: string;
@@ -49,6 +50,11 @@ interface BusinessSettings {
   whatsappHandoffAdminPrefill: string;
   holidays: string[];
   scheduleBlocks: ScheduleBlock[];
+  calendarDisplay: {
+    morning: { start: string; end: string; color: string };
+    afternoon: { start: string; end: string; color: string };
+    night: { start: string; end: string; color: string };
+  };
 }
 
 const defaultSettings: BusinessSettings = {
@@ -77,6 +83,23 @@ const defaultSettings: BusinessSettings = {
   whatsappHandoffAdminPrefill: 'Hola, el cliente {customer} necesita ayuda con {service}',
   holidays: [],
   scheduleBlocks: [],
+  calendarDisplay: {
+    morning: {
+      start: DEFAULT_CALENDAR_DISPLAY_CONFIG.morning.start,
+      end: DEFAULT_CALENDAR_DISPLAY_CONFIG.morning.end,
+      color: DEFAULT_CALENDAR_DISPLAY_CONFIG.morning.color,
+    },
+    afternoon: {
+      start: DEFAULT_CALENDAR_DISPLAY_CONFIG.afternoon.start,
+      end: DEFAULT_CALENDAR_DISPLAY_CONFIG.afternoon.end,
+      color: DEFAULT_CALENDAR_DISPLAY_CONFIG.afternoon.color,
+    },
+    night: {
+      start: DEFAULT_CALENDAR_DISPLAY_CONFIG.night.start,
+      end: DEFAULT_CALENDAR_DISPLAY_CONFIG.night.end,
+      color: DEFAULT_CALENDAR_DISPLAY_CONFIG.night.color,
+    },
+  },
 };
 
 const dayNames: Record<keyof BusinessSettings['workingHours'], string> = {
@@ -157,6 +180,23 @@ export default function SettingsPage() {
         whatsappHandoffAdminPrefill: serverSettings.whatsappHandoffAdminPrefill || '',
         holidays: serverSettings.holidays ? JSON.parse(serverSettings.holidays) : [],
         scheduleBlocks: serverSettings.scheduleBlocks ? JSON.parse(serverSettings.scheduleBlocks) : [],
+        calendarDisplay: {
+          morning: {
+            start: serverSettings.calendarMorningStart || defaultSettings.calendarDisplay.morning.start,
+            end: serverSettings.calendarMorningEnd || defaultSettings.calendarDisplay.morning.end,
+            color: serverSettings.calendarMorningColor || defaultSettings.calendarDisplay.morning.color,
+          },
+          afternoon: {
+            start: serverSettings.calendarAfternoonStart || defaultSettings.calendarDisplay.afternoon.start,
+            end: serverSettings.calendarAfternoonEnd || defaultSettings.calendarDisplay.afternoon.end,
+            color: serverSettings.calendarAfternoonColor || defaultSettings.calendarDisplay.afternoon.color,
+          },
+          night: {
+            start: serverSettings.calendarNightStart || defaultSettings.calendarDisplay.night.start,
+            end: serverSettings.calendarNightEnd || defaultSettings.calendarDisplay.night.end,
+            color: serverSettings.calendarNightColor || defaultSettings.calendarDisplay.night.color,
+          },
+        },
       };
       
       setSettings(mappedSettings);
@@ -188,6 +228,24 @@ export default function SettingsPage() {
         ...prev.workingHours,
         [day]: {
           ...prev.workingHours[day],
+          [field]: value,
+        },
+      },
+    }));
+    setHasChanges(true);
+  };
+
+  const handleCalendarDisplayChange = (
+    slot: 'morning' | 'afternoon' | 'night',
+    field: 'start' | 'end' | 'color',
+    value: string
+  ) => {
+    setSettings((prev) => ({
+      ...prev,
+      calendarDisplay: {
+        ...prev.calendarDisplay,
+        [slot]: {
+          ...prev.calendarDisplay[slot],
           [field]: value,
         },
       },
@@ -245,6 +303,15 @@ export default function SettingsPage() {
         whatsappHandoffAdminPrefill: settings.whatsappHandoffAdminPrefill,
         holidays: JSON.stringify(settings.holidays),
         scheduleBlocks: JSON.stringify(settings.scheduleBlocks),
+        calendarMorningStart: settings.calendarDisplay.morning.start,
+        calendarMorningEnd: settings.calendarDisplay.morning.end,
+        calendarMorningColor: settings.calendarDisplay.morning.color,
+        calendarAfternoonStart: settings.calendarDisplay.afternoon.start,
+        calendarAfternoonEnd: settings.calendarDisplay.afternoon.end,
+        calendarAfternoonColor: settings.calendarDisplay.afternoon.color,
+        calendarNightStart: settings.calendarDisplay.night.start,
+        calendarNightEnd: settings.calendarDisplay.night.end,
+        calendarNightColor: settings.calendarDisplay.night.color,
       };
       
       await settingsApi.saveAll(settingsData);
@@ -802,6 +869,61 @@ export default function SettingsPage() {
                     </Col>
                   </Row>
                 ))}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col lg={12} className="mb-4">
+            <Card>
+              <Card.Header>
+                <h5 className="mb-0">🎨 Calendario: Franjas Horarias y Colores</h5>
+              </Card.Header>
+              <Card.Body>
+                <p className="text-muted small mb-3">
+                  Estos colores se usan en el calendario general y en el calendario del dashboard.
+                </p>
+
+                {(['morning', 'afternoon', 'night'] as const).map((slot) => {
+                  const slotLabel: Record<'morning' | 'afternoon' | 'night', string> = {
+                    morning: 'Mañana',
+                    afternoon: 'Tarde',
+                    night: 'Noche',
+                  };
+
+                  return (
+                    <Row key={slot} className="align-items-end g-3 mb-3">
+                      <Col md={3}>
+                        <Form.Label className="fw-semibold">{slotLabel[slot]}</Form.Label>
+                      </Col>
+                      <Col md={3}>
+                        <Form.Label className="small text-muted">Desde</Form.Label>
+                        <Form.Control
+                          type="time"
+                          value={settings.calendarDisplay[slot].start}
+                          onChange={(e) => handleCalendarDisplayChange(slot, 'start', e.target.value)}
+                        />
+                      </Col>
+                      <Col md={3}>
+                        <Form.Label className="small text-muted">Hasta</Form.Label>
+                        <Form.Control
+                          type="time"
+                          value={settings.calendarDisplay[slot].end}
+                          onChange={(e) => handleCalendarDisplayChange(slot, 'end', e.target.value)}
+                        />
+                      </Col>
+                      <Col md={3}>
+                        <Form.Label className="small text-muted">Color</Form.Label>
+                        <Form.Control
+                          type="color"
+                          value={settings.calendarDisplay[slot].color}
+                          onChange={(e) => handleCalendarDisplayChange(slot, 'color', e.target.value)}
+                        />
+                      </Col>
+                    </Row>
+                  );
+                })}
               </Card.Body>
             </Card>
           </Col>

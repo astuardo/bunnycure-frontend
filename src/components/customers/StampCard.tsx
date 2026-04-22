@@ -230,7 +230,7 @@ export default function StampCard({
               </div>
             )}
             <p className="mt-3 mb-0 small text-muted">
-              Pide a la clienta que escanee este código con su cámara para añadir la tarjeta a su Google Wallet.
+              Pide a la clienta que escanee este código para guardar su pase BunnyCure (formato Generic) en Google Wallet.
             </p>
           </Modal.Body>
           <Modal.Footer>

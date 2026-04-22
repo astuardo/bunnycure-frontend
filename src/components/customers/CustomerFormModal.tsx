@@ -13,6 +13,17 @@ interface CustomerFormModalProps {
     onSuccess?: (customer: Customer) => void;
 }
 
+const normalizePhone = (value?: string): string => {
+    if (!value) return '';
+
+    const trimmed = value.trim();
+    const hasLeadingPlus = trimmed.startsWith('+');
+    const digitsOnly = trimmed.replace(/\D/g, '');
+
+    if (!digitsOnly) return '';
+    return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly;
+};
+
 // Esquema de validación
 const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     fullName: yup
@@ -23,9 +34,9 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     
     phone: yup
         .string()
+        .transform((_, originalValue) => normalizePhone(originalValue))
         .required('El teléfono es requerido')
-        .matches(/^\+?[0-9\s\-()]+$/, 'Formato de teléfono inválido')
-        .min(8, 'El teléfono debe tener al menos 8 dígitos'),
+        .matches(/^\+?[0-9]{8,15}$/, 'Formato de teléfono inválido (8-15 dígitos, opcional +)'),
     
     email: yup
         .string()
@@ -42,8 +53,9 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     
     emergencyPhone: yup
         .string()
-        .matches(/^\+?[0-9\s\-()]+$/, {
-            message: 'Formato de teléfono inválido',
+        .transform((_, originalValue) => normalizePhone(originalValue))
+        .matches(/^\+?[0-9]{8,15}$/, {
+            message: 'Formato de teléfono de emergencia inválido (8-15 dígitos, opcional +)',
             excludeEmptyString: true
         })
         .optional(),
@@ -80,6 +92,8 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
         setValue
     } = useForm<CustomerFormData>({
         resolver: yupResolver(customerSchema),
+        mode: 'onChange',
+        reValidateMode: 'onChange',
         defaultValues: {
             fullName: '',
             phone: '',
@@ -113,9 +127,15 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
     }, [customer, setValue, reset]);
 
     const onSubmit = async (data: CustomerFormData) => {
+        const normalizedData: CustomerFormData = {
+            ...data,
+            phone: normalizePhone(data.phone),
+            emergencyPhone: data.emergencyPhone ? normalizePhone(data.emergencyPhone) : ''
+        };
+
         if (customer) {
             // Actualizar
-            const result = await updateCustomer(customer.id, data);
+            const result = await updateCustomer(customer.id, normalizedData);
             if (result) {
                 onSuccess?.(result);
                 onHide();
@@ -123,7 +143,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
             }
         } else {
             // Crear nuevo
-            const result = await createCustomer(data);
+            const result = await createCustomer(normalizedData);
             if (result) {
                 onSuccess?.(result);
                 onHide();
@@ -189,6 +209,9 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                 <Form.Control.Feedback type="invalid">
                                     {errors.phone?.message}
                                 </Form.Control.Feedback>
+                                <Form.Text className="text-muted">
+                                    Puedes escribir espacios o guiones (ej: +56 9 8369 2046)
+                                </Form.Text>
                             </Form.Group>
                         </Col>
 
