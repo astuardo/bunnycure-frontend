@@ -92,15 +92,45 @@ const serializeReminderStrategy = (value?: SettingsData['reminderStrategy']): st
   }
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isFlatSettingsMap = (value: unknown): value is Record<string, string> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((v) => typeof v === 'string');
+};
+
 export const settingsApi = {
   /**
    * Obtener todas las configuraciones del servidor
    */
   getAll: async (): Promise<SettingsData> => {
-    const response = await apiClient.get<ApiResponse<Record<string, string>>>('/api/settings');
-    
-    // Convertir del formato plano del backend a nuestro formato tipado
-    const flatSettings = response.data.data || {};
+    const response = await apiClient.get<ApiResponse<unknown>>('/api/settings');
+    const payload = response.data.data;
+    const flatSettings: Record<string, string> = isFlatSettingsMap(payload) ? payload : {};
+
+    if (!isFlatSettingsMap(payload) && isRecord(payload)) {
+      const branding = isRecord(payload.branding) ? payload.branding : {};
+      const whatsapp = isRecord(payload.whatsapp) ? payload.whatsapp : {};
+      const reminders = isRecord(payload.reminders) ? payload.reminders : {};
+      const notificationTemplates = isRecord(payload.notificationTemplates) ? payload.notificationTemplates : {};
+
+      return {
+        businessName: typeof branding.name === 'string' ? branding.name : undefined,
+        businessEmail: typeof branding.email === 'string' ? branding.email : undefined,
+        businessPhone: typeof whatsapp.number === 'string' ? whatsapp.number : undefined,
+        businessAddress: undefined,
+        appointmentDuration: 60,
+        emailNotificationsEnabled: typeof notificationTemplates.emailEnabled === 'boolean' ? notificationTemplates.emailEnabled : undefined,
+        whatsappNumber: typeof whatsapp.number === 'string' ? whatsapp.number : undefined,
+        reminderStrategy: typeof reminders.strategy === 'string' ? parseReminderStrategy(reminders.strategy) : undefined,
+        whatsappHandoffEnabled: typeof whatsapp.handoffEnabled === 'boolean' ? whatsapp.handoffEnabled : undefined,
+        whatsappHumanNumber: typeof whatsapp.humanNumber === 'string' ? whatsapp.humanNumber : undefined,
+        whatsappHumanDisplayName: typeof whatsapp.humanDisplayName === 'string' ? whatsapp.humanDisplayName : undefined,
+        whatsappHandoffClientMessage: typeof whatsapp.handoffClientMessage === 'string' ? whatsapp.handoffClientMessage : undefined,
+        whatsappHandoffAdminPrefill: typeof whatsapp.handoffAdminPrefill === 'string' ? whatsapp.handoffAdminPrefill : undefined,
+      };
+    }
     
     return {
       // Business Info
@@ -236,7 +266,7 @@ export const settingsApi = {
     if (settings.calendarNightEnd !== undefined) flatSettings['calendar.slot.night.end'] = settings.calendarNightEnd;
     if (settings.calendarNightColor !== undefined) flatSettings['calendar.slot.night.color'] = settings.calendarNightColor;
 
-    await apiClient.post<ApiResponse<void>>('/api/settings', flatSettings);
+    await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
   },
 
   /**
