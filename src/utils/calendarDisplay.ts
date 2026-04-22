@@ -13,6 +13,8 @@ export interface CalendarDisplayConfig {
   night: CalendarSlotConfig;
 }
 
+export const CALENDAR_DISPLAY_STORAGE_KEY = 'calendar-display-config';
+
 export const DEFAULT_CALENDAR_DISPLAY_CONFIG: CalendarDisplayConfig = {
   morning: { start: '07:00', end: '13:00', color: '#10b981' },
   afternoon: { start: '14:00', end: '19:00', color: '#00a6d6' },

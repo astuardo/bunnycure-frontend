@@ -14,7 +14,7 @@ import { useToast } from '../../hooks/useToast';
 import { settingsApi, SettingsData } from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
-import { DEFAULT_CALENDAR_DISPLAY_CONFIG } from '@/utils/calendarDisplay';
+import { CALENDAR_DISPLAY_STORAGE_KEY, DEFAULT_CALENDAR_DISPLAY_CONFIG } from '@/utils/calendarDisplay';
 
 interface ScheduleBlock {
   id: string;
@@ -126,6 +126,16 @@ export default function SettingsPage() {
       const serverSettings = await settingsApi.getAll();
       
       // Convertir de SettingsData a BusinessSettings
+      const localCalendarRaw = localStorage.getItem(CALENDAR_DISPLAY_STORAGE_KEY);
+      let localCalendar: BusinessSettings['calendarDisplay'] | null = null;
+      if (localCalendarRaw) {
+        try {
+          localCalendar = JSON.parse(localCalendarRaw) as BusinessSettings['calendarDisplay'];
+        } catch {
+          localStorage.removeItem(CALENDAR_DISPLAY_STORAGE_KEY);
+        }
+      }
+
       const mappedSettings: BusinessSettings = {
         businessName: serverSettings.businessName || defaultSettings.businessName,
         email: serverSettings.businessEmail || defaultSettings.email,
@@ -182,19 +192,19 @@ export default function SettingsPage() {
         scheduleBlocks: serverSettings.scheduleBlocks ? JSON.parse(serverSettings.scheduleBlocks) : [],
         calendarDisplay: {
           morning: {
-            start: serverSettings.calendarMorningStart || defaultSettings.calendarDisplay.morning.start,
-            end: serverSettings.calendarMorningEnd || defaultSettings.calendarDisplay.morning.end,
-            color: serverSettings.calendarMorningColor || defaultSettings.calendarDisplay.morning.color,
+            start: localCalendar?.morning?.start || serverSettings.calendarMorningStart || defaultSettings.calendarDisplay.morning.start,
+            end: localCalendar?.morning?.end || serverSettings.calendarMorningEnd || defaultSettings.calendarDisplay.morning.end,
+            color: localCalendar?.morning?.color || serverSettings.calendarMorningColor || defaultSettings.calendarDisplay.morning.color,
           },
           afternoon: {
-            start: serverSettings.calendarAfternoonStart || defaultSettings.calendarDisplay.afternoon.start,
-            end: serverSettings.calendarAfternoonEnd || defaultSettings.calendarDisplay.afternoon.end,
-            color: serverSettings.calendarAfternoonColor || defaultSettings.calendarDisplay.afternoon.color,
+            start: localCalendar?.afternoon?.start || serverSettings.calendarAfternoonStart || defaultSettings.calendarDisplay.afternoon.start,
+            end: localCalendar?.afternoon?.end || serverSettings.calendarAfternoonEnd || defaultSettings.calendarDisplay.afternoon.end,
+            color: localCalendar?.afternoon?.color || serverSettings.calendarAfternoonColor || defaultSettings.calendarDisplay.afternoon.color,
           },
           night: {
-            start: serverSettings.calendarNightStart || defaultSettings.calendarDisplay.night.start,
-            end: serverSettings.calendarNightEnd || defaultSettings.calendarDisplay.night.end,
-            color: serverSettings.calendarNightColor || defaultSettings.calendarDisplay.night.color,
+            start: localCalendar?.night?.start || serverSettings.calendarNightStart || defaultSettings.calendarDisplay.night.start,
+            end: localCalendar?.night?.end || serverSettings.calendarNightEnd || defaultSettings.calendarDisplay.night.end,
+            color: localCalendar?.night?.color || serverSettings.calendarNightColor || defaultSettings.calendarDisplay.night.color,
           },
         },
       };
@@ -303,18 +313,10 @@ export default function SettingsPage() {
         whatsappHandoffAdminPrefill: settings.whatsappHandoffAdminPrefill,
         holidays: JSON.stringify(settings.holidays),
         scheduleBlocks: JSON.stringify(settings.scheduleBlocks),
-        calendarMorningStart: settings.calendarDisplay.morning.start,
-        calendarMorningEnd: settings.calendarDisplay.morning.end,
-        calendarMorningColor: settings.calendarDisplay.morning.color,
-        calendarAfternoonStart: settings.calendarDisplay.afternoon.start,
-        calendarAfternoonEnd: settings.calendarDisplay.afternoon.end,
-        calendarAfternoonColor: settings.calendarDisplay.afternoon.color,
-        calendarNightStart: settings.calendarDisplay.night.start,
-        calendarNightEnd: settings.calendarDisplay.night.end,
-        calendarNightColor: settings.calendarDisplay.night.color,
       };
       
       await settingsApi.saveAll(settingsData);
+      localStorage.setItem(CALENDAR_DISPLAY_STORAGE_KEY, JSON.stringify(settings.calendarDisplay));
       toast.success('✅ Configuración guardada en servidor');
       setHasChanges(false);
     } catch (error) {
