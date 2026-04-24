@@ -28,6 +28,7 @@ export default function StampCard({
   const [walletUrl, setWalletUrl] = useState<string>('');
   const [showQR, setShowQR] = useState(false);
   const [loadingQR, setLoadingQR] = useState(false);
+  const walletUrlLikelyTooLongForQr = walletUrl.length > 2900;
 
   useEffect(() => {
     fetchRewards();
@@ -220,14 +221,20 @@ export default function StampCard({
           </Modal.Header>
           <Modal.Body className="text-center py-4">
             {walletUrl && (
-              <div className="bg-white p-3 d-inline-block rounded shadow-sm">
-                <QRCodeSVG 
-                  value={walletUrl} 
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                />
-              </div>
+              walletUrlLikelyTooLongForQr ? (
+                <Alert variant="warning" className="mb-3 text-start">
+                  El enlace es demasiado largo para generar un QR escaneable. Usa el bot&oacute;n de Google Wallet.
+                </Alert>
+              ) : (
+                <div className="bg-white p-3 d-inline-block rounded shadow-sm">
+                  <QRCodeSVG 
+                    value={walletUrl} 
+                    size={200}
+                    level="L"
+                    includeMargin={true}
+                  />
+                </div>
+              )
             )}
             <p className="mt-3 mb-0 small text-muted">
               Pide a la clienta que escanee este código para guardar su pase BunnyCure (formato Generic) en Google Wallet.
