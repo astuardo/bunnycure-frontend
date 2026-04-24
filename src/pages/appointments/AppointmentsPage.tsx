@@ -450,23 +450,36 @@ export default function AppointmentsPage() {
 
   const handleEditAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingAppointmentId) return;
+    if (editMode === 'edit' && !editingAppointmentId) return;
     if (!validateForm(editFormData.customerId, editFormData.serviceIds)) return;
 
     const finalNotes = buildEditNotes();
     const finalTotal = editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0);
 
     try {
-      await updateAppointment(editingAppointmentId, {
-        ...buildEditPayload(),
-        notes: finalNotes,
-        totalPrice: finalTotal,
-      });
-      toast.success(editMode === 'reschedule' ? 'Cita reagendada exitosamente' : 'Cita actualizada exitosamente');
+      if (editMode === 'reschedule') {
+        await createAppointment({
+          customerId: editFormData.customerId,
+          serviceId: editFormData.serviceIds[0],
+          serviceIds: editFormData.serviceIds,
+          appointmentDate: editFormData.appointmentDate,
+          appointmentTime: editFormData.appointmentTime,
+          notes: finalNotes,
+          totalPrice: finalTotal,
+        });
+        toast.success('Cita reagendada: se creó una nueva cita');
+      } else {
+        await updateAppointment(editingAppointmentId!, {
+          ...buildEditPayload(),
+          notes: finalNotes,
+          totalPrice: finalTotal,
+        });
+        toast.success('Cita actualizada exitosamente');
+      }
       closeEditModal();
       fetchAppointments();
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Error al actualizar la cita'));
+      toast.error(getErrorMessage(err, editMode === 'reschedule' ? 'Error al reagendar la cita' : 'Error al actualizar la cita'));
     }
   };
 
