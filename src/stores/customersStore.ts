@@ -138,6 +138,15 @@ export const useCustomersStore = create<CustomersState>((set) => ({
         set({ loading: true, error: null });
         try {
             const updatedCustomer = await customersApi.adjustLoyalty(id, delta);
+            let walletSyncError: string | null = null;
+
+            try {
+                // Fuerza sincronización del objeto en Wallet y captura error real si falla.
+                await customersApi.getGoogleWalletLinks(id);
+            } catch (walletError) {
+                const err = walletError as { response?: { data?: { message?: string } }; message?: string };
+                walletSyncError = err.response?.data?.message || err.message || 'No se pudo sincronizar Google Wallet';
+            }
             
             // Actualizar en la lista y en el actual
             set((state) => {
@@ -156,6 +165,9 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             });
             
             toast.success(delta > 0 ? `Sello(s) agregado(s)` : `Sello(s) removido(s)`);
+            if (walletSyncError) {
+                toast.warning(`Sellos actualizados, pero Wallet no se sincronizó: ${walletSyncError}`);
+            }
             return updatedCustomer;
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 'Error al ajustar sellos';

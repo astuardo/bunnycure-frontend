@@ -35,6 +35,12 @@ export default function StampCard({
     fetchRewards();
   }, [fetchRewards]);
 
+  useEffect(() => {
+    // Si cambian sellos/premio, invalidamos enlaces para regenerar un JWT actualizado.
+    setWalletUrl('');
+    setWalletQrUrl('');
+  }, [loyaltyStamps, currentRewardIndex]);
+
   const fetchWalletLinks = async (id: number) => {
     const links = await customersApi.getGoogleWalletLinks(id);
     setWalletUrl(links.openUrl);
