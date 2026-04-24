@@ -37,6 +37,7 @@ interface CustomChargeItem {
 }
 
 type CreateStep = 'form' | 'summary';
+type EditMode = 'edit' | 'reschedule';
 type AppointmentStatusFilter = AppointmentStatus | 'ACTIVE' | 'ALL';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
@@ -62,6 +63,7 @@ export default function AppointmentsPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editMode, setEditMode] = useState<EditMode>('edit');
   const [createStep, setCreateStep] = useState<CreateStep>('form');
   const [customChargeItems, setCustomChargeItems] = useState<CustomChargeItem[]>([]);
   const [editCustomChargeItems, setEditCustomChargeItems] = useState<CustomChargeItem[]>([]);
@@ -113,14 +115,22 @@ export default function AppointmentsPage() {
 
   // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
   useEffect(() => {
+    const rescheduleId = searchParams.get('reschedule');
     const editId = searchParams.get('edit');
-    if (editId && appointments.length > 0) {
-      const apt = appointments.find((a) => a.id === Number(editId));
+    const mode: EditMode | null = rescheduleId ? 'reschedule' : editId ? 'edit' : null;
+    const targetId = Number(rescheduleId ?? editId);
+    if (mode && appointments.length > 0) {
+      const apt = appointments.find((a) => a.id === targetId);
       if (apt) {
-        openEditModal(apt);
+        if (mode === 'reschedule') {
+          openRescheduleModal(apt);
+        } else {
+          openEditModal(apt);
+        }
         // Limpiar el parámetro de la URL sin recargar para no reabrirlo al refrescar
         setSearchParams((prev) => {
           prev.delete('edit');
+          prev.delete('reschedule');
           return prev;
         }, { replace: true });
       }
@@ -372,7 +382,7 @@ export default function AppointmentsPage() {
     return baseNotes ? `${baseNotes}\n\n${extrasBlock}` : extrasBlock;
   };
 
-  const openEditModal = (appointment: Appointment) => {
+  const initializeEditForm = (appointment: Appointment) => {
     const selectedIds = appointment.services?.length
       ? appointment.services.map((service) => service.id)
       : [appointment.service.id];
@@ -418,9 +428,20 @@ export default function AppointmentsPage() {
     setShowEditModal(true);
   };
 
+  const openEditModal = (appointment: Appointment) => {
+    setEditMode('edit');
+    initializeEditForm(appointment);
+  };
+
+  const openRescheduleModal = (appointment: Appointment) => {
+    setEditMode('reschedule');
+    initializeEditForm(appointment);
+  };
+
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditingAppointmentId(null);
+    setEditMode('edit');
     const returnTo = searchParams.get('returnTo');
     if (returnTo) {
       navigate(returnTo, { replace: true });
@@ -441,7 +462,7 @@ export default function AppointmentsPage() {
         notes: finalNotes,
         totalPrice: finalTotal,
       });
-      toast.success('Cita actualizada exitosamente');
+      toast.success(editMode === 'reschedule' ? 'Cita reagendada exitosamente' : 'Cita actualizada exitosamente');
       closeEditModal();
       fetchAppointments();
     } catch (err: unknown) {
@@ -1166,7 +1187,7 @@ export default function AppointmentsPage() {
         fullscreen="sm-down"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Editar Cita</Modal.Title>
+          <Modal.Title>{editMode === 'reschedule' ? 'Reagendar Cita' : 'Editar Cita'}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleEditAppointment}>
           <Modal.Body>
@@ -1174,37 +1195,46 @@ export default function AppointmentsPage() {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Cliente *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Buscar cliente por nombre o teléfono..."
-                    value={editCustomerSearch}
-                    onChange={(e) => setEditCustomerSearch(e.target.value)}
-                    className="mb-2"
-                  />
-                  <div className="border rounded" style={{ maxHeight: '210px', overflowY: 'auto' }}>
-                    {filteredEditCustomers.length > 0 ? (
-                      filteredEditCustomers.map((customer) => (
-                        <button
-                          key={customer.id}
-                          type="button"
-                          className={`btn w-100 text-start border-bottom rounded-0 ${
-                            editFormData.customerId === customer.id ? 'btn-primary' : 'btn-light'
-                          }`}
-                          onClick={() => setEditFormData((prev) => ({ ...prev, customerId: customer.id }))}
-                        >
-                          <div className="fw-semibold">{customer.fullName}</div>
-                          <small>{customer.phone}</small>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="p-3 text-muted">No se encontraron clientes</div>
-                    )}
-                  </div>
-                  <Form.Text className="text-muted">
-                    {selectedEditCustomer
-                      ? `Seleccionado: ${selectedEditCustomer.fullName}`
-                      : 'Selecciona un cliente de la lista'}
-                  </Form.Text>
+                  {editMode === 'reschedule' ? (
+                    <div className="p-3 border rounded bg-light">
+                      <div className="fw-semibold">{selectedEditCustomer?.fullName || 'Cliente no disponible'}</div>
+                      <small className="text-muted">{selectedEditCustomer?.phone || '-'}</small>
+                    </div>
+                  ) : (
+                    <>
+                      <Form.Control
+                        type="text"
+                        placeholder="Buscar cliente por nombre o teléfono..."
+                        value={editCustomerSearch}
+                        onChange={(e) => setEditCustomerSearch(e.target.value)}
+                        className="mb-2"
+                      />
+                      <div className="border rounded" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                        {filteredEditCustomers.length > 0 ? (
+                          filteredEditCustomers.map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              className={`btn w-100 text-start border-bottom rounded-0 ${
+                                editFormData.customerId === customer.id ? 'btn-primary' : 'btn-light'
+                              }`}
+                              onClick={() => setEditFormData((prev) => ({ ...prev, customerId: customer.id }))}
+                            >
+                              <div className="fw-semibold">{customer.fullName}</div>
+                              <small>{customer.phone}</small>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-muted">No se encontraron clientes</div>
+                        )}
+                      </div>
+                      <Form.Text className="text-muted">
+                        {selectedEditCustomer
+                          ? `Seleccionado: ${selectedEditCustomer.fullName}`
+                          : 'Selecciona un cliente de la lista'}
+                      </Form.Text>
+                    </>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -1264,27 +1294,33 @@ export default function AppointmentsPage() {
                 </Form.Group>
               </Col>
             </Row>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Estado</Form.Label>
-                  <Form.Select
-                    value={editFormData.status}
-                    onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as AppointmentStatus }))}
-                  >
-                    <option value={AppointmentStatus.PENDING}>Pendiente</option>
-                    <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
-                    <option value={AppointmentStatus.COMPLETED}>Completada</option>
-                    <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6} className="d-flex align-items-center">
-                <div className="text-muted small">
-                  Valor estimado: {formatCurrency(editTotal)} CLP
-                </div>
-              </Col>
-            </Row>
+            {editMode === 'edit' ? (
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Estado</Form.Label>
+                    <Form.Select
+                      value={editFormData.status}
+                      onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as AppointmentStatus }))}
+                    >
+                      <option value={AppointmentStatus.PENDING}>Pendiente</option>
+                      <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
+                      <option value={AppointmentStatus.COMPLETED}>Completada</option>
+                      <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6} className="d-flex align-items-center">
+                  <div className="text-muted small">
+                    Valor estimado: {formatCurrency(editTotal)} CLP
+                  </div>
+                </Col>
+              </Row>
+            ) : (
+              <div className="mb-3 text-muted small">
+                Reagendado para la misma clienta. Puedes ajustar fecha, hora, servicios y extras.
+              </div>
+            )}
             <Form.Group className="mb-3">
               <Form.Label>Detalle de servicios</Form.Label>
               <Form.Control
@@ -1381,7 +1417,7 @@ export default function AppointmentsPage() {
               Cancelar
             </Button>
             <Button variant="primary" type="submit">
-              Guardar Cambios
+              {editMode === 'reschedule' ? 'Guardar Reagendado' : 'Guardar Cambios'}
             </Button>
           </Modal.Footer>
         </Form>

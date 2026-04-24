@@ -321,7 +321,7 @@ export default function DashboardPage() {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '340px' }}>
                                 <thead>
                                     <tr style={{ borderTop: DIVIDER }}>
-                                        {['Hora', 'Cliente', 'Servicio', 'Valor', 'Estado'].map(h => (
+                                        {['Hora', 'Cliente', 'Servicio', 'Valor', 'Estado', 'Acciones'].map(h => (
                                             <th key={h} style={{
                                                 textAlign: 'left', padding: '10px 12px',
                                                 fontSize: '11px', fontWeight: 700,
@@ -335,13 +335,10 @@ export default function DashboardPage() {
                                     {todayAppointments.slice(0, 5).map((apt: Appointment, idx: number) => (
                                         <tr
                                             key={apt.id}
-                                            onClick={() => navigate(`/appointments?edit=${apt.id}&returnTo=/dashboard`)}
                                             style={{
-                                                borderTop: DIVIDER, cursor: 'pointer',
+                                                borderTop: DIVIDER,
                                                 background: idx % 2 !== 0 ? '#fdf6f3' : '#fff',
                                             }}
-                                            onMouseEnter={e => (e.currentTarget.style.background = '#fdeae4')}
-                                            onMouseLeave={e => (e.currentTarget.style.background = idx % 2 !== 0 ? '#fdf6f3' : '#fff')}
                                         >
                                             <td style={{ padding: '12px', color: TEXT_DARK, whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: '12px' }}>
                                                 {apt.appointmentTime ? apt.appointmentTime.slice(0, 5) : '-'}
@@ -366,6 +363,42 @@ export default function DashboardPage() {
                                                 }}>
                                                     {statusLabel(apt.status)}
                                                 </span>
+                                            </td>
+                                            <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/appointments?edit=${apt.id}&returnTo=/dashboard`)}
+                                                        style={{
+                                                            border: '1px solid #d4a89a',
+                                                            background: '#fff8f5',
+                                                            color: '#7c3a2d',
+                                                            borderRadius: '999px',
+                                                            padding: '4px 10px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                        }}
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/appointments?reschedule=${apt.id}&returnTo=/dashboard`)}
+                                                        style={{
+                                                            border: '1px solid #b6d8cb',
+                                                            background: '#eaf7f2',
+                                                            color: '#1f6b52',
+                                                            borderRadius: '999px',
+                                                            padding: '4px 10px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                        }}
+                                                    >
+                                                        Reagendar
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
