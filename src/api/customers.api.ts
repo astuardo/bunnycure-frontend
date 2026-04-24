@@ -6,6 +6,12 @@ import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
 import { Customer, CustomerLookupResponse, CustomerFormData } from '../types/customer.types';
 
+interface WalletLinksResponse {
+  url: string;
+  qrUrl?: string;
+  shortUrl?: string;
+}
+
 export const customersApi = {
   /**
    * Listar clientes (opcionalmente con búsqueda)
@@ -79,8 +85,27 @@ export const customersApi = {
   /**
    * Obtener enlace de Google Wallet para el cliente
    */
+  getGoogleWalletLinks: async (id: number): Promise<{ openUrl: string; qrUrl: string }> => {
+    const response = await apiClient.get<ApiResponse<WalletLinksResponse>>(`/api/customers/${id}/wallet/google-link`);
+    const payload = response.data.data;
+    const openUrl = payload?.url || '';
+    const qrUrl = payload?.qrUrl || payload?.shortUrl || openUrl;
+    return { openUrl, qrUrl };
+  },
+
+  /**
+   * Obtener enlace de Google Wallet para abrir en navegador
+   */
   getGoogleWalletLink: async (id: number): Promise<string> => {
-    const response = await apiClient.get<ApiResponse<{ url: string }>>(`/api/customers/${id}/wallet/google-link`);
-    return response.data.data?.url || '';
+    const { openUrl } = await customersApi.getGoogleWalletLinks(id);
+    return openUrl;
+  },
+
+  /**
+   * Obtener enlace ideal para codificar en QR (corto cuando backend lo provee)
+   */
+  getGoogleWalletQrLink: async (id: number): Promise<string> => {
+    const { qrUrl } = await customersApi.getGoogleWalletLinks(id);
+    return qrUrl;
   },
 };

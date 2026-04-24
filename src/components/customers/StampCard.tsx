@@ -26,27 +26,34 @@ export default function StampCard({
   const maxStamps = 10;
 
   const [walletUrl, setWalletUrl] = useState<string>('');
+  const [walletQrUrl, setWalletQrUrl] = useState<string>('');
   const [showQR, setShowQR] = useState(false);
   const [loadingQR, setLoadingQR] = useState(false);
-  const walletUrlLikelyTooLongForQr = walletUrl.length > 2900;
+  const walletUrlLikelyTooLongForQr = walletQrUrl.length > 2900;
 
   useEffect(() => {
     fetchRewards();
   }, [fetchRewards]);
 
+  const fetchWalletLinks = async (id: number) => {
+    const links = await customersApi.getGoogleWalletLinks(id);
+    setWalletUrl(links.openUrl);
+    setWalletQrUrl(links.qrUrl);
+    return links;
+  };
+
   const handleShowQR = async () => {
     if (!customerId) return;
     
-    if (walletUrl) {
+    if (walletQrUrl) {
       setShowQR(true);
       return;
     }
 
     setLoadingQR(true);
     try {
-      const url = await customersApi.getGoogleWalletLink(customerId);
-      if (url) {
-        setWalletUrl(url);
+      const links = await fetchWalletLinks(customerId);
+      if (links.qrUrl) {
         setShowQR(true);
       } else {
         toast.error('No se pudo generar el enlace de Google Wallet');
@@ -62,9 +69,8 @@ export default function StampCard({
   const handleAddToGoogleWallet = async () => {
     if (!customerId) return;
     try {
-      const url = walletUrl || await customersApi.getGoogleWalletLink(customerId);
+      const url = walletUrl || (await fetchWalletLinks(customerId)).openUrl;
       if (url) {
-        setWalletUrl(url);
         window.open(url, '_blank');
       } else {
         toast.error('No se pudo generar el enlace de Google Wallet');
@@ -220,7 +226,7 @@ export default function StampCard({
             <Modal.Title className="fs-6">Escanea para descargar</Modal.Title>
           </Modal.Header>
           <Modal.Body className="text-center py-4">
-            {walletUrl && (
+            {walletQrUrl && (
               walletUrlLikelyTooLongForQr ? (
                 <Alert variant="warning" className="mb-3 text-start">
                   El enlace es demasiado largo para generar un QR escaneable. Usa el bot&oacute;n de Google Wallet.
@@ -228,7 +234,7 @@ export default function StampCard({
               ) : (
                 <div className="bg-white p-3 d-inline-block rounded shadow-sm">
                   <QRCodeSVG 
-                    value={walletUrl} 
+                    value={walletQrUrl}
                     size={200}
                     level="L"
                     includeMargin={true}
