@@ -231,6 +231,14 @@ body {
   touch-action: pan-y;
 }
 
+.giftcard-modal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
 .bunny-auth-page,
 .bunny-public-page {
   min-height: 100vh;

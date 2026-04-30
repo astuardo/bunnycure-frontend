@@ -8,6 +8,12 @@ import { useToast } from '@/hooks/useToast';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
+const getDefaultExpiryDate = (): string => {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() + 1);
+  return date.toISOString().slice(0, 10);
+};
+
 interface ServiceSelection {
   serviceId: number;
   name: string;
@@ -22,8 +28,7 @@ const defaultCreateState = {
   buyerName: '',
   buyerPhone: '',
   buyerEmail: '',
-  expiresOn: '',
-  paidAmount: 0,
+  expiresOn: getDefaultExpiryDate(),
   paymentMethod: 'EFECTIVO' as GiftCardPaymentMethod,
 };
 
@@ -88,12 +93,17 @@ export default function GiftCardsPage() {
   };
 
   const openCreateModal = () => {
+    const defaultExpiryDate = getDefaultExpiryDate();
     const initialSelections = services.map((service) => ({
       serviceId: service.id,
       name: service.name,
       price: Number(service.price),
       quantity: 0,
     }));
+    setCreateData({
+      ...defaultCreateState,
+      expiresOn: defaultExpiryDate,
+    });
     setServiceSelections(initialSelections);
     setShowCreateModal(true);
   };
@@ -121,7 +131,7 @@ export default function GiftCardsPage() {
       buyerPhone: createData.buyerPhone.trim() || undefined,
       buyerEmail: createData.buyerEmail.trim() || undefined,
       expiresOn: createData.expiresOn,
-      paidAmount: createData.paidAmount,
+      paidAmount: totalAmount,
       paymentMethod: createData.paymentMethod,
       items: selectedServices.map((service) => ({
         serviceId: service.serviceId,
@@ -325,7 +335,14 @@ export default function GiftCardsPage() {
         </Card>
       </div>
 
-      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg" scrollable fullscreen="sm-down">
+      <Modal
+        show={showCreateModal}
+        onHide={() => setShowCreateModal(false)}
+        size="lg"
+        scrollable
+        fullscreen="sm-down"
+        className="bunny-modal giftcard-modal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Crear GiftCard</Modal.Title>
         </Modal.Header>
@@ -396,16 +413,7 @@ export default function GiftCardsPage() {
                   <option value="TRANSFERENCIA">TRANSFERENCIA</option>
                 </Form.Select>
               </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Monto pagado *</Form.Label>
-                <Form.Control
-                  type="number"
-                  min={0}
-                  value={createData.paidAmount}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, paidAmount: Number(e.target.value) || 0 }))}
-                />
-              </Col>
-              <Col md={4} className="mb-3 d-flex align-items-end">
+              <Col md={8} className="mb-3 d-flex align-items-end">
                 <div className="fw-semibold">Total GiftCard: {formatCurrency(totalAmount)}</div>
               </Col>
             </Row>
@@ -446,7 +454,14 @@ export default function GiftCardsPage() {
         </Form>
       </Modal>
 
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="xl" scrollable fullscreen="sm-down">
+      <Modal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        size="xl"
+        scrollable
+        fullscreen="sm-down"
+        className="bunny-modal giftcard-modal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Detalle GiftCard</Modal.Title>
         </Modal.Header>
