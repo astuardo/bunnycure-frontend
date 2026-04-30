@@ -13,6 +13,8 @@ import SettingsPage from '../pages/settings/SettingsPage';
 import LoyaltySettingsPage from '../pages/settings/LoyaltySettingsPage';
 import CalendarPage from '../pages/calendar/CalendarPage';
 import RemindersPage from '../pages/reminders/RemindersPage';
+import GiftCardsPage from '../pages/giftcards/GiftCardsPage';
+import PublicGiftCardPage from '../pages/giftcards/PublicGiftCardPage';
 import InstallPage from '../pages/InstallPage';
 import TestApiPage from '../pages/TestApiPage';
 
@@ -27,6 +29,7 @@ export default function AppRouter() {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/test" element={<TestApiPage />} />
+                <Route path="/giftcards/public/:code" element={<PublicGiftCardPage />} />
 
                 {/* Protected routes */}
                 <Route
@@ -97,6 +100,15 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <LoyaltySettingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/giftcards"
+                    element={
+                        <ProtectedRoute>
+                            <GiftCardsPage />
                         </ProtectedRoute>
                     }
                 />

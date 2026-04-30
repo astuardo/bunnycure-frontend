@@ -45,6 +45,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             description: 'Catálogo'
         },
         { 
+            path: '/giftcards',
+            icon: '🎁',
+            label: 'GiftCards',
+            description: 'Venta y canje'
+        },
+        { 
             path: '/booking-requests', 
             icon: '📬', 
             label: 'Solicitudes',
