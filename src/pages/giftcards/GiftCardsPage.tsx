@@ -31,6 +31,60 @@ const loadStoredPins = (): Record<number, string> => {
     return {};
   }
 };
+const escapeXml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+const toWhatsAppPhone = (value?: string): string => {
+  const digits = (value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('56')) return digits;
+  if (digits.length === 9 && digits.startsWith('9')) return `56${digits}`;
+  return digits;
+};
+const renderGiftCardPng = async (svgMarkup: string): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const image = new Image();
+
+    image.onload = () => {
+      const width = image.naturalWidth || image.width || 559;
+      const height = image.naturalHeight || image.height || 397;
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const context = canvas.getContext('2d');
+
+      if (!context) {
+        URL.revokeObjectURL(svgUrl);
+        reject(new Error('No se pudo inicializar canvas'));
+        return;
+      }
+
+      context.setTransform(scale, 0, 0, scale, 0, 0);
+      context.drawImage(image, 0, 0, width, height);
+      canvas.toBlob((pngBlob) => {
+        URL.revokeObjectURL(svgUrl);
+        if (!pngBlob) {
+          reject(new Error('No se pudo generar PNG'));
+          return;
+        }
+        resolve(pngBlob);
+      }, 'image/png');
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(svgUrl);
+      reject(new Error('No se pudo renderizar plantilla SVG'));
+    };
+
+    image.src = svgUrl;
+  });
 
 const getDefaultExpiryDate = (): string => {
   const date = new Date();
@@ -100,6 +154,7 @@ export default function GiftCardsPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [generatedPins, setGeneratedPins] = useState<Record<number, string>>(loadStoredPins);
+  const [sharingGiftCard, setSharingGiftCard] = useState(false);
 
   useEffect(() => {
     fetchServices(true);
@@ -320,6 +375,84 @@ export default function GiftCardsPage() {
     } catch {
       toast.error('No se pudo anular la GiftCard');
     }
+  };
+
+  const handleShareGiftCard = async () => {
+    if (!currentGiftCard) return;
+
+    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
+    const expiry = currentGiftCard.expiresOn || '-';
+    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
+    const waPhone = toWhatsAppPhone(currentGiftCard.beneficiaryPhone);
+    const message =
+      `Hola ${beneficiary}, aqui esta tu GiftCard BunnyCure.\n` +
+      `Codigo: ${currentGiftCard.code}\n` +
+      `PIN: ${pinValue}\n` +
+      `Vence: ${expiry}\n` +
+      `Link: ${currentGiftCard.publicUrl}`;
+
+    setSharingGiftCard(true);
+    try {
+      const templateResponse = await fetch(giftCardTemplate, { cache: 'no-store' });
+      if (!templateResponse.ok) {
+        throw new Error('No se pudo cargar la plantilla de GiftCard');
+      }
+
+      let templateSvg = await templateResponse.text();
+      templateSvg = templateSvg
+        .replace(/\{\{beneficiaryName\}\}/g, escapeXml(beneficiary))
+        .replace(/\{\{code\}\}/g, escapeXml(currentGiftCard.code))
+        .replace(/\{\{pin\}\}/g, escapeXml(pinValue))
+        .replace(/\{\{expiresOn\}\}/g, escapeXml(expiry));
+
+      const pngBlob = await renderGiftCardPng(templateSvg);
+      const pngFile = new File([pngBlob], `giftcard-${currentGiftCard.code}.png`, { type: 'image/png' });
+      const shareData: ShareData = { files: [pngFile], title: 'GiftCard BunnyCure', text: message };
+      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
+
+      if (navigator.share && nav.canShare?.({ files: [pngFile] })) {
+        await navigator.share(shareData);
+        toast.success('GiftCard generada y compartida');
+      } else {
+        const fileUrl = URL.createObjectURL(pngBlob);
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = `giftcard-${currentGiftCard.code}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(fileUrl);
+
+        if (waPhone) {
+          const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+          window.open(waUrl, '_blank', 'noopener,noreferrer');
+        }
+        toast.info('PNG descargado. Se abrió WhatsApp para completar el envío');
+      }
+    } catch {
+      toast.error('No se pudo generar o compartir la GiftCard');
+    } finally {
+      setSharingGiftCard(false);
+    }
+  };
+
+  const handleSendWhatsAppBeneficiary = () => {
+    if (!currentGiftCard) return;
+    const waPhone = toWhatsAppPhone(currentGiftCard.beneficiaryPhone);
+    if (!waPhone) {
+      toast.error('La beneficiaria no tiene teléfono válido para WhatsApp');
+      return;
+    }
+
+    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
+    const message =
+      `Hola ${currentGiftCard.beneficiaryName}, aqui esta tu GiftCard BunnyCure.\n` +
+      `Codigo: ${currentGiftCard.code}\n` +
+      `PIN: ${pinValue}\n` +
+      `Vence: ${currentGiftCard.expiresOn}\n` +
+      `Link: ${currentGiftCard.publicUrl}`;
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -711,6 +844,12 @@ export default function GiftCardsPage() {
                 <a className="btn btn-outline-primary" href={currentGiftCard.publicUrl} target="_blank" rel="noreferrer">
                   Abrir URL pública
                 </a>
+                <Button variant="outline-success" onClick={handleShareGiftCard} disabled={sharingGiftCard}>
+                  {sharingGiftCard ? 'Generando...' : 'Generar y compartir PNG'}
+                </Button>
+                <Button variant="success" onClick={handleSendWhatsAppBeneficiary}>
+                  Enviar a WhatsApp beneficiaria
+                </Button>
               </div>
 
               <h6>Historial</h6>
