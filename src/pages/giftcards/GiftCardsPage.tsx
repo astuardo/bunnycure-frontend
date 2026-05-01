@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Table } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { customersApi } from '@/api/customers.api';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { useServicesStore } from '@/stores/servicesStore';
@@ -7,11 +9,25 @@ import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus 
 import { useToast } from '@/hooks/useToast';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
+type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  const err = error as ApiError;
+  return err.response?.data?.error?.message || err.response?.data?.message || fallback;
+};
 
 const getDefaultExpiryDate = (): string => {
   const date = new Date();
   date.setFullYear(date.getFullYear() + 1);
   return date.toISOString().slice(0, 10);
+};
+
+const normalizePhone = (value?: string): string => {
+  if (!value) return '';
+  const trimmed = value.trim();
+  const hasLeadingPlus = trimmed.startsWith('+');
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (!digitsOnly) return '';
+  return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly;
 };
 
 interface ServiceSelection {
@@ -33,6 +49,7 @@ const defaultCreateState = {
 };
 
 export default function GiftCardsPage() {
+  const navigate = useNavigate();
   const toast = useToast();
   const { services, fetchServices } = useServicesStore();
   const {
@@ -63,6 +80,8 @@ export default function GiftCardsPage() {
   const [overrideReason, setOverrideReason] = useState('');
   const [redeemQuantities, setRedeemQuantities] = useState<Record<number, number>>({});
   const [revertQuantities, setRevertQuantities] = useState<Record<number, number>>({});
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
 
   useEffect(() => {
     fetchServices(true);
@@ -90,6 +109,7 @@ export default function GiftCardsPage() {
   const resetCreateState = () => {
     setCreateData(defaultCreateState);
     setServiceSelections((prev) => prev.map((item) => ({ ...item, quantity: 0 })));
+    setLookupStatus('idle');
   };
 
   const openCreateModal = () => {
@@ -105,13 +125,19 @@ export default function GiftCardsPage() {
       expiresOn: defaultExpiryDate,
     });
     setServiceSelections(initialSelections);
+    setLookupStatus('idle');
     setShowCreateModal(true);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createData.beneficiaryFullName.trim() || !createData.beneficiaryPhone.trim()) {
+    const normalizedPhone = normalizePhone(createData.beneficiaryPhone);
+    if (!createData.beneficiaryFullName.trim() || !normalizedPhone) {
       toast.error('Nombre y teléfono de beneficiaria son obligatorios');
+      return;
+    }
+    if (lookupStatus === 'idle') {
+      toast.error('Primero busca la beneficiaria por teléfono');
       return;
     }
     if (selectedServices.length === 0) {
@@ -125,7 +151,7 @@ export default function GiftCardsPage() {
 
     const payload: GiftCardCreateRequest = {
       beneficiaryFullName: createData.beneficiaryFullName.trim(),
-      beneficiaryPhone: createData.beneficiaryPhone.trim(),
+      beneficiaryPhone: normalizedPhone,
       beneficiaryEmail: createData.beneficiaryEmail.trim() || undefined,
       buyerName: createData.buyerName.trim() || undefined,
       buyerPhone: createData.buyerPhone.trim() || undefined,
@@ -146,8 +172,45 @@ export default function GiftCardsPage() {
       resetCreateState();
       await fetchGiftCardById(created.id);
       setShowDetailModal(true);
-    } catch {
-      toast.error('No se pudo crear la GiftCard');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'No se pudo crear la GiftCard'));
+    }
+  };
+
+  const handleLookupBeneficiary = async () => {
+    const normalizedPhone = normalizePhone(createData.beneficiaryPhone);
+    if (!normalizedPhone) {
+      toast.error('Ingresa un teléfono válido para buscar');
+      return;
+    }
+
+    setLookupLoading(true);
+    try {
+      const result = await customersApi.lookup(normalizedPhone);
+      if (result.exists && result.customer) {
+        setCreateData((prev) => ({
+          ...prev,
+          beneficiaryPhone: result.customer?.phone || normalizedPhone,
+          beneficiaryFullName: result.customer?.fullName || prev.beneficiaryFullName,
+          beneficiaryEmail: result.customer?.email || '',
+        }));
+        setLookupStatus('found');
+        toast.success('Cliente encontrado, datos autocompletados');
+      } else {
+        setCreateData((prev) => ({
+          ...prev,
+          beneficiaryPhone: normalizedPhone,
+          beneficiaryFullName: '',
+          beneficiaryEmail: '',
+        }));
+        setLookupStatus('not_found');
+        toast.info('Teléfono no registrado. Completa los datos para crear la GiftCard');
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'No se pudo buscar cliente por teléfono'));
+      setLookupStatus('idle');
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -243,7 +306,12 @@ export default function GiftCardsPage() {
             <p className="text-muted">Crea, gestiona y canjea GiftCards por servicios.</p>
           </Col>
           <Col xs="auto">
-            <Button onClick={openCreateModal}>+ Nueva GiftCard</Button>
+            <div className="d-flex gap-2">
+              <Button onClick={() => navigate('/giftcards/generar')} variant="outline-primary">
+                Generar GiftCard
+              </Button>
+              <Button onClick={openCreateModal}>+ Nueva GiftCard</Button>
+            </div>
           </Col>
         </Row>
 
@@ -358,10 +426,30 @@ export default function GiftCardsPage() {
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Label>Beneficiaria - Teléfono *</Form.Label>
-                <Form.Control
-                  value={createData.beneficiaryPhone}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryPhone: e.target.value }))}
-                />
+                <div className="d-flex gap-2">
+                  <Form.Control
+                    value={createData.beneficiaryPhone}
+                    onChange={(e) => {
+                      setCreateData((prev) => ({ ...prev, beneficiaryPhone: e.target.value }));
+                      setLookupStatus('idle');
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline-primary"
+                    onClick={handleLookupBeneficiary}
+                    disabled={lookupLoading}
+                  >
+                    {lookupLoading ? 'Buscando...' : 'Buscar'}
+                  </Button>
+                </div>
+                <Form.Text className={lookupStatus === 'found' ? 'text-success' : 'text-muted'}>
+                  {lookupStatus === 'found'
+                    ? 'Cliente existente detectado. Se usaran datos guardados.'
+                    : lookupStatus === 'not_found'
+                      ? 'Telefono no registrado. Completa nombre/email manualmente.'
+                      : 'Primero busca por telefono antes de crear la GiftCard.'}
+                </Form.Text>
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Label>Beneficiaria - Email</Form.Label>

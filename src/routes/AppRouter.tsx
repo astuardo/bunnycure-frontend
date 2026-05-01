@@ -14,6 +14,7 @@ import LoyaltySettingsPage from '../pages/settings/LoyaltySettingsPage';
 import CalendarPage from '../pages/calendar/CalendarPage';
 import RemindersPage from '../pages/reminders/RemindersPage';
 import GiftCardsPage from '../pages/giftcards/GiftCardsPage';
+import GenerateGiftCardPage from '../pages/giftcards/GenerateGiftCardPage';
 import PublicGiftCardPage from '../pages/giftcards/PublicGiftCardPage';
 import InstallPage from '../pages/InstallPage';
 import TestApiPage from '../pages/TestApiPage';
@@ -109,6 +110,14 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <GiftCardsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/giftcards/generar"
+                    element={
+                        <ProtectedRoute>
+                            <GenerateGiftCardPage />
                         </ProtectedRoute>
                     }
                 />
