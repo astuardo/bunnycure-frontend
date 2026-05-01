@@ -7,12 +7,29 @@ import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { useServicesStore } from '@/stores/servicesStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
+import giftCardTemplate from '../../../giftcard_bunnycure.svg';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
+const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   const err = error as ApiError;
   return err.response?.data?.error?.message || err.response?.data?.message || fallback;
+};
+const loadStoredPins = (): Record<number, string> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(ADMIN_GIFTCARD_PINS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return Object.entries(parsed).reduce<Record<number, string>>((acc, [key, value]) => {
+      const id = Number(key);
+      if (Number.isFinite(id) && value) acc[id] = value;
+      return acc;
+    }, {});
+  } catch {
+    return {};
+  }
 };
 
 const getDefaultExpiryDate = (): string => {
@@ -82,11 +99,16 @@ export default function GiftCardsPage() {
   const [revertQuantities, setRevertQuantities] = useState<Record<number, number>>({});
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
+  const [generatedPins, setGeneratedPins] = useState<Record<number, string>>(loadStoredPins);
 
   useEffect(() => {
     fetchServices(true);
     fetchGiftCards();
   }, [fetchServices, fetchGiftCards]);
+
+  useEffect(() => {
+    localStorage.setItem(ADMIN_GIFTCARD_PINS_KEY, JSON.stringify(generatedPins));
+  }, [generatedPins]);
 
   const selectedServices = useMemo(
     () => serviceSelections.filter((selection) => selection.quantity > 0),
@@ -168,6 +190,9 @@ export default function GiftCardsPage() {
     try {
       const created = await createGiftCard(payload);
       toast.success('GiftCard creada');
+      if (created.plainPin) {
+        setGeneratedPins((prev) => ({ ...prev, [created.id]: created.plainPin as string }));
+      }
       setShowCreateModal(false);
       resetCreateState();
       await fetchGiftCardById(created.id);
@@ -558,6 +583,17 @@ export default function GiftCardsPage() {
             <div>Cargando...</div>
           ) : (
             <>
+              <div className="giftcard-admin-preview mb-3">
+                <img src={giftCardTemplate} alt="Plantilla GiftCard BunnyCure" className="giftcard-admin-preview__image" />
+                <div className="giftcard-admin-preview__overlay">
+                  <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
+                  <div className="giftcard-admin-preview__line">{currentGiftCard.beneficiaryName}</div>
+                  <div className="giftcard-admin-preview__line">Codigo: {currentGiftCard.code}</div>
+                  <div className="giftcard-admin-preview__pin">
+                    PIN: {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                  </div>
+                </div>
+              </div>
               <Row className="mb-3">
                 <Col md={4}>
                   <div><strong>Código:</strong> {currentGiftCard.code}</div>
@@ -571,9 +607,9 @@ export default function GiftCardsPage() {
                 <Col md={4}>
                   <div><strong>Total:</strong> {formatCurrency(currentGiftCard.totalAmount)}</div>
                   <div><strong>Pagado:</strong> {formatCurrency(currentGiftCard.paidAmount)}</div>
-                  {currentGiftCard.plainPin && (
-                    <div className="text-danger"><strong>PIN:</strong> {currentGiftCard.plainPin}</div>
-                  )}
+                  <div className="text-danger">
+                    <strong>PIN:</strong> {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                  </div>
                 </Col>
               </Row>
 

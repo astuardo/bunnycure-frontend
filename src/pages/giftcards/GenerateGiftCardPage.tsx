@@ -7,8 +7,10 @@ import { useServicesStore } from '@/stores/servicesStore';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { GiftCardCreateRequest, GiftCardPaymentMethod } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
+import giftCardTemplate from '../../../giftcard_bunnycure.svg';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
+const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   const err = error as ApiError;
@@ -54,7 +56,7 @@ export default function GenerateGiftCardPage() {
 
   const [createData, setCreateData] = useState(defaultCreateState);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [createdInfo, setCreatedInfo] = useState<{ code: string; publicUrl: string; plainPin: string | null } | null>(null);
+  const [createdInfo, setCreatedInfo] = useState<{ code: string; publicUrl: string; plainPin: string | null; beneficiaryName: string } | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
 
@@ -119,7 +121,14 @@ export default function GenerateGiftCardPage() {
         code: created.code,
         publicUrl: created.publicUrl,
         plainPin: created.plainPin,
+        beneficiaryName: createData.beneficiaryFullName.trim(),
       });
+      if (created.plainPin) {
+        const currentRaw = localStorage.getItem(ADMIN_GIFTCARD_PINS_KEY);
+        const current = currentRaw ? (JSON.parse(currentRaw) as Record<string, string>) : {};
+        current[String(created.id)] = created.plainPin;
+        localStorage.setItem(ADMIN_GIFTCARD_PINS_KEY, JSON.stringify(current));
+      }
       setCreateData({
         ...defaultCreateState,
         expiresOn: getDefaultExpiryDate(),
@@ -197,6 +206,15 @@ export default function GenerateGiftCardPage() {
                 PIN: <strong>{createdInfo.plainPin}</strong>.{' '}
               </>
             )}
+            <div className="giftcard-admin-preview mt-3 mb-2">
+              <img src={giftCardTemplate} alt="Plantilla GiftCard BunnyCure" className="giftcard-admin-preview__image" />
+              <div className="giftcard-admin-preview__overlay">
+                <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
+                <div className="giftcard-admin-preview__line">{createdInfo.beneficiaryName || 'Beneficiaria'}</div>
+                <div className="giftcard-admin-preview__line">Codigo: {createdInfo.code}</div>
+                <div className="giftcard-admin-preview__pin">PIN: {createdInfo.plainPin || 'No disponible'}</div>
+              </div>
+            </div>
             <a href={createdInfo.publicUrl} target="_blank" rel="noreferrer">
               Abrir URL publica
             </a>{' '}
