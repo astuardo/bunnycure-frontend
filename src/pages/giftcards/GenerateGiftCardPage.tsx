@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
-const giftCardTemplate = '/giftcard_bunnycure.svg';
+const giftCardTemplate = '/giftcard_fondo.png';
 const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
@@ -240,12 +240,14 @@ export default function GenerateGiftCardPage() {
                   <Form.Control
                     value={createData.beneficiaryFullName}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
                   />
                 </Col>
                 <Col md={6} className="mb-3">
                   <Form.Label>Beneficiaria - Telefono *</Form.Label>
                   <div className="d-flex gap-2">
                     <Form.Control
+                      autoFocus
                       value={createData.beneficiaryPhone}
                       onChange={(e) => {
                         setCreateData((prev) => ({ ...prev, beneficiaryPhone: e.target.value }));
@@ -275,6 +277,7 @@ export default function GenerateGiftCardPage() {
                     type="email"
                     value={createData.beneficiaryEmail}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryEmail: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
                   />
                 </Col>
                 <Col md={6} className="mb-3">
@@ -283,6 +286,7 @@ export default function GenerateGiftCardPage() {
                     type="date"
                     value={createData.expiresOn}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
                   />
                 </Col>
                 <Col md={4} className="mb-3">
@@ -290,6 +294,7 @@ export default function GenerateGiftCardPage() {
                   <Form.Control
                     value={createData.buyerName}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
                   />
                 </Col>
                 <Col md={4} className="mb-3">
@@ -297,6 +302,7 @@ export default function GenerateGiftCardPage() {
                   <Form.Control
                     value={createData.buyerPhone}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
                   />
                 </Col>
                 <Col md={4} className="mb-3">
@@ -305,6 +311,7 @@ export default function GenerateGiftCardPage() {
                     type="email"
                     value={createData.buyerEmail}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
                   />
                 </Col>
                 <Col md={4} className="mb-3">
@@ -314,6 +321,7 @@ export default function GenerateGiftCardPage() {
                     onChange={(e) =>
                       setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
                     }
+                    disabled={lookupStatus === 'idle'}
                   >
                     <option value="EFECTIVO">EFECTIVO</option>
                     <option value="TRANSFERENCIA">TRANSFERENCIA</option>
@@ -338,6 +346,7 @@ export default function GenerateGiftCardPage() {
                         type="number"
                         min={0}
                         value={quantities[service.id] || 0}
+                        disabled={lookupStatus === 'idle'}
                         onChange={(e) =>
                           setQuantities((prev) => ({
                             ...prev,
@@ -354,7 +363,7 @@ export default function GenerateGiftCardPage() {
                 <Button variant="outline-secondary" onClick={() => navigate('/giftcards')}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading || lookupStatus === 'idle'}>
                   {loading ? 'Generando...' : 'Generar GiftCard'}
                 </Button>
               </div>

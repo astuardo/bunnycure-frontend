@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Table } from 'react-
 import { useNavigate } from 'react-router-dom';
 import { customersApi } from '@/api/customers.api';
 import DashboardLayout from '@/components/common/DashboardLayout';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { useServicesStore } from '@/stores/servicesStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus } from '@/types/giftcard.types';
@@ -10,7 +11,7 @@ import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
-const giftCardTemplate = '/giftcard_bunnycure.svg';
+const giftCardTemplate = '/giftcard_fondo.png';
 const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
@@ -126,7 +127,7 @@ const renderGiftCardPng = async (data: GiftCardRenderTextData): Promise<Blob> =>
     };
 
     image.onerror = () => {
-      reject(new Error('No se pudo renderizar plantilla SVG'));
+      reject(new Error('No se pudo renderizar plantilla de fondo'));
     };
 
     image.src = `${giftCardTemplate}?v=${Date.now()}`;
@@ -201,6 +202,8 @@ export default function GiftCardsPage() {
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [generatedPins, setGeneratedPins] = useState<Record<number, string>>(loadStoredPins);
   const [sharingGiftCard, setSharingGiftCard] = useState(false);
+  const [giftCardToCancelFromList, setGiftCardToCancelFromList] = useState<GiftCard | null>(null);
+  const [cancellingFromList, setCancellingFromList] = useState(false);
 
   useEffect(() => {
     fetchServices(true);
@@ -423,6 +426,20 @@ export default function GiftCardsPage() {
     }
   };
 
+  const handleCancelFromList = async () => {
+    if (!giftCardToCancelFromList) return;
+    setCancellingFromList(true);
+    try {
+      await cancelGiftCard(giftCardToCancelFromList.id, 'Anulación administrativa desde listado');
+      toast.success('GiftCard anulada');
+      setGiftCardToCancelFromList(null);
+    } catch {
+      toast.error('No se pudo anular la GiftCard');
+    } finally {
+      setCancellingFromList(false);
+    }
+  };
+
   const handleShareGiftCard = async () => {
     if (!currentGiftCard) return;
 
@@ -588,9 +605,19 @@ export default function GiftCardsPage() {
                           <Badge bg={giftCard.status === 'ACTIVE' ? 'primary' : 'secondary'}>{giftCard.status}</Badge>
                         </td>
                         <td>
-                          <Button size="sm" variant="outline-primary" onClick={() => openDetails(giftCard)}>
-                            Ver detalle
-                          </Button>
+                          <div className="d-flex gap-2">
+                            <Button size="sm" variant="outline-primary" onClick={() => openDetails(giftCard)}>
+                              Ver detalle
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-danger"
+                              onClick={() => setGiftCardToCancelFromList(giftCard)}
+                              disabled={giftCard.status === 'CANCELLED'}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -621,6 +648,7 @@ export default function GiftCardsPage() {
                 <Form.Control
                   value={createData.beneficiaryFullName}
                   onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
+                  disabled={lookupStatus === 'idle'}
                 />
               </Col>
               <Col md={6} className="mb-3">
@@ -652,50 +680,56 @@ export default function GiftCardsPage() {
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Label>Beneficiaria - Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  value={createData.beneficiaryEmail}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryEmail: e.target.value }))}
-                />
-              </Col>
-              <Col md={6} className="mb-3">
-                <Form.Label>Vencimiento *</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={createData.expiresOn}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
-                />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Compradora - Nombre</Form.Label>
-                <Form.Control
-                  value={createData.buyerName}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
-                />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Compradora - Teléfono</Form.Label>
-                <Form.Control
-                  value={createData.buyerPhone}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
-                />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Compradora - Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  value={createData.buyerEmail}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
-                />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Método de pago *</Form.Label>
-                <Form.Select
-                  value={createData.paymentMethod}
-                  onChange={(e) =>
-                    setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
-                  }
-                >
+                  <Form.Control
+                    type="email"
+                    value={createData.beneficiaryEmail}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryEmail: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
+                  />
+                </Col>
+                <Col md={6} className="mb-3">
+                  <Form.Label>Vencimiento *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={createData.expiresOn}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
+                  />
+                </Col>
+                <Col md={4} className="mb-3">
+                  <Form.Label>Compradora - Nombre</Form.Label>
+                  <Form.Control
+                    value={createData.buyerName}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
+                  />
+                </Col>
+                <Col md={4} className="mb-3">
+                  <Form.Label>Compradora - Teléfono</Form.Label>
+                  <Form.Control
+                    value={createData.buyerPhone}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
+                  />
+                </Col>
+                <Col md={4} className="mb-3">
+                  <Form.Label>Compradora - Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    value={createData.buyerEmail}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
+                  />
+                </Col>
+                <Col md={4} className="mb-3">
+                  <Form.Label>Método de pago *</Form.Label>
+                  <Form.Select
+                    value={createData.paymentMethod}
+                    onChange={(e) =>
+                      setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
+                    }
+                    disabled={lookupStatus === 'idle'}
+                  >
                   <option value="EFECTIVO">EFECTIVO</option>
                   <option value="TRANSFERENCIA">TRANSFERENCIA</option>
                 </Form.Select>
@@ -717,6 +751,7 @@ export default function GiftCardsPage() {
                       type="number"
                       min={0}
                       value={selection.quantity}
+                      disabled={lookupStatus === 'idle'}
                       onChange={(e) =>
                         setServiceSelections((prev) =>
                           prev.map((item) =>
@@ -733,13 +768,15 @@ export default function GiftCardsPage() {
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">Crear GiftCard</Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
+              <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={lookupStatus === 'idle'}>
+                Crear GiftCard
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
 
       <Modal
         show={showDetailModal}
@@ -923,6 +960,17 @@ export default function GiftCardsPage() {
           )}
         </Modal.Body>
       </Modal>
+
+      <ConfirmDialog
+        show={Boolean(giftCardToCancelFromList)}
+        title="Eliminar GiftCard"
+        message={`¿Seguro que deseas eliminar/anular la GiftCard ${giftCardToCancelFromList?.code || ''}?`}
+        variant="danger"
+        confirmText="Eliminar"
+        onConfirm={handleCancelFromList}
+        onCancel={() => setGiftCardToCancelFromList(null)}
+        loading={cancellingFromList}
+      />
     </DashboardLayout>
   );
 }
