@@ -55,6 +55,13 @@ interface GiftCardInfoBox {
   height: number;
 }
 
+const GIFT_CARD_FONT_OPTIONS = {
+  elegant: '"Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  modern: '"Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  soft: '"Lato", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+} as const;
+const GIFT_CARD_FONT_FAMILY = GIFT_CARD_FONT_OPTIONS.elegant;
+
 const getGiftCardInfoBox = (width: number, height: number): GiftCardInfoBox => ({
   // Centro-derecha para evitar superponer recursos visuales.
   x: Math.round(width * 0.56),
@@ -73,26 +80,48 @@ const fitText = (context: CanvasRenderingContext2D, text: string, maxWidth: numb
   return `${content.trimEnd()}...`;
 };
 
+const drawGiftCardLine = (
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  maxWidth: number,
+  label: string,
+  value: string,
+  fontSize: number
+): void => {
+  context.font = `600 ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
+  context.fillStyle = '#8c2f74';
+  const labelText = `${label}: `;
+  context.fillText(labelText, x, y, maxWidth);
+  const labelWidth = Math.min(context.measureText(labelText).width, Math.max(12, maxWidth - 12));
+
+  context.font = `500 ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
+  context.fillStyle = '#a13a82';
+  context.fillText(fitText(context, value, maxWidth - labelWidth), x + labelWidth, y, maxWidth - labelWidth);
+};
+
 const drawGiftCardInfo = (context: CanvasRenderingContext2D, box: GiftCardInfoBox, data: GiftCardRenderTextData): void => {
-  const paddingX = Math.max(10, Math.floor(box.width * 0.06));
-  const paddingY = Math.max(8, Math.floor(box.height * 0.08));
+  const paddingX = Math.max(14, Math.floor(box.width * 0.07));
+  const paddingY = Math.max(12, Math.floor(box.height * 0.09));
   const maxTextWidth = Math.max(10, box.width - paddingX * 2);
-  const lineGap = Math.max(4, Math.floor(box.height * 0.04));
+  const titleFontSize = Math.max(20, Math.min(34, Math.floor(box.height * 0.1)));
+  const detailsFontSize = Math.max(13, Math.min(20, Math.floor(box.height * 0.058)));
+  const sectionGap = Math.max(8, Math.floor(detailsFontSize * 0.9));
+  const rowGap = Math.max(6, Math.floor(detailsFontSize * 0.75));
   let cursorY = box.y + paddingY;
 
-  context.fillStyle = '#a62a82';
+  context.fillStyle = '#8c2f74';
   context.textBaseline = 'top';
 
-  context.font = `700 ${Math.max(14, Math.min(24, Math.floor(box.height * 0.2)))}px "Segoe UI", Arial, sans-serif`;
+  context.font = `600 ${titleFontSize}px ${GIFT_CARD_FONT_FAMILY}`;
   context.fillText(fitText(context, data.beneficiaryName || 'Beneficiaria', maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += Math.max(16, Math.floor(box.height * 0.2)) + lineGap;
+  cursorY += titleFontSize + sectionGap;
 
-  context.font = `700 ${Math.max(11, Math.min(18, Math.floor(box.height * 0.13)))}px "Segoe UI", Arial, sans-serif`;
-  context.fillText(fitText(context, `CODIGO: ${data.code}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += Math.max(14, Math.floor(box.height * 0.15)) + lineGap;
-  context.fillText(fitText(context, `PIN: ${data.pin}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += Math.max(14, Math.floor(box.height * 0.15)) + lineGap;
-  context.fillText(fitText(context, `VENCE: ${data.expiresOn}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
+  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Codigo', data.code, detailsFontSize);
+  cursorY += detailsFontSize + rowGap;
+  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'PIN', data.pin, detailsFontSize);
+  cursorY += detailsFontSize + rowGap;
+  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Vence', data.expiresOn, detailsFontSize);
 };
 
 const renderGiftCardPng = async (data: GiftCardRenderTextData): Promise<Blob> =>
