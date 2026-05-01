@@ -12,6 +12,52 @@ interface WalletLinksResponse {
   shortUrl?: string;
 }
 
+type BackendLookupResponse = {
+  found?: boolean;
+  exists?: boolean;
+  customer?: {
+    publicId?: string;
+    id?: number;
+    fullName?: string;
+    phone?: string;
+    email?: string;
+  };
+  publicId?: string;
+  id?: number;
+  fullName?: string;
+  phone?: string;
+  email?: string;
+};
+
+const normalizeLookupResponse = (payload: BackendLookupResponse): CustomerLookupResponse => {
+  if (typeof payload.exists === 'boolean') {
+    return {
+      exists: payload.exists,
+      customer: payload.customer
+        ? {
+            publicId: payload.customer.publicId || String(payload.customer.id || ''),
+            fullName: payload.customer.fullName || '',
+            phone: payload.customer.phone || '',
+            email: payload.customer.email,
+          }
+        : undefined,
+    };
+  }
+
+  const found = payload.found === true;
+  return {
+    exists: found,
+    customer: found
+      ? {
+          publicId: payload.publicId || String(payload.id || ''),
+          fullName: payload.fullName || '',
+          phone: payload.phone || '',
+          email: payload.email,
+        }
+      : undefined,
+  };
+};
+
 const buildPhoneLookupCandidates = (phone: string): string[] => {
   const trimmed = phone.trim();
   const digits = trimmed.replace(/\D/g, '');
@@ -62,12 +108,12 @@ export const customersApi = {
    * Buscar cliente por teléfono (endpoint público)
    */
   lookup: async (phone: string): Promise<CustomerLookupResponse> => {
-    const response = await apiClient.post<CustomerLookupResponse>(
+    const response = await apiClient.post<BackendLookupResponse>(
       '/api/customers/lookup',
       null,
       { params: { phone } }
     );
-    return response.data;
+    return normalizeLookupResponse(response.data);
   },
 
   /**
@@ -78,14 +124,15 @@ export const customersApi = {
     let lastResponse: CustomerLookupResponse = { exists: false };
 
     for (const candidate of candidates) {
-      const response = await apiClient.post<CustomerLookupResponse>(
+      const response = await apiClient.post<BackendLookupResponse>(
         '/api/customers/lookup',
         null,
         { params: { phone: candidate } }
       );
-      lastResponse = response.data;
-      if (response.data.exists) {
-        return response.data;
+      const normalized = normalizeLookupResponse(response.data);
+      lastResponse = normalized;
+      if (normalized.exists) {
+        return normalized;
       }
     }
 
