@@ -7,9 +7,9 @@ import { useServicesStore } from '@/stores/servicesStore';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { GiftCardCreateRequest, GiftCardPaymentMethod } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
-import giftCardTemplate from '../../../giftcard_bunnycure.svg';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
+const giftCardTemplate = '/giftcard_bunnycure.svg';
 const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
