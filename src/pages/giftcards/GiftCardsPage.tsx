@@ -54,6 +54,12 @@ interface GiftCardInfoBox {
 }
 
 const GIFTCARD_INFO_BOX_COLOR = { r: 0xd1, g: 0x6e, b: 0x6e };
+const getDefaultGiftCardInfoBox = (width: number, height: number): GiftCardInfoBox => ({
+  x: Math.round(width * 0.19),
+  y: Math.round(height * 0.45),
+  width: Math.round(width * 0.69),
+  height: Math.round(height * 0.5),
+});
 
 const findLongestRange = (values: number[], minValue: number): [number, number] | null => {
   let bestStart = -1;
@@ -187,12 +193,13 @@ const renderGiftCardPng = async (svgMarkup: string, data: GiftCardRenderTextData
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.drawImage(image, 0, 0, width, height);
-      const infoBox = findGiftCardInfoBox(context, width, height);
-      if (!infoBox) {
-        URL.revokeObjectURL(svgUrl);
-        reject(new Error('No se detecto recuadro #d16e6e en la plantilla'));
-        return;
+      let infoBox: GiftCardInfoBox | null = null;
+      try {
+        infoBox = findGiftCardInfoBox(context, width, height);
+      } catch {
+        infoBox = null;
       }
+      if (!infoBox) infoBox = getDefaultGiftCardInfoBox(width, height);
       drawGiftCardInfo(context, infoBox, data);
       canvas.toBlob((pngBlob) => {
         URL.revokeObjectURL(svgUrl);
