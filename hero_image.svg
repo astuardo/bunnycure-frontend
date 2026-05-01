@@ -1,0 +1,46 @@
+<svg width="1032" height="336" viewBox="0 0 1032 336" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo con esquinas ligeramente redondeadas para simular la tarjeta -->
+  <rect width="100%" height="100%" fill="#fdf6f3" />
+
+  <!-- Título con la tipografía del sistema -->
+  <text x="50%" y="70" font-family="Segoe UI, Roboto, sans-serif" font-size="32" font-weight="bold" fill="#5c3d2e" text-anchor="middle" letter-spacing="1">BUNNYCURE LOYALTY</text>
+  <text x="50%" y="105" font-family="Segoe UI, Roboto, sans-serif" font-size="16" fill="#9e7b6e" text-anchor="middle">Colecciona 10 sellos para obtener tu beneficio</text>
+
+  <!-- Definición del Icono del Conejo (Lucide Style) -->
+  <defs>
+    <symbol id="bunny" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M13 16a3 3 0 0 1 2.24 5M18 10.5V6a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v4.5M10 10.5a1.5 1.5 0 1 0
+3 0 1.5 1.5 0 0 0-3 0ZM6 10.5h12c1.7 0 3 1.3 3 3v3.5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-3.5c0-1.7 1.3-3 3-3ZM10 16a3 3 0 0 0-2.24 5"/>
+    </symbol>
+  </defs>
+
+  <g transform="translate(56, 170)">
+    <!-- Fila 1 (5 sellos) -->
+    <!-- SELLO 1 -->
+    <circle cx="110" cy="0" r="42" fill="#c9897a" stroke="#7c3a2d" stroke-width="2" />
+    <use href="#bunny" x="86" y="-24" width="48" height="48" color="white" />
+
+    <!-- SELLO 2 -->
+    <circle cx="270" cy="0" r="42" fill="#c9897a" stroke="#7c3a2d" stroke-width="2" />
+    <use href="#bunny" x="246" y="-24" width="48" height="48" color="white" />
+
+    <!-- SELLO 3 (EJEMPLO: CAMBIO A INACTIVO AQUÍ) -->
+    <circle cx="430" cy="0" r="42" fill="#f0f0f0" stroke="#d1d1d1" stroke-width="1" />
+    <use href="#bunny" x="406" y="-24" width="48" height="48" color="#d1d1d1" />
+
+    <!-- SELLO 4 (INACTIVO) -->
+    <circle cx="590" cy="0" r="42" fill="#f0f0f0" stroke="#d1d1d1" stroke-width="1" />
+    <use href="#bunny" x="566" y="-24" width="48" height="48" color="#d1d1d1" />
+
+    <!-- SELLO 5 (INACTIVO) -->
+    <circle cx="750" cy="0" r="42" fill="#f0f0f0" stroke="#d1d1d1" stroke-width="1" />
+    <use href="#bunny" x="726" y="-24" width="48" height="48" color="#d1d1d1" />
+
+    <!-- Nota: Se recomienda 2 filas de 5 para mejor visibilidad en móvil -->
+    <!-- (Ajustar coordenadas CY para la segunda fila si se desea) -->
+  </g>
+
+  <!-- Footer con Progreso -->
+  <rect x="390" y="270" width="252" height="34" rx="17" fill="#ffffff" stroke="#f0e0d8" />
+  <text x="50%" y="293" font-family="Segoe UI, Roboto, sans-serif" font-size="14" font-weight="bold" fill="#7c3a2d" text-anchor="middle">PROGRESO: 2 / 10 SELLOS</text>
+</svg>

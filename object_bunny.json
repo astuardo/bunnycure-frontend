@@ -1,0 +1,62 @@
+{
+  "id": "ISSUER_ID.OBJECT_ID",
+  "classId": "ISSUER_ID.GENERIC_CLASS_ID",
+  "logo": {
+    "sourceUri": {
+      "uri": "https://www.bunnycure.cl/logo.png"
+    },
+    "contentDescription": {
+      "defaultValue": {
+        "language": "en-US",
+        "value": "LOGO_IMAGE_DESCRIPTION"
+      }
+    }
+  },
+  "cardTitle": {
+    "defaultValue": {
+      "language": "en-US",
+      "value": "Bunny Cure"
+    }
+  },
+  "subheader": {
+    "defaultValue": {
+      "language": "en-US",
+      "value": "Cliente:"
+    }
+  },
+  "header": {
+    "defaultValue": {
+      "language": "en-US",
+      "value": "Alfredo Stuardo"
+    }
+  },
+  "textModulesData": [
+    {
+      "id": "sellos",
+      "header": "Sellos",
+      "body": "4 / 10"
+    },
+    {
+      "id": "premio:",
+      "header": "Premio:",
+      "body": "20% de Desc."
+    }
+  ],
+  "barcode": {
+    "type": "QR_CODE",
+    "value": "BARCODE_VALUE",
+    "alternateText": ""
+  },
+  "hexBackgroundColor": "#c9897a",
+  "heroImage": {
+    "sourceUri": {
+      "uri": "https://bunnycure-04c4c179be8f.herokuapp.com/assets/wallet/hero_5.svg"
+    },
+    "contentDescription": {
+      "defaultValue": {
+        "language": "en-US",
+        "value": "HERO_IMAGE_DESCRIPTION"
+      }
+    }
+  }
+}

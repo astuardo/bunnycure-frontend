@@ -13,6 +13,7 @@ import {
     Users,
 } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useBookingRequestsStore } from '@/stores/bookingRequestsStore';
 import { useCustomersStore } from '@/stores/customersStore';
@@ -23,6 +24,7 @@ import { statsApi } from '@/api/stats.api';
 import { DashboardStats } from '@/types/stats.types';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
+import { useToast } from '@/hooks/useToast';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -171,13 +173,15 @@ const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 export default function DashboardPage() {
     const navigate = useNavigate();
-    const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
+    const toast = useToast();
+    const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus } = useAppointmentsStore();
     const { bookingRequests, fetchBookingRequests } = useBookingRequestsStore();
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
     const [calendarMonth] = useState(new Date());
     const calendarDisplayConfig = useCalendarDisplayConfig();
+    const [completeDialog, setCompleteDialog] = useState<{ show: boolean; appointmentId: number | null }>({ show: false, appointmentId: null });
 
     useEffect(() => {
         const load = async () => {
@@ -198,6 +202,18 @@ export default function DashboardPage() {
         };
         load();
     }, [fetchAppointments, fetchBookingRequests, fetchCustomers]);
+
+    const handleCompleteAppointment = async () => {
+        if (!completeDialog.appointmentId) return;
+        
+        try {
+            await updateAppointmentStatus(completeDialog.appointmentId, AppointmentStatus.COMPLETED);
+            toast.success('Cita marcada como completada');
+            setCompleteDialog({ show: false, appointmentId: null });
+        } catch (error) {
+            toast.error('Error al completar cita');
+        }
+    };
 
     const todayAppointments = appointments.filter(
         (apt: Appointment) => apt.appointmentDate && isToday(parseISO(apt.appointmentDate))
@@ -398,6 +414,24 @@ export default function DashboardPage() {
                                                     >
                                                         Reagendar
                                                     </button>
+                                                    {apt.status !== AppointmentStatus.COMPLETED && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCompleteDialog({ show: true, appointmentId: apt.id })}
+                                                            style={{
+                                                                border: '1px solid #c8e6e0',
+                                                                background: '#e0f5f0',
+                                                                color: '#0d5c4a',
+                                                                borderRadius: '999px',
+                                                                padding: '4px 10px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            Completar
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -588,6 +622,15 @@ export default function DashboardPage() {
                 </DashCard>
 
             </div>
+
+            <ConfirmDialog
+                show={completeDialog.show}
+                title="Completar Cita"
+                message="¿Estás seguro de que deseas marcar esta cita como completada?"
+                variant="success"
+                onConfirm={handleCompleteAppointment}
+                onCancel={() => setCompleteDialog({ show: false, appointmentId: null })}
+            />
         </DashboardLayout>
     );
 }
