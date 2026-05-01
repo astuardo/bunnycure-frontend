@@ -55,18 +55,30 @@ interface GiftCardInfoBox {
 }
 
 const GIFTCARD_INFO_BOX_COLOR = { r: 0xd1, g: 0x6e, b: 0x6e };
+const EXPECTED_INFO_BOX = { x: 0.19, y: 0.445, width: 0.693, height: 0.499 };
+const COLOR_TOLERANCE = 22;
+const ALPHA_MIN = 80;
 const isGiftCardInfoColor = (imageData: Uint8ClampedArray, index: number): boolean =>
-  imageData[index + 3] >= 220 &&
-  Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= 8 &&
-  Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= 8 &&
-  Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= 8;
+  imageData[index + 3] >= ALPHA_MIN &&
+  Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= COLOR_TOLERANCE &&
+  Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= COLOR_TOLERANCE &&
+  Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= COLOR_TOLERANCE;
 
 const findGiftCardInfoBox = (context: CanvasRenderingContext2D, width: number, height: number): GiftCardInfoBox | null => {
   const imageData = context.getImageData(0, 0, width, height).data;
   const totalPixels = width * height;
   const visited = new Uint8Array(totalPixels);
   const stack: number[] = [];
-  let best: { count: number; minX: number; minY: number; maxX: number; maxY: number } | null = null;
+  let best:
+    | {
+        count: number;
+        minX: number;
+        minY: number;
+        maxX: number;
+        maxY: number;
+        score: number;
+      }
+    | null = null;
 
   for (let pixel = 0; pixel < totalPixels; pixel += 1) {
     if (visited[pixel] !== 0) continue;
@@ -129,14 +141,41 @@ const findGiftCardInfoBox = (context: CanvasRenderingContext2D, width: number, h
     }
 
     if (count === 0 || maxX < minX || maxY < minY) continue;
-    if (!best || count > best.count) best = { count, minX, minY, maxX, maxY };
+
+    const boxWidth = maxX - minX + 1;
+    const boxHeight = maxY - minY + 1;
+    const bboxArea = boxWidth * boxHeight;
+    if (bboxArea <= 0) continue;
+
+    const density = count / bboxArea;
+    const widthRatio = boxWidth / width;
+    const heightRatio = boxHeight / height;
+    const centerX = (minX + maxX) / 2 / width;
+    const centerY = (minY + maxY) / 2 / height;
+    const expectedCenterX = EXPECTED_INFO_BOX.x + EXPECTED_INFO_BOX.width / 2;
+    const expectedCenterY = EXPECTED_INFO_BOX.y + EXPECTED_INFO_BOX.height / 2;
+
+    const sizePenalty = Math.abs(widthRatio - EXPECTED_INFO_BOX.width) + Math.abs(heightRatio - EXPECTED_INFO_BOX.height);
+    const positionPenalty = Math.abs(centerX - expectedCenterX) + Math.abs(centerY - expectedCenterY);
+    const densityPenalty = Math.abs(density - 1);
+
+    // Lower score is better.
+    const score = sizePenalty * 6 + positionPenalty * 4 + densityPenalty * 0.5 - Math.min(count / 20000, 1);
+    if (!best || score < best.score) best = { count, minX, minY, maxX, maxY, score };
   }
 
   if (!best) return null;
 
   const boxWidth = best.maxX - best.minX + 1;
   const boxHeight = best.maxY - best.minY + 1;
-  if (boxWidth < Math.floor(width * 0.25) || boxHeight < Math.floor(height * 0.15)) return null;
+  if (boxWidth < Math.floor(width * 0.35) || boxHeight < Math.floor(height * 0.2)) {
+    return {
+      x: Math.round(width * EXPECTED_INFO_BOX.x),
+      y: Math.round(height * EXPECTED_INFO_BOX.y),
+      width: Math.round(width * EXPECTED_INFO_BOX.width),
+      height: Math.round(height * EXPECTED_INFO_BOX.height),
+    };
+  }
 
   return { x: best.minX, y: best.minY, width: boxWidth, height: boxHeight };
 };
@@ -196,12 +235,13 @@ const renderGiftCardPng = async (svgMarkup: string, data: GiftCardRenderTextData
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.drawImage(image, 0, 0, width, height);
-      const infoBox = findGiftCardInfoBox(context, width, height);
-      if (!infoBox) {
-        URL.revokeObjectURL(svgUrl);
-        reject(new Error('No se pudo detectar el recuadro #d16e6e para posicionar datos'));
-        return;
-      }
+      const infoBox =
+        findGiftCardInfoBox(context, width, height) || {
+          x: Math.round(width * EXPECTED_INFO_BOX.x),
+          y: Math.round(height * EXPECTED_INFO_BOX.y),
+          width: Math.round(width * EXPECTED_INFO_BOX.width),
+          height: Math.round(height * EXPECTED_INFO_BOX.height),
+        };
       drawGiftCardInfo(context, infoBox, data);
       canvas.toBlob((pngBlob) => {
         URL.revokeObjectURL(svgUrl);
