@@ -31,13 +31,6 @@ const loadStoredPins = (): Record<number, string> => {
     return {};
   }
 };
-const escapeXml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
 const toWhatsAppPhone = (value?: string): string => {
   const digits = (value || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -45,7 +38,133 @@ const toWhatsAppPhone = (value?: string): string => {
   if (digits.length === 9 && digits.startsWith('9')) return `56${digits}`;
   return digits;
 };
-const renderGiftCardPng = async (svgMarkup: string): Promise<Blob> =>
+
+interface GiftCardRenderTextData {
+  beneficiaryName: string;
+  code: string;
+  pin: string;
+  expiresOn: string;
+}
+
+interface GiftCardInfoBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const GIFTCARD_INFO_BOX_COLOR = { r: 0xd1, g: 0x6e, b: 0x6e };
+
+const findLongestRange = (values: number[], minValue: number): [number, number] | null => {
+  let bestStart = -1;
+  let bestEnd = -1;
+  let currentStart = -1;
+
+  for (let i = 0; i < values.length; i += 1) {
+    if (values[i] >= minValue) {
+      if (currentStart === -1) currentStart = i;
+      continue;
+    }
+    if (currentStart !== -1) {
+      if (bestStart === -1 || i - currentStart > bestEnd - bestStart + 1) {
+        bestStart = currentStart;
+        bestEnd = i - 1;
+      }
+      currentStart = -1;
+    }
+  }
+
+  if (currentStart !== -1 && (bestStart === -1 || values.length - currentStart > bestEnd - bestStart + 1)) {
+    bestStart = currentStart;
+    bestEnd = values.length - 1;
+  }
+
+  return bestStart === -1 ? null : [bestStart, bestEnd];
+};
+
+const findGiftCardInfoBox = (context: CanvasRenderingContext2D, width: number, height: number): GiftCardInfoBox | null => {
+  const imageData = context.getImageData(0, 0, width, height).data;
+  const rowCounts = new Array<number>(height).fill(0);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const alpha = imageData[index + 3];
+      if (alpha < 220) continue;
+
+      const isTargetColor =
+        Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= 8 &&
+        Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= 8 &&
+        Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= 8;
+      if (isTargetColor) rowCounts[y] += 1;
+    }
+  }
+
+  const rowBand = findLongestRange(rowCounts, Math.max(60, Math.floor(width * 0.08)));
+  if (!rowBand) return null;
+
+  const [startY, endY] = rowBand;
+  const bandHeight = endY - startY + 1;
+  if (bandHeight < 24) return null;
+
+  const colCounts = new Array<number>(width).fill(0);
+  for (let y = startY; y <= endY; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const alpha = imageData[index + 3];
+      if (alpha < 220) continue;
+
+      const isTargetColor =
+        Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= 8 &&
+        Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= 8 &&
+        Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= 8;
+      if (isTargetColor) colCounts[x] += 1;
+    }
+  }
+
+  const colBand = findLongestRange(colCounts, Math.max(10, Math.floor(bandHeight * 0.6)));
+  if (!colBand) return null;
+
+  const [startX, endX] = colBand;
+  const bandWidth = endX - startX + 1;
+  if (bandWidth < 130) return null;
+
+  return { x: startX, y: startY, width: bandWidth, height: bandHeight };
+};
+
+const fitText = (context: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
+  if (context.measureText(text).width <= maxWidth) return text;
+
+  let content = text;
+  while (content.length > 3 && context.measureText(`${content}...`).width > maxWidth) {
+    content = content.slice(0, -1);
+  }
+  return `${content.trimEnd()}...`;
+};
+
+const drawGiftCardInfo = (context: CanvasRenderingContext2D, box: GiftCardInfoBox, data: GiftCardRenderTextData): void => {
+  const paddingX = Math.max(10, Math.floor(box.width * 0.06));
+  const paddingY = Math.max(8, Math.floor(box.height * 0.08));
+  const maxTextWidth = Math.max(10, box.width - paddingX * 2);
+  const lineGap = Math.max(4, Math.floor(box.height * 0.04));
+  let cursorY = box.y + paddingY;
+
+  context.fillStyle = '#fffdfb';
+  context.textBaseline = 'top';
+
+  context.font = `700 ${Math.max(14, Math.min(24, Math.floor(box.height * 0.22)))}px "Segoe UI", Arial, sans-serif`;
+  context.fillText(fitText(context, data.beneficiaryName || 'Beneficiaria', maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
+  cursorY += Math.max(18, Math.floor(box.height * 0.22)) + lineGap;
+
+  context.font = `700 ${Math.max(11, Math.min(18, Math.floor(box.height * 0.14)))}px "Segoe UI", Arial, sans-serif`;
+  context.fillText(fitText(context, `CODIGO: ${data.code}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
+  cursorY += Math.max(15, Math.floor(box.height * 0.16)) + lineGap;
+  context.fillText(fitText(context, `PIN: ${data.pin}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
+  cursorY += Math.max(15, Math.floor(box.height * 0.16)) + lineGap;
+  context.fillText(fitText(context, `VENCE: ${data.expiresOn}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
+};
+
+const renderGiftCardPng = async (svgMarkup: string, data: GiftCardRenderTextData): Promise<Blob> =>
   new Promise((resolve, reject) => {
     const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
@@ -68,6 +187,13 @@ const renderGiftCardPng = async (svgMarkup: string): Promise<Blob> =>
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.drawImage(image, 0, 0, width, height);
+      const infoBox = findGiftCardInfoBox(context, width, height);
+      if (!infoBox) {
+        URL.revokeObjectURL(svgUrl);
+        reject(new Error('No se detecto recuadro #d16e6e en la plantilla'));
+        return;
+      }
+      drawGiftCardInfo(context, infoBox, data);
       canvas.toBlob((pngBlob) => {
         URL.revokeObjectURL(svgUrl);
         if (!pngBlob) {
@@ -398,14 +524,13 @@ export default function GiftCardsPage() {
         throw new Error('No se pudo cargar la plantilla de GiftCard');
       }
 
-      let templateSvg = await templateResponse.text();
-      templateSvg = templateSvg
-        .replace(/\{\{beneficiaryName\}\}/g, escapeXml(beneficiary))
-        .replace(/\{\{code\}\}/g, escapeXml(currentGiftCard.code))
-        .replace(/\{\{pin\}\}/g, escapeXml(pinValue))
-        .replace(/\{\{expiresOn\}\}/g, escapeXml(expiry));
-
-      const pngBlob = await renderGiftCardPng(templateSvg);
+      const templateSvg = await templateResponse.text();
+      const pngBlob = await renderGiftCardPng(templateSvg, {
+        beneficiaryName: beneficiary,
+        code: currentGiftCard.code,
+        pin: pinValue,
+        expiresOn: expiry,
+      });
       const pngFile = new File([pngBlob], `giftcard-${currentGiftCard.code}.png`, { type: 'image/png' });
       const shareData: ShareData = { files: [pngFile], title: 'GiftCard BunnyCure', text: message };
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
