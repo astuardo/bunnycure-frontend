@@ -54,131 +54,13 @@ interface GiftCardInfoBox {
   height: number;
 }
 
-const GIFTCARD_INFO_BOX_COLOR = { r: 0xd1, g: 0x6e, b: 0x6e };
-const EXPECTED_INFO_BOX = { x: 0.19, y: 0.445, width: 0.693, height: 0.499 };
-const COLOR_TOLERANCE = 22;
-const ALPHA_MIN = 80;
-const isGiftCardInfoColor = (imageData: Uint8ClampedArray, index: number): boolean =>
-  imageData[index + 3] >= ALPHA_MIN &&
-  Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= COLOR_TOLERANCE &&
-  Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= COLOR_TOLERANCE &&
-  Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= COLOR_TOLERANCE;
-
-const findGiftCardInfoBox = (context: CanvasRenderingContext2D, width: number, height: number): GiftCardInfoBox | null => {
-  const imageData = context.getImageData(0, 0, width, height).data;
-  const totalPixels = width * height;
-  const visited = new Uint8Array(totalPixels);
-  const stack: number[] = [];
-  let best:
-    | {
-        count: number;
-        minX: number;
-        minY: number;
-        maxX: number;
-        maxY: number;
-        score: number;
-      }
-    | null = null;
-
-  for (let pixel = 0; pixel < totalPixels; pixel += 1) {
-    if (visited[pixel] !== 0) continue;
-    visited[pixel] = 1;
-
-    const pixelIndex = pixel * 4;
-    if (!isGiftCardInfoColor(imageData, pixelIndex)) continue;
-
-    let count = 0;
-    let minX = width;
-    let minY = height;
-    let maxX = -1;
-    let maxY = -1;
-
-    stack.push(pixel);
-    while (stack.length > 0) {
-      const current = stack.pop();
-      if (current === undefined || visited[current] === 2) continue;
-      visited[current] = 2;
-
-      const currentIndex = current * 4;
-      if (!isGiftCardInfoColor(imageData, currentIndex)) continue;
-
-      const x = current % width;
-      const y = Math.floor(current / width);
-      count += 1;
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x > maxX) maxX = x;
-      if (y > maxY) maxY = y;
-
-      if (x > 0) {
-        const left = current - 1;
-        if (visited[left] === 0) {
-          visited[left] = 1;
-          stack.push(left);
-        }
-      }
-      if (x < width - 1) {
-        const right = current + 1;
-        if (visited[right] === 0) {
-          visited[right] = 1;
-          stack.push(right);
-        }
-      }
-      if (y > 0) {
-        const up = current - width;
-        if (visited[up] === 0) {
-          visited[up] = 1;
-          stack.push(up);
-        }
-      }
-      if (y < height - 1) {
-        const down = current + width;
-        if (visited[down] === 0) {
-          visited[down] = 1;
-          stack.push(down);
-        }
-      }
-    }
-
-    if (count === 0 || maxX < minX || maxY < minY) continue;
-
-    const boxWidth = maxX - minX + 1;
-    const boxHeight = maxY - minY + 1;
-    const bboxArea = boxWidth * boxHeight;
-    if (bboxArea <= 0) continue;
-
-    const density = count / bboxArea;
-    const widthRatio = boxWidth / width;
-    const heightRatio = boxHeight / height;
-    const centerX = (minX + maxX) / 2 / width;
-    const centerY = (minY + maxY) / 2 / height;
-    const expectedCenterX = EXPECTED_INFO_BOX.x + EXPECTED_INFO_BOX.width / 2;
-    const expectedCenterY = EXPECTED_INFO_BOX.y + EXPECTED_INFO_BOX.height / 2;
-
-    const sizePenalty = Math.abs(widthRatio - EXPECTED_INFO_BOX.width) + Math.abs(heightRatio - EXPECTED_INFO_BOX.height);
-    const positionPenalty = Math.abs(centerX - expectedCenterX) + Math.abs(centerY - expectedCenterY);
-    const densityPenalty = Math.abs(density - 1);
-
-    // Lower score is better.
-    const score = sizePenalty * 6 + positionPenalty * 4 + densityPenalty * 0.5 - Math.min(count / 20000, 1);
-    if (!best || score < best.score) best = { count, minX, minY, maxX, maxY, score };
-  }
-
-  if (!best) return null;
-
-  const boxWidth = best.maxX - best.minX + 1;
-  const boxHeight = best.maxY - best.minY + 1;
-  if (boxWidth < Math.floor(width * 0.35) || boxHeight < Math.floor(height * 0.2)) {
-    return {
-      x: Math.round(width * EXPECTED_INFO_BOX.x),
-      y: Math.round(height * EXPECTED_INFO_BOX.y),
-      width: Math.round(width * EXPECTED_INFO_BOX.width),
-      height: Math.round(height * EXPECTED_INFO_BOX.height),
-    };
-  }
-
-  return { x: best.minX, y: best.minY, width: boxWidth, height: boxHeight };
-};
+const getGiftCardInfoBox = (width: number, height: number): GiftCardInfoBox => ({
+  // Centro-derecha para evitar superponer recursos visuales.
+  x: Math.round(width * 0.56),
+  y: Math.round(height * 0.34),
+  width: Math.round(width * 0.37),
+  height: Math.round(height * 0.3),
+});
 
 const fitText = (context: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
   if (context.measureText(text).width <= maxWidth) return text;
@@ -197,54 +79,44 @@ const drawGiftCardInfo = (context: CanvasRenderingContext2D, box: GiftCardInfoBo
   const lineGap = Math.max(4, Math.floor(box.height * 0.04));
   let cursorY = box.y + paddingY;
 
-  context.fillStyle = '#fffdfb';
+  context.fillStyle = '#a62a82';
   context.textBaseline = 'top';
 
-  context.font = `700 ${Math.max(14, Math.min(24, Math.floor(box.height * 0.22)))}px "Segoe UI", Arial, sans-serif`;
+  context.font = `700 ${Math.max(14, Math.min(24, Math.floor(box.height * 0.2)))}px "Segoe UI", Arial, sans-serif`;
   context.fillText(fitText(context, data.beneficiaryName || 'Beneficiaria', maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += Math.max(18, Math.floor(box.height * 0.22)) + lineGap;
+  cursorY += Math.max(16, Math.floor(box.height * 0.2)) + lineGap;
 
-  context.font = `700 ${Math.max(11, Math.min(18, Math.floor(box.height * 0.14)))}px "Segoe UI", Arial, sans-serif`;
+  context.font = `700 ${Math.max(11, Math.min(18, Math.floor(box.height * 0.13)))}px "Segoe UI", Arial, sans-serif`;
   context.fillText(fitText(context, `CODIGO: ${data.code}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += Math.max(15, Math.floor(box.height * 0.16)) + lineGap;
+  cursorY += Math.max(14, Math.floor(box.height * 0.15)) + lineGap;
   context.fillText(fitText(context, `PIN: ${data.pin}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += Math.max(15, Math.floor(box.height * 0.16)) + lineGap;
+  cursorY += Math.max(14, Math.floor(box.height * 0.15)) + lineGap;
   context.fillText(fitText(context, `VENCE: ${data.expiresOn}`, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
 };
 
-const renderGiftCardPng = async (svgMarkup: string, data: GiftCardRenderTextData): Promise<Blob> =>
+const renderGiftCardPng = async (data: GiftCardRenderTextData): Promise<Blob> =>
   new Promise((resolve, reject) => {
-    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
     const image = new Image();
 
     image.onload = () => {
-      const width = image.naturalWidth || image.width || 559;
-      const height = image.naturalHeight || image.height || 397;
-      const scale = 2;
+      const width = image.naturalWidth || image.width || 1748;
+      const height = image.naturalHeight || image.height || 1240;
+      const scale = 1;
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(width * scale);
       canvas.height = Math.round(height * scale);
       const context = canvas.getContext('2d');
 
       if (!context) {
-        URL.revokeObjectURL(svgUrl);
         reject(new Error('No se pudo inicializar canvas'));
         return;
       }
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.drawImage(image, 0, 0, width, height);
-      const infoBox =
-        findGiftCardInfoBox(context, width, height) || {
-          x: Math.round(width * EXPECTED_INFO_BOX.x),
-          y: Math.round(height * EXPECTED_INFO_BOX.y),
-          width: Math.round(width * EXPECTED_INFO_BOX.width),
-          height: Math.round(height * EXPECTED_INFO_BOX.height),
-        };
+      const infoBox = getGiftCardInfoBox(width, height);
       drawGiftCardInfo(context, infoBox, data);
       canvas.toBlob((pngBlob) => {
-        URL.revokeObjectURL(svgUrl);
         if (!pngBlob) {
           reject(new Error('No se pudo generar PNG'));
           return;
@@ -254,11 +126,10 @@ const renderGiftCardPng = async (svgMarkup: string, data: GiftCardRenderTextData
     };
 
     image.onerror = () => {
-      URL.revokeObjectURL(svgUrl);
       reject(new Error('No se pudo renderizar plantilla SVG'));
     };
 
-    image.src = svgUrl;
+    image.src = `${giftCardTemplate}?v=${Date.now()}`;
   });
 
 const getDefaultExpiryDate = (): string => {
@@ -569,13 +440,7 @@ export default function GiftCardsPage() {
 
     setSharingGiftCard(true);
     try {
-      const templateResponse = await fetch(giftCardTemplate, { cache: 'no-store' });
-      if (!templateResponse.ok) {
-        throw new Error('No se pudo cargar la plantilla de GiftCard');
-      }
-
-      const templateSvg = await templateResponse.text();
-      const pngBlob = await renderGiftCardPng(templateSvg, {
+      const pngBlob = await renderGiftCardPng({
         beneficiaryName: beneficiary,
         code: currentGiftCard.code,
         pin: pinValue,
