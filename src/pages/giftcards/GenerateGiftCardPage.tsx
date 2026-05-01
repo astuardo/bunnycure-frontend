@@ -7,6 +7,7 @@ import { useServicesStore } from '@/stores/servicesStore';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { GiftCardCreateRequest, GiftCardPaymentMethod } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
+import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 const giftCardTemplate = '/giftcard_bunnycure.svg';
@@ -119,7 +120,7 @@ export default function GenerateGiftCardPage() {
       toast.success('GiftCard creada');
       setCreatedInfo({
         code: created.code,
-        publicUrl: created.publicUrl,
+        publicUrl: normalizeGiftCardPublicUrl(created.publicUrl, created.code),
         plainPin: created.plainPin,
         beneficiaryName: createData.beneficiaryFullName.trim(),
       });

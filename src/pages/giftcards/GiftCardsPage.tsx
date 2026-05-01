@@ -7,6 +7,7 @@ import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { useServicesStore } from '@/stores/servicesStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
+import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 const giftCardTemplate = '/giftcard_bunnycure.svg';
@@ -54,88 +55,90 @@ interface GiftCardInfoBox {
 }
 
 const GIFTCARD_INFO_BOX_COLOR = { r: 0xd1, g: 0x6e, b: 0x6e };
-const getDefaultGiftCardInfoBox = (width: number, height: number): GiftCardInfoBox => ({
-  x: Math.round(width * 0.19),
-  y: Math.round(height * 0.45),
-  width: Math.round(width * 0.69),
-  height: Math.round(height * 0.5),
-});
-
-const findLongestRange = (values: number[], minValue: number): [number, number] | null => {
-  let bestStart = -1;
-  let bestEnd = -1;
-  let currentStart = -1;
-
-  for (let i = 0; i < values.length; i += 1) {
-    if (values[i] >= minValue) {
-      if (currentStart === -1) currentStart = i;
-      continue;
-    }
-    if (currentStart !== -1) {
-      if (bestStart === -1 || i - currentStart > bestEnd - bestStart + 1) {
-        bestStart = currentStart;
-        bestEnd = i - 1;
-      }
-      currentStart = -1;
-    }
-  }
-
-  if (currentStart !== -1 && (bestStart === -1 || values.length - currentStart > bestEnd - bestStart + 1)) {
-    bestStart = currentStart;
-    bestEnd = values.length - 1;
-  }
-
-  return bestStart === -1 ? null : [bestStart, bestEnd];
-};
+const isGiftCardInfoColor = (imageData: Uint8ClampedArray, index: number): boolean =>
+  imageData[index + 3] >= 220 &&
+  Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= 8 &&
+  Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= 8 &&
+  Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= 8;
 
 const findGiftCardInfoBox = (context: CanvasRenderingContext2D, width: number, height: number): GiftCardInfoBox | null => {
   const imageData = context.getImageData(0, 0, width, height).data;
-  const rowCounts = new Array<number>(height).fill(0);
+  const totalPixels = width * height;
+  const visited = new Uint8Array(totalPixels);
+  const stack: number[] = [];
+  let best: { count: number; minX: number; minY: number; maxX: number; maxY: number } | null = null;
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const index = (y * width + x) * 4;
-      const alpha = imageData[index + 3];
-      if (alpha < 220) continue;
+  for (let pixel = 0; pixel < totalPixels; pixel += 1) {
+    if (visited[pixel] !== 0) continue;
+    visited[pixel] = 1;
 
-      const isTargetColor =
-        Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= 8 &&
-        Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= 8 &&
-        Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= 8;
-      if (isTargetColor) rowCounts[y] += 1;
+    const pixelIndex = pixel * 4;
+    if (!isGiftCardInfoColor(imageData, pixelIndex)) continue;
+
+    let count = 0;
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    stack.push(pixel);
+    while (stack.length > 0) {
+      const current = stack.pop();
+      if (current === undefined || visited[current] === 2) continue;
+      visited[current] = 2;
+
+      const currentIndex = current * 4;
+      if (!isGiftCardInfoColor(imageData, currentIndex)) continue;
+
+      const x = current % width;
+      const y = Math.floor(current / width);
+      count += 1;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+
+      if (x > 0) {
+        const left = current - 1;
+        if (visited[left] === 0) {
+          visited[left] = 1;
+          stack.push(left);
+        }
+      }
+      if (x < width - 1) {
+        const right = current + 1;
+        if (visited[right] === 0) {
+          visited[right] = 1;
+          stack.push(right);
+        }
+      }
+      if (y > 0) {
+        const up = current - width;
+        if (visited[up] === 0) {
+          visited[up] = 1;
+          stack.push(up);
+        }
+      }
+      if (y < height - 1) {
+        const down = current + width;
+        if (visited[down] === 0) {
+          visited[down] = 1;
+          stack.push(down);
+        }
+      }
     }
+
+    if (count === 0 || maxX < minX || maxY < minY) continue;
+    if (!best || count > best.count) best = { count, minX, minY, maxX, maxY };
   }
 
-  const rowBand = findLongestRange(rowCounts, Math.max(60, Math.floor(width * 0.08)));
-  if (!rowBand) return null;
+  if (!best) return null;
 
-  const [startY, endY] = rowBand;
-  const bandHeight = endY - startY + 1;
-  if (bandHeight < 24) return null;
+  const boxWidth = best.maxX - best.minX + 1;
+  const boxHeight = best.maxY - best.minY + 1;
+  if (boxWidth < Math.floor(width * 0.25) || boxHeight < Math.floor(height * 0.15)) return null;
 
-  const colCounts = new Array<number>(width).fill(0);
-  for (let y = startY; y <= endY; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const index = (y * width + x) * 4;
-      const alpha = imageData[index + 3];
-      if (alpha < 220) continue;
-
-      const isTargetColor =
-        Math.abs(imageData[index] - GIFTCARD_INFO_BOX_COLOR.r) <= 8 &&
-        Math.abs(imageData[index + 1] - GIFTCARD_INFO_BOX_COLOR.g) <= 8 &&
-        Math.abs(imageData[index + 2] - GIFTCARD_INFO_BOX_COLOR.b) <= 8;
-      if (isTargetColor) colCounts[x] += 1;
-    }
-  }
-
-  const colBand = findLongestRange(colCounts, Math.max(10, Math.floor(bandHeight * 0.6)));
-  if (!colBand) return null;
-
-  const [startX, endX] = colBand;
-  const bandWidth = endX - startX + 1;
-  if (bandWidth < 130) return null;
-
-  return { x: startX, y: startY, width: bandWidth, height: bandHeight };
+  return { x: best.minX, y: best.minY, width: boxWidth, height: boxHeight };
 };
 
 const fitText = (context: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
@@ -193,13 +196,12 @@ const renderGiftCardPng = async (svgMarkup: string, data: GiftCardRenderTextData
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.drawImage(image, 0, 0, width, height);
-      let infoBox: GiftCardInfoBox | null = null;
-      try {
-        infoBox = findGiftCardInfoBox(context, width, height);
-      } catch {
-        infoBox = null;
+      const infoBox = findGiftCardInfoBox(context, width, height);
+      if (!infoBox) {
+        URL.revokeObjectURL(svgUrl);
+        reject(new Error('No se pudo detectar el recuadro #d16e6e para posicionar datos'));
+        return;
       }
-      if (!infoBox) infoBox = getDefaultGiftCardInfoBox(width, height);
       drawGiftCardInfo(context, infoBox, data);
       canvas.toBlob((pngBlob) => {
         URL.revokeObjectURL(svgUrl);
@@ -517,12 +519,13 @@ export default function GiftCardsPage() {
     const expiry = currentGiftCard.expiresOn || '-';
     const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
     const waPhone = toWhatsAppPhone(currentGiftCard.beneficiaryPhone);
+    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
     const message =
       `Hola ${beneficiary}, aqui esta tu GiftCard BunnyCure.\n` +
       `Codigo: ${currentGiftCard.code}\n` +
       `PIN: ${pinValue}\n` +
       `Vence: ${expiry}\n` +
-      `Link: ${currentGiftCard.publicUrl}`;
+      `Link: ${publicUrl}`;
 
     setSharingGiftCard(true);
     try {
@@ -577,12 +580,13 @@ export default function GiftCardsPage() {
     }
 
     const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
+    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
     const message =
       `Hola ${currentGiftCard.beneficiaryName}, aqui esta tu GiftCard BunnyCure.\n` +
       `Codigo: ${currentGiftCard.code}\n` +
       `PIN: ${pinValue}\n` +
       `Vence: ${currentGiftCard.expiresOn}\n` +
-      `Link: ${currentGiftCard.publicUrl}`;
+      `Link: ${publicUrl}`;
     const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
   };
@@ -973,7 +977,12 @@ export default function GiftCardsPage() {
                 <Button variant="outline-danger" onClick={handleCancel}>
                   Anular GiftCard
                 </Button>
-                <a className="btn btn-outline-primary" href={currentGiftCard.publicUrl} target="_blank" rel="noreferrer">
+                <a
+                  className="btn btn-outline-primary"
+                  href={normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Abrir URL pública
                 </a>
                 <Button variant="outline-success" onClick={handleShareGiftCard} disabled={sharingGiftCard}>
