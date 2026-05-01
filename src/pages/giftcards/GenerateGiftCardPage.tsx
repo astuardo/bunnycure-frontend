@@ -140,7 +140,7 @@ export default function GenerateGiftCardPage() {
 
     setLookupLoading(true);
     try {
-      const result = await customersApi.lookup(normalizedPhone);
+      const result = await customersApi.lookupFlexible(normalizedPhone);
       if (result.exists && result.customer) {
         setCreateData((prev) => ({
           ...prev,

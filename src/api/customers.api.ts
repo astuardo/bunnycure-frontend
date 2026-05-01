@@ -12,6 +12,32 @@ interface WalletLinksResponse {
   shortUrl?: string;
 }
 
+const buildPhoneLookupCandidates = (phone: string): string[] => {
+  const trimmed = phone.trim();
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits) return [];
+
+  const candidates = new Set<string>();
+  candidates.add(trimmed);
+  candidates.add(digits);
+  candidates.add(`+${digits}`);
+
+  if (digits.startsWith('56')) {
+    const local = digits.slice(2);
+    if (local) {
+      candidates.add(local);
+      candidates.add(`+${local}`);
+    }
+  }
+
+  if (digits.length === 9 && digits.startsWith('9')) {
+    candidates.add(`56${digits}`);
+    candidates.add(`+56${digits}`);
+  }
+
+  return Array.from(candidates).filter((value) => value.length > 0);
+};
+
 export const customersApi = {
   /**
    * Listar clientes (opcionalmente con búsqueda)
@@ -42,6 +68,28 @@ export const customersApi = {
       { params: { phone } }
     );
     return response.data;
+  },
+
+  /**
+   * Buscar cliente por teléfono probando variantes de formato (+56, 56, local)
+   */
+  lookupFlexible: async (phone: string): Promise<CustomerLookupResponse> => {
+    const candidates = buildPhoneLookupCandidates(phone);
+    let lastResponse: CustomerLookupResponse = { exists: false };
+
+    for (const candidate of candidates) {
+      const response = await apiClient.post<CustomerLookupResponse>(
+        '/api/customers/lookup',
+        null,
+        { params: { phone: candidate } }
+      );
+      lastResponse = response.data;
+      if (response.data.exists) {
+        return response.data;
+      }
+    }
+
+    return lastResponse;
   },
 
   /**
