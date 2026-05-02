@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { CancelAppointmentDialog } from '@/components/appointments/CancelAppointmentDialog';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useBookingRequestsStore } from '@/stores/bookingRequestsStore';
 import { useCustomersStore } from '@/stores/customersStore';
@@ -174,7 +175,7 @@ const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 export default function DashboardPage() {
     const navigate = useNavigate();
     const toast = useToast();
-    const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus } = useAppointmentsStore();
+    const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus, updateAppointment } = useAppointmentsStore();
     const { bookingRequests, fetchBookingRequests } = useBookingRequestsStore();
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
@@ -182,6 +183,9 @@ export default function DashboardPage() {
     const [calendarMonth] = useState(new Date());
     const calendarDisplayConfig = useCalendarDisplayConfig();
     const [completeDialog, setCompleteDialog] = useState<{ show: boolean; appointmentId: number | null }>({ show: false, appointmentId: null });
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelingAppointmentId, setCancelingAppointmentId] = useState<number | null>(null);
+    const [isCancelLoading, setIsCancelLoading] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -212,6 +216,37 @@ export default function DashboardPage() {
             setCompleteDialog({ show: false, appointmentId: null });
         } catch (error) {
             toast.error('Error al completar cita');
+        }
+    };
+
+    const handleCancelAppointment = (id: number) => {
+        setCancelingAppointmentId(id);
+        setShowCancelModal(true);
+    };
+
+    const handleConfirmCancelAppointment = async (reason: string) => {
+        if (!cancelingAppointmentId) return;
+
+        setIsCancelLoading(true);
+        try {
+            const appointment = appointments.find((apt) => apt.id === cancelingAppointmentId);
+            if (!appointment) throw new Error('Cita no encontrada');
+
+            const updatedNotes = appointment.notes
+                ? `${appointment.notes}\n\n--- CANCELACIÓN ---\nMotivo: ${reason}`
+                : `--- CANCELACIÓN ---\nMotivo: ${reason}`;
+
+            await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
+            await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
+
+            toast.success('Cita cancelada correctamente');
+            setShowCancelModal(false);
+            setCancelingAppointmentId(null);
+            await fetchAppointments();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al cancelar la cita');
+        } finally {
+            setIsCancelLoading(false);
         }
     };
 
@@ -432,6 +467,24 @@ export default function DashboardPage() {
                                                             Completar
                                                         </button>
                                                     )}
+                                                    {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleCancelAppointment(apt.id)}
+                                                            style={{
+                                                                border: '1px solid #f5bfbf',
+                                                                background: '#fce4e4',
+                                                                color: '#7c1c1c',
+                                                                borderRadius: '999px',
+                                                                padding: '4px 10px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -631,6 +684,22 @@ export default function DashboardPage() {
                 onConfirm={handleCompleteAppointment}
                 onCancel={() => setCompleteDialog({ show: false, appointmentId: null })}
             />
+
+            {cancelingAppointmentId && (
+                <CancelAppointmentDialog
+                    show={showCancelModal}
+                    appointmentId={cancelingAppointmentId}
+                    customerName={appointments.find((apt) => apt.id === cancelingAppointmentId)?.customer.fullName}
+                    appointmentDate={appointments.find((apt) => apt.id === cancelingAppointmentId)?.appointmentDate}
+                    appointmentTime={appointments.find((apt) => apt.id === cancelingAppointmentId)?.appointmentTime}
+                    onConfirm={handleConfirmCancelAppointment}
+                    onCancel={() => {
+                        setShowCancelModal(false);
+                        setCancelingAppointmentId(null);
+                    }}
+                    isLoading={isCancelLoading}
+                />
+            )}
         </DashboardLayout>
     );
 }
