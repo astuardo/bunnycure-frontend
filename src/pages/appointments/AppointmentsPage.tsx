@@ -8,6 +8,7 @@ import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert, Dropdown } fr
 import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
+import { CancelAppointmentDialog } from '../../components/appointments/CancelAppointmentDialog';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
@@ -81,6 +82,11 @@ export default function AppointmentsPage() {
 
   const [isCustomerListCollapsed, setIsCustomerListCollapsed] = useState(false);
   const [isServiceListCollapsed, setIsServiceListCollapsed] = useState(false);
+
+  // Estados para modal de cancelación
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelingAppointmentId, setCancelingAppointmentId] = useState<number | null>(null);
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
 
   const [formData, setFormData] = useState<AppointmentFormState>({
     customerId: 0,
@@ -495,15 +501,36 @@ export default function AppointmentsPage() {
     }
   };
 
-  const handleCancelAppointment = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-      try {
-        await updateAppointmentStatus(id, AppointmentStatus.CANCELLED);
-        toast.success('Cita cancelada');
-        fetchAppointments();
-      } catch (err: unknown) {
-        toast.error(getErrorMessage(err, 'Error al cancelar la cita'));
-      }
+  const handleCancelAppointment = (id: number) => {
+    setCancelingAppointmentId(id);
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancelAppointment = async (reason: string) => {
+    if (!cancelingAppointmentId) return;
+
+    setIsCancelLoading(true);
+    try {
+      // Actualizar cita con motivo en notas
+      const appointment = appointments.find((apt) => apt.id === cancelingAppointmentId);
+      if (!appointment) throw new Error('Cita no encontrada');
+
+      const updatedNotes = appointment.notes
+        ? `${appointment.notes}\n\n--- CANCELACIÓN ---\nMotivo: ${reason}`
+        : `--- CANCELACIÓN ---\nMotivo: ${reason}`;
+
+      await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
+      // Actualizar las notas con el motivo
+      await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
+
+      toast.success('Cita cancelada correctamente');
+      setShowCancelModal(false);
+      setCancelingAppointmentId(null);
+      await fetchAppointments();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Error al cancelar la cita'));
+    } finally {
+      setIsCancelLoading(false);
     }
   };
 
@@ -1435,6 +1462,23 @@ export default function AppointmentsPage() {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      {/* Modal de Cancelación con Motivo */}
+      {cancelingAppointmentId && (
+        <CancelAppointmentDialog
+          show={showCancelModal}
+          appointmentId={cancelingAppointmentId}
+          customerName={appointments.find((apt) => apt.id === cancelingAppointmentId)?.customer.fullName}
+          appointmentDate={appointments.find((apt) => apt.id === cancelingAppointmentId)?.appointmentDate}
+          appointmentTime={appointments.find((apt) => apt.id === cancelingAppointmentId)?.appointmentTime}
+          onConfirm={handleConfirmCancelAppointment}
+          onCancel={() => {
+            setShowCancelModal(false);
+            setCancelingAppointmentId(null);
+          }}
+          isLoading={isCancelLoading}
+        />
+      )}
       </div>
     </DashboardLayout>
   );
