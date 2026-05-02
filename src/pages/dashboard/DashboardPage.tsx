@@ -26,6 +26,7 @@ import { DashboardStats } from '@/types/stats.types';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
 import { useToast } from '@/hooks/useToast';
+import { trackAppointmentCancelled } from '@/utils/analytics';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -238,6 +239,9 @@ export default function DashboardPage() {
 
             await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
             await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
+
+            // 🔍 Track cancellation en GA4
+            trackAppointmentCancelled(cancelingAppointmentId, appointment.customer.id, reason);
 
             toast.success('Cita cancelada correctamente');
             setShowCancelModal(false);

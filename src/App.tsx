@@ -6,8 +6,12 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/mobile.css'
+import { usePageViewTracking } from './hooks/usePageViewTracking'
 
-function App() {
+function AppContent() {
+  // Trackear page views automáticamente cuando cambia de ruta
+  usePageViewTracking();
+
   return (
     <>
       <OfflineIndicator />
@@ -26,7 +30,11 @@ function App() {
         pauseOnHover
       />
     </>
-  )
+  );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default App

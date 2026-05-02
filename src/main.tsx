@@ -5,6 +5,7 @@ import App from './App.tsx'
 import './styles/mobile.css';
 import './styles/bunny-theme.css';
 import apiClient from './api/client';
+import { initializeGA } from './utils/analytics';
 
 const WEB_PUSH_SYNC_KEY = 'webpush_subscription_synced_endpoint';
 
@@ -72,6 +73,8 @@ const registerWebPushSubscription = async (registration: ServiceWorkerRegistrati
 // Registrar Service Worker para notificaciones PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // Inicializar GA4
+    initializeGA();
     navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
       .then((registration) => {

@@ -8,6 +8,7 @@ import { persist } from 'zustand/middleware';
 import type { User } from '../api/auth.api';
 import * as authApi from '../api/auth.api';
 import { getAppBuildId } from '../config/buildInfo';
+import { trackLogin, setUserProperties } from '../utils/analytics';
 
 const APP_BUILD_ID = getAppBuildId();
 
@@ -50,6 +51,10 @@ export const useAuthStore = create<AuthState>()(
             error: null,
             authBuildId: APP_BUILD_ID,
           });
+          
+          // 🔍 Track login en GA4
+          trackLogin(loginResponse.user.id, loginResponse.user.email || undefined);
+          setUserProperties(loginResponse.user.id, loginResponse.user.role || undefined);
           
           // TODO: Manejar requiresPasswordChange cuando se implemente
           if (loginResponse.requiresPasswordChange) {

@@ -17,6 +17,7 @@ import { appointmentsApi } from '../../api/appointments.api';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/useToast';
+import { trackAppointmentCancelled } from '../../utils/analytics';
 
 interface AppointmentFormState {
   customerId: number;
@@ -522,6 +523,9 @@ export default function AppointmentsPage() {
       await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
       // Actualizar las notas con el motivo
       await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
+
+      // 🔍 Track cancellation en GA4
+      trackAppointmentCancelled(cancelingAppointmentId, appointment.customer.id, reason);
 
       toast.success('Cita cancelada correctamente');
       setShowCancelModal(false);
