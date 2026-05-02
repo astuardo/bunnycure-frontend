@@ -557,7 +557,7 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {clientsMetrics.slice(0, 50).map((client) => (
+                  {clientsMetrics.slice(0, 10).map((client) => (
                     <tr key={client.clientId} style={{ borderBottom: '1px solid #f0e0d8' }}>
                       <td style={{ padding: '10px', color: TEXT_DARK, fontWeight: 500 }}>
                         <div>{client.clientName}</div>
@@ -585,9 +585,9 @@ export default function AnalyticsPage() {
                   ))}
                 </tbody>
               </table>
-              {clientsMetrics.length > 50 && (
+              {clientsMetrics.length > 10 && (
                 <div style={{ marginTop: '12px', color: TEXT_MID, fontSize: '12px' }}>
-                  Mostrando 50 de {clientsMetrics.length} clientes. Descarga el reporte CSV para ver todos.
+                  Mostrando 10 de {clientsMetrics.length} clientes. Descarga el reporte CSV para ver todos.
                 </div>
               )}
             </div>
