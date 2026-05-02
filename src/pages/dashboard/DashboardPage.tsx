@@ -353,7 +353,7 @@ export default function DashboardPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '9px', textTransform: 'uppercase', color: TEXT_MID, fontWeight: 700, letterSpacing: '0.05em' }}>Total Hoy</span>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#5a8f7b' }}>{formatCurrency(todayAppointments.reduce((sum, apt) => sum + getAppointmentTotal(apt), 0))}</span>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#5a8f7b' }}>{formatCurrency(todayAppointments.filter(apt => apt.status !== 'CANCELLED').reduce((sum, apt) => sum + getAppointmentTotal(apt), 0))}</span>
                             </div>
                             <Link to="/appointments" style={{ fontSize: '13px', color: TEXT_MID, textDecoration: 'underline' }}>
                                 Ver todas
