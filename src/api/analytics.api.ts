@@ -181,7 +181,105 @@ export const analyticsApi = {
       cancellationReasons,
     };
   },
+
+  /**
+   * Obtener tabla detallada de todas las citas canceladas
+   */
+  getCancelledAppointmentsDetail: async (startDate: string, endDate: string) => {
+    const appointments = await apiClient
+      .get<ApiResponse<Appointment[]>>('/api/appointments', {
+        params: { startDate, endDate },
+      })
+      .then((res) => res.data.data || []);
+
+    return appointments
+      .filter((apt) => apt.status === 'CANCELLED')
+      .map((apt) => ({
+        id: apt.id,
+        customerName: apt.customer.fullName,
+        customerPhone: apt.customer.phone || '-',
+        serviceName: apt.services?.[0]?.name || apt.service?.name || '-',
+        appointmentDate: apt.appointmentDate,
+        total: getAppointmentTotal(apt),
+        cancellationReason: extractCancellationReason(apt),
+        notes: apt.notes || '',
+      }))
+      .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
+  },
+
+  /**
+   * Obtener tabla extendida de clientes con todas sus métricas
+   */
+  getAllClientsMetrics: async (startDate: string, endDate: string) => {
+    const appointments = await apiClient
+      .get<ApiResponse<Appointment[]>>('/api/appointments', {
+        params: { startDate, endDate },
+      })
+      .then((res) => res.data.data || []);
+
+    const clientMap = new Map<
+      number,
+      {
+        clientId: number;
+        clientName: string;
+        clientPhone: string;
+        appointmentCount: number;
+        cancelledCount: number;
+        completedCount: number;
+        totalSpent: number;
+        averageSpent: number;
+        lastAppointmentDate: string | null;
+        cancellationRate: number;
+      }
+    >();
+
+    appointments.forEach((apt) => {
+      const existing = clientMap.get(apt.customer.id) || {
+        clientId: apt.customer.id,
+        clientName: apt.customer.fullName,
+        clientPhone: apt.customer.phone || '',
+        appointmentCount: 0,
+        cancelledCount: 0,
+        completedCount: 0,
+        totalSpent: 0,
+        averageSpent: 0,
+        lastAppointmentDate: null,
+        cancellationRate: 0,
+      };
+
+      existing.appointmentCount += 1;
+      if (apt.status !== 'CANCELLED') {
+        existing.totalSpent += getAppointmentTotal(apt) || 0;
+      }
+      if (apt.status === 'CANCELLED') existing.cancelledCount += 1;
+      if (apt.status === 'COMPLETED') existing.completedCount += 1;
+
+      if (!existing.lastAppointmentDate || apt.appointmentDate > existing.lastAppointmentDate) {
+        existing.lastAppointmentDate = apt.appointmentDate;
+      }
+
+      existing.averageSpent = existing.appointmentCount > 0 ? Math.round(existing.totalSpent / existing.appointmentCount) : 0;
+      existing.cancellationRate = existing.appointmentCount > 0 ? Math.round((existing.cancelledCount / existing.appointmentCount) * 100) : 0;
+
+      clientMap.set(apt.customer.id, existing);
+    });
+
+    return Array.from(clientMap.values()).sort((a, b) => b.appointmentCount - a.appointmentCount);
+  },
 };
+
+/**
+ * Función auxiliar para extraer motivo de cancelación
+ */
+function extractCancellationReason(apt: Appointment): string {
+  if (apt.notes) {
+    const match = apt.notes.match(/Motivo:\s*(.+?)(\n|$)/i);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+  return 'Sin especificar';
+}
 
 /**
  * Función auxiliar para calcular total de cita (duplicada de AppointmentsPage)

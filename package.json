@@ -15,6 +15,7 @@
     "bootstrap": "^5.3.8",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.8.0",
+    "papaparse": "^5.5.3",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.4",
     "react-big-calendar": "^1.19.4",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/node": "^24.12.2",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",

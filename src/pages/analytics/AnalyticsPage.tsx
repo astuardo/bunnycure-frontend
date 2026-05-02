@@ -19,12 +19,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { BarChart3, Users, AlertCircle } from 'lucide-react';
+import { BarChart3, Users, AlertCircle, Download } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { analyticsApi } from '@/api/analytics.api';
 import { AnalyticsData } from '@/types/analytics.types';
 import { useToast } from '@/hooks/useToast';
 import { format, subDays } from 'date-fns';
+import { exportToCSV } from '@/utils/exportUtils';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
@@ -32,6 +33,8 @@ export default function AnalyticsPage() {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [cancelledDetail, setCancelledDetail] = useState<any[]>([]);
+  const [clientsMetrics, setClientsMetrics] = useState<any[]>([]);
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
@@ -40,6 +43,12 @@ export default function AnalyticsPage() {
     try {
       const result = await analyticsApi.getAnalytics(startDate, endDate);
       setData(result);
+      
+      // Cargar datos extras
+      const cancelled = await analyticsApi.getCancelledAppointmentsDetail(startDate, endDate);
+      const clients = await analyticsApi.getAllClientsMetrics(startDate, endDate);
+      setCancelledDetail(cancelled);
+      setClientsMetrics(clients);
     } catch (error) {
       toast.error('Error al cargar analíticas');
       console.error(error);
@@ -386,6 +395,201 @@ export default function AnalyticsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        {/* SPRINT 4: Tabla Detallada de Cancelaciones */}
+        <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: '20px', padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0 }}>
+              <AlertCircle size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#dc3545' }} />
+              Tabla de Cancelaciones
+            </h5>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() => {
+                exportToCSV({
+                  filename: 'reportes-cancelaciones',
+                  headers: ['Cliente', 'Teléfono', 'Servicio', 'Fecha', 'Monto', 'Motivo'],
+                  data: cancelledDetail.map((item) => ({
+                    'Cliente': item.customerName,
+                    'Teléfono': item.customerPhone,
+                    'Servicio': item.serviceName,
+                    'Fecha': format(new Date(item.appointmentDate), 'dd/MM/yyyy'),
+                    'Monto': `$${item.total.toLocaleString('es-CL')}`,
+                    'Motivo': item.cancellationReason,
+                  })),
+                });
+                toast.success('Reporte descargado');
+              }}
+            >
+              <Download size={14} style={{ marginRight: '6px' }} />
+              CSV
+            </Button>
+          </div>
+
+          {cancelledDetail.length === 0 ? (
+            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+              No hay cancelaciones en este período
+            </Alert>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#fdf6f3', borderBottom: '1px solid #f0e0d8' }}>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Cliente
+                    </th>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Teléfono
+                    </th>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Servicio
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Fecha
+                    </th>
+                    <th style={{ textAlign: 'right', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Monto
+                    </th>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Motivo
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cancelledDetail.slice(0, 20).map((item) => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #f0e0d8' }}>
+                      <td style={{ padding: '10px', color: TEXT_DARK, fontWeight: 500 }}>
+                        {item.customerName}
+                      </td>
+                      <td style={{ padding: '10px', color: TEXT_MID, fontSize: '11px' }}>
+                        {item.customerPhone}
+                      </td>
+                      <td style={{ padding: '10px', color: TEXT_DARK }}>{item.serviceName}</td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: TEXT_DARK, fontSize: '11px' }}>
+                        {format(new Date(item.appointmentDate), 'dd/MM/yyyy')}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: '#dc3545', fontWeight: 600 }}>
+                        ${item.total.toLocaleString('es-CL')}
+                      </td>
+                      <td style={{ padding: '10px', color: TEXT_MID, fontSize: '11px' }}>
+                        {item.cancellationReason}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {cancelledDetail.length > 20 && (
+                <div style={{ marginTop: '12px', color: TEXT_MID, fontSize: '12px' }}>
+                  Mostrando 20 de {cancelledDetail.length} cancelaciones. Descarga el reporte CSV para ver todas.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* SPRINT 4: Tabla Extendida de Clientes */}
+        <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: '20px', padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0 }}>
+              <Users size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              Ranking Completo de Clientes
+            </h5>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() => {
+                exportToCSV({
+                  filename: 'ranking-clientes',
+                  headers: ['Cliente', 'Teléfono', 'Citas', 'Completadas', 'Canceladas', 'Tasa Cancelación', 'Gasto Total', 'Promedio'],
+                  data: clientsMetrics.map((item) => ({
+                    'Cliente': item.clientName,
+                    'Teléfono': item.clientPhone,
+                    'Citas': item.appointmentCount,
+                    'Completadas': item.completedCount,
+                    'Canceladas': item.cancelledCount,
+                    'Tasa Cancelación': `${item.cancellationRate}%`,
+                    'Gasto Total': `$${item.totalSpent.toLocaleString('es-CL')}`,
+                    'Promedio': `$${item.averageSpent.toLocaleString('es-CL')}`,
+                  })),
+                });
+                toast.success('Reporte descargado');
+              }}
+            >
+              <Download size={14} style={{ marginRight: '6px' }} />
+              CSV
+            </Button>
+          </div>
+
+          {clientsMetrics.length === 0 ? (
+            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+              No hay clientes en este período
+            </Alert>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#fdf6f3', borderBottom: '1px solid #f0e0d8' }}>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Cliente
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Citas
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#28a745' }}>
+                      Completadas
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#dc3545' }}>
+                      Canceladas
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#dc3545' }}>
+                      % Cancel.
+                    </th>
+                    <th style={{ textAlign: 'right', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Gasto Total
+                    </th>
+                    <th style={{ textAlign: 'right', padding: '10px', fontWeight: 700, color: TEXT_MID }}>
+                      Promedio
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clientsMetrics.slice(0, 50).map((client) => (
+                    <tr key={client.clientId} style={{ borderBottom: '1px solid #f0e0d8' }}>
+                      <td style={{ padding: '10px', color: TEXT_DARK, fontWeight: 500 }}>
+                        <div>{client.clientName}</div>
+                        <small style={{ color: TEXT_MID, fontSize: '10px' }}>{client.clientPhone}</small>
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: TEXT_DARK, fontWeight: 600 }}>
+                        {client.appointmentCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#28a745', fontWeight: 600 }}>
+                        {client.completedCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#dc3545', fontWeight: 600 }}>
+                        {client.cancelledCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: client.cancellationRate > 30 ? '#dc3545' : TEXT_MID }}>
+                        {client.cancellationRate}%
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: '#5a8f7b', fontWeight: 600 }}>
+                        ${client.totalSpent.toLocaleString('es-CL')}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: TEXT_MID }}>
+                        ${client.averageSpent.toLocaleString('es-CL')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {clientsMetrics.length > 50 && (
+                <div style={{ marginTop: '12px', color: TEXT_MID, fontSize: '12px' }}>
+                  Mostrando 50 de {clientsMetrics.length} clientes. Descarga el reporte CSV para ver todos.
+                </div>
+              )}
             </div>
           )}
         </div>
