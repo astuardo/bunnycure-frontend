@@ -7,7 +7,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
-    const menuItems = [
+const menuItems = [
         { 
             path: '/dashboard', 
             icon: '📊', 
@@ -31,6 +31,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             icon: '🔔', 
             label: 'Recordatorios',
             description: 'Envío de avisos'
+        },
+        { 
+            path: '/analytics', 
+            icon: '📈', 
+            label: 'Analíticas',
+            description: 'Métricas de negocio'
         },
         { 
             path: '/customers', 

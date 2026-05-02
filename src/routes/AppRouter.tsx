@@ -13,6 +13,7 @@ import SettingsPage from '../pages/settings/SettingsPage';
 import LoyaltySettingsPage from '../pages/settings/LoyaltySettingsPage';
 import CalendarPage from '../pages/calendar/CalendarPage';
 import RemindersPage from '../pages/reminders/RemindersPage';
+import AnalyticsPage from '../pages/analytics/AnalyticsPage';
 import GiftCardsPage from '../pages/giftcards/GiftCardsPage';
 import GenerateGiftCardPage from '../pages/giftcards/GenerateGiftCardPage';
 import PublicGiftCardPage from '../pages/giftcards/PublicGiftCardPage';
@@ -136,6 +137,15 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <RemindersPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/analytics"
+                    element={
+                        <ProtectedRoute>
+                            <AnalyticsPage />
                         </ProtectedRoute>
                     }
                 />
