@@ -14,6 +14,7 @@ import {
   CancellationReason,
 } from '../types/analytics.types';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
+import { getAppointmentTotal, extractCancellationReason } from '../utils/appointmentUtils';
 
 export const analyticsApi = {
   /**
@@ -267,34 +268,3 @@ export const analyticsApi = {
     return Array.from(clientMap.values()).sort((a, b) => b.appointmentCount - a.appointmentCount);
   },
 };
-
-/**
- * Función auxiliar para extraer motivo de cancelación
- */
-function extractCancellationReason(apt: Appointment): string {
-  if (apt.notes) {
-    const match = apt.notes.match(/Motivo:\s*(.+?)(\n|$)/i);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-  }
-  return 'Sin especificar';
-}
-
-/**
- * Función auxiliar para calcular total de cita (duplicada de AppointmentsPage)
- */
-function getAppointmentTotal(apt: Appointment): number {
-  if (apt.notes) {
-    const match = apt.notes.match(/Total final estimado:\s*\$?\s*([\d.]+)/i);
-    if (match && match[1]) {
-      const parsedTotal = parseInt(match[1].replace(/\./g, ''), 10);
-      if (!isNaN(parsedTotal) && parsedTotal > 0) return parsedTotal;
-    }
-  }
-
-  if (typeof apt.totalPrice === 'number' && apt.totalPrice > 0) return apt.totalPrice;
-
-  const services = apt.services || (apt.service ? [apt.service] : []);
-  return services.reduce((sum, service) => sum + service.price, 0);
-}
