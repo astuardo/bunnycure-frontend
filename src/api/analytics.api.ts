@@ -38,7 +38,10 @@ export const analyticsApi = {
         appointments.length > 0
           ? Math.round((appointments.filter((a) => a.status === 'CANCELLED').length / appointments.length) * 100)
           : 0,
-      totalRevenue: appointments.reduce((sum, apt) => sum + (getAppointmentTotal(apt) || 0), 0),
+      // CRÍTICO: Excluir citas canceladas del ingreso total (no generan ingresos)
+      totalRevenue: appointments
+        .filter((a) => a.status !== 'CANCELLED')
+        .reduce((sum, apt) => sum + (getAppointmentTotal(apt) || 0), 0),
     };
 
     // Citas por día
@@ -69,7 +72,10 @@ export const analyticsApi = {
       };
 
       dayData.count += 1;
-      dayData.revenue += getAppointmentTotal(apt) || 0;
+      // CRÍTICO: Solo contar ingresos de citas no canceladas
+      if (apt.status !== 'CANCELLED') {
+        dayData.revenue += getAppointmentTotal(apt) || 0;
+      }
       if (apt.status === 'CANCELLED') dayData.cancelled += 1;
       if (apt.status === 'COMPLETED') dayData.completed += 1;
 
@@ -80,24 +86,26 @@ export const analyticsApi = {
 
     // Top servicios
     const serviceMap = new Map<number, AppointmentByService>();
-    appointments.forEach((apt) => {
-      const services = apt.services || (apt.service ? [apt.service] : []);
-      services.forEach((service) => {
-        const existing = serviceMap.get(service.id) || {
-          serviceId: service.id,
-          serviceName: service.name,
-          appointmentCount: 0,
-          totalRevenue: 0,
-          averagePrice: 0,
-        };
+    appointments
+      .filter((a) => a.status !== 'CANCELLED') // CRÍTICO: Excluir canceladas
+      .forEach((apt) => {
+        const services = apt.services || (apt.service ? [apt.service] : []);
+        services.forEach((service) => {
+          const existing = serviceMap.get(service.id) || {
+            serviceId: service.id,
+            serviceName: service.name,
+            appointmentCount: 0,
+            totalRevenue: 0,
+            averagePrice: 0,
+          };
 
-        existing.appointmentCount += 1;
-        existing.totalRevenue += service.price;
-        existing.averagePrice = existing.totalRevenue / existing.appointmentCount;
+          existing.appointmentCount += 1;
+          existing.totalRevenue += service.price;
+          existing.averagePrice = existing.totalRevenue / existing.appointmentCount;
 
-        serviceMap.set(service.id, existing);
+          serviceMap.set(service.id, existing);
+        });
       });
-    });
 
     const topServices = Array.from(serviceMap.values())
       .sort((a, b) => b.appointmentCount - a.appointmentCount)
@@ -118,7 +126,10 @@ export const analyticsApi = {
       };
 
       existing.appointmentCount += 1;
-      existing.totalSpent += getAppointmentTotal(apt) || 0;
+      // CRÍTICO: Solo contar ingresos de citas no canceladas
+      if (apt.status !== 'CANCELLED') {
+        existing.totalSpent += getAppointmentTotal(apt) || 0;
+      }
 
       if (apt.status === 'CANCELLED') existing.cancelledCount += 1;
       if (apt.status === 'COMPLETED') existing.completedCount += 1;
