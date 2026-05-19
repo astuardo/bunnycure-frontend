@@ -5,7 +5,6 @@ import { es } from 'date-fns/locale';
 import {
     CalendarDays,
     UserPlus,
-    Mail,
     Scissors,
     Zap,
     BarChart3,
@@ -16,10 +15,8 @@ import DashboardLayout from '@/components/common/DashboardLayout';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { CancelAppointmentDialog } from '@/components/appointments/CancelAppointmentDialog';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
-import { useBookingRequestsStore } from '@/stores/bookingRequestsStore';
 import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
-import { BookingRequest } from '@/types/booking.types';
 import { ServiceSummary } from '@/types/service.types';
 import { statsApi } from '@/api/stats.api';
 import { DashboardStats } from '@/types/stats.types';
@@ -159,7 +156,6 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const toast = useToast();
     const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus, updateAppointment } = useAppointmentsStore();
-    const { bookingRequests, fetchBookingRequests } = useBookingRequestsStore();
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
@@ -177,18 +173,17 @@ export default function DashboardPage() {
                 const [stats] = await Promise.all([
                     statsApi.getDashboardStats(),
                     fetchAppointments(), 
-                    fetchBookingRequests(), 
                     fetchCustomers()
                 ]);
                 setDashboardStats(stats);
-            } catch (error) {
-                console.error("Error loading dashboard stats:", error);
-            } finally {
-                setStatsLoading(false);
-            }
+        } catch (error) {
+            console.error("Error loading dashboard stats:", error);
+        } finally {
+            setStatsLoading(false);
+        }
         };
         load();
-    }, [fetchAppointments, fetchBookingRequests, fetchCustomers]);
+    }, [fetchAppointments, fetchCustomers]);
 
     const handleCompleteAppointment = async () => {
         if (!completeDialog.appointmentId) return;
@@ -197,7 +192,7 @@ export default function DashboardPage() {
             await updateAppointmentStatus(completeDialog.appointmentId, AppointmentStatus.COMPLETED);
             toast.success('Cita marcada como completada');
             setCompleteDialog({ show: false, appointmentId: null });
-        } catch (error) {
+        } catch {
             toast.error('Error al completar cita');
         }
     };
@@ -246,8 +241,6 @@ export default function DashboardPage() {
         const weekEnd   = endOfWeek(new Date(),   { locale: es });
         return d >= weekStart && d <= weekEnd;
     });
-    const pendingRequests = bookingRequests.filter((r: BookingRequest) => r.status === 'PENDING');
-
     const weekStats = [
         { label: 'Confirmadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CONFIRMED).length, bg: '#d4edda', color: '#155724' },
         { label: 'Completadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.COMPLETED).length, bg: '#c8e6e0', color: '#0d5c4a' },
@@ -319,9 +312,9 @@ export default function DashboardPage() {
                         <ActionButton icon={<CalendarDays size={22} />} label="Nueva Cita"          to="/appointments?create=1&returnTo=%2Fdashboard"    variant="rose" />
                         <ActionButton icon={<UserPlus    size={22} />} label="Nuevo Cliente"        to="/customers?create=1&returnTo=%2Fdashboard"       variant="mint" />
                         <ActionButton
-                            icon={<Mail size={22} />}
-                            label={`Ver Solicitudes${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}`}
-                            to="/booking-requests"
+                            icon={<CalendarDays size={22} />}
+                            label="Calendario"
+                            to="/calendar"
                             variant="beige"
                         />
                         <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"        variant="sky"  />
