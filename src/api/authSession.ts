@@ -24,7 +24,7 @@ interface AccessTokenResponse {
 }
 
 export const refreshAccessToken = async (): Promise<string> => {
-  const response = await authSessionClient.post<ApiResponse<AccessTokenResponse>>('/api/auth/refresh');
+  const response = await authSessionClient.get<ApiResponse<AccessTokenResponse>>('/api/auth/refresh');
 
   if (response.data.success && response.data.data?.token) {
     return response.data.data.token;
