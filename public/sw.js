@@ -12,7 +12,7 @@ const urlsToCache = [
   '/icon-512.png',
 ];
 
-const API_BASE_URL = 'https://bunnycure-04c4c179be8f.herokuapp.com';
+const API_BASE_URL = 'https://api.bunnycure.cl';
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
 const NOTIFICATION_WINDOW_HOURS = 2; // Notificar 2 horas antes
 const NOTIFIED_APPOINTMENTS_KEY = 'notified_appointments';
