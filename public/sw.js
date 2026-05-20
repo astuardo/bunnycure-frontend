@@ -16,7 +16,6 @@ const API_BASE_URL = 'https://bunnycure-04c4c179be8f.herokuapp.com';
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
 const NOTIFICATION_WINDOW_HOURS = 2; // Notificar 2 horas antes
 const NOTIFIED_APPOINTMENTS_KEY = 'notified_appointments';
-const AUTH_TOKEN_CACHE_KEY = 'auth_token';
 const TEMPLATES_CACHE_KEY = 'notification_templates';
 const TEMPLATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
@@ -71,6 +70,15 @@ self.addEventListener('activate', (event) => {
 
 // Estrategia de cache: Network First, fallback a Cache
 self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+  const isApiRequest = requestUrl.pathname.startsWith('/api/');
+  const hasAuthHeader = event.request.headers.has('authorization');
+
+  if (isApiRequest || hasAuthHeader) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -341,56 +349,39 @@ async function showAppointmentNotification(appointment, hoursUntil) {
 }
 
 /**
- * Obtiene el token de autenticaciÃ³n desde los clientes conectados
+ * Obtiene el token de autenticaciÃ³n renovando la cookie HttpOnly.
  */
 let cachedToken = null;
 
-// Listener para recibir respuestas de los clientes
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CHECK_APPOINTMENTS_NOW') {
     console.log('[SW-AUTO] Check manual solicitado desde cliente');
     checkUpcomingAppointments();
-    return;
-  }
-
-  if (event.data && event.data.type === 'AUTH_TOKEN_RESPONSE') {
-    cachedToken = event.data.token || null;
-    console.log('[SW-AUTO] Token recibido desde cliente');
-    saveToIndexedDB(AUTH_TOKEN_CACHE_KEY, cachedToken).catch((error) => {
-      console.error('[SW-AUTO] Error persistiendo token:', error);
-    });
   }
 });
 
 async function getAuthToken() {
   try {
-    // Si ya tenemos el token en cache, usarlo
     if (cachedToken) {
       return cachedToken;
     }
 
-    const persistedToken = await getFromIndexedDB(AUTH_TOKEN_CACHE_KEY);
-    if (persistedToken) {
-      cachedToken = persistedToken;
-      return cachedToken;
-    }
-    
-    // Pedir token a todos los clientes
-    const allClients = await clients.matchAll({ includeUncontrolled: true, type: 'window' });
-    
-    if (allClients.length === 0) {
-      console.log('[SW-AUTO] No hay clientes conectados');
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.log('[SW-AUTO] No se pudo renovar el access token');
       return null;
     }
-    
-    // Enviar solicitud a todos los clientes
-    allClients.forEach((client) => {
-      client.postMessage({ type: 'REQUEST_AUTH_TOKEN' });
-    });
-    
-    // Esperar un momento para recibir respuesta
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+
+    const result = await response.json();
+    const token = result.data?.token || null;
+    cachedToken = token;
     return cachedToken;
     
   } catch (error) {

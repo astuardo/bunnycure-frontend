@@ -3,7 +3,13 @@
  * Incluye manejo de errores y autenticación con JWT.
  */
 
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
+import { refreshAccessToken } from './authSession';
+import { setInMemoryToken, getInMemoryToken } from './tokenStore';
+
+interface RetryableRequestConfig extends AxiosRequestConfig {
+  _retry?: boolean;
+}
 
 const getCookieValue = (name: string): string | null => {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -25,18 +31,15 @@ const apiClient = axios.create({
 let isRedirecting = false;
 
 /**
- * Interceptor de peticiones para agregar JWT token en cada request.
- * Busca el token en localStorage y lo agrega al header Authorization.
+ * Interceptor de peticiones para agregar JWT access token en cada request.
  */
 apiClient.interceptors.request.use(
   (config) => {
-    // Obtener token JWT de localStorage
-    const token = localStorage.getItem('jwt_token');
+    const token = getInMemoryToken();
     
     if (token) {
-      // Agregar header Authorization con el token
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log(`🔑 JWT incluido en request: ${config.method?.toUpperCase()} ${config.url}`);
+      const headers = config.headers as Record<string, string>;
+      headers.Authorization = `Bearer ${token}`;
     }
 
     // Adjuntar CSRF token cuando esté disponible (backend Spring Security)
@@ -62,21 +65,13 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response) => {
-    // Log successful requests para debug
-    if (response.config.url?.includes('/api/')) {
-      console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} → ${response.status}`);
-    }
     return response;
   },
   async (error) => {
-    // Log del error para debug
-    const url = error.config?.url;
-    const status = error.response?.status;
-    console.error(`❌ ${error.config?.method?.toUpperCase()} ${url} → ${status || 'Network Error'}`);
-    
     // Solo manejar errores de autenticación en requests que NO son login/checkAuth
     const isAuthRequest = error.config?.url?.includes('/api/auth/login') || 
-                          error.config?.url?.includes('/api/auth/me');
+                          error.config?.url?.includes('/api/auth/me') ||
+                          error.config?.url?.includes('/api/auth/refresh');
     
     // Detectar error de autenticación (401 o redirect a login)
     // Nota: 403 puede ser CSRF o permisos, no siempre sesión expirada.
@@ -90,19 +85,29 @@ apiClient.interceptors.response.use(
     // 2. NO es un request de login/checkAuth (para evitar loops)
     // 3. No estamos ya redirigiendo
     // 4. Estamos en una ruta protegida (no en /login)
+    if (isAuthError && !isAuthRequest) {
+      const originalRequest = error.config as RetryableRequestConfig | undefined;
+
+      if (originalRequest && !originalRequest._retry) {
+        originalRequest._retry = true;
+
+        try {
+          const newToken = await refreshAccessToken();
+          setInMemoryToken(newToken);
+          const headers = (originalRequest.headers ?? {}) as Record<string, string>;
+          headers.Authorization = `Bearer ${newToken}`;
+          originalRequest.headers = headers;
+          return apiClient.request(originalRequest);
+        } catch {
+          // Falls through to session expiration handling below
+        }
+      }
+    }
+
     if (isAuthError && !isAuthRequest && !isRedirecting && window.location.pathname !== '/login') {
-      console.warn('🔒 Sesión expirada o inválida - redirigiendo a login');
-      console.warn(`   URL fallida: ${url}`);
-      console.warn(`   Status: ${status}`);
       isRedirecting = true;
-      
-      // Importar authStore dinámicamente para evitar dependencias circulares
       const { useAuthStore } = await import('../stores/authStore');
-      
-      // Llamar al metodo handleSessionExpired del store
       useAuthStore.getState().handleSessionExpired();
-      
-      // Reset flag después de un delay
       setTimeout(() => {
         isRedirecting = false;
       }, 1000);
