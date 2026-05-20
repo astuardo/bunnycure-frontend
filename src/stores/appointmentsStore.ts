@@ -25,7 +25,11 @@ interface AppointmentsState {
   fetchAppointmentById: (id: number) => Promise<void>;
   createAppointment: (data: AppointmentCreateRequest) => Promise<Appointment>;
   updateAppointment: (id: number, data: AppointmentUpdateRequest) => Promise<Appointment>;
-  updateAppointmentStatus: (id: number, status: AppointmentStatus) => Promise<void>;
+  updateAppointmentStatus: (
+    id: number,
+    status: AppointmentStatus,
+    options?: { generateInvoice?: boolean }
+  ) => Promise<void>;
   deleteAppointment: (id: number) => Promise<void>;
   setFilters: (filters: Partial<AppointmentsState['filters']>) => void;
   clearFilters: () => void;
@@ -110,10 +114,10 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     }
   },
 
-  updateAppointmentStatus: async (id, status) => {
+  updateAppointmentStatus: async (id, status, options) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedAppointment = await appointmentsApi.updateStatus(id, status);
+      const updatedAppointment = await appointmentsApi.updateStatus(id, status, options);
       set((state) => ({
         appointments: state.appointments.map((apt) =>
           apt.id === id ? updatedAppointment : apt

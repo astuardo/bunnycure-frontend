@@ -492,14 +492,40 @@ export default function AppointmentsPage() {
   };
 
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
-    if (confirm(`¿Cambiar estado a ${status}?`)) {
-      try {
-        await updateAppointmentStatus(id, status);
-        toast.success('Estado actualizado correctamente');
-        fetchAppointments();
-      } catch (err: unknown) {
-        toast.error(getErrorMessage(err, 'Error al actualizar el estado'));
+    if (!confirm(`¿Cambiar estado a ${status}?`)) {
+      return;
+    }
+
+    try {
+      let generateInvoice = true;
+      if (status === AppointmentStatus.COMPLETED) {
+        const quota = await appointmentsApi.getInvoiceQuota();
+
+        if (!quota.generateByDefault) {
+          const continueWithoutInvoice = confirm(
+            `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
+            'Se alcanzó el límite mensual, esta cita se completará SIN generar boleta.\n' +
+            '¿Deseas continuar?'
+          );
+          if (!continueWithoutInvoice) {
+            return;
+          }
+          generateInvoice = false;
+        } else {
+          generateInvoice = confirm(
+            `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
+            '¿Generar boleta para esta cita?\n' +
+            'Aceptar = Sí generar\n' +
+            'Cancelar = No generar'
+          );
+        }
       }
+
+      await updateAppointmentStatus(id, status, { generateInvoice });
+      toast.success('Estado actualizado correctamente');
+      fetchAppointments();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Error al actualizar el estado'));
     }
   };
 

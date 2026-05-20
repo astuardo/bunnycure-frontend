@@ -48,3 +48,10 @@ export interface AppointmentUpdateRequest {
   notes?: string;
   totalPrice?: number;
 }
+
+export interface InvoiceQuotaInfo {
+  generatedThisMonth: number;
+  monthlyLimit: number;
+  remainingThisMonth: number;
+  generateByDefault: boolean;
+}

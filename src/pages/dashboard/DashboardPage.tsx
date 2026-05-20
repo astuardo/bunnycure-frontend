@@ -18,6 +18,7 @@ import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { ServiceSummary } from '@/types/service.types';
+import { appointmentsApi } from '@/api/appointments.api';
 import { statsApi } from '@/api/stats.api';
 import { DashboardStats } from '@/types/stats.types';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
@@ -189,7 +190,29 @@ export default function DashboardPage() {
         if (!completeDialog.appointmentId) return;
         
         try {
-            await updateAppointmentStatus(completeDialog.appointmentId, AppointmentStatus.COMPLETED);
+            const quota = await appointmentsApi.getInvoiceQuota();
+            let generateInvoice = true;
+
+            if (!quota.generateByDefault) {
+                const continueWithoutInvoice = window.confirm(
+                    `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
+                    'Se alcanzó el límite mensual, esta cita se completará SIN generar boleta.\n' +
+                    '¿Deseas continuar?'
+                );
+                if (!continueWithoutInvoice) {
+                    return;
+                }
+                generateInvoice = false;
+            } else {
+                generateInvoice = window.confirm(
+                    `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
+                    '¿Generar boleta para esta cita?\n' +
+                    'Aceptar = Sí generar\n' +
+                    'Cancelar = No generar'
+                );
+            }
+
+            await updateAppointmentStatus(completeDialog.appointmentId, AppointmentStatus.COMPLETED, { generateInvoice });
             toast.success('Cita marcada como completada');
             setCompleteDialog({ show: false, appointmentId: null });
         } catch {

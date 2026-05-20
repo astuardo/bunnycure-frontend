@@ -4,7 +4,13 @@
 
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
-import { Appointment, AppointmentCreateRequest, AppointmentUpdateRequest, AppointmentStatus } from '../types/appointment.types';
+import {
+  Appointment,
+  AppointmentCreateRequest,
+  AppointmentUpdateRequest,
+  AppointmentStatus,
+  InvoiceQuotaInfo,
+} from '../types/appointment.types';
 
 export const appointmentsApi = {
   /**
@@ -49,13 +55,23 @@ export const appointmentsApi = {
   /**
    * Cambiar estado de cita
    */
-  updateStatus: async (id: number, status: AppointmentStatus): Promise<Appointment> => {
+  updateStatus: async (
+    id: number,
+    status: AppointmentStatus,
+    options?: { generateInvoice?: boolean }
+  ): Promise<Appointment> => {
     const response = await apiClient.patch<ApiResponse<Appointment>>(
       `/api/appointments/${id}/status`,
       null,
-      { params: { status } }
+      { params: { status, generateInvoice: options?.generateInvoice ?? true } }
     );
     if (!response.data.data) throw new Error('Error al actualizar estado');
+    return response.data.data;
+  },
+
+  getInvoiceQuota: async (): Promise<InvoiceQuotaInfo> => {
+    const response = await apiClient.get<ApiResponse<InvoiceQuotaInfo>>('/api/appointments/invoice-quota');
+    if (!response.data.data) throw new Error('No se pudo obtener la cuota de boletas');
     return response.data.data;
   },
 
