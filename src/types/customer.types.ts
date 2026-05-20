@@ -14,6 +14,7 @@ export interface Customer {
   publicId: string;
   fullName: string;
   phone: string;
+  rut: string;
   email?: string;
   gender?: string;
   birthDate?: string;
@@ -47,6 +48,7 @@ export interface CustomerLookupResponse {
 export interface CustomerFormData {
   fullName: string;
   phone: string;
+  rut: string;
   email?: string;
   gender?: string;
   birthDate?: string;

@@ -169,6 +169,10 @@ export default function CustomerDetailsPage() {
               </Card.Header>
               <Card.Body>
                 <div className="mb-3">
+                  <strong>🪪 RUT:</strong>
+                  <p className="mb-0">{customer.rut}</p>
+                </div>
+                <div className="mb-3">
                   <strong>📧 Email:</strong>
                   <p className="mb-0">{customer.email || 'No especificado'}</p>
                 </div>

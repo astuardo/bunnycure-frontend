@@ -24,6 +24,17 @@ const normalizePhone = (value?: string): string => {
     return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly;
 };
 
+const normalizeRut = (value?: string): string => {
+    if (!value) return '';
+    const cleaned = value.trim().toUpperCase().replace(/[^0-9K]/g, '');
+    if (cleaned.length < 2) return cleaned;
+
+    const dv = cleaned.slice(-1);
+    const body = cleaned.slice(0, -1);
+    const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${formattedBody}-${dv}`;
+};
+
 // Esquema de validación
 const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     fullName: yup
@@ -37,6 +48,12 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
         .transform((_, originalValue) => normalizePhone(originalValue))
         .required('El teléfono es requerido')
         .matches(/^\+?[0-9]{8,15}$/, 'Formato de teléfono inválido (8-15 dígitos, opcional +)'),
+
+    rut: yup
+        .string()
+        .transform((_, originalValue) => normalizeRut(originalValue))
+        .required('El RUT es obligatorio')
+        .matches(/^\d{1,2}(?:\.\d{3})+-[0-9K]$/, 'Formato de RUT inválido. Usa 12.345.678-9'),
     
     email: yup
         .string()
@@ -94,9 +111,10 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
         resolver: yupResolver(customerSchema),
         mode: 'onChange',
         reValidateMode: 'onChange',
-        defaultValues: {
+            defaultValues: {
             fullName: '',
             phone: '',
+            rut: '',
             email: '',
             gender: '',
             birthDate: '',
@@ -113,6 +131,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
         if (customer) {
             setValue('fullName', customer.fullName);
             setValue('phone', customer.phone);
+            setValue('rut', customer.rut || '');
             setValue('email', customer.email || '');
             setValue('gender', customer.gender || '');
             setValue('birthDate', customer.birthDate || '');
@@ -130,6 +149,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
         const normalizedData: CustomerFormData = {
             ...data,
             phone: normalizePhone(data.phone),
+            rut: normalizeRut(data.rut),
             emergencyPhone: data.emergencyPhone ? normalizePhone(data.emergencyPhone) : ''
         };
 
@@ -211,6 +231,27 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                 </Form.Control.Feedback>
                                 <Form.Text className="text-muted">
                                     Puedes escribir espacios o guiones (ej: +56 9 8369 2046)
+                                </Form.Text>
+                            </Form.Group>
+                        </Col>
+
+                        {/* RUT */}
+                        <Col md={6} className="mb-3">
+                            <Form.Group>
+                                <Form.Label>
+                                    RUT <span className="text-danger">*</span>
+                                </Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="12.345.678-9"
+                                    {...register('rut')}
+                                    isInvalid={!!errors.rut}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    {errors.rut?.message}
+                                </Form.Control.Feedback>
+                                <Form.Text className="text-muted">
+                                    Formato: 12.345.678-9 o 1.234.567-K
                                 </Form.Text>
                             </Form.Group>
                         </Col>
