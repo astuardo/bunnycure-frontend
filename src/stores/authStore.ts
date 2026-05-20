@@ -4,7 +4,6 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { User } from '../api/auth.api';
 import * as authApi from '../api/auth.api';
 import { getAppBuildId } from '../config/buildInfo';
@@ -18,7 +17,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   authBuildId: string | null;
-  
+
   // Actions
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -29,189 +28,150 @@ interface AuthState {
   handleVersionMismatch: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
-      authBuildId: null,
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  authBuildId: null,
 
-      login: async (username: string, password: string) => {
-        set({ isLoading: true, error: null });
-        try {
-          // Login con API REST JSON
-          const loginResponse = await authApi.login({ username, password });
-          
-          set({ 
-            user: loginResponse.user, 
-            isAuthenticated: true, 
-            isLoading: false,
-            error: null,
-            authBuildId: APP_BUILD_ID,
-          });
-          
-          // 🔍 Track login en GA4
-          trackLogin(loginResponse.user.id, loginResponse.user.email || undefined);
-          setUserProperties(loginResponse.user.id, loginResponse.user.role || undefined);
-          
-          // TODO: Manejar requiresPasswordChange cuando se implemente
-          if (loginResponse.requiresPasswordChange) {
-            console.warn('⚠️ Usuario debe cambiar contraseña');
-          }
-          
-        } catch (error) {
-          console.error('❌ Error en login:', error);
-          const err = error as { response?: { data?: { error?: { message?: string }; message?: string } } };
-          const errorMessage = err.response?.data?.error?.message 
-            || err.response?.data?.message 
-            || 'Credenciales inválidas';
-          
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
-            isLoading: false,
-            error: errorMessage
-          });
-          throw error;
-        }
-      },
+  login: async (username: string, password: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const loginResponse = await authApi.login({ username, password });
 
-      logout: async () => {
-        try {
-          await authApi.logout();
-        } catch (error) {
-          console.error('Error al hacer logout:', error);
-        } finally {
-          // Limpiar estado
-            set({ 
-              user: null, 
-              isAuthenticated: false, 
-              error: null,
-              authBuildId: null,
-            });
-          
-          // IMPORTANTE: Limpiar localStorage para forzar re-login
-          localStorage.removeItem('auth-storage');
-          localStorage.removeItem('jwt_token'); // Limpiar JWT token
-          
-          // Limpiar también sessionStorage
-          sessionStorage.removeItem('redirectAfterLogin');
-        }
-      },
+      set({
+        user: loginResponse.user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+        authBuildId: APP_BUILD_ID,
+      });
 
-      checkAuth: async () => {
-        set({ isLoading: true });
-        try {
-          const user = await authApi.getCurrentUser();
-          console.log('✅ Sesión válida:', user.username);
-          set({ 
-            user, 
-            isAuthenticated: true, 
-            isLoading: false,
-            authBuildId: APP_BUILD_ID,
-          });
-        } catch (error) {
-          // Solo limpiar estado si es un error real de autenticación (401/302)
-          // NO limpiar si es error de red o servidor (500, timeout, etc.)
-          const err = error as { response?: { status?: number }; message?: string };
-          const isAuthenticationError = err.response?.status === 401 || 
-                                       err.response?.status === 302;
-          
-          if (isAuthenticationError) {
-            console.log('⚠️ Sesión expirada, limpiando estado');
-            // Sesión expiró o no existe - limpiar estado
-            set({ 
-              user: null, 
-              isAuthenticated: false, 
-              isLoading: false,
-              authBuildId: null,
-            });
-          } else {
-            // Error de red u otro - mantener estado actual y solo quitar loading
-            const errorMessage = err.message || 'Error desconocido';
-            console.warn('⚠️ Error al verificar sesión (no es error de auth):', errorMessage);
-            set({ isLoading: false });
-          }
-        }
-      },
+      trackLogin(loginResponse.user.id, loginResponse.user.email || undefined);
+      setUserProperties(loginResponse.user.id, loginResponse.user.role || undefined);
 
-      setUser: (user: User | null) => {
-        set({ 
-          user, 
-          isAuthenticated: user !== null,
-          authBuildId: user ? APP_BUILD_ID : null,
+      if (loginResponse.requiresPasswordChange) {
+        console.warn('⚠️ Usuario debe cambiar contraseña');
+      }
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      const err = error as { response?: { data?: { error?: { message?: string }; message?: string } } };
+      const errorMessage =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Credenciales inválidas';
+
+      set({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  },
+
+  logout: async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      set({
+        user: null,
+        isAuthenticated: false,
+        error: null,
+        authBuildId: null,
+      });
+      sessionStorage.removeItem('redirectAfterLogin');
+    }
+  },
+
+  checkAuth: async () => {
+    set({ isLoading: true });
+    try {
+      try {
+        const user = await authApi.getCurrentUser();
+        set({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          authBuildId: APP_BUILD_ID,
         });
-      },
-
-      clearError: () => {
-        set({ error: null });
-      },
-
-      handleSessionExpired: () => {
-        console.warn('⚠️ Sesión expirada - limpiando estado local');
-        
-        // Limpiar estado de autenticación
-        set({ 
-          user: null, 
-          isAuthenticated: false,
-          error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-          authBuildId: null,
+        return;
+      } catch {
+        await authApi.refreshSession();
+        const user = await authApi.getCurrentUser();
+        set({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          authBuildId: APP_BUILD_ID,
         });
-        
-        // Limpiar localStorage
-        localStorage.removeItem('auth-storage');
-        localStorage.removeItem('session_backup');
-        localStorage.removeItem('jwt_token'); // Limpiar JWT token
-        
-        // Guardar ruta actual para redirect después del login
-        const currentPath = window.location.pathname;
-        if (currentPath !== '/login' && currentPath !== '/') {
-          sessionStorage.setItem('redirectAfterLogin', currentPath);
-        }
-        
-        // Redirigir a login con parámetro de sesión expirada
-        window.location.href = '/login?expired=true';
-      },
+        return;
+      }
+    } catch (error) {
+      const err = error as { response?: { status?: number }; message?: string };
+      const isAuthenticationError = err.response?.status === 401 || err.response?.status === 302;
 
-      handleVersionMismatch: () => {
-        console.warn('♻️ Nueva versión detectada - forzando re-login');
-
+      if (isAuthenticationError) {
         set({
           user: null,
           isAuthenticated: false,
-          error: null,
-          authBuildId: APP_BUILD_ID,
+          isLoading: false,
+          authBuildId: null,
         });
-
-        localStorage.removeItem('auth-storage');
-        localStorage.removeItem('session_backup');
-        localStorage.removeItem('jwt_token');
-        sessionStorage.removeItem('redirectAfterLogin');
-
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login?version=true';
-        }
-      },
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({ 
-        // Solo persistir user e isAuthenticated
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        authBuildId: state.authBuildId,
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (!state || !state.isAuthenticated) return;
-
-        if (state.authBuildId !== APP_BUILD_ID) {
-          state.handleVersionMismatch();
-        }
-      },
-      // IMPORTANTE: Versión para forzar reset cuando cambie la estructura
-      version: 2,
+      } else {
+        const errorMessage = err.message || 'Error desconocido';
+        console.warn('⚠️ Error al verificar sesión (no es error de auth):', errorMessage);
+        set({ isLoading: false });
+      }
     }
-  )
-);
+  },
+
+  setUser: (user: User | null) => {
+    set({
+      user,
+      isAuthenticated: user !== null,
+      authBuildId: user ? APP_BUILD_ID : null,
+    });
+  },
+
+  clearError: () => {
+    set({ error: null });
+  },
+
+  handleSessionExpired: () => {
+    console.warn('⚠️ Sesión expirada - limpiando estado local');
+
+    set({
+      user: null,
+      isAuthenticated: false,
+      error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+      authBuildId: null,
+    });
+
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/login' && currentPath !== '/') {
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+    }
+
+    window.location.href = '/login?expired=true';
+  },
+
+  handleVersionMismatch: () => {
+    console.warn('♻️ Nueva versión detectada - forzando re-login');
+
+    set({
+      user: null,
+      isAuthenticated: false,
+      error: null,
+      authBuildId: APP_BUILD_ID,
+    });
+
+    sessionStorage.removeItem('redirectAfterLogin');
+
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login?version=true';
+    }
+  },
+}));

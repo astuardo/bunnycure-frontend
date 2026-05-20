@@ -4,6 +4,8 @@
  */
 
 import apiClient from './client';
+import { clearInMemoryToken, setInMemoryToken } from './tokenStore';
+import { refreshAccessToken } from './authSession';
 
 export interface LoginRequest {
   username: string;
@@ -42,7 +44,7 @@ export interface ApiResponse<T> {
 
 /**
  * Login del usuario con API REST JSON.
- * Guarda el JWT token en localStorage para autenticación en requests posteriores.
+ * Guarda el JWT access token solo en memoria.
  */
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
   const response = await apiClient.post<ApiResponse<LoginResponse>>(
@@ -51,10 +53,9 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
   );
   
   if (response.data.success && response.data.data) {
-    // Guardar JWT token en localStorage si viene en la respuesta
+    // Guardar JWT access token solo en memoria
     if (response.data.data.token) {
-      localStorage.setItem('jwt_token', response.data.data.token);
-      console.log('✅ JWT token guardado en localStorage');
+      setInMemoryToken(response.data.data.token);
     }
     
     return response.data.data;
@@ -80,17 +81,17 @@ export const getCurrentUser = async (): Promise<User> => {
  * Logout del usuario.
  */
 export const logout = async (): Promise<void> => {
-  await apiClient.post<ApiResponse<string>>('/api/auth/logout');
+  try {
+    await apiClient.post<ApiResponse<string>>('/api/auth/logout');
+  } finally {
+    clearInMemoryToken();
+  }
 };
 
 /**
- * Verificar si el usuario está autenticado.
+ * Renovar access token usando la cookie HttpOnly de refresh.
  */
-export const checkAuth = async (): Promise<boolean> => {
-  try {
-    await getCurrentUser();
-    return true;
-  } catch (error) {
-    return false;
-  }
+export const refreshSession = async (): Promise<void> => {
+  const token = await refreshAccessToken();
+  setInMemoryToken(token);
 };

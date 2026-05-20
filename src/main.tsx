@@ -24,9 +24,6 @@ const registerWebPushSubscription = async (registration: ServiceWorkerRegistrati
   if (!('PushManager' in window) || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
-  const token = localStorage.getItem('jwt_token');
-  if (!token) return;
-
   const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY?.trim();
   if (!publicKey) {
     console.warn('[PWA-PUSH] Falta VITE_WEB_PUSH_PUBLIC_KEY');
@@ -53,7 +50,7 @@ const registerWebPushSubscription = async (registration: ServiceWorkerRegistrati
       return;
     }
 
-    const lastSyncedEndpoint = localStorage.getItem(WEB_PUSH_SYNC_KEY);
+    const lastSyncedEndpoint = localStorage.getItem('webpush_subscription_synced_endpoint');
     if (lastSyncedEndpoint === endpoint) {
       return;
     }
@@ -80,47 +77,8 @@ if ('serviceWorker' in navigator) {
       .then((registration) => {
         console.log('✅ Service Worker registrado correctamente:', registration);
 
-        const syncTokenWithServiceWorker = () => {
-          if (!registration.active) return;
-          const token = localStorage.getItem('jwt_token');
-          registration.active.postMessage({
-            type: 'AUTH_TOKEN_RESPONSE',
-            token: token || null,
-          });
-        };
-        syncTokenWithServiceWorker();
         registerWebPushSubscription(registration);
-        
-        // Configurar listener para mensajes del Service Worker
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
-            // Enviar token al Service Worker (jwt_token, NO 'token')
-            const token = localStorage.getItem('jwt_token');
-            if (token && registration.active) {
-              registration.active.postMessage({
-                type: 'AUTH_TOKEN_RESPONSE',
-                token: token,
-              });
-              console.log('[App] ✅ Token JWT enviado al Service Worker');
-            } else {
-              console.warn('[App] ⚠️ No hay token JWT disponible');
-              if (registration.active) {
-                registration.active.postMessage({
-                  type: 'AUTH_TOKEN_RESPONSE',
-                  token: null,
-                });
-              }
-            }
-          }
-        });
 
-        window.addEventListener('storage', (event) => {
-          if (event.key === 'jwt_token') {
-            syncTokenWithServiceWorker();
-            registerWebPushSubscription(registration);
-          }
-        });
-        
         // NUEVO: Trigger para chequeo de notificaciones
         const triggerNotificationCheck = () => {
           if (registration.active) {
@@ -142,6 +100,10 @@ if ('serviceWorker' in navigator) {
             registerWebPushSubscription(registration);
             setTimeout(triggerNotificationCheck, 1000);
           }
+        });
+
+        window.addEventListener('bunnycure-access-token-changed', () => {
+          registerWebPushSubscription(registration);
         });
       })
       .catch((error) => {
