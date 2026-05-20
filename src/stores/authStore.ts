@@ -48,6 +48,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
         authBuildId: APP_BUILD_ID,
       });
 
+      await authApi.getCsrfToken();
+
       trackLogin(loginResponse.user.id, loginResponse.user.email || undefined);
       setUserProperties(loginResponse.user.id, loginResponse.user.role || undefined);
 
@@ -91,6 +93,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     try {
       try {
         const user = await authApi.getCurrentUser();
+        await authApi.getCsrfToken();
         set({
           user,
           isAuthenticated: true,
@@ -101,6 +104,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       } catch {
         await authApi.refreshSession();
         const user = await authApi.getCurrentUser();
+        await authApi.getCsrfToken();
         set({
           user,
           isAuthenticated: true,

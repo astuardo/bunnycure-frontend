@@ -95,3 +95,10 @@ export const refreshSession = async (): Promise<void> => {
   const token = await refreshAccessToken();
   setInMemoryToken(token);
 };
+
+/**
+ * Obtiene el token CSRF y fuerza la creación de la cookie XSRF-TOKEN.
+ */
+export const getCsrfToken = async (): Promise<void> => {
+  await apiClient.get('/api/auth/csrf');
+};
