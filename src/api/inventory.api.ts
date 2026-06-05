@@ -30,6 +30,12 @@ export const inventoryApi = {
     await apiClient.delete(`/api/inventory/products/${id}`);
   },
 
+  refreshObservedPrice: async (id: number): Promise<Product> => {
+    const response = await apiClient.post<ApiResponse<Product>>(`/api/inventory/products/${id}/refresh-observed`);
+    if (!response.data.data) throw new Error('Error al actualizar precio observado');
+    return response.data.data;
+  },
+
   consumeForService: async (payload: ConsumeRequest) => {
     return apiClient.post('/api/inventory/consume', payload);
   },

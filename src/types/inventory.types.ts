@@ -3,6 +3,9 @@ export interface Product {
   name: string;
   purchasePrice: number; // price per purchase unit
   purchaseUrl?: string | null;
+  observedPrice?: number | null;
+  observedAvailable?: boolean | null;
+  lastObservedAt?: string | null;
   purchaseUnit: string; // e.g., "Botella", "Caja"
   consumptionUnit: string; // e.g., "ml", "unidad"
   conversionFactor: number; // how many consumption units in one purchase unit

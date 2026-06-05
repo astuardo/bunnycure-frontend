@@ -8,9 +8,10 @@ interface Props {
   onDelete: (p: Product) => void;
   onPurchase: (p: Product) => void;
   onViewMovements: (p: Product) => void;
+  onRefreshObserved: (p: Product) => void;
 }
 
-export const ProductList: React.FC<Props> = ({ products, onEdit, onDelete, onPurchase, onViewMovements }) => {
+export const ProductList: React.FC<Props> = ({ products, onEdit, onDelete, onPurchase, onViewMovements, onRefreshObserved }) => {
   return (
     <div className="table-responsive">
       <table className="table table-hover">
@@ -18,6 +19,9 @@ export const ProductList: React.FC<Props> = ({ products, onEdit, onDelete, onPur
           <tr>
             <th>Nombre</th>
             <th>Precio compra</th>
+            <th>Precio observado</th>
+            <th>Disponibilidad</th>
+            <th>Última revisión</th>
             <th>Unidad compra</th>
             <th>Unidad consumo</th>
             <th>Factor</th>
@@ -28,7 +32,7 @@ export const ProductList: React.FC<Props> = ({ products, onEdit, onDelete, onPur
         <tbody>
           {products.length === 0 && (
             <tr>
-              <td colSpan={7} className="text-center text-muted">No hay productos</td>
+              <td colSpan={10} className="text-center text-muted">No hay productos</td>
             </tr>
           )}
 
@@ -43,16 +47,28 @@ export const ProductList: React.FC<Props> = ({ products, onEdit, onDelete, onPur
                 )}
               </td>
               <td>{formatCurrencyCLP(p.purchasePrice)}</td>
+              <td>{formatCurrencyCLP(p.observedPrice ?? null)}</td>
+              <td>
+                {p.observedAvailable === true ? (
+                  <span className="badge bg-success">Disponible</span>
+                ) : p.observedAvailable === false ? (
+                  <span className="badge bg-danger">Sin stock</span>
+                ) : (
+                  <span className="badge bg-secondary">Sin dato</span>
+                )}
+              </td>
+              <td>{p.lastObservedAt ? new Date(p.lastObservedAt).toLocaleString('es-CL') : '-'}</td>
               <td>{p.purchaseUnit}</td>
               <td>{p.consumptionUnit}</td>
               <td>{p.conversionFactor}</td>
               <td>{p.stockConsumptionUnit}</td>
               <td>
-                <div className="btn-group" role="group">
-                  <button className="btn btn-sm btn-outline-success" onClick={() => onPurchase(p)}>Registrar compra</button>
-                  <button className="btn btn-sm btn-outline-secondary" onClick={() => onViewMovements(p)}>Movimientos</button>
-                  <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(p)}>Editar</button>
-                  <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(p)}>Eliminar</button>
+                <div className="btn-group flex-wrap gap-1" role="group">
+                  <button type="button" className="btn btn-sm btn-outline-info" onClick={() => onRefreshObserved(p)}>Actualizar</button>
+                  <button type="button" className="btn btn-sm btn-outline-success" onClick={() => onPurchase(p)}>Registrar compra</button>
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => onViewMovements(p)}>Movimientos</button>
+                  <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => onEdit(p)}>Editar</button>
+                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onDelete(p)}>Eliminar</button>
                 </div>
               </td>
             </tr>
