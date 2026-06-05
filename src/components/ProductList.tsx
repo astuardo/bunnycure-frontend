@@ -2,6 +2,20 @@ import React from 'react';
 import { Product } from '@/types/inventory.types';
 import { formatCurrencyCLP } from '@/utils/formatters';
 
+const formatDelta = (current?: number | null, previous?: number | null) => {
+  if (current === null || current === undefined || previous === null || previous === undefined) return null;
+  const delta = current - previous;
+  if (delta === 0) {
+    return <span className="badge bg-secondary">Sin cambio</span>;
+  }
+
+  return delta > 0 ? (
+    <span className="badge bg-danger">▲ {formatCurrencyCLP(delta)}</span>
+  ) : (
+    <span className="badge bg-success">▼ {formatCurrencyCLP(Math.abs(delta))}</span>
+  );
+};
+
 interface Props {
   products: Product[];
   onEdit: (p: Product) => void;
@@ -47,7 +61,12 @@ export const ProductList: React.FC<Props> = ({ products, onEdit, onDelete, onPur
                 )}
               </td>
               <td>{formatCurrencyCLP(p.purchasePrice)}</td>
-              <td>{formatCurrencyCLP(p.observedPrice ?? null)}</td>
+              <td>
+                <div className="d-flex flex-column gap-1">
+                  <span>{formatCurrencyCLP(p.observedPrice ?? null)}</span>
+                  <span>{formatDelta(p.observedPrice ?? null, p.previousObservedPrice ?? null)}</span>
+                </div>
+              </td>
               <td>
                 {p.observedAvailable === true ? (
                   <span className="badge bg-success">Disponible</span>

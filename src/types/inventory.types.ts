@@ -4,6 +4,7 @@ export interface Product {
   purchasePrice: number; // price per purchase unit
   purchaseUrl?: string | null;
   observedPrice?: number | null;
+  previousObservedPrice?: number | null;
   observedAvailable?: boolean | null;
   lastObservedAt?: string | null;
   purchaseUnit: string; // e.g., "Botella", "Caja"
