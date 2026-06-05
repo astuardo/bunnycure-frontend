@@ -10,6 +10,31 @@ import { getAppBuildId } from '../config/buildInfo';
 import { trackLogin, setUserProperties } from '../utils/analytics';
 
 const APP_BUILD_ID = getAppBuildId();
+const AUTH_BUILD_KEY = 'bunnycure-auth-build-id';
+const FORCE_RELOGIN_KEY = 'bunnycure-force-relogin-build-id';
+
+const getStoredAuthBuildId = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(AUTH_BUILD_KEY);
+};
+
+const setStoredAuthBuildId = (buildId: string | null) => {
+  if (typeof window === 'undefined') return;
+  if (buildId) {
+    window.localStorage.setItem(AUTH_BUILD_KEY, buildId);
+  } else {
+    window.localStorage.removeItem(AUTH_BUILD_KEY);
+  }
+};
+
+const setForceReloginMarker = (buildId: string | null) => {
+  if (typeof window === 'undefined') return;
+  if (buildId) {
+    window.localStorage.setItem(FORCE_RELOGIN_KEY, buildId);
+  } else {
+    window.localStorage.removeItem(FORCE_RELOGIN_KEY);
+  }
+};
 
 interface AuthState {
   user: User | null;
@@ -48,6 +73,9 @@ export const useAuthStore = create<AuthState>()((set) => ({
         authBuildId: APP_BUILD_ID,
       });
 
+      setStoredAuthBuildId(APP_BUILD_ID);
+      setForceReloginMarker(null);
+
       await authApi.getCsrfToken();
 
       trackLogin(loginResponse.user.id, loginResponse.user.email || undefined);
@@ -84,6 +112,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
         error: null,
         authBuildId: null,
       });
+      setStoredAuthBuildId(null);
+      setForceReloginMarker(null);
       sessionStorage.removeItem('redirectAfterLogin');
     }
   },
@@ -91,6 +121,28 @@ export const useAuthStore = create<AuthState>()((set) => ({
   checkAuth: async () => {
     set({ isLoading: true });
     try {
+      const storedBuildId = getStoredAuthBuildId();
+      const forceReloginBuildId =
+        typeof window !== 'undefined' ? window.localStorage.getItem(FORCE_RELOGIN_KEY) : null;
+      const hasVersionMismatch =
+        Boolean(forceReloginBuildId) ||
+        (storedBuildId && storedBuildId !== APP_BUILD_ID);
+
+      if (hasVersionMismatch) {
+        setForceReloginMarker(APP_BUILD_ID);
+        setStoredAuthBuildId(APP_BUILD_ID);
+
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          authBuildId: null,
+        });
+
+        void authApi.logout();
+        return;
+      }
+
       try {
         const user = await authApi.getCurrentUser();
         await authApi.getCsrfToken();
@@ -100,6 +152,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
           isLoading: false,
           authBuildId: APP_BUILD_ID,
         });
+        setStoredAuthBuildId(APP_BUILD_ID);
+        setForceReloginMarker(null);
         return;
       } catch {
         await authApi.refreshSession();
@@ -111,6 +165,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
           isLoading: false,
           authBuildId: APP_BUILD_ID,
         });
+        setStoredAuthBuildId(APP_BUILD_ID);
+        setForceReloginMarker(null);
         return;
       }
     } catch (error) {
@@ -153,6 +209,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
       authBuildId: null,
     });
+    setForceReloginMarker(null);
 
     const currentPath = window.location.pathname;
     if (currentPath !== '/login' && currentPath !== '/') {
@@ -172,7 +229,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
       authBuildId: APP_BUILD_ID,
     });
 
+    setStoredAuthBuildId(APP_BUILD_ID);
+    setForceReloginMarker(APP_BUILD_ID);
     sessionStorage.removeItem('redirectAfterLogin');
+
+    void authApi.logout();
 
     if (window.location.pathname !== '/login') {
       window.location.href = '/login?version=true';
