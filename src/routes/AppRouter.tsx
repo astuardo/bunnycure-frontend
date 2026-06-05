@@ -8,6 +8,7 @@ import AppointmentsPage from '../pages/appointments/AppointmentsPage';
 import CustomersPage from '../pages/customers/CustomersPage';
 import CustomerDetailsPage from '../pages/customers/CustomerDetailsPage';
 import ServicesPage from '../pages/services/ServicesPage';
+import ProductsPage from '../pages/ProductsPage';
 import BookingRequestsPage from '../pages/booking-requests/BookingRequestsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import LoyaltySettingsPage from '../pages/settings/LoyaltySettingsPage';
@@ -82,6 +83,15 @@ function RoutesWithTracking() {
                 element={
                     <ProtectedRoute>
                         <ServicesPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/products"
+                element={
+                    <ProtectedRoute>
+                        <ProductsPage />
                     </ProtectedRoute>
                 }
             />
