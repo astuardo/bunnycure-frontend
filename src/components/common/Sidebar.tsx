@@ -50,6 +50,12 @@ const menuItems = [
             label: 'Servicios',
             description: 'Catálogo'
         },
+        {
+            path: '/products',
+            icon: '📦',
+            label: 'Inventario',
+            description: 'Productos y stock'
+        },
         { 
             path: '/giftcards',
             icon: '🎁',
