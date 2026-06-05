@@ -121,14 +121,20 @@ export const useAuthStore = create<AuthState>()((set) => ({
   checkAuth: async () => {
     set({ isLoading: true });
     try {
-      const storedBuildId = getStoredAuthBuildId();
       const forceReloginBuildId =
         typeof window !== 'undefined' ? window.localStorage.getItem(FORCE_RELOGIN_KEY) : null;
-      const hasVersionMismatch =
-        Boolean(forceReloginBuildId) ||
-        (storedBuildId && storedBuildId !== APP_BUILD_ID);
+      if (forceReloginBuildId) {
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          authBuildId: null,
+        });
+        return;
+      }
 
-      if (hasVersionMismatch) {
+      const storedBuildId = getStoredAuthBuildId();
+      if (storedBuildId && storedBuildId !== APP_BUILD_ID) {
         setForceReloginMarker(APP_BUILD_ID);
         setStoredAuthBuildId(APP_BUILD_ID);
 

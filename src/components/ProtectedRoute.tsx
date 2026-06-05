@@ -8,6 +8,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
 
+const FORCE_RELOGIN_KEY = 'bunnycure-force-relogin-build-id';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -15,9 +17,14 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, checkAuth, user } = useAuth();
   const location = useLocation();
+  const forceRelogin = typeof window !== 'undefined' && window.localStorage.getItem(FORCE_RELOGIN_KEY);
 
   // Verificar autenticación al montar
   useEffect(() => {
+    if (forceRelogin) {
+      return;
+    }
+
     // Solo hacer checkAuth si:
     // 1. No está autenticado según el estado
     // 2. O el estado dice autenticado pero no hay usuario (inconsistencia)
@@ -27,7 +34,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       console.log('🔍 Verificando autenticación...');
       checkAuth();
     }
-  }, [location.pathname, isAuthenticated, user, checkAuth]); // Incluir todas las dependencias
+  }, [location.pathname, isAuthenticated, user, checkAuth, forceRelogin]); // Incluir todas las dependencias
+
+  if (forceRelogin) {
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
+    return <Navigate to="/login?version=true" state={{ from: location }} replace />;
+  }
 
   // Mostrar loader mientras verifica
   if (isLoading) {

@@ -6,12 +6,15 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/mobile.css'
+import BuildVersionGuard from './components/BuildVersionGuard'
 
 function App() {
   return (
     <>
-      <OfflineIndicator />
-      <AppRouter />
+      <BuildVersionGuard>
+        <OfflineIndicator />
+        <AppRouter />
+      </BuildVersionGuard>
       <PWAUpdatePrompt />
       <InstallPWA />
       <ToastContainer
