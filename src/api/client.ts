@@ -30,14 +30,19 @@ const apiClient = axios.create({
 // Variable para evitar múltiples redirects simultáneos
 let isRedirecting = false;
 
+const isAuthLoginRequest = (url?: string): boolean => {
+  if (!url) return false;
+  return url.includes('/api/auth/login');
+};
+
 /**
  * Interceptor de peticiones para agregar JWT access token en cada request.
  */
 apiClient.interceptors.request.use(
   (config) => {
     const token = getInMemoryToken();
-    
-    if (token) {
+
+    if (token && !isAuthLoginRequest(config.url)) {
       const headers = config.headers as Record<string, string>;
       headers.Authorization = `Bearer ${token}`;
     }
