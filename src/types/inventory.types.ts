@@ -55,3 +55,11 @@ export interface InventoryMovement {
   createdBy?: number | null;
   createdAt?: string | null;
 }
+
+export interface ProductImportPreview {
+  name?: string | null;
+  purchaseUrl: string;
+  purchasePrice?: number | null;
+  observedPrice?: number | null;
+  observedAvailable?: boolean | null;
+}

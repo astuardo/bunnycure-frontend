@@ -1,6 +1,6 @@
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
-import { Product, ProductFormData, ConsumeRequest, PurchaseRequest, InventoryMovement } from '../types/inventory.types';
+import { Product, ProductFormData, ConsumeRequest, PurchaseRequest, InventoryMovement, ProductImportPreview } from '../types/inventory.types';
 
 export const inventoryApi = {
   listProducts: async (): Promise<Product[]> => {
@@ -33,6 +33,12 @@ export const inventoryApi = {
   refreshObservedPrice: async (id: number): Promise<Product> => {
     const response = await apiClient.post<ApiResponse<Product>>(`/api/inventory/products/${id}/refresh-observed`);
     if (!response.data.data) throw new Error('Error al actualizar precio observado');
+    return response.data.data;
+  },
+
+  importProductFromUrl: async (purchaseUrl: string): Promise<ProductImportPreview> => {
+    const response = await apiClient.post<ApiResponse<ProductImportPreview>>('/api/inventory/products/import-from-url', { purchaseUrl });
+    if (!response.data.data) throw new Error('No se pudo importar datos del link');
     return response.data.data;
   },
 

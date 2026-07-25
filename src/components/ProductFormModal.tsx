@@ -18,6 +18,7 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<ProductFormData>({
     defaultValues: {
@@ -30,6 +31,7 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
       stockConsumptionUnit: 0
     }
   });
+  const [isImporting, setIsImporting] = React.useState(false);
 
   // Helper to normalize URLs by adding https:// when protocol is missing
   const normalizeUrl = (v?: string | null) => {
@@ -55,13 +57,6 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
 
   const onSubmit = async (data: ProductFormData) => {
     try {
-      // Auto-complete purchaseUrl: add https:// if missing
-      const normalizeUrl = (v?: string | null) => {
-        if (!v) return v;
-        if (v.startsWith('http://') || v.startsWith('https://')) return v;
-        return `https://${v}`;
-      };
-
       const payload: ProductFormData = {
         ...data,
         purchaseUrl: normalizeUrl(data.purchaseUrl),
@@ -87,6 +82,47 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
     } catch (err: any) {
       const msg = err?.response?.data?.error?.message ?? err?.message ?? 'Error';
       toast.error(msg);
+    }
+  };
+
+  const handleImportFromUrl = async () => {
+    const rawUrl = watch('purchaseUrl');
+    if (!rawUrl || !rawUrl.trim()) {
+      toast.info('Ingresa el link del producto para importar');
+      return;
+    }
+    if (!isValidUrl(rawUrl)) {
+      toast.error('La URL no es válida');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const normalizedUrl = normalizeUrl(rawUrl) || rawUrl;
+      const imported = await inventoryApi.importProductFromUrl(normalizedUrl);
+
+      if (imported.name && imported.name.trim()) {
+        setValue('name', imported.name.trim(), { shouldDirty: true });
+      }
+      if (imported.purchasePrice !== null && imported.purchasePrice !== undefined) {
+        setValue('purchasePrice', Number(imported.purchasePrice), { shouldDirty: true });
+      }
+      if (imported.purchaseUrl) {
+        setValue('purchaseUrl', imported.purchaseUrl, { shouldDirty: true });
+      } else {
+        setValue('purchaseUrl', normalizedUrl, { shouldDirty: true });
+      }
+
+      if (imported.observedAvailable === false) {
+        toast.warning('Producto importado, pero aparece como sin stock en el proveedor');
+      } else {
+        toast.success('Datos importados desde el link');
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? err?.message ?? 'No se pudo importar desde el link';
+      toast.error(msg);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -128,7 +164,21 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
 
           <div className="mb-3">
             <label className="form-label">URL del proveedor</label>
-            <input type="url" className="form-control" {...register('purchaseUrl', { validate: (v) => (v === undefined || v === null || v === '') || isValidUrl(v) })} />
+            <div className="d-flex gap-2">
+              <input
+                type="url"
+                className="form-control"
+                {...register('purchaseUrl', { validate: (v) => (v === undefined || v === null || v === '') || isValidUrl(v) })}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-info"
+                onClick={handleImportFromUrl}
+                disabled={isImporting}
+              >
+                {isImporting ? 'Importando...' : 'Importar'}
+              </button>
+            </div>
             {errors.purchaseUrl && <small className="text-danger">La URL no es válida</small>}
           </div>
 
