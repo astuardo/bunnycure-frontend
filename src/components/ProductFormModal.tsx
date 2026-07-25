@@ -112,6 +112,15 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
       } else {
         setValue('purchaseUrl', normalizedUrl, { shouldDirty: true });
       }
+      if (imported.suggestedPurchaseUnit && imported.suggestedPurchaseUnit.trim()) {
+        setValue('purchaseUnit', imported.suggestedPurchaseUnit.trim(), { shouldDirty: true });
+      }
+      if (imported.suggestedConsumptionUnit && imported.suggestedConsumptionUnit.trim()) {
+        setValue('consumptionUnit', imported.suggestedConsumptionUnit.trim(), { shouldDirty: true });
+      }
+      if (imported.suggestedConversionFactor !== null && imported.suggestedConversionFactor !== undefined) {
+        setValue('conversionFactor', Number(imported.suggestedConversionFactor), { shouldDirty: true });
+      }
 
       if (imported.observedAvailable === false) {
         toast.warning('Producto importado, pero aparece como sin stock en el proveedor');

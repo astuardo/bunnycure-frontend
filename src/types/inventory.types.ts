@@ -62,4 +62,7 @@ export interface ProductImportPreview {
   purchasePrice?: number | null;
   observedPrice?: number | null;
   observedAvailable?: boolean | null;
+  suggestedPurchaseUnit?: string | null;
+  suggestedConsumptionUnit?: string | null;
+  suggestedConversionFactor?: number | null;
 }
