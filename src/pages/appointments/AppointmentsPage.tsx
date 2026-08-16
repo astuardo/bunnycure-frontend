@@ -19,6 +19,9 @@ import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/useToast';
 import { trackAppointmentCancelled } from '../../utils/analytics';
 import { getAppointmentTotal } from '../../utils/appointmentUtils';
+import { useGiftCardsStore } from '../../stores/giftcardsStore';
+import { GiftCard, GiftCardItem } from '../../types/giftcard.types';
+import { toWhatsAppPhone } from '../../utils/giftcardRenderer';
 
 interface AppointmentFormState {
   customerId: number;
@@ -63,6 +66,8 @@ export default function AppointmentsPage() {
 
   const { customers, fetchCustomers } = useCustomersStore();
   const { services, fetchServices } = useServicesStore();
+  const { giftCards, fetchGiftCards, redeemGiftCard } = useGiftCardsStore();
+  const [applyingGiftCard, setApplyingGiftCard] = useState(false);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -119,7 +124,8 @@ export default function AppointmentsPage() {
     fetchAppointments();
     fetchCustomers();
     fetchServices(true);
-  }, [fetchAppointments, fetchCustomers, fetchServices]);
+    fetchGiftCards();
+  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards]);
 
   // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
   useEffect(() => {
@@ -299,6 +305,64 @@ export default function AppointmentsPage() {
     notes: buildCreateNotes(),
     totalPrice: createFinalTotal,
   });
+
+  const availableEditCustomerGiftCards = useMemo(() => {
+    if (!editFormData.customerId) return [];
+    const customerObj = customers.find((c) => c.id === editFormData.customerId);
+    const normalizedPhone = customerObj ? toWhatsAppPhone(customerObj.phone) : '';
+
+    return giftCards.filter((gc) => {
+      const isBeneficiary =
+        gc.beneficiaryCustomerId === editFormData.customerId ||
+        Boolean(normalizedPhone && toWhatsAppPhone(gc.beneficiaryPhone) === normalizedPhone);
+      const isActive = gc.status === 'ACTIVE' || gc.status === 'PARTIAL';
+      const hasRemaining = gc.items.some((item) => item.remainingQuantity > 0);
+      return isBeneficiary && isActive && hasRemaining;
+    });
+  }, [giftCards, editFormData.customerId, customers]);
+
+  const availableCreateCustomerGiftCards = useMemo(() => {
+    if (!formData.customerId) return [];
+    const customerObj = customers.find((c) => c.id === formData.customerId);
+    const normalizedPhone = customerObj ? toWhatsAppPhone(customerObj.phone) : '';
+
+    return giftCards.filter((gc) => {
+      const isBeneficiary =
+        gc.beneficiaryCustomerId === formData.customerId ||
+        Boolean(normalizedPhone && toWhatsAppPhone(gc.beneficiaryPhone) === normalizedPhone);
+      const isActive = gc.status === 'ACTIVE' || gc.status === 'PARTIAL';
+      const hasRemaining = gc.items.some((item) => item.remainingQuantity > 0);
+      return isBeneficiary && isActive && hasRemaining;
+    });
+  }, [giftCards, formData.customerId, customers]);
+
+  const handleApplyGiftCardToEditAppointment = async (gc: GiftCard, item: GiftCardItem) => {
+    if (applyingGiftCard) return;
+    if (!confirm(`¿Confirmas canjear 1 "${item.serviceName}" de la GiftCard ${gc.code} para esta cita?`)) {
+      return;
+    }
+
+    setApplyingGiftCard(true);
+    try {
+      await redeemGiftCard(gc.id, {
+        note: `Canje aplicado a cita #${editingAppointmentId || 'en edición'} (${editFormData.appointmentDate || 'Fecha a definir'})`,
+        items: [{ giftCardItemId: item.id, quantity: 1 }],
+      });
+
+      const gcNoteTag = `[Pago con GiftCard ${gc.code}: ${item.serviceName}]`;
+      setEditFormData((prev) => ({
+        ...prev,
+        notes: prev.notes ? `${prev.notes}\n${gcNoteTag}` : gcNoteTag,
+      }));
+
+      toast.success(`Servicio "${item.serviceName}" canjeado de GiftCard ${gc.code} y registrado en notas.`);
+      await fetchGiftCards();
+    } catch {
+      toast.error('No se pudo aplicar el canje de la GiftCard');
+    } finally {
+      setApplyingGiftCard(false);
+    }
+  };
 
   const buildEditPayload = (): AppointmentUpdateRequest => ({
     customerId: editFormData.customerId,
@@ -1110,6 +1174,22 @@ export default function AppointmentsPage() {
                 <p className="mb-0 text-muted">{formData.notes.trim() || 'Sin notas'}</p>
               </div>
 
+              {availableCreateCustomerGiftCards.length > 0 && (
+                <Alert variant="info" className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                  <div>
+                    <strong>🎁 GiftCard disponible:</strong> La clienta tiene {availableCreateCustomerGiftCards.length} GiftCard(s) activa(s) con saldo (
+                    {availableCreateCustomerGiftCards.map(gc => gc.code).join(', ')}).
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={() => navigate(`/giftcards?search=${encodeURIComponent(availableCreateCustomerGiftCards[0].code)}`)}
+                  >
+                    Ver GiftCard
+                  </Button>
+                </Alert>
+              )}
+
               <hr />
 
               <h6 className="mb-2">Servicios seleccionados</h6>
@@ -1404,6 +1484,43 @@ export default function AppointmentsPage() {
                 placeholder="Observaciones, preferencias, etc..."
               />
             </Form.Group>
+
+            {availableEditCustomerGiftCards.length > 0 && (
+              <div className="p-3 border rounded bg-light border-primary-subtle mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <div className="fw-semibold text-primary">🎁 GiftCards Disponibles de la Clienta</div>
+                  <Badge bg="success">
+                    {availableEditCustomerGiftCards.length} activa{availableEditCustomerGiftCards.length > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                <p className="text-muted small mb-2">
+                  Esta clienta tiene servicios disponibles en GiftCard. Puedes canjear el servicio directamente aquí para registrarlo en la cita:
+                </p>
+                <div className="d-flex flex-column gap-2">
+                  {availableEditCustomerGiftCards.map((gc) => (
+                    <div key={gc.id} className="p-2 border rounded bg-white">
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <span className="fw-semibold small">{gc.code}</span>
+                        <small className="text-muted">Vence: {gc.expiresOn}</small>
+                      </div>
+                      <div className="d-flex flex-wrap gap-1">
+                        {gc.items.filter((item) => item.remainingQuantity > 0).map((item) => (
+                          <Button
+                            key={item.id}
+                            size="sm"
+                            variant="outline-success"
+                            disabled={applyingGiftCard}
+                            onClick={() => handleApplyGiftCardToEditAppointment(gc, item)}
+                          >
+                            ⚡ Canjear {item.serviceName} ({item.remainingQuantity} disp.)
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <hr />
             <h6 className="mb-2">Cargos extra personalizados</h6>

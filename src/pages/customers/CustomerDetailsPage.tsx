@@ -1,8 +1,3 @@
-/**
- * Página de detalles ampliados del cliente.
- * Muestra historial, estadísticas y permite edición de notas.
- */
-
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner } from 'react-bootstrap';
@@ -12,9 +7,13 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import StampCard from '../../components/customers/StampCard';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { useToast } from '../../hooks/useToast';
 import { Customer } from '../../types/customer.types';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
+import { GiftCard } from '../../types/giftcard.types';
+import { downloadGiftCardPng, sendGiftCardWhatsApp, toWhatsAppPhone } from '../../utils/giftcardRenderer';
+import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
 
 type CustomerWithCreatedAt = Customer & { createdAt?: string };
 
@@ -31,6 +30,7 @@ export default function CustomerDetailsPage() {
   } = useCustomersStore();
 
   const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
+  const { giftCards, loading: giftCardsLoading, fetchGiftCards } = useGiftCardsStore();
 
   const [notesDraft, setNotesDraft] = useState('');
   const [editingNotes, setEditingNotes] = useState(false);
@@ -51,8 +51,9 @@ export default function CustomerDetailsPage() {
     if (id) {
       fetchCustomers();
       fetchAppointments();
+      fetchGiftCards();
     }
-  }, [id, fetchCustomers, fetchAppointments]);
+  }, [id, fetchCustomers, fetchAppointments, fetchGiftCards]);
 
   const customerId = Number(id);
   const customer = useMemo<CustomerWithCreatedAt | null>(() => {
@@ -71,6 +72,21 @@ export default function CustomerDetailsPage() {
       .slice()
       .sort((a, b) => safeTimestamp(b.appointmentDate) - safeTimestamp(a.appointmentDate));
   }, [appointments, customer]);
+
+  const customerGiftCards = useMemo<GiftCard[]>(() => {
+    if (!customer) return [];
+    const customerPhoneNormalized = toWhatsAppPhone(customer.phone);
+    return giftCards.filter((gc) => {
+      const isBeneficiaryId = gc.beneficiaryCustomerId === customer.id;
+      const isBeneficiaryPhone = Boolean(customerPhoneNormalized && toWhatsAppPhone(gc.beneficiaryPhone) === customerPhoneNormalized);
+      const isBuyerPhone = Boolean(customerPhoneNormalized && toWhatsAppPhone(gc.buyerPhone || '') === customerPhoneNormalized);
+      return isBeneficiaryId || isBeneficiaryPhone || isBuyerPhone;
+    });
+  }, [giftCards, customer]);
+
+  const activeCustomerGiftCards = useMemo(() => {
+    return customerGiftCards.filter((gc) => gc.status === 'ACTIVE' || gc.status === 'PARTIAL');
+  }, [customerGiftCards]);
 
   const totalAppointments = customerAppointments.length;
   const completedAppointments = customerAppointments.filter((a) => a.status === AppointmentStatus.COMPLETED).length;
@@ -278,6 +294,145 @@ export default function CustomerDetailsPage() {
               currentRewardIndex={customer.currentRewardIndex}
               onAdjust={handleLoyaltyAdjust}
             />
+
+            <Card className="mb-4">
+              <Card.Header className="d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center gap-2">
+                  <h5 className="mb-0">🎁 GiftCards del Cliente</h5>
+                  <Badge bg={activeCustomerGiftCards.length > 0 ? 'success' : 'secondary'}>
+                    {activeCustomerGiftCards.length} activa{activeCustomerGiftCards.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline-primary"
+                  onClick={() => navigate('/giftcards/generar')}
+                >
+                  + Emitir GiftCard
+                </Button>
+              </Card.Header>
+              <Card.Body>
+                {giftCardsLoading ? (
+                  <div className="text-center py-3 text-muted">Cargando GiftCards...</div>
+                ) : customerGiftCards.length === 0 ? (
+                  <div className="text-muted small py-2">
+                    Esta clienta no tiene GiftCards asociadas (como beneficiaria ni compradora).
+                  </div>
+                ) : (
+                  <div className="table-responsive">
+                    <Table hover size="sm" className="align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>Código</th>
+                          <th>Rol</th>
+                          <th>Estado</th>
+                          <th>Servicios Disponibles</th>
+                          <th>Vence</th>
+                          <th className="text-end">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {customerGiftCards.map((gc) => {
+                          const isBeneficiary = toWhatsAppPhone(gc.beneficiaryPhone) === toWhatsAppPhone(customer.phone);
+                          const remainingServices = gc.items.map(
+                            (item) => `${item.serviceName} (${item.remainingQuantity}/${item.quantity})`
+                          ).join(', ');
+                          const publicUrl = normalizeGiftCardPublicUrl(gc.publicUrl, gc.code);
+
+                          return (
+                            <tr key={gc.id}>
+                              <td>
+                                <strong>{gc.code}</strong>
+                                <br />
+                                <small className="text-muted">${gc.totalAmount.toLocaleString('es-CL')}</small>
+                              </td>
+                              <td>
+                                <Badge bg={isBeneficiary ? 'primary' : 'info'}>
+                                  {isBeneficiary ? 'Beneficiaria' : 'Compradora'}
+                                </Badge>
+                              </td>
+                              <td>
+                                <Badge bg={gc.status === 'ACTIVE' ? 'success' : gc.status === 'PARTIAL' ? 'warning' : 'secondary'}>
+                                  {gc.status}
+                                </Badge>
+                              </td>
+                              <td>
+                                <small>{remainingServices || 'Sin servicios'}</small>
+                              </td>
+                              <td>
+                                <small>{gc.expiresOn}</small>
+                              </td>
+                              <td className="text-end">
+                                <div className="d-flex justify-content-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline-secondary"
+                                    title="Ver en Gestión"
+                                    onClick={() => navigate(`/giftcards?search=${encodeURIComponent(gc.code)}`)}
+                                  >
+                                    🔍
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-success"
+                                    title="Enviar por WhatsApp"
+                                    onClick={() =>
+                                      sendGiftCardWhatsApp({
+                                        data: {
+                                          beneficiaryName: gc.beneficiaryName,
+                                          code: gc.code,
+                                          pin: gc.plainPin || 'No disponible',
+                                          expiresOn: gc.expiresOn,
+                                          publicUrl,
+                                        },
+                                        beneficiaryPhone: gc.beneficiaryPhone,
+                                        onError: (msg) => toast.error(msg),
+                                      })
+                                    }
+                                  >
+                                    📱
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-primary"
+                                    title="Descargar PNG"
+                                    onClick={async () => {
+                                      try {
+                                        await downloadGiftCardPng({
+                                          beneficiaryName: gc.beneficiaryName,
+                                          code: gc.code,
+                                          pin: gc.plainPin || 'No disponible',
+                                          expiresOn: gc.expiresOn,
+                                          publicUrl,
+                                        });
+                                        toast.success('PNG descargado');
+                                      } catch {
+                                        toast.error('Error al descargar PNG');
+                                      }
+                                    }}
+                                  >
+                                    📥
+                                  </Button>
+                                  <a
+                                    className="btn btn-sm btn-outline-info"
+                                    href={publicUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    title="Abrir URL pública"
+                                  >
+                                    🌐
+                                  </a>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
 
             <Card>
               <Card.Header>
