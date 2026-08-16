@@ -5,6 +5,13 @@
 
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
+import {
+  ScheduleUnavailability,
+  UnavailabilityColorConfig,
+  UnavailabilityNotificationConfig,
+  DEFAULT_UNAVAILABILITY_COLORS,
+  DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
+} from '../types/unavailability.types';
 
 export interface SettingsData {
   businessName?: string;
@@ -43,6 +50,9 @@ export interface SettingsData {
   whatsappHandoffAdminPrefill?: string;
   holidays?: string;
   scheduleBlocks?: string;
+  unavailabilities?: ScheduleUnavailability[];
+  unavailabilityColors?: UnavailabilityColorConfig;
+  unavailabilityNotifications?: UnavailabilityNotificationConfig;
   calendarMorningStart?: string;
   calendarMorningEnd?: string;
   calendarMorningColor?: string;
@@ -182,6 +192,69 @@ export const settingsApi = {
       whatsappHandoffAdminPrefill: flatSettings['whatsapp.handoff.admin-prefill'],
       holidays: flatSettings['business.holidays'],
       scheduleBlocks: flatSettings['business.schedule_blocks'],
+      unavailabilities: (() => {
+        try {
+          const raw = flatSettings['schedule.unavailabilities'];
+          if (raw) return JSON.parse(raw) as ScheduleUnavailability[];
+          // Backward compatibility: migrate old holidays or scheduleBlocks if present
+          const list: ScheduleUnavailability[] = [];
+          if (flatSettings['business.holidays']) {
+            const hList = JSON.parse(flatSettings['business.holidays']) as string[];
+            hList.forEach((h, idx) => {
+              list.push({
+                id: `legacy-h-${idx}-${h}`,
+                type: 'FULL_DAY',
+                startDate: h,
+                endDate: h,
+                reason: 'Feriado / Día Cerrado',
+                createdAt: new Date().toISOString(),
+              });
+            });
+          }
+          if (flatSettings['business.schedule_blocks']) {
+            const bList = JSON.parse(flatSettings['business.schedule_blocks']) as Array<{
+              id: string;
+              date: string;
+              startTime: string;
+              endTime: string;
+              reason: string;
+            }>;
+            bList.forEach((b) => {
+              list.push({
+                id: b.id || `legacy-b-${Date.now()}`,
+                type: 'TIME_SLOT',
+                startDate: b.date,
+                endDate: b.date,
+                startTime: b.startTime,
+                endTime: b.endTime,
+                reason: b.reason || 'Bloqueo de horario',
+                createdAt: new Date().toISOString(),
+              });
+            });
+          }
+          return list;
+        } catch {
+          return [];
+        }
+      })(),
+      unavailabilityColors: (() => {
+        try {
+          const raw = flatSettings['schedule.unavailability.colors'];
+          if (raw) return JSON.parse(raw) as UnavailabilityColorConfig;
+          return DEFAULT_UNAVAILABILITY_COLORS;
+        } catch {
+          return DEFAULT_UNAVAILABILITY_COLORS;
+        }
+      })(),
+      unavailabilityNotifications: (() => {
+        try {
+          const raw = flatSettings['schedule.unavailability.notifications'];
+          if (raw) return JSON.parse(raw) as UnavailabilityNotificationConfig;
+          return DEFAULT_UNAVAILABILITY_NOTIFICATIONS;
+        } catch {
+          return DEFAULT_UNAVAILABILITY_NOTIFICATIONS;
+        }
+      })(),
       calendarMorningStart: flatSettings['calendar.slot.morning.start'],
       calendarMorningEnd: flatSettings['calendar.slot.morning.end'],
       calendarMorningColor: flatSettings['calendar.slot.morning.color'],
@@ -219,6 +292,17 @@ export const settingsApi = {
     if (settings.whatsappHumanDisplayName !== undefined) flatSettings['whatsapp.human.display-name'] = settings.whatsappHumanDisplayName;
     if (settings.whatsappHandoffClientMessage !== undefined) flatSettings['whatsapp.handoff.client-message'] = settings.whatsappHandoffClientMessage;
     if (settings.whatsappHandoffAdminPrefill !== undefined) flatSettings['whatsapp.handoff.admin-prefill'] = settings.whatsappHandoffAdminPrefill;
+
+    // Unavailabilities, Colors and Notifications
+    if (settings.unavailabilities !== undefined) {
+      flatSettings['schedule.unavailabilities'] = JSON.stringify(settings.unavailabilities);
+    }
+    if (settings.unavailabilityColors !== undefined) {
+      flatSettings['schedule.unavailability.colors'] = JSON.stringify(settings.unavailabilityColors);
+    }
+    if (settings.unavailabilityNotifications !== undefined) {
+      flatSettings['schedule.unavailability.notifications'] = JSON.stringify(settings.unavailabilityNotifications);
+    }
 
     await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
   },

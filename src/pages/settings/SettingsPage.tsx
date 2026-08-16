@@ -14,15 +14,15 @@ import { useToast } from '../../hooks/useToast';
 import { settingsApi, SettingsData } from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
+import { ScheduleUnavailabilitySection } from '../../components/settings/ScheduleUnavailabilitySection';
+import {
+  ScheduleUnavailability,
+  UnavailabilityColorConfig,
+  UnavailabilityNotificationConfig,
+  DEFAULT_UNAVAILABILITY_COLORS,
+  DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
+} from '../../types/unavailability.types';
 import { CALENDAR_DISPLAY_STORAGE_KEY, DEFAULT_CALENDAR_DISPLAY_CONFIG } from '@/utils/calendarDisplay';
-
-interface ScheduleBlock {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  reason: string;
-}
 
 interface BusinessSettings {
   businessName: string;
@@ -48,8 +48,9 @@ interface BusinessSettings {
   whatsappHumanDisplayName: string;
   whatsappHandoffClientMessage: string;
   whatsappHandoffAdminPrefill: string;
-  holidays: string[];
-  scheduleBlocks: ScheduleBlock[];
+  unavailabilities: ScheduleUnavailability[];
+  unavailabilityColors: UnavailabilityColorConfig;
+  unavailabilityNotifications: UnavailabilityNotificationConfig;
   calendarDisplay: {
     morning: { start: string; end: string; color: string };
     afternoon: { start: string; end: string; color: string };
@@ -81,8 +82,9 @@ const defaultSettings: BusinessSettings = {
   whatsappHumanDisplayName: 'Equipo BunnyCure',
   whatsappHandoffClientMessage: 'Te estoy conectando con un miembro de nuestro equipo...',
   whatsappHandoffAdminPrefill: 'Hola, el cliente {customer} necesita ayuda con {service}',
-  holidays: [],
-  scheduleBlocks: [],
+  unavailabilities: [],
+  unavailabilityColors: DEFAULT_UNAVAILABILITY_COLORS,
+  unavailabilityNotifications: DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
   calendarDisplay: {
     morning: {
       start: DEFAULT_CALENDAR_DISPLAY_CONFIG.morning.start,
@@ -188,8 +190,9 @@ export default function SettingsPage() {
         whatsappHumanDisplayName: serverSettings.whatsappHumanDisplayName || '',
         whatsappHandoffClientMessage: serverSettings.whatsappHandoffClientMessage || '',
         whatsappHandoffAdminPrefill: serverSettings.whatsappHandoffAdminPrefill || '',
-        holidays: serverSettings.holidays ? JSON.parse(serverSettings.holidays) : [],
-        scheduleBlocks: serverSettings.scheduleBlocks ? JSON.parse(serverSettings.scheduleBlocks) : [],
+        unavailabilities: serverSettings.unavailabilities || [],
+        unavailabilityColors: serverSettings.unavailabilityColors || DEFAULT_UNAVAILABILITY_COLORS,
+        unavailabilityNotifications: serverSettings.unavailabilityNotifications || DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
         calendarDisplay: {
           morning: {
             start: localCalendar?.morning?.start || serverSettings.calendarMorningStart || defaultSettings.calendarDisplay.morning.start,
@@ -222,8 +225,11 @@ export default function SettingsPage() {
     loadSettings();
   }, [loadSettings]);
 
-  const handleChange = (field: keyof BusinessSettings, value: string | number | boolean | string[] | ScheduleBlock[]) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+  const handleChange = <K extends keyof BusinessSettings>(
+    key: K,
+    value: BusinessSettings[K]
+  ) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
     setHasChanges(true);
   };
 
@@ -311,8 +317,9 @@ export default function SettingsPage() {
         whatsappHumanDisplayName: settings.whatsappHumanDisplayName,
         whatsappHandoffClientMessage: settings.whatsappHandoffClientMessage,
         whatsappHandoffAdminPrefill: settings.whatsappHandoffAdminPrefill,
-        holidays: JSON.stringify(settings.holidays),
-        scheduleBlocks: JSON.stringify(settings.scheduleBlocks),
+        unavailabilities: settings.unavailabilities,
+        unavailabilityColors: settings.unavailabilityColors,
+        unavailabilityNotifications: settings.unavailabilityNotifications,
       };
       
       await settingsApi.saveAll(settingsData);
@@ -461,113 +468,24 @@ export default function SettingsPage() {
               </Card.Body>
             </Card>
           </Col>
+        </Row>
 
-          <Col lg={6} className="mb-4">
-            <Card className="border-danger shadow-sm">
-              <Card.Header className="bg-danger text-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 text-white">📅 Días Feriados (Cerrado)</h5>
-              </Card.Header>
-              <Card.Body>
-                <div className="d-flex gap-2 mb-3">
-                  <Form.Control 
-                    type="date" 
-                    id="new-holiday"
-                  />
-                  <Button variant="danger" size="sm" onClick={() => {
-                    const el = document.getElementById('new-holiday') as HTMLInputElement;
-                    if (el.value) {
-                      if (!settings.holidays.includes(el.value)) {
-                        handleChange('holidays', [...settings.holidays, el.value].sort());
-                      }
-                      el.value = '';
-                    }
-                  }}>Añadir</Button>
-                </div>
-                <div className="d-flex flex-wrap gap-2">
-                  {settings.holidays.length === 0 ? (
-                    <small className="text-muted">No hay feriados configurados</small>
-                  ) : (
-                    settings.holidays.map(h => (
-                      <Badge key={h} bg="danger" className="p-2 d-flex align-items-center gap-2">
-                        {new Date(h + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        <span style={{ cursor: 'pointer' }} onClick={() => handleChange('holidays', settings.holidays.filter(x => x !== h))}>✕</span>
-                      </Badge>
-                    ))
-                  )}
-                </div>
-              </Card.Body>
-            </Card>
+        <Row>
+          <Col xs={12} className="mb-4">
+            <ScheduleUnavailabilitySection
+              unavailabilities={settings.unavailabilities}
+              colors={settings.unavailabilityColors}
+              notifications={settings.unavailabilityNotifications}
+              onUnavailabilitiesChange={(unavailabilities) => handleChange('unavailabilities', unavailabilities)}
+              onColorsChange={(colors) => handleChange('unavailabilityColors', colors)}
+              onNotificationsChange={(notifications) => handleChange('unavailabilityNotifications', notifications)}
+            />
           </Col>
         </Row>
 
         <Row>
           <Col lg={6} className="mb-4">
-            <Card className="border-warning shadow-sm">
-              <Card.Header className="bg-warning text-dark d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">🚫 Bloqueos de Agenda</h5>
-              </Card.Header>
-              <Card.Body>
-                <div className="small text-muted mb-3">Define rangos de horas donde no habrá disponibilidad.</div>
-                
-                {settings.scheduleBlocks.length > 0 && (
-                  <div className="mb-3 border rounded p-2 bg-white" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {settings.scheduleBlocks.map(b => (
-                      <div key={b.id} className="d-flex justify-content-between align-items-center border-bottom py-2 px-1">
-                        <div>
-                          <div className="fw-bold small">{new Date(b.date + 'T12:00:00').toLocaleDateString('es-CL')}</div>
-                          <div className="small text-muted">{b.startTime} - {b.endTime} • {b.reason || 'Sin motivo'}</div>
-                        </div>
-                        <Button variant="link" size="sm" className="text-danger" onClick={() => handleChange('scheduleBlocks', settings.scheduleBlocks.filter(x => x.id !== b.id))}>Eliminar</Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="border p-3 rounded bg-light shadow-inner">
-                  <Row className="g-2">
-                    <Col xs={12} sm={6}>
-                      <Form.Label className="small mb-1">Fecha</Form.Label>
-                      <Form.Control size="sm" type="date" id="block-date" />
-                    </Col>
-                    <Col xs={6} sm={3}>
-                      <Form.Label className="small mb-1">Inicio</Form.Label>
-                      <Form.Control size="sm" type="time" id="block-start" defaultValue="14:00" />
-                    </Col>
-                    <Col xs={6} sm={3}>
-                      <Form.Label className="small mb-1">Fin</Form.Label>
-                      <Form.Control size="sm" type="time" id="block-end" defaultValue="16:00" />
-                    </Col>
-                    <Col xs={12} sm={9}>
-                      <Form.Label className="small mb-1">Motivo</Form.Label>
-                      <Form.Control size="sm" type="text" id="block-reason" placeholder="Ej: Almuerzo, trámite..." />
-                    </Col>
-                    <Col xs={12} sm={3} className="d-grid align-items-end">
-                      <Button variant="warning" size="sm" onClick={() => {
-                        const d = document.getElementById('block-date') as HTMLInputElement;
-                        const s = document.getElementById('block-start') as HTMLInputElement;
-                        const e = document.getElementById('block-end') as HTMLInputElement;
-                        const r = document.getElementById('block-reason') as HTMLInputElement;
-                        if (d.value && s.value && e.value) {
-                          const newBlock: ScheduleBlock = {
-                            id: Date.now().toString(),
-                            date: d.value,
-                            startTime: s.value,
-                            endTime: e.value,
-                            reason: r.value
-                          };
-                          handleChange('scheduleBlocks', [...settings.scheduleBlocks, newBlock].sort((a,b) => a.date.localeCompare(b.date)));
-                          d.value = ''; r.value = '';
-                        }
-                      }}>Bloquear</Button>
-                    </Col>
-                  </Row>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col lg={6} className="mb-4">
-              <Card>
+            <Card>
               <Card.Header>
                 <h5 className="mb-0">Configuración de Citas</h5>
               </Card.Header>

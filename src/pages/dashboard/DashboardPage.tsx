@@ -20,7 +20,18 @@ import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { ServiceSummary } from '@/types/service.types';
 import { appointmentsApi } from '@/api/appointments.api';
 import { statsApi } from '@/api/stats.api';
+import { settingsApi } from '@/api/settings.api';
 import { DashboardStats } from '@/types/stats.types';
+import {
+    ScheduleUnavailability,
+    UnavailabilityColorConfig,
+    DEFAULT_UNAVAILABILITY_COLORS,
+} from '@/types/unavailability.types';
+import {
+    isDateBlockedFullDay,
+    getDateUnavailabilities,
+    getTodayUnavailabilities,
+} from '@/utils/unavailabilityUtils';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
 import { useToast } from '@/hooks/useToast';
@@ -160,6 +171,8 @@ export default function DashboardPage() {
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+    const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>([]);
+    const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(DEFAULT_UNAVAILABILITY_COLORS);
     const [calendarMonth] = useState(new Date());
     const calendarDisplayConfig = useCalendarDisplayConfig();
     const [completeDialog, setCompleteDialog] = useState<{ show: boolean; appointmentId: number | null }>({ show: false, appointmentId: null });
@@ -171,17 +184,20 @@ export default function DashboardPage() {
         const load = async () => {
             setStatsLoading(true);
             try {
-                const [stats] = await Promise.all([
+                const [stats, settingsData] = await Promise.all([
                     statsApi.getDashboardStats(),
+                    settingsApi.getAll().catch(() => null),
                     fetchAppointments(), 
                     fetchCustomers()
                 ]);
                 setDashboardStats(stats);
-        } catch (error) {
-            console.error("Error loading dashboard stats:", error);
-        } finally {
-            setStatsLoading(false);
-        }
+                if (settingsData?.unavailabilities) setUnavailabilities(settingsData.unavailabilities);
+                if (settingsData?.unavailabilityColors) setUnavailabilityColors(settingsData.unavailabilityColors);
+            } catch (error) {
+                console.error("Error loading dashboard stats:", error);
+            } finally {
+                setStatsLoading(false);
+            }
         };
         load();
     }, [fetchAppointments, fetchCustomers]);
@@ -257,6 +273,10 @@ export default function DashboardPage() {
     const todayAppointments = appointments.filter(
         (apt: Appointment) => apt.appointmentDate && isToday(parseISO(apt.appointmentDate))
     );
+    const todayUnavailabilities = useMemo(() => {
+        return getTodayUnavailabilities(unavailabilities);
+    }, [unavailabilities]);
+
     const thisWeekAppointments = appointments.filter((apt: Appointment) => {
         if (!apt.appointmentDate) return false;
         const d = parseISO(apt.appointmentDate);
@@ -286,15 +306,24 @@ export default function DashboardPage() {
                 return isSameDay(aptDate, day);
             });
 
+            const fullDayBlock = isDateBlockedFullDay(day, unavailabilities);
+            const dayBlocks = getDateUnavailabilities(day, unavailabilities);
+            const slotBlocks = dayBlocks.filter(b => b.type === 'TIME_SLOT');
+
             return {
                 date: day,
                 isToday: isToday(day),
                 isOutsideMonth: !isSameMonth(day, calendarMonth),
                 appointmentCount: dayAppointments.length,
                 dotColors: getDayDotColors(dayAppointments, calendarDisplayConfig),
+                isFullDayBlocked: fullDayBlock.blocked,
+                blockReason: fullDayBlock.reason,
+                isTimeSlotBlocked: slotBlocks.length > 0,
+                timeSlotReason: slotBlocks[0]?.reason,
+                timeSlotBlocks: slotBlocks,
             };
         });
-    }, [appointments, calendarMonth, calendarDisplayConfig]);
+    }, [appointments, calendarMonth, calendarDisplayConfig, unavailabilities]);
 
     const PAGE_BG   = '#fdf0ec';
     const CARD_PAD  = '20px';
@@ -362,6 +391,49 @@ export default function DashboardPage() {
                             </Link>
                         </div>
                     </div>
+
+                    {/* Banner de Bloqueos para el día de Hoy */}
+                    {todayUnavailabilities.length > 0 && (
+                        <div style={{ padding: '0 20px 12px' }}>
+                            {todayUnavailabilities.map((u) => (
+                                <div
+                                    key={u.id}
+                                    style={{
+                                        padding: '9px 12px',
+                                        borderRadius: '10px',
+                                        background: u.type === 'FULL_DAY' ? '#ffe0e6' : '#fef3c7',
+                                        border: `1px solid ${u.type === 'FULL_DAY' ? '#f87171' : '#f59e0b'}`,
+                                        color: u.type === 'FULL_DAY' ? '#991b1b' : '#92400e',
+                                        fontSize: '12.5px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: '8px',
+                                        marginBottom: '6px',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '15px' }}>{u.type === 'FULL_DAY' ? '🚫' : '⏰'}</span>
+                                        <div>
+                                            <strong>{u.type === 'FULL_DAY' ? 'Día Cerrado / No Disponible:' : `Horario Bloqueado (${u.startTime} a ${u.endTime}):`}</strong> {u.reason}
+                                        </div>
+                                    </div>
+                                    <span style={{
+                                        fontSize: '10px',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        padding: '2px 7px',
+                                        borderRadius: '5px',
+                                        background: u.type === 'FULL_DAY' ? '#f87171' : '#f59e0b',
+                                        color: '#fff',
+                                        whiteSpace: 'nowrap',
+                                    }}>
+                                        {u.type === 'FULL_DAY' ? 'Cerrado' : 'Bloqueo'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {appointmentsLoading ? (
                         <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}><Spinner /></div>
@@ -624,6 +696,14 @@ export default function DashboardPage() {
                             <i style={{ width: '10px', height: '10px', borderRadius: '50%', background: calendarDisplayConfig.night.color, display: 'inline-block' }} />
                             {calendarDisplayConfig.night.start}-{calendarDisplayConfig.night.end}
                         </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', color: '#991b1b', fontWeight: 600, background: unavailabilityColors.fullDayColor, padding: '1px 6px', borderRadius: '6px' }}>
+                            <i style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f87171', display: 'inline-block' }} />
+                            Cerrado
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', color: '#92400e', fontWeight: 600, background: unavailabilityColors.timeSlotColor, padding: '1px 6px', borderRadius: '6px' }}>
+                            <i style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
+                            Bloqueo
+                        </span>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '0.35rem', marginBottom: '0.4rem' }}>
@@ -635,44 +715,67 @@ export default function DashboardPage() {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '0.35rem' }}>
-                        {monthCalendarCells.map((cell, idx) => (
-                            <div
-                                key={idx}
-                                style={{
-                                    minHeight: '62px',
-                                    border: '1px solid #f0e0d8',
-                                    borderRadius: '12px',
-                                    padding: '0.35rem',
-                                    background: cell.isToday ? 'linear-gradient(135deg, #fdf6f3 0%, #fce8e4 100%)' : '#fffdfc',
-                                    opacity: cell.isOutsideMonth ? 0.48 : 1,
-                                }}
-                            >
-                                <div style={{ fontSize: '12px', fontWeight: 600, color: TEXT_DARK, marginBottom: '0.2rem' }}>
-                                    {format(cell.date, 'd')}
+                        {monthCalendarCells.map((cell, idx) => {
+                            let cellBg = cell.isToday ? 'linear-gradient(135deg, #fdf6f3 0%, #fce8e4 100%)' : '#fffdfc';
+                            let cellBorder = '1px solid #f0e0d8';
+                            if (cell.isFullDayBlocked) {
+                                cellBg = unavailabilityColors.fullDayColor;
+                                cellBorder = '1px solid #f87171';
+                            } else if (cell.isTimeSlotBlocked) {
+                                cellBg = unavailabilityColors.timeSlotColor;
+                                cellBorder = '1px solid #f59e0b';
+                            }
+
+                            return (
+                                <div
+                                    key={idx}
+                                    style={{
+                                        minHeight: '62px',
+                                        border: cellBorder,
+                                        borderRadius: '12px',
+                                        padding: '0.35rem',
+                                        background: cellBg,
+                                        opacity: cell.isOutsideMonth ? 0.48 : 1,
+                                    }}
+                                    title={cell.isFullDayBlocked ? `Cerrado: ${cell.blockReason}` : cell.isTimeSlotBlocked ? `Bloqueo: ${cell.timeSlotReason}` : undefined}
+                                >
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: TEXT_DARK, marginBottom: '0.2rem' }}>
+                                        {format(cell.date, 'd')}
+                                    </div>
+                                    {cell.isFullDayBlocked && (
+                                        <div style={{ fontSize: '8.5px', color: '#991b1b', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            🚫 {cell.blockReason}
+                                        </div>
+                                    )}
+                                    {!cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
+                                        <div style={{ fontSize: '8.5px', color: '#92400e', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            ⏰ {cell.timeSlotReason}
+                                        </div>
+                                    )}
+                                    {cell.appointmentCount > 0 && (
+                                        <>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.18rem', minHeight: '12px', marginTop: '2px' }}>
+                                                {cell.dotColors.map((color, dotIndex) => (
+                                                    <span
+                                                        key={dotIndex}
+                                                        style={{
+                                                            width: '0.34rem',
+                                                            height: '0.34rem',
+                                                            borderRadius: '999px',
+                                                            backgroundColor: color,
+                                                            display: 'inline-block',
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <div style={{ marginTop: '0.15rem', fontSize: '9px', color: TEXT_MID, fontWeight: 600 }}>
+                                                {cell.appointmentCount === 1 ? '1 cita' : `${cell.appointmentCount} citas`}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                                {cell.appointmentCount > 0 && (
-                                    <>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.18rem', minHeight: '12px' }}>
-                                            {cell.dotColors.map((color, dotIndex) => (
-                                                <span
-                                                    key={dotIndex}
-                                                    style={{
-                                                        width: '0.34rem',
-                                                        height: '0.34rem',
-                                                        borderRadius: '999px',
-                                                        backgroundColor: color,
-                                                        display: 'inline-block',
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                        <div style={{ marginTop: '0.15rem', fontSize: '9px', color: TEXT_MID, fontWeight: 600 }}>
-                                            {cell.appointmentCount === 1 ? '1 cita' : `${cell.appointmentCount} citas`}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </DashCard>
 

@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Container, Card, Badge, Spinner, Button, Table, Dropdown } from 'react-bootstrap';
+import { Container, Card, Badge, Spinner, Button, Table, Dropdown, Alert } from 'react-bootstrap';
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -29,6 +29,16 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
+import { settingsApi } from '../../api/settings.api';
+import {
+  ScheduleUnavailability,
+  UnavailabilityColorConfig,
+  DEFAULT_UNAVAILABILITY_COLORS,
+} from '../../types/unavailability.types';
+import {
+  isDateBlockedFullDay,
+  getDateUnavailabilities,
+} from '../../utils/unavailabilityUtils';
 import './CalendarPage.css';
 
 interface CalendarDayCell {
@@ -39,6 +49,10 @@ interface CalendarDayCell {
   appointmentCount: number;
   appointments: Appointment[];
   dotColors: string[];
+  isFullDayBlocked: boolean;
+  blockReason?: string;
+  isTimeSlotBlocked: boolean;
+  timeSlotBlocks: ScheduleUnavailability[];
 }
 
 const statusColors: Record<AppointmentStatus, string> = {
@@ -69,9 +83,15 @@ export default function CalendarPage() {
   const calendarDisplayConfig = useCalendarDisplayConfig();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>([]);
+  const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(DEFAULT_UNAVAILABILITY_COLORS);
 
   useEffect(() => {
     fetchAppointments();
+    settingsApi.getAll().then((data) => {
+      if (data.unavailabilities) setUnavailabilities(data.unavailabilities);
+      if (data.unavailabilityColors) setUnavailabilityColors(data.unavailabilityColors);
+    }).catch((err) => console.error('Error loading unavailabilities in calendar:', err));
   }, [fetchAppointments]);
 
   // Handlers para notificaciones y WhatsApp
@@ -145,6 +165,10 @@ export default function CalendarPage() {
         return isSameDay(aptDate, day);
       });
       
+      const fullDayBlock = isDateBlockedFullDay(day, unavailabilities);
+      const dayBlocks = getDateUnavailabilities(day, unavailabilities);
+      const slotBlocks = dayBlocks.filter(b => b.type === 'TIME_SLOT');
+
       return {
         date: day,
         isToday: isToday(day),
@@ -153,9 +177,13 @@ export default function CalendarPage() {
         appointmentCount: dayAppointments.length,
         appointments: dayAppointments,
         dotColors: getDayDotColors(dayAppointments, calendarDisplayConfig),
+        isFullDayBlocked: fullDayBlock.blocked,
+        blockReason: fullDayBlock.reason,
+        isTimeSlotBlocked: slotBlocks.length > 0,
+        timeSlotBlocks: slotBlocks,
       };
     });
-  }, [currentMonth, appointments, selectedDate, calendarDisplayConfig]);
+  }, [currentMonth, appointments, selectedDate, calendarDisplayConfig, unavailabilities]);
 
   // Citas del día seleccionado
   const selectedDayAppointments = useMemo(() => {
@@ -179,6 +207,11 @@ export default function CalendarPage() {
         return a.appointmentTime.localeCompare(b.appointmentTime);
       });
   }, [appointments, selectedDate]);
+
+  const selectedDayUnavailabilities = useMemo(() => {
+    if (!selectedDate) return [];
+    return getDateUnavailabilities(selectedDate, unavailabilities);
+  }, [selectedDate, unavailabilities]);
 
   const handlePrevMonth = () => {
     setCurrentMonth(prev => subMonths(prev, 1));
@@ -220,10 +253,16 @@ export default function CalendarPage() {
           <div>
             <h2 className="mb-1">📅 Calendario de Citas</h2>
             <p className="text-muted mb-0">Vista mensual de todas las citas programadas</p>
-            <div className="calendar-time-legend mt-2">
+            <div className="calendar-time-legend mt-2 d-flex flex-wrap gap-2">
               <span><i style={{ background: calendarDisplayConfig.morning.color }} /> {calendarDisplayConfig.morning.start}–{calendarDisplayConfig.morning.end}</span>
               <span><i style={{ background: calendarDisplayConfig.afternoon.color }} /> {calendarDisplayConfig.afternoon.start}–{calendarDisplayConfig.afternoon.end}</span>
               <span><i style={{ background: calendarDisplayConfig.night.color }} /> {calendarDisplayConfig.night.start}–{calendarDisplayConfig.night.end}</span>
+              <span style={{ background: unavailabilityColors.fullDayColor, borderColor: '#f87171', color: '#991b1b', fontWeight: 600 }}>
+                <i style={{ background: '#f87171' }} /> Día Cerrado
+              </span>
+              <span style={{ background: unavailabilityColors.timeSlotColor, borderColor: '#f59e0b', color: '#92400e', fontWeight: 600 }}>
+                <i style={{ background: '#f59e0b' }} /> Horario Bloqueado
+              </span>
             </div>
           </div>
           <div className="d-flex gap-2 flex-wrap">
@@ -286,39 +325,74 @@ export default function CalendarPage() {
 
             {/* Grid de días */}
             <div className="month-grid">
-              {calendarCells.map((cell, idx) => (
-                <div key={idx} onClick={() => handleDayClick(cell)}>
-                  <div
-                    className={`month-day-card ${
-                      cell.isSelected ? 'is-selected' :
-                      cell.isToday ? 'is-today' :
-                      cell.isOutsideMonth ? 'is-outside' : ''
-                    }`}
-                  >
-                    <div className="month-day-number">
-                      {format(cell.date, 'd')}
+              {calendarCells.map((cell, idx) => {
+                let cellCustomStyle: React.CSSProperties = {};
+                if (!cell.isSelected) {
+                  if (cell.isFullDayBlocked) {
+                    cellCustomStyle = {
+                      backgroundColor: unavailabilityColors.fullDayColor,
+                      borderColor: '#f87171',
+                    };
+                  } else if (cell.isTimeSlotBlocked) {
+                    cellCustomStyle = {
+                      backgroundColor: unavailabilityColors.timeSlotColor,
+                      borderColor: '#f59e0b',
+                    };
+                  }
+                }
+
+                return (
+                  <div key={idx} onClick={() => handleDayClick(cell)}>
+                    <div
+                      className={`month-day-card ${
+                        cell.isSelected ? 'is-selected' :
+                        cell.isToday ? 'is-today' :
+                        cell.isOutsideMonth ? 'is-outside' : ''
+                      }`}
+                      style={cellCustomStyle}
+                    >
+                      <div className="month-day-number">
+                        {format(cell.date, 'd')}
+                      </div>
+
+                      {/* Tag de Día Completo Bloqueado */}
+                      {cell.isFullDayBlocked && (
+                        <div className="month-day-block-tag" title={`Cerrado: ${cell.blockReason}`}>
+                          🚫 {cell.blockReason}
+                        </div>
+                      )}
+
+                      {/* Tag de Horario Parcial Bloqueado */}
+                      {!cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
+                        <div
+                          className="month-day-slot-tag"
+                          title={cell.timeSlotBlocks.map(b => `${b.startTime}-${b.endTime}: ${b.reason}`).join(' | ')}
+                        >
+                          ⏰ {cell.timeSlotBlocks[0]?.reason}
+                        </div>
+                      )}
+                      
+                      {/* Indicadores de citas (dots) */}
+                      {cell.appointmentCount > 0 && (
+                        <div className="month-day-dots">
+                          {cell.dotColors.map((color, i) => (
+                            <span key={i} className="month-day-dot" style={{ backgroundColor: color }}></span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Label de cantidad */}
+                      {cell.appointmentCount > 0 && (
+                        <div className="month-day-mini-label">
+                          {cell.appointmentCount === 1 
+                            ? '1 cita' 
+                            : `${cell.appointmentCount} citas`}
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* Indicadores de citas (dots) */}
-                    {cell.appointmentCount > 0 && (
-                      <div className="month-day-dots">
-                        {cell.dotColors.map((color, i) => (
-                          <span key={i} className="month-day-dot" style={{ backgroundColor: color }}></span>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Label de cantidad */}
-                    {cell.appointmentCount > 0 && (
-                      <div className="month-day-mini-label">
-                        {cell.appointmentCount === 1 
-                          ? '1 cita' 
-                          : `${cell.appointmentCount} citas`}
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card.Body>
         </Card>
@@ -329,10 +403,39 @@ export default function CalendarPage() {
             <div className="selected-day-header">
               Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}
             </div>
+
+            {/* Alertas de Bloqueos para el día seleccionado */}
+            {selectedDayUnavailabilities.length > 0 && (
+              <div className="p-3 pb-1">
+                {selectedDayUnavailabilities.map((u) => (
+                  <Alert
+                    key={u.id}
+                    variant={u.type === 'FULL_DAY' ? 'danger' : 'warning'}
+                    className="d-flex align-items-center justify-content-between mb-2 py-2 px-3 shadow-sm"
+                    style={{ borderRadius: '10px' }}
+                  >
+                    <div className="d-flex align-items-center gap-2">
+                      <span style={{ fontSize: '1.2rem' }}>{u.type === 'FULL_DAY' ? '🚫' : '⏰'}</span>
+                      <div>
+                        <div className="fw-bold small">
+                          {u.type === 'FULL_DAY'
+                            ? 'Día Completo Cerrado / No Disponible'
+                            : `Horario Bloqueado: ${u.startTime} a ${u.endTime} hrs`}
+                        </div>
+                        <small className="text-muted">{u.reason}</small>
+                      </div>
+                    </div>
+                    <Badge bg={u.type === 'FULL_DAY' ? 'danger' : 'warning'} text={u.type === 'FULL_DAY' ? 'white' : 'dark'}>
+                      {u.type === 'FULL_DAY' ? 'CERRADO' : 'BLOQUEO'}
+                    </Badge>
+                  </Alert>
+                ))}
+              </div>
+            )}
             
             {selectedDayAppointments.length === 0 ? (
               <Card.Body>
-                <p className="no-appointments-message">
+                <p className="no-appointments-message mb-0">
                   No hay citas programadas para este día
                 </p>
               </Card.Body>

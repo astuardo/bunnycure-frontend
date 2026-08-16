@@ -178,6 +178,45 @@
   text-align: center;
 }
 
+.month-day-block-tag {
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
+  color: #991b1b;
+  background: rgba(254, 226, 226, 0.85);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.month-day-slot-tag {
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
+  color: #92400e;
+  background: rgba(254, 243, 199, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.month-day-card.is-selected .month-day-block-tag,
+.month-day-card.is-selected .month-day-slot-tag {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 /* Tabla de citas del día seleccionado */
 .selected-day-section {
   margin-top: 1.5rem;
