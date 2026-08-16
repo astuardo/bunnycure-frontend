@@ -14,7 +14,6 @@ import { useToast } from '../../hooks/useToast';
 import { settingsApi, SettingsData } from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
-import { ScheduleUnavailabilitySection } from '../../components/settings/ScheduleUnavailabilitySection';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
@@ -467,19 +466,6 @@ export default function SettingsPage() {
                 </Form.Group>
               </Card.Body>
             </Card>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col xs={12} className="mb-4">
-            <ScheduleUnavailabilitySection
-              unavailabilities={settings.unavailabilities}
-              colors={settings.unavailabilityColors}
-              notifications={settings.unavailabilityNotifications}
-              onUnavailabilitiesChange={(unavailabilities) => handleChange('unavailabilities', unavailabilities)}
-              onColorsChange={(colors) => handleChange('unavailabilityColors', colors)}
-              onNotificationsChange={(notifications) => handleChange('unavailabilityNotifications', notifications)}
-            />
           </Col>
         </Row>
 

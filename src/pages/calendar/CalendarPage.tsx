@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Container, Card, Badge, Spinner, Button, Table, Dropdown, Alert } from 'react-bootstrap';
+import { Container, Card, Badge, Spinner, Button, Table, Dropdown, Alert, Modal } from 'react-bootstrap';
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -21,19 +21,23 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { FaChevronLeft, FaChevronRight, FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FiCalendar, FiSlash } from 'react-icons/fi';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
 import { settingsApi } from '../../api/settings.api';
+import { ScheduleUnavailabilitySection } from '../../components/settings/ScheduleUnavailabilitySection';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
+  UnavailabilityNotificationConfig,
   DEFAULT_UNAVAILABILITY_COLORS,
+  DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
 } from '../../types/unavailability.types';
 import {
   isDateBlockedFullDay,
@@ -78,21 +82,61 @@ const getAppointmentServiceLabel = (apt: Appointment) => {
 
 export default function CalendarPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
   const calendarDisplayConfig = useCalendarDisplayConfig();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showBlocksModal, setShowBlocksModal] = useState(false);
   const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>([]);
   const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(DEFAULT_UNAVAILABILITY_COLORS);
+  const [unavailabilityNotifications, setUnavailabilityNotifications] = useState<UnavailabilityNotificationConfig>(DEFAULT_UNAVAILABILITY_NOTIFICATIONS);
+
+  useEffect(() => {
+    if (searchParams.get('manageBlocks') === '1' || searchParams.get('block') === '1') {
+      setShowBlocksModal(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchAppointments();
     settingsApi.getAll().then((data) => {
       if (data.unavailabilities) setUnavailabilities(data.unavailabilities);
       if (data.unavailabilityColors) setUnavailabilityColors(data.unavailabilityColors);
+      if (data.unavailabilityNotifications) setUnavailabilityNotifications(data.unavailabilityNotifications);
     }).catch((err) => console.error('Error loading unavailabilities in calendar:', err));
   }, [fetchAppointments]);
+
+  const handleUnavailabilitiesChange = async (updated: ScheduleUnavailability[]) => {
+    setUnavailabilities(updated);
+    try {
+      await settingsApi.saveAll({ unavailabilities: updated });
+      toast.success('✅ Bloqueos de agenda actualizados');
+    } catch {
+      toast.error('Error al guardar bloqueos en el servidor');
+    }
+  };
+
+  const handleColorsChange = async (updatedColors: UnavailabilityColorConfig) => {
+    setUnavailabilityColors(updatedColors);
+    try {
+      await settingsApi.saveAll({ unavailabilityColors: updatedColors });
+      toast.success('✅ Colores de calendario actualizados');
+    } catch {
+      toast.error('Error al guardar colores');
+    }
+  };
+
+  const handleNotificationsChange = async (updatedNotifs: UnavailabilityNotificationConfig) => {
+    setUnavailabilityNotifications(updatedNotifs);
+    try {
+      await settingsApi.saveAll({ unavailabilityNotifications: updatedNotifs });
+      toast.success('✅ Configuración de notificaciones PWA guardada');
+    } catch {
+      toast.error('Error al guardar notificaciones');
+    }
+  };
 
   // Handlers para notificaciones y WhatsApp
   const handleSendNotification = async (id: number) => {
@@ -265,13 +309,24 @@ export default function CalendarPage() {
               </span>
             </div>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
+          <div className="d-flex gap-2 flex-wrap align-items-center">
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={() => setShowBlocksModal(true)}
+              className="d-flex align-items-center gap-2 px-3 py-2 shadow-sm"
+              style={{ borderRadius: '10px', fontWeight: 600, fontSize: '0.85rem' }}
+            >
+              <FiSlash /> Bloquear Agenda ({unavailabilities.length})
+            </Button>
             {Object.entries(statusLabels).map(([status, label]) => (
               <Badge
                 key={status}
                 style={{
                   backgroundColor: statusColors[status as AppointmentStatus],
                   color: 'white',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
                 }}
               >
                 {label}
@@ -554,6 +609,38 @@ export default function CalendarPage() {
             </div>
           </Card.Body>
         </Card>
+
+        {/* Modal de Bloqueos de Agenda */}
+        <Modal 
+          show={showBlocksModal} 
+          onHide={() => {
+            setShowBlocksModal(false);
+            if (searchParams.get('manageBlocks') || searchParams.get('block')) {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('manageBlocks');
+              nextParams.delete('block');
+              setSearchParams(nextParams);
+            }
+          }} 
+          size="lg" 
+          centered
+        >
+          <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
+            <Modal.Title className="d-flex align-items-center gap-2" style={{ color: '#422314', fontSize: '1.1rem', fontWeight: 700 }}>
+              <FiCalendar /> Gestión de Bloqueos de Agenda y Días No Laborables
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="p-2" style={{ background: '#fff' }}>
+            <ScheduleUnavailabilitySection
+              unavailabilities={unavailabilities}
+              colors={unavailabilityColors}
+              notifications={unavailabilityNotifications}
+              onUnavailabilitiesChange={handleUnavailabilitiesChange}
+              onColorsChange={handleColorsChange}
+              onNotificationsChange={handleNotificationsChange}
+            />
+          </Modal.Body>
+        </Modal>
       </Container>
     </DashboardLayout>
   );

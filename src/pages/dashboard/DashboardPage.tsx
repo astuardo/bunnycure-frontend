@@ -4,6 +4,7 @@ import { isToday, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, ea
 import { es } from 'date-fns/locale';
 import {
     CalendarDays,
+    CalendarOff,
     UserPlus,
     Scissors,
     Zap,
@@ -359,17 +360,13 @@ export default function DashboardPage() {
                         <Zap size={14} style={{ display: 'inline', color: '#e8a838', marginRight: '6px', verticalAlign: 'middle' }} />
                         Acciones Rápidas
                     </SectionTitle>
-                    {/* Grid 2×2 — ícono arriba, texto abajo para evitar desborde */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {/* Grid responsivo para acciones rápidas */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                         <ActionButton icon={<CalendarDays size={22} />} label="Nueva Cita"          to="/appointments?create=1&returnTo=%2Fdashboard"    variant="rose" />
                         <ActionButton icon={<UserPlus    size={22} />} label="Nuevo Cliente"        to="/customers?create=1&returnTo=%2Fdashboard"       variant="mint" />
-                        <ActionButton
-                            icon={<CalendarDays size={22} />}
-                            label="Calendario"
-                            to="/calendar"
-                            variant="beige"
-                        />
-                        <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"        variant="sky"  />
+                        <ActionButton icon={<CalendarOff size={22} />} label="Bloquear Agenda"      to="/calendar?manageBlocks=1"                        variant="rose" />
+                        <ActionButton icon={<CalendarDays size={22} />} label="Calendario"          to="/calendar"                                       variant="beige" />
+                        <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky"  />
                     </div>
                 </DashCard>
 
