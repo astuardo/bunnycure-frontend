@@ -10,6 +10,8 @@ export interface AnalyticsMetrics {
   totalConfirmed: number;
   cancelledRate: number; // Porcentaje
   totalRevenue: number;
+  completedRevenue: number;
+  averageTicket: number;
 }
 
 export interface AppointmentByClient {
@@ -39,6 +41,26 @@ export interface AppointmentByDay {
   completed: number;
 }
 
+export interface AppointmentsByWeekday {
+  dayName: string;
+  dayShort: string;
+  dayIndex: number; // 1 = Lunes, ..., 7 = Domingo
+  count: number;
+  completedCount: number;
+  revenue: number;
+  percentage: number;
+}
+
+export interface AppointmentsByHourSlot {
+  slotKey: string;
+  slotName: string;
+  timeRange: string;
+  count: number;
+  completedCount: number;
+  revenue: number;
+  percentage: number;
+}
+
 export interface CancellationReason {
   reason: string;
   count: number;
@@ -52,6 +74,8 @@ export interface AnalyticsData {
   };
   metrics: AnalyticsMetrics;
   appointmentsByDay: AppointmentByDay[];
+  appointmentsByWeekday: AppointmentsByWeekday[];
+  appointmentsByHourSlot: AppointmentsByHourSlot[];
   topServices: AppointmentByService[];
   topClients: AppointmentByClient[];
   cancelledClients: AppointmentByClient[];
