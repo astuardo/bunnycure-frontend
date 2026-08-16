@@ -243,27 +243,35 @@ body {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #f0d8d0;
+  border: 1px solid #e8d0c0;
+  box-shadow: 0 4px 18px rgba(140, 47, 116, 0.08);
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .giftcard-admin-preview__image {
   width: 100%;
-  max-height: 260px;
-  object-fit: cover;
+  height: auto;
+  aspect-ratio: 1488 / 1057;
+  object-fit: contain;
   display: block;
 }
 
 .giftcard-admin-preview__overlay {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(40, 20, 15, 0.15) 0%, rgba(40, 20, 15, 0.82) 75%);
-  color: #fffdfb;
+  left: 13%;
+  right: 17%;
+  bottom: 7.5%;
+  padding: 10px 14px;
+  background: rgba(255, 252, 248, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(195, 155, 110, 0.45);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(90, 40, 60, 0.12);
+  color: #4a154b;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
 }
 
@@ -274,42 +282,47 @@ body {
 
 .giftcard-admin-preview__title {
   font-weight: 700;
-  margin-bottom: 4px;
-  font-size: 1.05rem;
+  margin-bottom: 2px;
+  font-size: 0.95rem;
+  color: #61214e;
 }
 
 .giftcard-admin-preview__line {
-  font-size: 0.9rem;
-  line-height: 1.35;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: #553045;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .giftcard-admin-preview__pin {
-  margin-top: 4px;
+  margin-top: 2px;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
+  color: #a62450;
 }
 
 .giftcard-admin-preview__qr {
   flex: 0 0 auto;
   background: #ffffff;
-  padding: 6px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  padding: 5px;
+  border-radius: 8px;
+  border: 1px solid rgba(140, 47, 116, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 
 .giftcard-admin-preview__qr-label {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   color: #8c2f74;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
 }
 
 .bunny-auth-page,

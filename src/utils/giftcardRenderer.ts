@@ -42,14 +42,25 @@ export const toWhatsAppPhone = (value?: string): string => {
   return digits;
 };
 
+export const isBlankGiftCardBeneficiary = (name?: string): boolean => {
+  if (!name) return true;
+  const normalized = name.trim().toLowerCase();
+  return normalized === 'al portador' || normalized.includes('portador') || normalized.includes('en blanco') || normalized === 'por asignar';
+};
+
 export const buildGiftCardWhatsAppMessage = (data: GiftCardRenderData): string => {
+  const isBlank = isBlankGiftCardBeneficiary(data.beneficiaryName);
   const beneficiary = data.beneficiaryName || 'Beneficiaria';
   const pinValue = data.pin || 'No disponible';
   const expiry = data.expiresOn || '-';
   const normalizedUrl = normalizeGiftCardPublicUrl(data.publicUrl, data.code);
 
+  const greeting = isBlank
+    ? '¡Hola! Aquí tienes una GiftCard BunnyCure al portador 🎁✨'
+    : `Hola ${beneficiary}, ¡aquí está tu GiftCard BunnyCure! 🎁✨`;
+
   return (
-    `Hola ${beneficiary}, ¡aquí está tu GiftCard BunnyCure! 🎁✨\n\n` +
+    `${greeting}\n\n` +
     `📌 Código: ${data.code}\n` +
     `🔐 PIN de canje: ${pinValue}\n` +
     `📅 Válida hasta: ${expiry}\n` +
@@ -59,10 +70,10 @@ export const buildGiftCardWhatsAppMessage = (data: GiftCardRenderData): string =
 };
 
 const getGiftCardInfoBox = (width: number, height: number): GiftCardInfoBox => ({
-  x: Math.round(width * 0.54),
-  y: Math.round(height * 0.32),
-  width: Math.round(width * 0.40),
-  height: Math.round(height * 0.48),
+  x: Math.round(width * 0.15),
+  y: Math.round(height * 0.655),
+  width: Math.round(width * 0.67),
+  height: Math.round(height * 0.235),
 });
 
 const fitText = (context: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
@@ -82,16 +93,19 @@ const drawGiftCardLine = (
   maxWidth: number,
   label: string,
   value: string,
-  fontSize: number
+  fontSize: number,
+  labelColor = '#7a2b64',
+  valueColor = '#4d233c',
+  boldValue = false
 ): void => {
   context.font = `600 ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
-  context.fillStyle = '#8c2f74';
+  context.fillStyle = labelColor;
   const labelText = `${label}: `;
   context.fillText(labelText, x, y, maxWidth);
   const labelWidth = Math.min(context.measureText(labelText).width, Math.max(12, maxWidth - 12));
 
-  context.font = `500 ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
-  context.fillStyle = '#a13a82';
+  context.font = `${boldValue ? 'bold' : '500'} ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
+  context.fillStyle = valueColor;
   context.fillText(fitText(context, value, maxWidth - labelWidth), x + labelWidth, y, maxWidth - labelWidth);
 };
 
@@ -121,32 +135,52 @@ const drawGiftCardInfoWithQr = async (
   box: GiftCardInfoBox,
   data: GiftCardRenderData
 ): Promise<void> => {
-  const paddingX = Math.max(14, Math.floor(box.width * 0.05));
-  const paddingY = Math.max(12, Math.floor(box.height * 0.06));
-  const maxTextWidth = Math.max(10, box.width - paddingX * 2);
-  const titleFontSize = Math.max(22, Math.min(36, Math.floor(box.height * 0.11)));
-  const detailsFontSize = Math.max(14, Math.min(22, Math.floor(box.height * 0.065)));
-  const sectionGap = Math.max(10, Math.floor(detailsFontSize * 0.9));
-  const rowGap = Math.max(8, Math.floor(detailsFontSize * 0.8));
+  // 1. Dibujar tarjeta contenedor elegante (fondo cálido semi-translúcido para máxima legibilidad)
+  context.save();
+  context.fillStyle = 'rgba(255, 253, 248, 0.90)';
+  context.shadowColor = 'rgba(100, 40, 70, 0.10)';
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 6;
+  drawRoundedRect(context, box.x, box.y, box.width, box.height, 18);
+  context.fill();
+
+  // Borde dorado suave
+  context.strokeStyle = 'rgba(195, 155, 110, 0.45)';
+  context.lineWidth = 1.5;
+  drawRoundedRect(context, box.x, box.y, box.width, box.height, 18);
+  context.stroke();
+  context.restore();
+
+  const paddingX = Math.max(16, Math.floor(box.width * 0.035));
+  const paddingY = Math.max(14, Math.floor(box.height * 0.07));
+  const qrSize = Math.max(100, Math.min(145, Math.floor(box.height * 0.70)));
+  const qrCardPadding = 6;
+  const qrTotalWidth = qrSize + qrCardPadding * 2;
+  const maxTextWidth = box.width - qrTotalWidth - paddingX * 2 - 20;
+
+  const titleFontSize = Math.max(20, Math.min(27, Math.floor(box.height * 0.12)));
+  const detailsFontSize = Math.max(13, Math.min(18, Math.floor(box.height * 0.078)));
+  const rowGap = Math.max(6, Math.floor(detailsFontSize * 0.7));
   let cursorY = box.y + paddingY;
 
-  context.fillStyle = '#8c2f74';
   context.textBaseline = 'top';
 
-  // 1. Título con nombre de beneficiaria
-  context.font = `700 ${titleFontSize}px ${GIFT_CARD_FONT_FAMILY}`;
-  context.fillText(fitText(context, data.beneficiaryName || 'Beneficiaria', maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += titleFontSize + sectionGap;
+  // 2. Beneficiaria o Título al Portador
+  const isBlank = isBlankGiftCardBeneficiary(data.beneficiaryName);
+  const displayTitle = isBlank ? '🎁 GiftCard al Portador' : `Para: ${data.beneficiaryName || 'Beneficiaria'}`;
+  context.fillStyle = '#5c1d42';
+  context.font = `bold ${titleFontSize}px ${GIFT_CARD_FONT_FAMILY}`;
+  context.fillText(fitText(context, displayTitle, maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
+  cursorY += titleFontSize + Math.max(8, rowGap * 1.3);
 
-  // 2. Líneas de detalles: Código, PIN, Vencimiento
-  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Código', data.code, detailsFontSize);
+  // 3. Líneas de detalles: Código, PIN, Vencimiento
+  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Código', data.code, detailsFontSize, '#7a2b64', '#2d0f25', true);
   cursorY += detailsFontSize + rowGap;
-  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'PIN', data.pin, detailsFontSize);
+  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'PIN de canje', data.pin, detailsFontSize, '#7a2b64', '#a62450', true);
   cursorY += detailsFontSize + rowGap;
-  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Vence', data.expiresOn, detailsFontSize);
-  cursorY += detailsFontSize + Math.max(14, sectionGap * 1.3);
+  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Válida hasta', data.expiresOn, detailsFontSize, '#7a2b64', '#4d233c');
 
-  // 3. Renderizar Código QR Incrustado
+  // 4. Renderizar Código QR Incrustado a la derecha dentro de la tarjeta
   if (data.publicUrl) {
     try {
       const qrDataUrl = await QRCode.toDataURL(data.publicUrl, {
@@ -166,50 +200,37 @@ const drawGiftCardInfoWithQr = async (
         img.src = qrDataUrl;
       });
 
-      const qrSize = Math.max(120, Math.min(180, Math.floor(box.height * 0.45)));
-      const qrCardPadding = 8;
-      const qrCardWidth = qrSize + qrCardPadding * 2;
-      const qrCardHeight = qrSize + qrCardPadding * 2;
-      const qrX = box.x + paddingX;
-      const qrY = cursorY;
+      const qrX = box.x + box.width - qrTotalWidth - paddingX;
+      const qrY = box.y + Math.round((box.height - qrSize) / 2) - 8;
 
-      // Tarjeta blanca contenedora para garantizar contraste y escaneo óptimo
+      // Tarjeta blanca contenedora del QR
       context.save();
       context.fillStyle = '#ffffff';
-      context.shadowColor = 'rgba(74, 21, 75, 0.18)';
-      context.shadowBlur = 12;
-      context.shadowOffsetX = 0;
-      context.shadowOffsetY = 4;
-      drawRoundedRect(context, qrX, qrY, qrCardWidth, qrCardHeight, 12);
+      context.shadowColor = 'rgba(74, 21, 75, 0.12)';
+      context.shadowBlur = 8;
+      context.shadowOffsetY = 2;
+      drawRoundedRect(context, qrX, qrY, qrTotalWidth, qrSize + qrCardPadding * 2, 10);
       context.fill();
-      context.restore();
 
-      // Borde sutil
-      context.save();
-      context.strokeStyle = 'rgba(140, 47, 116, 0.2)';
-      context.lineWidth = 1.5;
-      drawRoundedRect(context, qrX, qrY, qrCardWidth, qrCardHeight, 12);
+      // Borde suave
+      context.strokeStyle = 'rgba(140, 47, 116, 0.15)';
+      context.lineWidth = 1;
+      drawRoundedRect(context, qrX, qrY, qrTotalWidth, qrSize + qrCardPadding * 2, 10);
       context.stroke();
       context.restore();
 
       // Dibujar QR
       context.drawImage(qrImg, qrX + qrCardPadding, qrY + qrCardPadding, qrSize, qrSize);
 
-      // Texto de guía al costado del QR
-      const guideX = qrX + qrCardWidth + 14;
-      const guideMaxW = box.x + box.width - guideX - paddingX;
-      if (guideMaxW > 40) {
-        context.font = `600 ${Math.max(11, Math.floor(detailsFontSize * 0.78))}px ${GIFT_CARD_FONT_FAMILY}`;
-        context.fillStyle = '#8c2f74';
-        context.fillText('Escanea el QR', guideX, qrY + Math.floor(qrCardHeight * 0.2), guideMaxW);
-
-        context.font = `400 ${Math.max(10, Math.floor(detailsFontSize * 0.68))}px ${GIFT_CARD_FONT_FAMILY}`;
-        context.fillStyle = '#a13a82';
-        context.fillText('para ver saldo', guideX, qrY + Math.floor(qrCardHeight * 0.45), guideMaxW);
-        context.fillText('y canjear online', guideX, qrY + Math.floor(qrCardHeight * 0.65), guideMaxW);
-      }
+      // Texto de guía centrado debajo del QR
+      context.save();
+      context.font = `600 ${Math.max(10, Math.floor(detailsFontSize * 0.68))}px ${GIFT_CARD_FONT_FAMILY}`;
+      context.fillStyle = '#8c2f74';
+      context.textAlign = 'center';
+      context.fillText('Escanea para canjear', qrX + qrTotalWidth / 2, qrY + qrSize + qrCardPadding * 2 + 3);
+      context.restore();
     } catch {
-      // Si falla la generación del QR no bloqueamos la generación de la tarjeta
+      // Ignorar fallo de QR
     }
   }
 };

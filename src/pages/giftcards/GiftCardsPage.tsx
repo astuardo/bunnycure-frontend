@@ -7,12 +7,16 @@ import DashboardLayout from '@/components/common/DashboardLayout';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { useServicesStore } from '@/stores/servicesStore';
+import { useCustomersStore } from '@/stores/customersStore';
+import CustomerFormModal from '@/components/customers/CustomerFormModal';
+import { Customer } from '@/types/customer.types';
 import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 import {
   GIFTCARD_BACKGROUND_TEMPLATE,
   downloadGiftCardPng,
+  isBlankGiftCardBeneficiary,
   sendGiftCardWhatsApp,
   shareGiftCardPng,
 } from '@/utils/giftcardRenderer';
@@ -77,6 +81,7 @@ export default function GiftCardsPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const { services, fetchServices } = useServicesStore();
+  const { customers, fetchCustomers: loadStoreCustomers } = useCustomersStore();
   const {
     giftCards,
     loading,
@@ -85,6 +90,7 @@ export default function GiftCardsPage() {
     fetchGiftCardById,
     currentGiftCard,
     createGiftCard,
+    updateGiftCard,
     redeemGiftCard,
     revertGiftCardRedeem,
     cancelGiftCard,
@@ -97,6 +103,7 @@ export default function GiftCardsPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isBlankCreate, setIsBlankCreate] = useState(false);
   const [createData, setCreateData] = useState(defaultCreateState);
   const [serviceSelections, setServiceSelections] = useState<ServiceSelection[]>([]);
   const [redeemNote, setRedeemNote] = useState('');
@@ -113,10 +120,16 @@ export default function GiftCardsPage() {
   const [giftCardToCancelFromList, setGiftCardToCancelFromList] = useState<GiftCard | null>(null);
   const [cancellingFromList, setCancellingFromList] = useState(false);
 
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
+  const [assignSearch, setAssignSearch] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+
   useEffect(() => {
     fetchServices(true);
     fetchGiftCards();
-  }, [fetchServices, fetchGiftCards]);
+    loadStoreCustomers();
+  }, [fetchServices, fetchGiftCards, loadStoreCustomers]);
 
   useEffect(() => {
     localStorage.setItem(ADMIN_GIFTCARD_PINS_KEY, JSON.stringify(generatedPins));
@@ -132,6 +145,19 @@ export default function GiftCardsPage() {
     [selectedServices]
   );
 
+  const assignSearchResults = useMemo(() => {
+    if (!assignSearch.trim()) return customers.slice(0, 15);
+    const q = assignSearch.trim().toLowerCase();
+    return customers
+      .filter(
+        (c) =>
+          c.fullName.toLowerCase().includes(q) ||
+          c.phone.includes(q) ||
+          (c.rut && c.rut.toLowerCase().includes(q))
+      )
+      .slice(0, 20);
+  }, [customers, assignSearch]);
+
   const applyFilters = () => {
     fetchGiftCards({
       search: search || undefined,
@@ -144,6 +170,7 @@ export default function GiftCardsPage() {
     setCreateData(defaultCreateState);
     setServiceSelections((prev) => prev.map((item) => ({ ...item, quantity: 0 })));
     setLookupStatus('idle');
+    setIsBlankCreate(false);
   };
 
   const openCreateModal = () => {
@@ -160,19 +187,27 @@ export default function GiftCardsPage() {
     });
     setServiceSelections(initialSelections);
     setLookupStatus('idle');
+    setIsBlankCreate(false);
     setShowCreateModal(true);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedPhone = normalizePhone(createData.beneficiaryPhone);
-    if (!createData.beneficiaryFullName.trim() || !normalizedPhone) {
-      toast.error('Nombre y teléfono de beneficiaria son obligatorios');
-      return;
-    }
-    if (lookupStatus === 'idle') {
-      toast.error('Primero busca la beneficiaria por teléfono');
-      return;
+    const isBlank = isBlankCreate;
+    const normalizedPhone = isBlank ? '+56900000000' : normalizePhone(createData.beneficiaryPhone);
+    const beneficiaryName = isBlank
+      ? createData.beneficiaryFullName.trim() || 'Al portador'
+      : createData.beneficiaryFullName.trim();
+
+    if (!isBlank) {
+      if (!beneficiaryName || !normalizedPhone) {
+        toast.error('Nombre y teléfono de beneficiaria son obligatorios');
+        return;
+      }
+      if (lookupStatus === 'idle') {
+        toast.error('Primero busca la beneficiaria por teléfono');
+        return;
+      }
     }
     if (selectedServices.length === 0) {
       toast.error('Selecciona al menos un servicio');
@@ -184,9 +219,9 @@ export default function GiftCardsPage() {
     }
 
     const payload: GiftCardCreateRequest = {
-      beneficiaryFullName: createData.beneficiaryFullName.trim(),
+      beneficiaryFullName: beneficiaryName,
       beneficiaryPhone: normalizedPhone,
-      beneficiaryEmail: createData.beneficiaryEmail.trim() || undefined,
+      beneficiaryEmail: !isBlank && createData.beneficiaryEmail.trim() ? createData.beneficiaryEmail.trim() : undefined,
       buyerName: createData.buyerName.trim() || undefined,
       buyerPhone: createData.buyerPhone.trim() || undefined,
       buyerEmail: createData.buyerEmail.trim() || undefined,
@@ -201,7 +236,7 @@ export default function GiftCardsPage() {
 
     try {
       const created = await createGiftCard(payload);
-      toast.success('GiftCard creada');
+      toast.success(isBlank ? 'GiftCard al portador creada con éxito' : 'GiftCard creada');
       if (created.plainPin) {
         setGeneratedPins((prev) => ({ ...prev, [created.id]: created.plainPin as string }));
       }
@@ -211,6 +246,38 @@ export default function GiftCardsPage() {
       setShowDetailModal(true);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'No se pudo crear la GiftCard'));
+    }
+  };
+
+  const handleBindCustomerToGiftCard = async (customer: Customer) => {
+    if (!currentGiftCard) return;
+    setAssignLoading(true);
+    try {
+      const payload: GiftCardCreateRequest = {
+        beneficiaryFullName: customer.fullName,
+        beneficiaryPhone: customer.phone,
+        beneficiaryEmail: customer.email || undefined,
+        buyerName: currentGiftCard.buyerName || undefined,
+        buyerPhone: currentGiftCard.buyerPhone || undefined,
+        buyerEmail: currentGiftCard.buyerEmail || undefined,
+        expiresOn: currentGiftCard.expiresOn,
+        paidAmount: currentGiftCard.paidAmount,
+        paymentMethod: currentGiftCard.paymentMethod,
+        items: currentGiftCard.items.map((i) => ({
+          serviceId: i.serviceId || 0,
+          quantity: i.quantity,
+        })),
+      };
+      await updateGiftCard(currentGiftCard.id, payload);
+      await fetchGiftCardById(currentGiftCard.id);
+      await fetchGiftCards();
+      toast.success(`Clienta "${customer.fullName}" asociada exitosamente a la GiftCard`);
+      setShowAssignModal(false);
+      setShowNewCustomerModal(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo asociar la clienta a la GiftCard'));
+    } finally {
+      setAssignLoading(false);
     }
   };
 
@@ -262,6 +329,18 @@ export default function GiftCardsPage() {
 
   const handleRedeem = async () => {
     if (!currentGiftCard) return;
+
+    const isBlank =
+      isBlankGiftCardBeneficiary(currentGiftCard.beneficiaryName) ||
+      !currentGiftCard.beneficiaryCustomerId ||
+      currentGiftCard.beneficiaryPhone === '+56900000000';
+
+    if (isBlank) {
+      toast.warning('Esta GiftCard está al portador. Debes asignar o registrar a la clienta antes de procesar el canje.');
+      setShowAssignModal(true);
+      return;
+    }
+
     const items = currentGiftCard.items
       .map((item) => ({ giftCardItemId: item.id, quantity: redeemQuantities[item.id] || 0 }))
       .filter((item) => item.quantity > 0);
@@ -496,36 +575,55 @@ export default function GiftCardsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {giftCards.map((giftCard) => (
-                      <tr key={giftCard.id}>
-                        <td>{giftCard.code}</td>
-                        <td>
-                          {giftCard.beneficiaryName}
-                          <br />
-                          <small className="text-muted">{giftCard.beneficiaryPhone}</small>
-                        </td>
-                        <td>{giftCard.expiresOn}</td>
-                        <td>{formatCurrency(giftCard.totalAmount)}</td>
-                        <td>
-                          <Badge bg={giftCard.status === 'ACTIVE' ? 'primary' : 'secondary'}>{giftCard.status}</Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button size="sm" variant="outline-primary" onClick={() => openDetails(giftCard)}>
-                              Ver detalle
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline-danger"
-                              onClick={() => setGiftCardToCancelFromList(giftCard)}
-                              disabled={giftCard.status === 'CANCELLED'}
-                            >
-                              Eliminar
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {giftCards.map((giftCard) => {
+                      const isBlank =
+                        isBlankGiftCardBeneficiary(giftCard.beneficiaryName) ||
+                        !giftCard.beneficiaryCustomerId ||
+                        giftCard.beneficiaryPhone === '+56900000000';
+                      return (
+                        <tr key={giftCard.id}>
+                          <td>{giftCard.code}</td>
+                          <td>
+                            {isBlank ? (
+                              <>
+                                <strong>{giftCard.beneficiaryName || 'Al portador'}</strong>
+                                <Badge bg="light" text="dark" className="border ms-2">
+                                  Al portador
+                                </Badge>
+                                <br />
+                                <small className="text-muted">Por registrar en canje</small>
+                              </>
+                            ) : (
+                              <>
+                                {giftCard.beneficiaryName}
+                                <br />
+                                <small className="text-muted">{giftCard.beneficiaryPhone}</small>
+                              </>
+                            )}
+                          </td>
+                          <td>{giftCard.expiresOn}</td>
+                          <td>{formatCurrency(giftCard.totalAmount)}</td>
+                          <td>
+                            <Badge bg={giftCard.status === 'ACTIVE' ? 'primary' : 'secondary'}>{giftCard.status}</Badge>
+                          </td>
+                          <td>
+                            <div className="d-flex gap-2">
+                              <Button size="sm" variant="outline-primary" onClick={() => openDetails(giftCard)}>
+                                Ver detalle
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline-danger"
+                                onClick={() => setGiftCardToCancelFromList(giftCard)}
+                                disabled={giftCard.status === 'CANCELLED'}
+                              >
+                                Eliminar
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
@@ -547,44 +645,101 @@ export default function GiftCardsPage() {
         </Modal.Header>
         <Form onSubmit={handleCreate}>
           <Modal.Body>
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Label>Beneficiaria - Nombre *</Form.Label>
-                <Form.Control
-                  value={createData.beneficiaryFullName}
-                  onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
-                  disabled={lookupStatus === 'idle'}
-                />
-              </Col>
-              <Col md={6} className="mb-3">
-                <Form.Label>Beneficiaria - Teléfono *</Form.Label>
-                <div className="d-flex gap-2">
+            <div className="mb-4 p-3 rounded border bg-light-subtle">
+              <Form.Check
+                type="switch"
+                id="blank-create-switch"
+                label="🎁 GiftCard al portador / En blanco (para sorteos o regalo abierto)"
+                className="fw-semibold text-primary"
+                checked={isBlankCreate}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIsBlankCreate(checked);
+                  if (checked) {
+                    setCreateData((prev) => ({
+                      ...prev,
+                      beneficiaryFullName: prev.beneficiaryFullName || 'Al portador',
+                      beneficiaryPhone: prev.beneficiaryPhone || '+56900000000',
+                    }));
+                  } else {
+                    setCreateData((prev) => ({
+                      ...prev,
+                      beneficiaryFullName: '',
+                      beneficiaryPhone: '',
+                      beneficiaryEmail: '',
+                    }));
+                    setLookupStatus('idle');
+                  }
+                }}
+              />
+              <small className="text-muted d-block mt-1">
+                {isBlankCreate
+                  ? 'No se requiere ingresar clienta ahora. Se registrará con todos sus datos (RUT, puntos, etc.) al cobrar la GiftCard.'
+                  : 'Permite buscar o ingresar los datos de la clienta beneficiaria antes de emitir.'}
+              </small>
+            </div>
+
+            {isBlankCreate ? (
+              <Row>
+                <Col md={6} className="mb-3">
+                  <Form.Label>Identificador / Título en Tarjeta</Form.Label>
                   <Form.Control
-                    value={createData.beneficiaryPhone}
-                    onChange={(e) => {
-                      setCreateData((prev) => ({ ...prev, beneficiaryPhone: e.target.value }));
-                      setLookupStatus('idle');
-                    }}
+                    placeholder="Ej: Al portador, Ganadora Sorteo Instagram, etc."
+                    value={createData.beneficiaryFullName}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
                   />
-                  <Button
-                    type="button"
-                    variant="outline-primary"
-                    onClick={handleLookupBeneficiary}
-                    disabled={lookupLoading}
-                  >
-                    {lookupLoading ? 'Buscando...' : 'Buscar'}
-                  </Button>
-                </div>
-                <Form.Text className={lookupStatus === 'found' ? 'text-success' : 'text-muted'}>
-                  {lookupStatus === 'found'
-                    ? 'Cliente existente detectado. Se usaran datos guardados.'
-                    : lookupStatus === 'not_found'
-                      ? 'Telefono no registrado. Completa nombre/email manualmente.'
-                      : 'Primero busca por telefono antes de crear la GiftCard.'}
-                </Form.Text>
-              </Col>
-              <Col md={6} className="mb-3">
-                <Form.Label>Beneficiaria - Email</Form.Label>
+                  <Form.Text className="text-muted">
+                    Se mostrará en la tarjeta PNG descargable y compartible.
+                  </Form.Text>
+                </Col>
+                <Col md={6} className="mb-3">
+                  <Form.Label>Vencimiento *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={createData.expiresOn}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
+                  />
+                </Col>
+              </Row>
+            ) : (
+              <Row>
+                <Col md={6} className="mb-3">
+                  <Form.Label>Beneficiaria - Nombre *</Form.Label>
+                  <Form.Control
+                    value={createData.beneficiaryFullName}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
+                    disabled={lookupStatus === 'idle'}
+                  />
+                </Col>
+                <Col md={6} className="mb-3">
+                  <Form.Label>Beneficiaria - Teléfono *</Form.Label>
+                  <div className="d-flex gap-2">
+                    <Form.Control
+                      value={createData.beneficiaryPhone}
+                      onChange={(e) => {
+                        setCreateData((prev) => ({ ...prev, beneficiaryPhone: e.target.value }));
+                        setLookupStatus('idle');
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      onClick={handleLookupBeneficiary}
+                      disabled={lookupLoading}
+                    >
+                      {lookupLoading ? 'Buscando...' : 'Buscar'}
+                    </Button>
+                  </div>
+                  <Form.Text className={lookupStatus === 'found' ? 'text-success' : 'text-muted'}>
+                    {lookupStatus === 'found'
+                      ? 'Cliente existente detectado. Se usaran datos guardados.'
+                      : lookupStatus === 'not_found'
+                        ? 'Telefono no registrado. Completa nombre/email manualmente.'
+                        : 'Primero busca por telefono antes de crear la GiftCard.'}
+                  </Form.Text>
+                </Col>
+                <Col md={6} className="mb-3">
+                  <Form.Label>Beneficiaria - Email</Form.Label>
                   <Form.Control
                     type="email"
                     value={createData.beneficiaryEmail}
@@ -601,40 +756,44 @@ export default function GiftCardsPage() {
                     disabled={lookupStatus === 'idle'}
                   />
                 </Col>
-                <Col md={4} className="mb-3">
-                  <Form.Label>Compradora - Nombre</Form.Label>
-                  <Form.Control
-                    value={createData.buyerName}
-                    onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
-                    disabled={lookupStatus === 'idle'}
-                  />
-                </Col>
-                <Col md={4} className="mb-3">
-                  <Form.Label>Compradora - Teléfono</Form.Label>
-                  <Form.Control
-                    value={createData.buyerPhone}
-                    onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
-                    disabled={lookupStatus === 'idle'}
-                  />
-                </Col>
-                <Col md={4} className="mb-3">
-                  <Form.Label>Compradora - Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    value={createData.buyerEmail}
-                    onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
-                    disabled={lookupStatus === 'idle'}
-                  />
-                </Col>
-                <Col md={4} className="mb-3">
-                  <Form.Label>Método de pago *</Form.Label>
-                  <Form.Select
-                    value={createData.paymentMethod}
-                    onChange={(e) =>
-                      setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
-                    }
-                    disabled={lookupStatus === 'idle'}
-                  >
+              </Row>
+            )}
+
+            <Row>
+              <Col md={4} className="mb-3">
+                <Form.Label>Compradora - Nombre</Form.Label>
+                <Form.Control
+                  value={createData.buyerName}
+                  onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                />
+              </Col>
+              <Col md={4} className="mb-3">
+                <Form.Label>Compradora - Teléfono</Form.Label>
+                <Form.Control
+                  value={createData.buyerPhone}
+                  onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                />
+              </Col>
+              <Col md={4} className="mb-3">
+                <Form.Label>Compradora - Email</Form.Label>
+                <Form.Control
+                  type="email"
+                  value={createData.buyerEmail}
+                  onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                />
+              </Col>
+              <Col md={4} className="mb-3">
+                <Form.Label>Método de pago *</Form.Label>
+                <Form.Select
+                  value={createData.paymentMethod}
+                  onChange={(e) =>
+                    setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
+                  }
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                >
                   <option value="EFECTIVO">EFECTIVO</option>
                   <option value="TRANSFERENCIA">TRANSFERENCIA</option>
                 </Form.Select>
@@ -656,7 +815,7 @@ export default function GiftCardsPage() {
                       type="number"
                       min={0}
                       value={selection.quantity}
-                      disabled={lookupStatus === 'idle'}
+                      disabled={!isBlankCreate && lookupStatus === 'idle'}
                       onChange={(e) =>
                         setServiceSelections((prev) =>
                           prev.map((item) =>
@@ -673,15 +832,15 @@ export default function GiftCardsPage() {
             </div>
           </Modal.Body>
           <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={lookupStatus === 'idle'}>
-                Crear GiftCard
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
+            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!isBlankCreate && lookupStatus === 'idle'}>
+              Crear GiftCard
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
 
       <Modal
         show={showDetailModal}
@@ -699,51 +858,116 @@ export default function GiftCardsPage() {
             <div>Cargando...</div>
           ) : (
             <>
-              <div className="giftcard-admin-preview mb-3">
-                <img
-                  src={GIFTCARD_BACKGROUND_TEMPLATE}
-                  alt="Plantilla GiftCard BunnyCure"
-                  className="giftcard-admin-preview__image"
-                />
-                <div className="giftcard-admin-preview__overlay">
-                  <div className="giftcard-admin-preview__info">
-                    <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
-                    <div className="giftcard-admin-preview__line"><strong>{currentGiftCard.beneficiaryName}</strong></div>
-                    <div className="giftcard-admin-preview__line">Código: {currentGiftCard.code}</div>
-                    <div className="giftcard-admin-preview__pin">
-                      PIN: {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+              {(() => {
+                const isBlankBeneficiary =
+                  isBlankGiftCardBeneficiary(currentGiftCard.beneficiaryName) ||
+                  !currentGiftCard.beneficiaryCustomerId ||
+                  currentGiftCard.beneficiaryPhone === '+56900000000';
+
+                return (
+                  <>
+                    {isBlankBeneficiary && (
+                      <Alert variant="warning" className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 shadow-sm border-warning">
+                        <div>
+                          <strong>🎁 GiftCard al Portador / En blanco:</strong> Esta tarjeta no tiene clienta asignada. Para canjear servicios y registrar sus visitas/sellos, debes asociar los datos de la clienta.
+                        </div>
+                        <Button
+                          variant="warning"
+                          size="sm"
+                          className="fw-semibold"
+                          onClick={() => {
+                            loadStoreCustomers();
+                            setShowAssignModal(true);
+                          }}
+                        >
+                          ➕ Asignar / Registrar Clienta
+                        </Button>
+                      </Alert>
+                    )}
+
+                    <div className="giftcard-admin-preview mb-3">
+                      <img
+                        src={GIFTCARD_BACKGROUND_TEMPLATE}
+                        alt="Plantilla GiftCard BunnyCure"
+                        className="giftcard-admin-preview__image"
+                      />
+                      <div className="giftcard-admin-preview__overlay">
+                        <div className="giftcard-admin-preview__info">
+                          <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
+                          <div className="giftcard-admin-preview__line">
+                            <strong>
+                              {isBlankBeneficiary ? 'GiftCard al Portador' : currentGiftCard.beneficiaryName}
+                            </strong>
+                          </div>
+                          <div className="giftcard-admin-preview__line">Código: {currentGiftCard.code}</div>
+                          <div className="giftcard-admin-preview__pin">
+                            PIN: {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                          </div>
+                          <div className="giftcard-admin-preview__line"><small>Vence: {currentGiftCard.expiresOn}</small></div>
+                        </div>
+                        <div className="giftcard-admin-preview__qr">
+                          <QRCodeSVG
+                            value={normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code)}
+                            size={68}
+                            bgColor="#ffffff"
+                            fgColor="#8c2f74"
+                          />
+                          <span className="giftcard-admin-preview__qr-label">QR Canje</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="giftcard-admin-preview__line"><small>Vence: {currentGiftCard.expiresOn}</small></div>
-                  </div>
-                  <div className="giftcard-admin-preview__qr">
-                    <QRCodeSVG
-                      value={normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code)}
-                      size={68}
-                      bgColor="#ffffff"
-                      fgColor="#8c2f74"
-                    />
-                    <span className="giftcard-admin-preview__qr-label">QR Canje</span>
-                  </div>
-                </div>
-              </div>
-              <Row className="mb-3">
-                <Col md={4}>
-                  <div><strong>Código:</strong> {currentGiftCard.code}</div>
-                  <div><strong>Estado:</strong> {currentGiftCard.status}</div>
-                  <div><strong>Vence:</strong> {currentGiftCard.expiresOn}</div>
-                </Col>
-                <Col md={4}>
-                  <div><strong>Beneficiaria:</strong> {currentGiftCard.beneficiaryName}</div>
-                  <div><strong>Teléfono:</strong> {currentGiftCard.beneficiaryPhone}</div>
-                </Col>
-                <Col md={4}>
-                  <div><strong>Total:</strong> {formatCurrency(currentGiftCard.totalAmount)}</div>
-                  <div><strong>Pagado:</strong> {formatCurrency(currentGiftCard.paidAmount)}</div>
-                  <div className="text-danger">
-                    <strong>PIN:</strong> {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
-                  </div>
-                </Col>
-              </Row>
+                    <Row className="mb-3">
+                      <Col md={4}>
+                        <div><strong>Código:</strong> {currentGiftCard.code}</div>
+                        <div><strong>Estado:</strong> {currentGiftCard.status}</div>
+                        <div><strong>Vence:</strong> {currentGiftCard.expiresOn}</div>
+                      </Col>
+                      <Col md={4}>
+                        {isBlankBeneficiary ? (
+                          <div className="p-2 rounded bg-light border">
+                            <Badge bg="warning" text="dark" className="mb-1">Al portador (sin asignar)</Badge>
+                            <div><strong>Nombre:</strong> {currentGiftCard.beneficiaryName || 'Al portador'}</div>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => {
+                                loadStoreCustomers();
+                                setShowAssignModal(true);
+                              }}
+                            >
+                              ➕ Asignar / Crear Clienta
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div><strong>Beneficiaria:</strong> {currentGiftCard.beneficiaryName}</div>
+                            <div><strong>Teléfono:</strong> {currentGiftCard.beneficiaryPhone}</div>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 text-decoration-none mt-1"
+                              onClick={() => {
+                                loadStoreCustomers();
+                                setShowAssignModal(true);
+                              }}
+                            >
+                              ✏️ Cambiar clienta asignada
+                            </Button>
+                          </div>
+                        )}
+                      </Col>
+                      <Col md={4}>
+                        <div><strong>Total:</strong> {formatCurrency(currentGiftCard.totalAmount)}</div>
+                        <div><strong>Pagado:</strong> {formatCurrency(currentGiftCard.paidAmount)}</div>
+                        <div className="text-danger">
+                          <strong>PIN:</strong> {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                        </div>
+                      </Col>
+                    </Row>
+                  </>
+                );
+              })()}
 
               <h6>Servicios</h6>
               <Table size="sm" bordered>
@@ -899,6 +1123,91 @@ export default function GiftCardsPage() {
           )}
         </Modal.Body>
       </Modal>
+
+      {/* Modal para Buscar o Asignar Clienta */}
+      <Modal
+        show={showAssignModal}
+        onHide={() => setShowAssignModal(false)}
+        size="lg"
+        centered
+        className="bunny-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Asignar Clienta a GiftCard {currentGiftCard?.code}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="info" className="mb-3">
+            Para registrar los servicios canjeados en el historial, puntos/sellos de fidelidad y ficha de cliente, vincula esta GiftCard a una clienta existente o regístrala como clienta regular nueva.
+          </Alert>
+
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h6 className="mb-0">Buscar Clienta Existente</h6>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowNewCustomerModal(true)}
+            >
+              ➕ Crear Nueva Clienta Regular
+            </Button>
+          </div>
+
+          <Form.Control
+            type="text"
+            placeholder="Buscar por nombre, teléfono (+569...) o RUT"
+            value={assignSearch}
+            onChange={(e) => setAssignSearch(e.target.value)}
+            className="mb-3"
+          />
+
+          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+            {assignSearchResults.length === 0 ? (
+              <p className="text-muted text-center py-3">No se encontraron clientas coincidentes.</p>
+            ) : (
+              <Table size="sm" hover className="align-middle">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>RUT</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignSearchResults.map((cust) => (
+                    <tr key={cust.id}>
+                      <td className="fw-semibold">{cust.fullName}</td>
+                      <td>{cust.phone}</td>
+                      <td>{cust.rut || '-'}</td>
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="outline-success"
+                          disabled={assignLoading}
+                          onClick={() => handleBindCustomerToGiftCard(cust)}
+                        >
+                          {assignLoading ? 'Asignando...' : 'Asignar a GiftCard'}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal de Creación Completa de Cliente Regular */}
+      <CustomerFormModal
+        show={showNewCustomerModal}
+        onHide={() => setShowNewCustomerModal(false)}
+        onSuccess={(newCust) => handleBindCustomerToGiftCard(newCust)}
+      />
 
       <ConfirmDialog
         show={Boolean(giftCardToCancelFromList)}

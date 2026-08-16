@@ -20,7 +20,7 @@ import { useToast } from '../../hooks/useToast';
 import { trackAppointmentCancelled } from '../../utils/analytics';
 import { getAppointmentTotal } from '../../utils/appointmentUtils';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
-import { GiftCard, GiftCardItem } from '../../types/giftcard.types';
+import { GiftCard, GiftCardCreateRequest, GiftCardItem } from '../../types/giftcard.types';
 import { toWhatsAppPhone } from '../../utils/giftcardRenderer';
 
 interface AppointmentFormState {
@@ -66,8 +66,10 @@ export default function AppointmentsPage() {
 
   const { customers, fetchCustomers } = useCustomersStore();
   const { services, fetchServices } = useServicesStore();
-  const { giftCards, fetchGiftCards, redeemGiftCard } = useGiftCardsStore();
+  const { giftCards, fetchGiftCards, redeemGiftCard, updateGiftCard } = useGiftCardsStore();
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [gcCodeInput, setGcCodeInput] = useState('');
+  const [bindingGcLoading, setBindingGcLoading] = useState(false);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -361,6 +363,61 @@ export default function AppointmentsPage() {
       toast.error('No se pudo aplicar el canje de la GiftCard');
     } finally {
       setApplyingGiftCard(false);
+    }
+  };
+
+  const handleBindGiftCardCodeToEditCustomer = async () => {
+    if (!gcCodeInput.trim() || !editFormData.customerId) return;
+    const customerObj = customers.find((c) => c.id === editFormData.customerId);
+    if (!customerObj) {
+      toast.error('Selecciona una clienta primero');
+      return;
+    }
+
+    const codeToFind = gcCodeInput.trim().toUpperCase();
+    const targetGc = giftCards.find((gc) => gc.code.toUpperCase() === codeToFind);
+    if (!targetGc) {
+      toast.error(`No se encontró la GiftCard con código ${codeToFind}`);
+      return;
+    }
+
+    if (targetGc.status !== 'ACTIVE' && targetGc.status !== 'PARTIAL') {
+      toast.error(`La GiftCard ${targetGc.code} está ${targetGc.status} y no se puede canjear`);
+      return;
+    }
+
+    const hasRemaining = targetGc.items.some((i) => i.remainingQuantity > 0);
+    if (!hasRemaining) {
+      toast.error(`La GiftCard ${targetGc.code} no tiene servicios disponibles`);
+      return;
+    }
+
+    setBindingGcLoading(true);
+    try {
+      const payload: GiftCardCreateRequest = {
+        beneficiaryFullName: customerObj.fullName,
+        beneficiaryPhone: customerObj.phone,
+        beneficiaryEmail: customerObj.email || undefined,
+        buyerName: targetGc.buyerName || undefined,
+        buyerPhone: targetGc.buyerPhone || undefined,
+        buyerEmail: targetGc.buyerEmail || undefined,
+        expiresOn: targetGc.expiresOn,
+        paidAmount: targetGc.paidAmount,
+        paymentMethod: targetGc.paymentMethod,
+        items: targetGc.items.map((i) => ({
+          serviceId: i.serviceId || 0,
+          quantity: i.quantity,
+        })),
+      };
+
+      await updateGiftCard(targetGc.id, payload);
+      await fetchGiftCards();
+      toast.success(`GiftCard ${targetGc.code} vinculada exitosamente a ${customerObj.fullName}`);
+      setGcCodeInput('');
+    } catch {
+      toast.error('No se pudo vincular la GiftCard a la clienta');
+    } finally {
+      setBindingGcLoading(false);
     }
   };
 
@@ -1485,42 +1542,74 @@ export default function AppointmentsPage() {
               />
             </Form.Group>
 
-            {availableEditCustomerGiftCards.length > 0 && (
-              <div className="p-3 border rounded bg-light border-primary-subtle mb-3">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <div className="fw-semibold text-primary">🎁 GiftCards Disponibles de la Clienta</div>
+            <div className="p-3 border rounded bg-light border-primary-subtle mb-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <div className="fw-semibold text-primary">🎁 Canje de GiftCards para esta Cita</div>
+                {availableEditCustomerGiftCards.length > 0 && (
                   <Badge bg="success">
-                    {availableEditCustomerGiftCards.length} activa{availableEditCustomerGiftCards.length > 1 ? 's' : ''}
+                    {availableEditCustomerGiftCards.length} disponible{availableEditCustomerGiftCards.length > 1 ? 's' : ''}
                   </Badge>
-                </div>
+                )}
+              </div>
+
+              {availableEditCustomerGiftCards.length > 0 ? (
+                <>
+                  <p className="text-muted small mb-2">
+                    Servicios disponibles de la clienta. Haz clic en el botón para canjear 1 servicio hacia esta cita:
+                  </p>
+                  <div className="d-flex flex-column gap-2 mb-3">
+                    {availableEditCustomerGiftCards.map((gc) => (
+                      <div key={gc.id} className="p-2 border rounded bg-white">
+                        <div className="d-flex justify-content-between align-items-center mb-1">
+                          <span className="fw-semibold small">{gc.code}</span>
+                          <small className="text-muted">Vence: {gc.expiresOn}</small>
+                        </div>
+                        <div className="d-flex flex-wrap gap-1">
+                          {gc.items.filter((item) => item.remainingQuantity > 0).map((item) => (
+                            <Button
+                              key={item.id}
+                              size="sm"
+                              variant="outline-success"
+                              disabled={applyingGiftCard}
+                              onClick={() => handleApplyGiftCardToEditAppointment(gc, item)}
+                            >
+                              ⚡ Canjear {item.serviceName} ({item.remainingQuantity} disp.)
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
                 <p className="text-muted small mb-2">
-                  Esta clienta tiene servicios disponibles en GiftCard. Puedes canjear el servicio directamente aquí para registrarlo en la cita:
+                  La clienta no tiene GiftCards vinculadas activas con saldo.
                 </p>
-                <div className="d-flex flex-column gap-2">
-                  {availableEditCustomerGiftCards.map((gc) => (
-                    <div key={gc.id} className="p-2 border rounded bg-white">
-                      <div className="d-flex justify-content-between align-items-center mb-1">
-                        <span className="fw-semibold small">{gc.code}</span>
-                        <small className="text-muted">Vence: {gc.expiresOn}</small>
-                      </div>
-                      <div className="d-flex flex-wrap gap-1">
-                        {gc.items.filter((item) => item.remainingQuantity > 0).map((item) => (
-                          <Button
-                            key={item.id}
-                            size="sm"
-                            variant="outline-success"
-                            disabled={applyingGiftCard}
-                            onClick={() => handleApplyGiftCardToEditAppointment(gc, item)}
-                          >
-                            ⚡ Canjear {item.serviceName} ({item.remainingQuantity} disp.)
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+              )}
+
+              {/* Input para vincular GiftCard al portador o código */}
+              <div className="pt-2 border-top">
+                <small className="text-muted fw-semibold d-block mb-1">
+                  ¿La clienta presenta una GiftCard al portador o código de tarjeta?
+                </small>
+                <div className="d-flex gap-2">
+                  <Form.Control
+                    size="sm"
+                    placeholder="Ej: GC-2026-000123"
+                    value={gcCodeInput}
+                    onChange={(e) => setGcCodeInput(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    disabled={bindingGcLoading || !gcCodeInput.trim()}
+                    onClick={handleBindGiftCardCodeToEditCustomer}
+                  >
+                    {bindingGcLoading ? 'Buscando...' : 'Vincular y Mostrar'}
+                  </Button>
                 </div>
               </div>
-            )}
+            </div>
 
             <hr />
             <h6 className="mb-2">Cargos extra personalizados</h6>
