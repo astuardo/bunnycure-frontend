@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Table } from 'react-bootstrap';
+import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Table, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { customersApi } from '@/api/customers.api';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -9,9 +10,14 @@ import { useServicesStore } from '@/stores/servicesStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
+import {
+  GIFTCARD_BACKGROUND_TEMPLATE,
+  downloadGiftCardPng,
+  sendGiftCardWhatsApp,
+  shareGiftCardPng,
+} from '@/utils/giftcardRenderer';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
-const giftCardTemplate = '/giftcard_fondo.png';
 const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
@@ -33,134 +39,6 @@ const loadStoredPins = (): Record<number, string> => {
     return {};
   }
 };
-const toWhatsAppPhone = (value?: string): string => {
-  const digits = (value || '').replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('56')) return digits;
-  if (digits.length === 9 && digits.startsWith('9')) return `56${digits}`;
-  return digits;
-};
-
-interface GiftCardRenderTextData {
-  beneficiaryName: string;
-  code: string;
-  pin: string;
-  expiresOn: string;
-}
-
-interface GiftCardInfoBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-const GIFT_CARD_FONT_OPTIONS = {
-  elegant: '"Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  modern: '"Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  soft: '"Lato", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-} as const;
-const GIFT_CARD_FONT_FAMILY = GIFT_CARD_FONT_OPTIONS.elegant;
-
-const getGiftCardInfoBox = (width: number, height: number): GiftCardInfoBox => ({
-  // Centro-derecha para evitar superponer recursos visuales.
-  x: Math.round(width * 0.56),
-  y: Math.round(height * 0.34),
-  width: Math.round(width * 0.37),
-  height: Math.round(height * 0.3),
-});
-
-const fitText = (context: CanvasRenderingContext2D, text: string, maxWidth: number): string => {
-  if (context.measureText(text).width <= maxWidth) return text;
-
-  let content = text;
-  while (content.length > 3 && context.measureText(`${content}...`).width > maxWidth) {
-    content = content.slice(0, -1);
-  }
-  return `${content.trimEnd()}...`;
-};
-
-const drawGiftCardLine = (
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  maxWidth: number,
-  label: string,
-  value: string,
-  fontSize: number
-): void => {
-  context.font = `600 ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
-  context.fillStyle = '#8c2f74';
-  const labelText = `${label}: `;
-  context.fillText(labelText, x, y, maxWidth);
-  const labelWidth = Math.min(context.measureText(labelText).width, Math.max(12, maxWidth - 12));
-
-  context.font = `500 ${fontSize}px ${GIFT_CARD_FONT_FAMILY}`;
-  context.fillStyle = '#a13a82';
-  context.fillText(fitText(context, value, maxWidth - labelWidth), x + labelWidth, y, maxWidth - labelWidth);
-};
-
-const drawGiftCardInfo = (context: CanvasRenderingContext2D, box: GiftCardInfoBox, data: GiftCardRenderTextData): void => {
-  const paddingX = Math.max(14, Math.floor(box.width * 0.07));
-  const paddingY = Math.max(12, Math.floor(box.height * 0.09));
-  const maxTextWidth = Math.max(10, box.width - paddingX * 2);
-  const titleFontSize = Math.max(20, Math.min(34, Math.floor(box.height * 0.1)));
-  const detailsFontSize = Math.max(13, Math.min(20, Math.floor(box.height * 0.058)));
-  const sectionGap = Math.max(8, Math.floor(detailsFontSize * 0.9));
-  const rowGap = Math.max(6, Math.floor(detailsFontSize * 0.75));
-  let cursorY = box.y + paddingY;
-
-  context.fillStyle = '#8c2f74';
-  context.textBaseline = 'top';
-
-  context.font = `600 ${titleFontSize}px ${GIFT_CARD_FONT_FAMILY}`;
-  context.fillText(fitText(context, data.beneficiaryName || 'Beneficiaria', maxTextWidth), box.x + paddingX, cursorY, maxTextWidth);
-  cursorY += titleFontSize + sectionGap;
-
-  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Codigo', data.code, detailsFontSize);
-  cursorY += detailsFontSize + rowGap;
-  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'PIN', data.pin, detailsFontSize);
-  cursorY += detailsFontSize + rowGap;
-  drawGiftCardLine(context, box.x + paddingX, cursorY, maxTextWidth, 'Vence', data.expiresOn, detailsFontSize);
-};
-
-const renderGiftCardPng = async (data: GiftCardRenderTextData): Promise<Blob> =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
-
-    image.onload = () => {
-      const width = image.naturalWidth || image.width || 1748;
-      const height = image.naturalHeight || image.height || 1240;
-      const scale = 1;
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
-      const context = canvas.getContext('2d');
-
-      if (!context) {
-        reject(new Error('No se pudo inicializar canvas'));
-        return;
-      }
-
-      context.setTransform(scale, 0, 0, scale, 0, 0);
-      context.drawImage(image, 0, 0, width, height);
-      const infoBox = getGiftCardInfoBox(width, height);
-      drawGiftCardInfo(context, infoBox, data);
-      canvas.toBlob((pngBlob) => {
-        if (!pngBlob) {
-          reject(new Error('No se pudo generar PNG'));
-          return;
-        }
-        resolve(pngBlob);
-      }, 'image/png');
-    };
-
-    image.onerror = () => {
-      reject(new Error('No se pudo renderizar plantilla de fondo'));
-    };
-
-    image.src = `${giftCardTemplate}?v=${Date.now()}`;
-  });
 
 const getDefaultExpiryDate = (): string => {
   const date = new Date();
@@ -231,6 +109,7 @@ export default function GiftCardsPage() {
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [generatedPins, setGeneratedPins] = useState<Record<number, string>>(loadStoredPins);
   const [sharingGiftCard, setSharingGiftCard] = useState(false);
+  const [downloadingPng, setDownloadingPng] = useState(false);
   const [giftCardToCancelFromList, setGiftCardToCancelFromList] = useState<GiftCard | null>(null);
   const [cancellingFromList, setCancellingFromList] = useState(false);
 
@@ -475,71 +354,68 @@ export default function GiftCardsPage() {
     const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
     const expiry = currentGiftCard.expiresOn || '-';
     const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
-    const waPhone = toWhatsAppPhone(currentGiftCard.beneficiaryPhone);
     const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
-    const message =
-      `Hola ${beneficiary}, aqui esta tu GiftCard BunnyCure.\n` +
-      `Codigo: ${currentGiftCard.code}\n` +
-      `PIN: ${pinValue}\n` +
-      `Vence: ${expiry}\n` +
-      `Link: ${publicUrl}`;
 
     setSharingGiftCard(true);
-    try {
-      const pngBlob = await renderGiftCardPng({
+    await shareGiftCardPng({
+      data: {
         beneficiaryName: beneficiary,
         code: currentGiftCard.code,
         pin: pinValue,
         expiresOn: expiry,
-      });
-      const pngFile = new File([pngBlob], `giftcard-${currentGiftCard.code}.png`, { type: 'image/png' });
-      const shareData: ShareData = { files: [pngFile], title: 'GiftCard BunnyCure', text: message };
-      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
-
-      if (navigator.share && nav.canShare?.({ files: [pngFile] })) {
-        await navigator.share(shareData);
-        toast.success('GiftCard generada y compartida');
-      } else {
-        const fileUrl = URL.createObjectURL(pngBlob);
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = `giftcard-${currentGiftCard.code}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(fileUrl);
-
-        if (waPhone) {
-          const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
-          window.open(waUrl, '_blank', 'noopener,noreferrer');
-        }
-        toast.info('PNG descargado. Se abrió WhatsApp para completar el envío');
-      }
-    } catch {
-      toast.error('No se pudo generar o compartir la GiftCard');
-    } finally {
-      setSharingGiftCard(false);
-    }
+        publicUrl,
+      },
+      beneficiaryPhone: currentGiftCard.beneficiaryPhone,
+      onSuccess: (msg) => toast.success(msg),
+      onError: (msg) => toast.error(msg),
+      onInfo: (msg) => toast.info(msg),
+    });
+    setSharingGiftCard(false);
   };
 
   const handleSendWhatsAppBeneficiary = () => {
     if (!currentGiftCard) return;
-    const waPhone = toWhatsAppPhone(currentGiftCard.beneficiaryPhone);
-    if (!waPhone) {
-      toast.error('La beneficiaria no tiene teléfono válido para WhatsApp');
-      return;
-    }
 
     const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
+    const expiry = currentGiftCard.expiresOn || '-';
+    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
     const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
-    const message =
-      `Hola ${currentGiftCard.beneficiaryName}, aqui esta tu GiftCard BunnyCure.\n` +
-      `Codigo: ${currentGiftCard.code}\n` +
-      `PIN: ${pinValue}\n` +
-      `Vence: ${currentGiftCard.expiresOn}\n` +
-      `Link: ${publicUrl}`;
-    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+    sendGiftCardWhatsApp({
+      data: {
+        beneficiaryName: beneficiary,
+        code: currentGiftCard.code,
+        pin: pinValue,
+        expiresOn: expiry,
+        publicUrl,
+      },
+      beneficiaryPhone: currentGiftCard.beneficiaryPhone,
+      onError: (msg) => toast.error(msg),
+    });
+  };
+
+  const handleDownloadPng = async () => {
+    if (!currentGiftCard) return;
+    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
+    const expiry = currentGiftCard.expiresOn || '-';
+    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
+    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
+
+    setDownloadingPng(true);
+    try {
+      await downloadGiftCardPng({
+        beneficiaryName: beneficiary,
+        code: currentGiftCard.code,
+        pin: pinValue,
+        expiresOn: expiry,
+        publicUrl,
+      });
+      toast.success('PNG descargado correctamente');
+    } catch {
+      toast.error('No se pudo descargar la imagen PNG');
+    } finally {
+      setDownloadingPng(false);
+    }
   };
 
   return (
@@ -824,13 +700,29 @@ export default function GiftCardsPage() {
           ) : (
             <>
               <div className="giftcard-admin-preview mb-3">
-                <img src={giftCardTemplate} alt="Plantilla GiftCard BunnyCure" className="giftcard-admin-preview__image" />
+                <img
+                  src={GIFTCARD_BACKGROUND_TEMPLATE}
+                  alt="Plantilla GiftCard BunnyCure"
+                  className="giftcard-admin-preview__image"
+                />
                 <div className="giftcard-admin-preview__overlay">
-                  <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
-                  <div className="giftcard-admin-preview__line">{currentGiftCard.beneficiaryName}</div>
-                  <div className="giftcard-admin-preview__line">Codigo: {currentGiftCard.code}</div>
-                  <div className="giftcard-admin-preview__pin">
-                    PIN: {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                  <div className="giftcard-admin-preview__info">
+                    <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
+                    <div className="giftcard-admin-preview__line"><strong>{currentGiftCard.beneficiaryName}</strong></div>
+                    <div className="giftcard-admin-preview__line">Código: {currentGiftCard.code}</div>
+                    <div className="giftcard-admin-preview__pin">
+                      PIN: {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                    </div>
+                    <div className="giftcard-admin-preview__line"><small>Vence: {currentGiftCard.expiresOn}</small></div>
+                  </div>
+                  <div className="giftcard-admin-preview__qr">
+                    <QRCodeSVG
+                      value={normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code)}
+                      size={68}
+                      bgColor="#ffffff"
+                      fgColor="#8c2f74"
+                    />
+                    <span className="giftcard-admin-preview__qr-label">QR Canje</span>
                   </div>
                 </div>
               </div>
@@ -944,7 +836,7 @@ export default function GiftCardsPage() {
                 </Col>
               </Row>
 
-              <div className="d-flex gap-2 mb-3">
+              <div className="d-flex flex-wrap gap-2 mb-3">
                 <Button variant="outline-danger" onClick={handleCancel}>
                   Anular GiftCard
                 </Button>
@@ -954,13 +846,31 @@ export default function GiftCardsPage() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Abrir URL pública
+                  🌐 Abrir URL pública
                 </a>
-                <Button variant="outline-success" onClick={handleShareGiftCard} disabled={sharingGiftCard}>
-                  {sharingGiftCard ? 'Generando...' : 'Generar y compartir PNG'}
+                <Button
+                  variant="outline-success"
+                  onClick={handleShareGiftCard}
+                  disabled={sharingGiftCard}
+                >
+                  {sharingGiftCard ? (
+                    <>
+                      <Spinner size="sm" animation="border" className="me-1" />
+                      Generando...
+                    </>
+                  ) : (
+                    '🎁 Generar y compartir PNG'
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={handleDownloadPng}
+                  disabled={downloadingPng}
+                >
+                  {downloadingPng ? 'Descargando...' : '📥 Descargar PNG'}
                 </Button>
                 <Button variant="success" onClick={handleSendWhatsAppBeneficiary}>
-                  Enviar a WhatsApp beneficiaria
+                  📱 Enviar WhatsApp
                 </Button>
               </div>
 

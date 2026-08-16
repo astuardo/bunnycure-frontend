@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bc-page-bg: #fdf0ec;
   --bc-surface: rgba(255, 255, 255, 0.9);
   --bc-surface-strong: #ffffff;
@@ -259,23 +259,57 @@ body {
   right: 0;
   bottom: 0;
   padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(40, 20, 15, 0.1) 0%, rgba(40, 20, 15, 0.72) 75%);
+  background: linear-gradient(180deg, rgba(40, 20, 15, 0.15) 0%, rgba(40, 20, 15, 0.82) 75%);
   color: #fffdfb;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.giftcard-admin-preview__info {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .giftcard-admin-preview__title {
   font-weight: 700;
   margin-bottom: 4px;
+  font-size: 1.05rem;
 }
 
 .giftcard-admin-preview__line {
   font-size: 0.9rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .giftcard-admin-preview__pin {
   margin-top: 4px;
   font-weight: 700;
   letter-spacing: 0.8px;
+}
+
+.giftcard-admin-preview__qr {
+  flex: 0 0 auto;
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.giftcard-admin-preview__qr-label {
+  font-size: 0.65rem;
+  color: #8c2f74;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .bunny-auth-page,

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { customersApi } from '@/api/customers.api';
 import { useServicesStore } from '@/stores/servicesStore';
@@ -8,9 +9,14 @@ import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { GiftCardCreateRequest, GiftCardPaymentMethod } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
+import {
+  GIFTCARD_BACKGROUND_TEMPLATE,
+  downloadGiftCardPng,
+  sendGiftCardWhatsApp,
+  shareGiftCardPng,
+} from '@/utils/giftcardRenderer';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
-const giftCardTemplate = '/giftcard_fondo.png';
 const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
 type ApiError = { response?: { data?: { error?: { message?: string }; message?: string } } };
 const getApiErrorMessage = (error: unknown, fallback: string) => {
@@ -38,6 +44,15 @@ interface ServiceSelection {
   quantity: number;
 }
 
+interface CreatedGiftCardInfo {
+  code: string;
+  publicUrl: string;
+  plainPin: string | null;
+  beneficiaryName: string;
+  beneficiaryPhone: string;
+  expiresOn: string;
+}
+
 const defaultCreateState = {
   beneficiaryFullName: '',
   beneficiaryPhone: '',
@@ -57,9 +72,11 @@ export default function GenerateGiftCardPage() {
 
   const [createData, setCreateData] = useState(defaultCreateState);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [createdInfo, setCreatedInfo] = useState<{ code: string; publicUrl: string; plainPin: string | null; beneficiaryName: string } | null>(null);
+  const [createdInfo, setCreatedInfo] = useState<CreatedGiftCardInfo | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
+  const [sharingGiftCard, setSharingGiftCard] = useState(false);
+  const [downloadingPng, setDownloadingPng] = useState(false);
 
   useEffect(() => {
     fetchServices(true);
@@ -83,11 +100,11 @@ export default function GenerateGiftCardPage() {
     e.preventDefault();
     const normalizedPhone = normalizePhone(createData.beneficiaryPhone);
     if (!createData.beneficiaryFullName.trim() || !normalizedPhone) {
-      toast.error('Nombre y telefono de beneficiaria son obligatorios');
+      toast.error('Nombre y teléfono de beneficiaria son obligatorios');
       return;
     }
     if (lookupStatus === 'idle') {
-      toast.error('Primero busca la beneficiaria por telefono');
+      toast.error('Primero busca la beneficiaria por teléfono');
       return;
     }
     if (selectedServices.length === 0) {
@@ -117,12 +134,14 @@ export default function GenerateGiftCardPage() {
 
     try {
       const created = await createGiftCard(payload);
-      toast.success('GiftCard creada');
+      toast.success('GiftCard creada con éxito');
       setCreatedInfo({
         code: created.code,
         publicUrl: normalizeGiftCardPublicUrl(created.publicUrl, created.code),
         plainPin: created.plainPin,
         beneficiaryName: createData.beneficiaryFullName.trim(),
+        beneficiaryPhone: normalizedPhone,
+        expiresOn: createData.expiresOn,
       });
       if (created.plainPin) {
         const currentRaw = localStorage.getItem(ADMIN_GIFTCARD_PINS_KEY);
@@ -144,7 +163,7 @@ export default function GenerateGiftCardPage() {
   const handleLookupBeneficiary = async () => {
     const normalizedPhone = normalizePhone(createData.beneficiaryPhone);
     if (!normalizedPhone) {
-      toast.error('Ingresa un telefono valido para buscar');
+      toast.error('Ingresa un teléfono válido para buscar');
       return;
     }
 
@@ -168,13 +187,66 @@ export default function GenerateGiftCardPage() {
           beneficiaryEmail: '',
         }));
         setLookupStatus('not_found');
-        toast.info('Telefono no registrado. Completa los datos para crear la GiftCard');
+        toast.info('Teléfono no registrado. Completa los datos para crear la GiftCard');
       }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'No se pudo buscar cliente por telefono'));
+      toast.error(getApiErrorMessage(error, 'No se pudo buscar cliente por teléfono'));
       setLookupStatus('idle');
     } finally {
       setLookupLoading(false);
+    }
+  };
+
+  const handleShareGiftCard = async () => {
+    if (!createdInfo) return;
+    setSharingGiftCard(true);
+    await shareGiftCardPng({
+      data: {
+        beneficiaryName: createdInfo.beneficiaryName,
+        code: createdInfo.code,
+        pin: createdInfo.plainPin || 'No disponible',
+        expiresOn: createdInfo.expiresOn,
+        publicUrl: createdInfo.publicUrl,
+      },
+      beneficiaryPhone: createdInfo.beneficiaryPhone,
+      onSuccess: (msg) => toast.success(msg),
+      onError: (msg) => toast.error(msg),
+      onInfo: (msg) => toast.info(msg),
+    });
+    setSharingGiftCard(false);
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!createdInfo) return;
+    sendGiftCardWhatsApp({
+      data: {
+        beneficiaryName: createdInfo.beneficiaryName,
+        code: createdInfo.code,
+        pin: createdInfo.plainPin || 'No disponible',
+        expiresOn: createdInfo.expiresOn,
+        publicUrl: createdInfo.publicUrl,
+      },
+      beneficiaryPhone: createdInfo.beneficiaryPhone,
+      onError: (msg) => toast.error(msg),
+    });
+  };
+
+  const handleDownloadPng = async () => {
+    if (!createdInfo) return;
+    setDownloadingPng(true);
+    try {
+      await downloadGiftCardPng({
+        beneficiaryName: createdInfo.beneficiaryName,
+        code: createdInfo.code,
+        pin: createdInfo.plainPin || 'No disponible',
+        expiresOn: createdInfo.expiresOn,
+        publicUrl: createdInfo.publicUrl,
+      });
+      toast.success('PNG descargado correctamente');
+    } catch {
+      toast.error('No se pudo descargar la imagen PNG');
+    } finally {
+      setDownloadingPng(false);
     }
   };
 
@@ -188,7 +260,7 @@ export default function GenerateGiftCardPage() {
           </Col>
           <Col xs="auto" className="d-flex align-items-start gap-2">
             <Button variant="outline-secondary" onClick={() => navigate('/giftcards')}>
-              Volver
+              Volver al listado
             </Button>
           </Col>
         </Row>
@@ -200,34 +272,89 @@ export default function GenerateGiftCardPage() {
         )}
 
         {createdInfo && (
-          <Alert variant="success">
-            GiftCard <strong>{createdInfo.code}</strong> creada correctamente.{' '}
-            {createdInfo.plainPin && (
-              <>
-                PIN: <strong>{createdInfo.plainPin}</strong>.{' '}
-              </>
-            )}
-            <div className="giftcard-admin-preview mt-3 mb-2">
-              <img src={giftCardTemplate} alt="Plantilla GiftCard BunnyCure" className="giftcard-admin-preview__image" />
+          <Alert variant="success" className="mb-4 shadow-sm border-success">
+            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+              <div>
+                <h5 className="alert-heading mb-1">🎉 ¡GiftCard creada con éxito!</h5>
+                <div>
+                  Código: <strong>{createdInfo.code}</strong> &nbsp;|&nbsp; PIN:{' '}
+                  <strong className="text-danger">{createdInfo.plainPin || 'No disponible'}</strong> &nbsp;|&nbsp; Vence:{' '}
+                  <strong>{createdInfo.expiresOn}</strong>
+                </div>
+              </div>
+              <Button
+                variant="outline-success"
+                size="sm"
+                onClick={() => setCreatedInfo(null)}
+              >
+                + Emitir otra GiftCard
+              </Button>
+            </div>
+
+            <div className="giftcard-admin-preview my-3">
+              <img
+                src={GIFTCARD_BACKGROUND_TEMPLATE}
+                alt="Plantilla GiftCard BunnyCure"
+                className="giftcard-admin-preview__image"
+              />
               <div className="giftcard-admin-preview__overlay">
-                <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
-                <div className="giftcard-admin-preview__line">{createdInfo.beneficiaryName || 'Beneficiaria'}</div>
-                <div className="giftcard-admin-preview__line">Codigo: {createdInfo.code}</div>
-                <div className="giftcard-admin-preview__pin">PIN: {createdInfo.plainPin || 'No disponible'}</div>
+                <div className="giftcard-admin-preview__info">
+                  <div className="giftcard-admin-preview__title">GiftCard BunnyCure</div>
+                  <div className="giftcard-admin-preview__line"><strong>{createdInfo.beneficiaryName}</strong></div>
+                  <div className="giftcard-admin-preview__line">Código: {createdInfo.code}</div>
+                  <div className="giftcard-admin-preview__pin">PIN: {createdInfo.plainPin || 'No disponible'}</div>
+                  <div className="giftcard-admin-preview__line"><small>Vence: {createdInfo.expiresOn}</small></div>
+                </div>
+                <div className="giftcard-admin-preview__qr">
+                  <QRCodeSVG value={createdInfo.publicUrl} size={68} bgColor="#ffffff" fgColor="#8c2f74" />
+                  <span className="giftcard-admin-preview__qr-label">QR Canje</span>
+                </div>
               </div>
             </div>
-            <a href={createdInfo.publicUrl} target="_blank" rel="noreferrer">
-              Abrir URL publica
-            </a>{' '}
-            o{' '}
-            <button
-              type="button"
-              className="btn btn-link p-0 align-baseline"
-              onClick={() => navigate('/giftcards')}
-            >
-              volver al listado
-            </button>
-            .
+
+            <div className="d-flex flex-wrap gap-2 mt-3 pt-2 border-top border-success-subtle">
+              <Button
+                variant="success"
+                onClick={handleShareGiftCard}
+                disabled={sharingGiftCard}
+              >
+                {sharingGiftCard ? (
+                  <>
+                    <Spinner size="sm" animation="border" className="me-1" />
+                    Generando...
+                  </>
+                ) : (
+                  '🎁 Generar y compartir PNG'
+                )}
+              </Button>
+              <Button
+                variant="outline-success"
+                onClick={handleSendWhatsApp}
+              >
+                📱 Enviar a WhatsApp
+              </Button>
+              <Button
+                variant="outline-secondary"
+                onClick={handleDownloadPng}
+                disabled={downloadingPng}
+              >
+                {downloadingPng ? 'Descargando...' : '📥 Descargar PNG'}
+              </Button>
+              <a
+                href={createdInfo.publicUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-outline-primary"
+              >
+                🌐 Ver URL pública
+              </a>
+              <Button
+                variant="outline-dark"
+                onClick={() => navigate('/giftcards')}
+              >
+                Ir al listado
+              </Button>
+            </div>
           </Alert>
         )}
 
