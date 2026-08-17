@@ -3,14 +3,24 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+    background-color: var(--bc-page-bg, #fdf0ec);
 }
 
 /* Main content area */
 .main-content-col {
-    flex: 1 1 auto;
+    flex: 1 1 0%;
+    min-width: 0;
     max-width: 100%;
     overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+    .main-content-col {
+        width: calc(100% - 250px);
+    }
 }
 
 .main-content-col main {
@@ -26,37 +36,8 @@
 }
 
 .main-content-col [class*="col-"] {
-    padding-left: 12px;
-    padding-right: 12px;
-}
-
-/* Card responsiveness */
-@media (max-width: 767px) {
-    .main-content-col main {
-        padding: 1rem !important;
-    }
-    
-    /* Reduce padding in cards */
-    .main-content-col .card {
-        margin-bottom: 1rem;
-    }
-    
-    .main-content-col h1 {
-        font-size: 1.5rem;
-    }
-    
-    .main-content-col .btn-lg {
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
-    }
-}
-
-/* Desktop optimization */
-@media (min-width: 768px) {
-    .main-content-col {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
+    padding-left: 8px;
+    padding-right: 8px;
 }
 
 /* Fix body overflow */

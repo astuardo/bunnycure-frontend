@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Row, Col, Card, Badge, Button, Form, Table, Spinner, Accordion } from 'react-bootstrap';
+import { Row, Col, Card, Badge, Button, Form, Table, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import {
   FaWhatsapp,
@@ -9,7 +9,6 @@ import {
   FaClock,
   FaTimes,
   FaCommentDots,
-  FaInfoCircle,
 } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -35,6 +34,8 @@ import {
 import ReactivationMessageModal from './ReactivationMessageModal';
 import { useToast } from '@/hooks/useToast';
 
+const TEMPLATE_SEND_STORAGE_KEY = 'bunnycure_reactivation_template_enabled_v1';
+
 interface CustomerReactivationTabProps {
   customers: Customer[];
   appointments: Appointment[];
@@ -50,6 +51,30 @@ export default function CustomerReactivationTab({
 }: CustomerReactivationTabProps) {
   const navigate = useNavigate();
   const toast = useToast();
+
+  // Control Switch Maestro para Habilitar/Deshabilitar Envío Directo (1-clic) por Plantilla
+  const [templateSendEnabled, setTemplateSendEnabled] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(TEMPLATE_SEND_STORAGE_KEY);
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleTemplateSend = (enabled: boolean) => {
+    setTemplateSendEnabled(enabled);
+    try {
+      localStorage.setItem(TEMPLATE_SEND_STORAGE_KEY, String(enabled));
+    } catch (err) {
+      console.error('Error saving template send setting:', err);
+    }
+    toast.info(
+      enabled
+        ? '✅ Envío de WhatsApp (1-clic) HABILITADO'
+        : '⚪ Envío de WhatsApp (1-clic) DESHABILITADO (puedes seguir usando Personalizar y Copiar)'
+    );
+  };
 
   // Filtros
   const [inactivityRange, setInactivityRange] = useState<InactivityRange>('ALL_20_PLUS');
@@ -93,6 +118,11 @@ export default function CustomerReactivationTab({
   // Envío WhatsApp 1-clic directo
   const handleQuickWhatsApp = useCallback(
     (item: InactiveCustomer) => {
+      if (!templateSendEnabled) {
+        toast.info('El envío 1-clic está desactivado. Usa "Personalizar" o "Copiar"');
+        return;
+      }
+
       if (item.isContactedRecently) {
         const confirmSend = window.confirm(
           `⚠️ ${item.customer.fullName} ya fue contactada hace ${item.daysSinceLastContact} día(s).\n¿Deseas volver a enviarle un mensaje por WhatsApp?`
@@ -117,7 +147,7 @@ export default function CustomerReactivationTab({
       window.open(url, '_blank', 'noopener,noreferrer');
       toast.success(`Abriendo WhatsApp para ${item.customer.fullName}`);
     },
-    [toast]
+    [templateSendEnabled, toast]
   );
 
   // Copiar mensaje rápido al portapapeles
@@ -166,7 +196,7 @@ export default function CustomerReactivationTab({
   return (
     <div className="reactivation-module">
       {/* KPI Stats Cards */}
-      <Row className="g-3 mb-4">
+      <Row className="g-3 mb-3">
         <Col xs={6} md={3} lg={2}>
           <Card
             className={`h-100 border-0 shadow-sm cursor-pointer ${inactivityRange === 'ALL_20_PLUS' ? 'ring-2 ring-primary' : ''}`}
@@ -190,7 +220,7 @@ export default function CustomerReactivationTab({
             <Card.Body className="p-3">
               <div className="text-primary small fw-semibold">20 - 29 Días</div>
               <div className="fs-3 fw-bold text-primary">{metrics.maintenance20To29}</div>
-              <small className="text-muted">Ventana de mantención</small>
+              <small className="text-muted">Ventana mantención</small>
             </Card.Body>
           </Card>
         </Col>
@@ -234,48 +264,54 @@ export default function CustomerReactivationTab({
         </Col>
       </Row>
 
-      {/* Banner de Ayuda / Info de Plantilla Oficial */}
-      <Accordion className="mb-4 shadow-sm">
-        <Accordion.Item eventKey="0" className="border-0">
-          <Accordion.Header>
-            <div className="d-flex align-items-center gap-2">
-              <FaInfoCircle className="text-primary" />
-              <span className="fw-semibold">Ver Plantilla Oficial Meta WhatsApp Cloud API (+56 9 8887 3031)</span>
+      {/* Switch Maestro de Envío Directo 1-Clic */}
+      <Card className="mb-3 border-0 shadow-sm" style={{ background: '#ffffff' }}>
+        <Card.Body className="p-3 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="d-flex align-items-center justify-content-center rounded-circle"
+              style={{
+                width: '40px',
+                height: '40px',
+                background: templateSendEnabled ? '#ecfdf5' : '#f1f5f9',
+                color: templateSendEnabled ? '#10b981' : '#94a3b8',
+                fontSize: '20px',
+                flexShrink: 0,
+              }}
+            >
+              <FaWhatsapp />
             </div>
-          </Accordion.Header>
-          <Accordion.Body className="bg-light">
-            <Row className="g-3">
-              <Col md={7}>
-                <h6 className="fw-bold mb-2">📋 Configuración para Meta Business Manager:</h6>
-                <ul className="small text-muted mb-2">
-                  <li><strong>Nombre de plantilla:</strong> <code>bunnycure_reactivacion_clienta</code></li>
-                  <li><strong>Categoría:</strong> MARKETING | <strong>Idioma:</strong> Español (es)</li>
-                  <li><strong>Encabezado:</strong> <code>🐰💅 ¡Te extrañamos en BunnyCure!</code></li>
-                  <li><strong>Número de atención oficial:</strong> <code>+56 9 8887 3031</code></li>
-                </ul>
-                <div className="p-3 bg-white rounded border small font-monospace">
-                  ¡Hola &#123;&#123;1&#125;&#125;! 🌸<br /><br />
-                  Hace ya unas semanas desde tu último servicio de &#123;&#123;2&#125;&#125; en BunnyCure. Sabemos lo importante que es mantener tus uñitas sanas, bellas y con un cuidado impecable ✨<br /><br />
-                  Ya estás en la fecha ideal para tu mantención o para renovar tu diseño favorito 💅💖<br /><br />
-                  ¿Te gustaría que te reservemos un espacio esta semana? Puedes responder directamente a este chat (+56988873031) para coordinar tu cita encantadas 🥰
-                </div>
-              </Col>
-              <Col md={5}>
-                <h6 className="fw-bold mb-2">⚡ Automatización &amp; Control Anti-Spam:</h6>
-                <p className="small text-muted mb-2">
-                  El sistema registra automáticamente la fecha y hora de cada envío para evitar contactar a una misma clienta más de una vez por semana.
-                </p>
-                <div className="alert alert-info py-2 px-3 small mb-0">
-                  💡 <strong>Exclusión automática activa:</strong> Cualquier clienta que ya cuente con una cita próxima confirmada o pendiente no figurará en esta lista.
-                </div>
-              </Col>
-            </Row>
-          </Accordion.Body>
-        </Accordion.Item>
-      </Accordion>
+            <div>
+              <div className="fw-bold small d-flex align-items-center gap-2">
+                <span>Envío Rápido de WhatsApp (1-clic) mediante Plantilla</span>
+                <Badge bg={templateSendEnabled ? 'success' : 'secondary'}>
+                  {templateSendEnabled ? '🟢 Habilitado' : '⚪ Deshabilitado'}
+                </Badge>
+              </div>
+              <small className="text-muted d-block">
+                {templateSendEnabled
+                  ? 'El botón "WhatsApp" (1-clic) abrirá la plantilla en WhatsApp directamente (+56 9 8887 3031).'
+                  : 'Envío en 1-clic apagado. Las opciones de "Personalizar" (modal) y "Copiar mensaje" continúan 100% activas.'}
+              </small>
+            </div>
+          </div>
+          <Form.Check
+            type="switch"
+            id="reactivation-template-switch"
+            checked={templateSendEnabled}
+            onChange={(e) => handleToggleTemplateSend(e.target.checked)}
+            label={
+              <span className="small fw-semibold text-nowrap">
+                {templateSendEnabled ? 'Envío 1-clic: ON' : 'Envío 1-clic: OFF'}
+              </span>
+            }
+            className="fs-6 m-0 cursor-pointer"
+          />
+        </Card.Body>
+      </Card>
 
       {/* Barra de Filtros */}
-      <Card className="mb-4 border-0 shadow-sm">
+      <Card className="mb-3 border-0 shadow-sm">
         <Card.Body className="p-3">
           <Row className="g-3 align-items-center">
             {/* Rango de Inactividad */}
@@ -411,7 +447,7 @@ export default function CustomerReactivationTab({
                       <th>Último Servicio Realizado</th>
                       <th className="text-center">Días Inactiva</th>
                       <th>Estado Anti-Spam</th>
-                      <th className="text-end">Acciones Rápidas</th>
+                      <th className="text-end">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -475,17 +511,25 @@ export default function CustomerReactivationTab({
                         {/* Acciones */}
                         <td className="text-end">
                           <div className="d-inline-flex gap-1">
+                            {/* Botón WhatsApp 1-clic (Depende del switch maestro) */}
                             <Button
-                              variant="success"
+                              variant={templateSendEnabled ? "success" : "secondary"}
                               size="sm"
+                              disabled={!templateSendEnabled}
                               onClick={() => handleQuickWhatsApp(item)}
-                              title="Enviar mensaje WhatsApp en 1-clic"
+                              title={
+                                templateSendEnabled
+                                  ? "Enviar mensaje WhatsApp en 1-clic"
+                                  : "Envío 1-clic desactivado por el switch superior. Usa 'Personalizar' o 'Copiar'"
+                              }
                               className="d-inline-flex align-items-center gap-1 fw-semibold"
+                              style={!templateSendEnabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                             >
                               <FaWhatsapp />
                               <span>WhatsApp</span>
                             </Button>
 
+                            {/* Botón Personalizar (Siempre habilitado) */}
                             <Button
                               variant="outline-primary"
                               size="sm"
@@ -495,6 +539,7 @@ export default function CustomerReactivationTab({
                               <FaCommentDots />
                             </Button>
 
+                            {/* Botón Copiar (Siempre habilitado) */}
                             <Button
                               variant="outline-secondary"
                               size="sm"
@@ -504,6 +549,7 @@ export default function CustomerReactivationTab({
                               <FaCopy />
                             </Button>
 
+                            {/* Botón Ver Ficha (Siempre habilitado) */}
                             <Button
                               variant="outline-dark"
                               size="sm"
@@ -555,12 +601,15 @@ export default function CustomerReactivationTab({
 
                       <div className="d-grid gap-2">
                         <Button
-                          variant="success"
+                          variant={templateSendEnabled ? "success" : "secondary"}
                           size="sm"
+                          disabled={!templateSendEnabled}
                           onClick={() => handleQuickWhatsApp(item)}
                           className="d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                          style={!templateSendEnabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                         >
-                          <FaWhatsapp className="fs-5" /> Enviar WhatsApp (1-clic)
+                          <FaWhatsapp className="fs-5" />
+                          <span>{templateSendEnabled ? 'Enviar WhatsApp (1-clic)' : 'Envío 1-clic desactivado'}</span>
                         </Button>
                         <div className="d-flex gap-2">
                           <Button
