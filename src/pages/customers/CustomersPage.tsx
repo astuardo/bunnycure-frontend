@@ -1,36 +1,50 @@
-import { useState, useEffect } from 'react';
-import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner } from 'react-bootstrap';
+import { useState, useEffect, useMemo } from 'react';
+import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner, Nav } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
 import DeleteCustomerModal from '../../components/customers/DeleteCustomerModal';
+import CustomerReactivationTab from '../../components/customers/CustomerReactivationTab';
 import { useCustomersStore } from '../../stores/customersStore';
+import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { useServicesStore } from '../../stores/servicesStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Customer, NotificationPreference } from '../../types/customer.types';
+import { computeInactiveCustomers } from '../../utils/reactivationUtils';
 
 export default function CustomersPage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState<'directory' | 'reactivation'>('directory');
     const [search, setSearch] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     
     const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomersStore();
+    const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
+    const { services, isLoading: servicesLoading, fetchServices } = useServicesStore();
     const { isAuthenticated, user } = useAuthStore();
     const isQuickCreateMode = searchParams.get('create') === '1';
 
     useEffect(() => {
         // Solo fetch si está autenticado y tiene usuario
         if (isAuthenticated && user) {
-            console.log('✅ Usuario autenticado, cargando clientes...');
+            console.log('✅ Usuario autenticado, cargando clientes, citas y servicios...');
             fetchCustomers();
+            fetchAppointments();
+            fetchServices();
         } else {
             console.warn('⚠️ Usuario no autenticado en CustomersPage');
         }
-    }, [isAuthenticated, user, fetchCustomers]);
+    }, [isAuthenticated, user, fetchCustomers, fetchAppointments, fetchServices]);
 
     const showCustomerFormModal = showFormModal || isQuickCreateMode;
+
+    // Calcular cantidad de clientas inactivas para la insignia del tab
+    const inactiveCustomersCount = useMemo(() => {
+        return computeInactiveCustomers(customers, appointments).length;
+    }, [customers, appointments]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -110,227 +124,281 @@ export default function CustomersPage() {
     return (
         <DashboardLayout>
             <div className="bunny-page">
-            <Row className="mb-3 mb-md-4">
-                <Col>
-                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                        <div>
-                            <h1 className="mb-1">👥 Gestión de Clientes</h1>
-                            <p className="text-muted mb-0 small">Administra la base de datos de clientes</p>
-                        </div>
-                        <Button 
-                            variant="primary" 
-                            size="lg" 
-                            onClick={handleNewCustomer}
-                            className="w-100 w-md-auto"
-                        >
-                            ➕ Nuevo Cliente
-                        </Button>
-                    </div>
-                </Col>
-            </Row>
-
-            {/* Búsqueda */}
-            <Row className="mb-3 mb-md-4">
-                <Col md={8} lg={6}>
-                    <Card>
-                        <Card.Body>
-                            <Form onSubmit={handleSearch}>
-                                <Form.Group className="d-flex gap-2">
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Buscar por nombre o teléfono..."
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                    />
-                                    <Button type="submit" variant="primary" className="text-nowrap">
-                                        🔍 <span className="d-none d-sm-inline">Buscar</span>
-                                    </Button>
-                                    {search && (
-                                        <Button 
-                                            type="button" 
-                                            variant="outline-secondary"
-                                            onClick={handleClearSearch}
-                                        >
-                                            ✖️
-                                        </Button>
-                                    )}
-                                </Form.Group>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Error */}
-            {error && (
-                <Row className="mb-4">
+                {/* Header de Página */}
+                <Row className="mb-3 mb-md-4">
                     <Col>
-                        <Alert variant="danger" dismissible>
-                            {error}
-                        </Alert>
+                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                            <div>
+                                <h1 className="mb-1">👥 Clientes &amp; Reactivación</h1>
+                                <p className="text-muted mb-0 small">
+                                    Administra la base de datos de clientas y fideliza a las inactivas
+                                </p>
+                            </div>
+                            <Button 
+                                variant="primary" 
+                                size="lg" 
+                                onClick={handleNewCustomer}
+                                className="w-100 w-md-auto"
+                            >
+                                ➕ Nuevo Cliente
+                            </Button>
+                        </div>
                     </Col>
                 </Row>
-            )}
 
-            {/* Tabla de Clientes */}
-            <Row>
-                <Col>
-                    <Card>
-                        <Card.Header className="d-flex justify-content-between align-items-center">
-                            <h5 className="mb-0">Lista de Clientes</h5>
-                            <Badge bg="secondary">{customers.length} clientes</Badge>
-                        </Card.Header>
-                        <Card.Body className="p-0">
-                            {loading ? (
-                                <div className="text-center py-5">
-                                    <Spinner animation="border" role="status">
-                                        <span className="visually-hidden">Cargando...</span>
-                                    </Spinner>
-                                    <p className="mt-2 text-muted">Cargando clientes...</p>
-                                </div>
-                            ) : customers.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <p className="text-muted mb-0">
-                                        {search 
-                                            ? 'No se encontraron clientes con ese criterio'
-                                            : 'No hay clientes registrados'
-                                        }
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Vista Desktop: Tabla */}
-                                    <div className="d-none d-md-block">
-                                        <Table responsive hover className="mb-0">
-                                            <thead className="table-light">
-                                                <tr>
-                                                    <th>Nombre</th>
-                                                    <th>Teléfono / Instagram</th>
-                                                    <th>Notificaciones</th>
-                                                    <th>Notas de Salud</th>
-                                                    <th className="text-center">Acciones</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {customers.map((customer) => (
-                                                    <tr key={customer.id}>
-                                                        <td className="fw-semibold">{customer.fullName}</td>
-                                                        <td>
-                                                            <div className="d-flex flex-column">
-                                                                <a href={`tel:${customer.phone}`} className="text-decoration-none small mb-1">
-                                                                    📱 {customer.phone}
-                                                                </a>
-                                                                {customer.instagram && (
-                                                                    <span className="text-primary small">
-                                                                        📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td>{getNotificationBadge(customer.notificationPreference)}</td>
-                                                        <td>{formatHealthNotes(customer.healthNotes)}</td>
-                                                        <td className="text-center">
-                                                            <Button 
-                                                                variant="outline-primary" 
-                                                                size="sm"
-                                                                className="me-2"
-                                                                onClick={() => navigate(`/customers/${customer.id}`)}
-                                                            >
-                                                                👁️ Ver
-                                                            </Button>
-                                                            <Button 
-                                                                variant="outline-secondary" 
-                                                                size="sm"
-                                                                className="me-2"
-                                                                onClick={() => handleEditCustomer(customer)}
-                                                            >
-                                                                ✏️ Editar
-                                                            </Button>
-                                                            <Button 
-                                                                variant="outline-danger" 
-                                                                size="sm"
-                                                                onClick={() => handleDeleteCustomer(customer)}
-                                                            >
-                                                                🗑️
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </Table>
-                                    </div>
-
-                                    {/* Vista Móvil: Cards */}
-                                    <div className="d-md-none">
-                                        {customers.map((customer) => (
-                                            <Card key={customer.id} className="mb-3 mx-3 mt-3">
-                                                <Card.Body>
-                                                    <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
-                                                        <div style={{ minWidth: 0 }}>
-                                                            <h6 className="mb-1 fw-bold text-break">{customer.fullName}</h6>
-                                                            <small className="text-muted d-block text-break">📱 {customer.phone}</small>
-                                                        </div>
-                                                        <div className="flex-shrink-0">
-                                                            {getNotificationBadge(customer.notificationPreference)}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="mb-2">
-                                                        <small className="text-muted d-block">Notas de Salud:</small>
-                                                        <small className="text-break">{formatHealthNotes(customer.healthNotes)}</small>
-                                                    </div>
-                                                     
-                                                    <div className="d-flex gap-2 flex-wrap">
-                                                        <Button 
-                                                            variant="outline-primary" 
-                                                            size="sm"
-                                                            className="flex-fill"
-                                                            onClick={() => navigate(`/customers/${customer.id}`)}
-                                                        >
-                                                            👁️ Ver
-                                                        </Button>
-                                                        <Button 
-                                                            variant="outline-secondary" 
-                                                            size="sm"
-                                                            className="flex-fill"
-                                                            onClick={() => handleEditCustomer(customer)}
-                                                        >
-                                                            ✏️ Editar
-                                                        </Button>
-                                                        <Button 
-                                                            variant="outline-danger" 
-                                                            size="sm"
-                                                            onClick={() => handleDeleteCustomer(customer)}
-                                                        >
-                                                            🗑️
-                                                        </Button>
-                                                    </div>
-                                                </Card.Body>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </>
+                {/* Pestañas de Navegación */}
+                <Nav variant="pills" className="mb-3 mb-md-4 gap-2">
+                    <Nav.Item>
+                        <Nav.Link
+                            active={activeTab === 'directory'}
+                            onClick={() => setActiveTab('directory')}
+                            className="d-flex align-items-center gap-2"
+                        >
+                            <span>👥 Directorio de Clientes</span>
+                            <Badge 
+                                bg={activeTab === 'directory' ? 'light' : 'secondary'} 
+                                text={activeTab === 'directory' ? 'dark' : undefined}
+                            >
+                                {customers.length}
+                            </Badge>
+                        </Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                        <Nav.Link
+                            active={activeTab === 'reactivation'}
+                            onClick={() => setActiveTab('reactivation')}
+                            className="d-flex align-items-center gap-2"
+                        >
+                            <span>✨ Reactivación de Clientas</span>
+                            {inactiveCustomersCount > 0 && (
+                                <Badge 
+                                    bg={activeTab === 'reactivation' ? 'danger' : 'warning'} 
+                                    text={activeTab === 'reactivation' ? 'white' : 'dark'}
+                                >
+                                    {inactiveCustomersCount} inactivas
+                                </Badge>
                             )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                        </Nav.Link>
+                    </Nav.Item>
+                </Nav>
 
-            {/* Modales */}
-            <CustomerFormModal
-                show={showCustomerFormModal}
-                onHide={handleCloseFormModal}
-                customer={selectedCustomer}
-                onSuccess={handleCustomerFormSuccess}
-            />
+                {/* Vista: Directorio de Clientes */}
+                {activeTab === 'directory' && (
+                    <>
+                        {/* Búsqueda */}
+                        <Row className="mb-3 mb-md-4">
+                            <Col md={8} lg={6}>
+                                <Card>
+                                    <Card.Body>
+                                        <Form onSubmit={handleSearch}>
+                                            <Form.Group className="d-flex gap-2">
+                                                <Form.Control
+                                                    type="text"
+                                                    placeholder="Buscar por nombre o teléfono..."
+                                                    value={search}
+                                                    onChange={(e) => setSearch(e.target.value)}
+                                                />
+                                                <Button type="submit" variant="primary" className="text-nowrap">
+                                                    🔍 <span className="d-none d-sm-inline">Buscar</span>
+                                                </Button>
+                                                {search && (
+                                                    <Button 
+                                                        type="button" 
+                                                        variant="outline-secondary"
+                                                        onClick={handleClearSearch}
+                                                    >
+                                                        ✖️
+                                                    </Button>
+                                                )}
+                                            </Form.Group>
+                                        </Form>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        </Row>
 
-            <DeleteCustomerModal
-                show={showDeleteModal}
-                onHide={handleCloseDeleteModal}
-                customer={selectedCustomer}
-                onConfirm={confirmDelete}
-                loading={loading}
-            />
+                        {/* Error */}
+                        {error && (
+                            <Row className="mb-4">
+                                <Col>
+                                    <Alert variant="danger" dismissible>
+                                        {error}
+                                    </Alert>
+                                </Col>
+                            </Row>
+                        )}
+
+                        {/* Tabla de Clientes */}
+                        <Row>
+                            <Col>
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5 className="mb-0">Lista de Clientes</h5>
+                                        <Badge bg="secondary">{customers.length} clientes</Badge>
+                                    </Card.Header>
+                                    <Card.Body className="p-0">
+                                        {loading ? (
+                                            <div className="text-center py-5">
+                                                <Spinner animation="border" role="status">
+                                                    <span className="visually-hidden">Cargando...</span>
+                                                </Spinner>
+                                                <p className="mt-2 text-muted">Cargando clientes...</p>
+                                            </div>
+                                        ) : customers.length === 0 ? (
+                                            <div className="text-center py-5">
+                                                <p className="text-muted mb-0">
+                                                    {search 
+                                                        ? 'No se encontraron clientes con ese criterio'
+                                                        : 'No hay clientes registrados'
+                                                    }
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Vista Desktop: Tabla */}
+                                                <div className="d-none d-md-block">
+                                                    <Table responsive hover className="mb-0">
+                                                        <thead className="table-light">
+                                                            <tr>
+                                                                <th>Nombre</th>
+                                                                <th>Teléfono / Instagram</th>
+                                                                <th>Notificaciones</th>
+                                                                <th>Notas de Salud</th>
+                                                                <th className="text-center">Acciones</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {customers.map((customer) => (
+                                                                <tr key={customer.id}>
+                                                                    <td className="fw-semibold">{customer.fullName}</td>
+                                                                    <td>
+                                                                        <div className="d-flex flex-column">
+                                                                            <a href={`tel:${customer.phone}`} className="text-decoration-none small mb-1">
+                                                                                📱 {customer.phone}
+                                                                            </a>
+                                                                            {customer.instagram && (
+                                                                                <span className="text-primary small">
+                                                                                    📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>{getNotificationBadge(customer.notificationPreference)}</td>
+                                                                    <td>{formatHealthNotes(customer.healthNotes)}</td>
+                                                                    <td className="text-center">
+                                                                        <Button 
+                                                                            variant="outline-primary" 
+                                                                            size="sm"
+                                                                            className="me-2"
+                                                                            onClick={() => navigate(`/customers/${customer.id}`)}
+                                                                        >
+                                                                            👁️ Ver
+                                                                        </Button>
+                                                                        <Button 
+                                                                            variant="outline-secondary" 
+                                                                            size="sm"
+                                                                            className="me-2"
+                                                                            onClick={() => handleEditCustomer(customer)}
+                                                                        >
+                                                                            ✏️ Editar
+                                                                        </Button>
+                                                                        <Button 
+                                                                            variant="outline-danger" 
+                                                                            size="sm"
+                                                                            onClick={() => handleDeleteCustomer(customer)}
+                                                                        >
+                                                                            🗑️
+                                                                        </Button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </Table>
+                                                </div>
+
+                                                {/* Vista Móvil: Cards */}
+                                                <div className="d-md-none">
+                                                    {customers.map((customer) => (
+                                                        <Card key={customer.id} className="mb-3 mx-3 mt-3">
+                                                            <Card.Body>
+                                                                <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                                                                    <div style={{ minWidth: 0 }}>
+                                                                        <h6 className="mb-1 fw-bold text-break">{customer.fullName}</h6>
+                                                                        <small className="text-muted d-block text-break">📱 {customer.phone}</small>
+                                                                    </div>
+                                                                    <div className="flex-shrink-0">
+                                                                        {getNotificationBadge(customer.notificationPreference)}
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div className="mb-2">
+                                                                    <small className="text-muted d-block">Notas de Salud:</small>
+                                                                    <small className="text-break">{formatHealthNotes(customer.healthNotes)}</small>
+                                                                </div>
+                                                                
+                                                                <div className="d-flex gap-2 flex-wrap">
+                                                                    <Button 
+                                                                        variant="outline-primary" 
+                                                                        size="sm"
+                                                                        className="flex-fill"
+                                                                        onClick={() => navigate(`/customers/${customer.id}`)}
+                                                                    >
+                                                                        👁️ Ver
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="outline-secondary" 
+                                                                        size="sm"
+                                                                        className="flex-fill"
+                                                                        onClick={() => handleEditCustomer(customer)}
+                                                                    >
+                                                                        ✏️ Editar
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="outline-danger" 
+                                                                        size="sm"
+                                                                        onClick={() => handleDeleteCustomer(customer)}
+                                                                    >
+                                                                        🗑️
+                                                                    </Button>
+                                                                </div>
+                                                            </Card.Body>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        </Row>
+                    </>
+                )}
+
+                {/* Vista: Reactivación de Clientas */}
+                {activeTab === 'reactivation' && (
+                    <CustomerReactivationTab
+                        customers={customers}
+                        appointments={appointments}
+                        services={services}
+                        loading={loading || appointmentsLoading || servicesLoading}
+                    />
+                )}
+
+                {/* Modales */}
+                <CustomerFormModal
+                    show={showCustomerFormModal}
+                    onHide={handleCloseFormModal}
+                    customer={selectedCustomer}
+                    onSuccess={handleCustomerFormSuccess}
+                />
+
+                <DeleteCustomerModal
+                    show={showDeleteModal}
+                    onHide={handleCloseDeleteModal}
+                    customer={selectedCustomer}
+                    onConfirm={confirmDelete}
+                    loading={loading}
+                />
             </div>
         </DashboardLayout>
     );
