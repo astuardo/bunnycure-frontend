@@ -24,16 +24,7 @@ const normalizePhone = (value?: string): string => {
     return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly;
 };
 
-const normalizeRut = (value?: string): string => {
-    if (!value) return '';
-    const cleaned = value.trim().toUpperCase().replace(/[^0-9K]/g, '');
-    if (cleaned.length < 2) return cleaned;
-
-    const dv = cleaned.slice(-1);
-    const body = cleaned.slice(0, -1);
-    const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `${formattedBody}-${dv}`;
-};
+import { normalizeRut, isValidRutFormat } from '../../utils/rutUtils';
 
 // Esquema de validación
 const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
@@ -53,7 +44,9 @@ const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
         .string()
         .transform((_, originalValue) => normalizeRut(originalValue))
         .required('El RUT es obligatorio')
-        .matches(/^\d{1,2}(?:\.\d{3})+-[0-9K]$/, 'Formato de RUT inválido. Usa 12.345.678-9'),
+        .test('valid-rut', 'Formato de RUT inválido. Ingresa ej: 18.664.589-8 o 18664589-8', (val) => {
+            return isValidRutFormat(val);
+        }),
     
     email: yup
         .string()
@@ -243,7 +236,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                 </Form.Label>
                                 <Form.Control
                                     type="text"
-                                    placeholder="12.345.678-9"
+                                    placeholder="18.664.589-8 o 18664589-8"
                                     {...register('rut')}
                                     isInvalid={!!errors.rut}
                                 />
@@ -251,7 +244,7 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                     {errors.rut?.message}
                                 </Form.Control.Feedback>
                                 <Form.Text className="text-muted">
-                                    Formato: 12.345.678-9 o 1.234.567-K
+                                    Acepta con puntos (18.664.589-8) o sin puntos (18664589-8)
                                 </Form.Text>
                             </Form.Group>
                         </Col>

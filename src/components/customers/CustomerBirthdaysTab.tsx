@@ -14,6 +14,7 @@ import {
 } from '../../utils/birthdayUtils';
 import { BirthdayMessageModal } from './BirthdayMessageModal';
 import { useToast } from '../../hooks/useToast';
+import { matchRutSearch } from '../../utils/rutUtils';
 
 interface CustomerBirthdaysTabProps {
   customers: Customer[];
@@ -70,9 +71,9 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const name = (bc.customer.fullName || '').toLowerCase();
-        const rut = ((bc.customer as any).rut || '').toLowerCase();
         const phone = (bc.customer.phone || '').toLowerCase();
-        return name.includes(q) || rut.includes(q) || phone.includes(q);
+        const rutMatches = matchRutSearch(q, (bc.customer as any).rut);
+        return name.includes(q) || rutMatches || phone.includes(q);
       }
 
       return true;

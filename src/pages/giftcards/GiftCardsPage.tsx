@@ -13,6 +13,7 @@ import { Customer } from '@/types/customer.types';
 import { GiftCard, GiftCardCreateRequest, GiftCardPaymentMethod, GiftCardStatus } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
+import { matchRutSearch } from '@/utils/rutUtils';
 import {
   GIFTCARD_BACKGROUND_TEMPLATE,
   downloadGiftCardPng,
@@ -153,7 +154,7 @@ export default function GiftCardsPage() {
         (c) =>
           c.fullName.toLowerCase().includes(q) ||
           c.phone.includes(q) ||
-          (c.rut && c.rut.toLowerCase().includes(q))
+          matchRutSearch(q, c.rut)
       )
       .slice(0, 20);
   }, [customers, assignSearch]);

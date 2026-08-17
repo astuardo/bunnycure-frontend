@@ -18,6 +18,7 @@ import { useCustomersStore } from '../../stores/customersStore';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { getAppointmentTotal } from '../../utils/appointmentUtils';
+import { matchRutSearch } from '../../utils/rutUtils';
 
 interface SpotlightSearchModalProps {
   show: boolean;
@@ -211,10 +212,10 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
     const matchedCustomers: SpotlightItem[] = customers
       .filter((c) => {
         const name = (c.fullName || '').toLowerCase();
-        const rut = ((c as any).rut || '').toLowerCase();
         const phone = (c.phone || '').toLowerCase();
         const email = (c.email || '').toLowerCase();
-        return name.includes(q) || rut.includes(q) || phone.includes(q) || email.includes(q);
+        const rutMatches = matchRutSearch(q, (c as any).rut);
+        return name.includes(q) || rutMatches || phone.includes(q) || email.includes(q);
       })
       .slice(0, 6)
       .map((c) => ({
@@ -237,7 +238,8 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
         const cName = (apt.customer?.fullName || '').toLowerCase();
         const date = (apt.appointmentDate || '').toLowerCase();
         const sNames = apt.services ? apt.services.map((s) => s.name.toLowerCase()).join(' ') : (apt.service?.name || '').toLowerCase();
-        return cName.includes(q) || date.includes(q) || sNames.includes(q);
+        const rutMatches = matchRutSearch(q, (apt.customer as any)?.rut);
+        return cName.includes(q) || rutMatches || date.includes(q) || sNames.includes(q);
       })
       .slice(0, 5)
       .map((apt) => {

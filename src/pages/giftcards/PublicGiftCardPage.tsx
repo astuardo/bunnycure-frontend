@@ -5,6 +5,7 @@ import { giftcardsApi } from '@/api/giftcards.api';
 import { GiftCard } from '@/types/giftcard.types';
 import { useToast } from '@/hooks/useToast';
 import { isBlankGiftCardBeneficiary } from '@/utils/giftcardRenderer';
+import { normalizeRut } from '@/utils/rutUtils';
 
 export default function PublicGiftCardPage() {
   const { code } = useParams();
@@ -70,7 +71,7 @@ export default function PublicGiftCardPage() {
     }
 
     const finalNote = isBlank
-      ? `[Canje al portador - Cliente: ${clientName.trim()} | Tel: ${clientPhone.trim()} | RUT: ${clientRut.trim() || 'N/A'}] ${note.trim()}`
+      ? `[Canje al portador - Cliente: ${clientName.trim()} | Tel: ${clientPhone.trim()} | RUT: ${clientRut.trim() ? normalizeRut(clientRut) : 'N/A'}] ${note.trim()}`
       : note.trim();
 
     try {
@@ -198,7 +199,7 @@ export default function PublicGiftCardPage() {
                         <Col md={4}>
                           <Form.Label>RUT</Form.Label>
                           <Form.Control
-                            placeholder="Ej: 12.345.678-9"
+                            placeholder="18.664.589-8 o 18664589-8"
                             value={clientRut}
                             onChange={(e) => setClientRut(e.target.value)}
                           />

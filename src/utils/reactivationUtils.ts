@@ -13,6 +13,7 @@ import {
   TemplateTone,
 } from '@/types/reactivation.types';
 import { toWhatsAppPhone } from './giftcardRenderer';
+import { matchRutSearch } from './rutUtils';
 
 export const BUNNYCURE_OFFICIAL_PHONE = '+56988873031';
 export const BUNNYCURE_OFFICIAL_PHONE_DIGITS = '56988873031';
@@ -290,13 +291,13 @@ export function filterInactiveCustomers(
       if (!item.isContactedRecently) return false;
     }
 
-    // 4. Búsqueda por texto (Nombre, Teléfono o RUT)
+    // 4. Búsqueda por texto (Nombre, Teléfono o RUT con/sin puntos)
     if (filters.search.trim()) {
       const q = filters.search.trim().toLowerCase();
       const name = (item.customer.fullName || '').toLowerCase();
       const phone = (item.customer.phone || '').toLowerCase();
-      const rut = (item.customer.rut || '').toLowerCase();
-      if (!name.includes(q) && !phone.includes(q) && !rut.includes(q)) {
+      const rutMatches = matchRutSearch(q, item.customer.rut);
+      if (!name.includes(q) && !phone.includes(q) && !rutMatches) {
         return false;
       }
     }

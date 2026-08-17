@@ -236,7 +236,7 @@ export default function CustomersPage() {
                                             <Form.Group className="d-flex gap-2">
                                                 <Form.Control
                                                     type="text"
-                                                    placeholder="Buscar por nombre o teléfono..."
+                                                    placeholder="Buscar por nombre, RUT (18.664.589-8 o 18664589-8) o teléfono..."
                                                     value={search}
                                                     onChange={(e) => setSearch(e.target.value)}
                                                 />
