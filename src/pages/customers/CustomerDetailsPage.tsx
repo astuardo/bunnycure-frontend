@@ -207,12 +207,51 @@ export default function CustomerDetailsPage() {
                   <p className="mb-0">{customer.phone?.trim() ? customer.phone.trim() : 'No tiene'}</p>
                 </div>
                 <div className="mb-3">
+                  <strong>🚨 Teléfono de Emergencia:</strong>
+                  <p className="mb-0">{customer.emergencyPhone?.trim() ? customer.emergencyPhone.trim() : 'No tiene'}</p>
+                </div>
+                <div className="mb-3">
+                  <strong>📸 Instagram:</strong>
+                  <div>
+                    {customer.instagram?.trim() ? (
+                      <a
+                        href={`https://instagram.com/${customer.instagram.replace(/^@/, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-decoration-none fw-semibold text-primary"
+                      >
+                        @{customer.instagram.replace(/^@/, '')}
+                      </a>
+                    ) : (
+                      <p className="mb-0">No tiene</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <strong>🚻 Género:</strong>
+                  <p className="mb-0">{customer.gender?.trim() ? customer.gender.trim() : 'No especificado'}</p>
+                </div>
+                <div className="mb-3">
                   <strong>🎂 Fecha de Nacimiento:</strong>
                   <p className="mb-0">{customer.birthDate ? formatDateSafe(customer.birthDate) : 'No tiene'}</p>
                 </div>
                 <div className="mb-3">
                   <strong>📅 Cliente desde:</strong>
                   <p className="mb-0">{customer.createdAt ? formatDateSafe(customer.createdAt) : 'No tiene'}</p>
+                </div>
+                <div className="mb-3">
+                  <strong>🔔 Notificaciones:</strong>
+                  <p className="mb-0">
+                    <Badge bg="info" className="text-dark">
+                      {customer.notificationPreference || 'WHATSAPP'}
+                    </Badge>
+                  </p>
+                </div>
+                <div className="mb-0">
+                  <strong>🩺 Notas de Salud / Alergias:</strong>
+                  <p className="mb-0 text-muted small">
+                    {customer.healthNotes?.trim() ? customer.healthNotes.trim() : 'Sin observaciones de salud registradas'}
+                  </p>
                 </div>
               </Card.Body>
             </Card>

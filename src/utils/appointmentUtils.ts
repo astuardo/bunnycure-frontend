@@ -45,3 +45,39 @@ export function extractCancellationReason(apt: Appointment): string {
   }
   return 'Sin especificar';
 }
+
+/**
+ * Enlace oficial y constructor de mensajes de valoración en Google Reviews
+ */
+export const GOOGLE_REVIEWS_URL = 'https://g.page/r/CfcuMpxkvLJ3EBM/review';
+
+export function buildGoogleReviewMessage(customerName?: string, serviceName?: string): string {
+  const firstName = (customerName || '').trim().split(/\s+/)[0] || 'amiga';
+  const service = serviceName || 'tu atención de manicure';
+
+  return (
+    `¡Hola ${firstName}! 🌸 Muchas gracias por visitarnos hoy en BunnyCure para tu ${service} ✨\n\n` +
+    `Nos encantaría saber qué te pareció tu atención y tus uñitas. ¿Nos regalarías 1 minuto para dejarnos tu opinión en Google? 💖\n\n` +
+    `⭐ Dejar reseña aquí: ${GOOGLE_REVIEWS_URL}\n\n` +
+    `¡Tu valoración nos ayuda muchísimo a seguir mejorando y creciendo! 🥰`
+  );
+}
+
+export function buildGoogleReviewWhatsAppUrl(phone?: string, customerName?: string, serviceName?: string): string {
+  const digits = (phone || '').replace(/\D/g, '');
+  let waPhone = digits;
+  if (digits.startsWith('56')) {
+    waPhone = digits;
+  } else if (digits.length === 9 && digits.startsWith('9')) {
+    waPhone = `56${digits}`;
+  }
+
+  const message = buildGoogleReviewMessage(customerName, serviceName);
+  const encoded = encodeURIComponent(message);
+
+  if (!waPhone) {
+    return `https://wa.me/?text=${encoded}`;
+  }
+  return `https://wa.me/${waPhone}?text=${encoded}`;
+}
+

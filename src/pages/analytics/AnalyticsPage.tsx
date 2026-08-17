@@ -348,6 +348,68 @@ export default function AnalyticsPage() {
           </Col>
         </Row>
 
+        {/* Banner de Proyecciones & Insights Predictivos de Demanda */}
+        {(() => {
+          const peakWeekday = [...appointmentsByWeekday].sort((a, b) => b.completedCount - a.completedCount)[0];
+          const peakSlot = [...appointmentsByHourSlot].sort((a, b) => b.completedCount - a.completedCount)[0];
+          const totalAtendidas = metrics.totalCompleted;
+          const effectiveness = metrics.totalAppointments > 0 ? Math.round((totalAtendidas / metrics.totalAppointments) * 100) : 0;
+
+          return (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #fff9f6 0%, #fdf0ec 100%)',
+                border: '1px solid #f2cfc2',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                boxShadow: '0 2px 8px rgba(180, 120, 100, 0.08)',
+              }}
+            >
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <Sparkles size={18} className="text-warning" />
+                <span className="fw-bold" style={{ color: TEXT_DARK, fontSize: '15px' }}>
+                  🔮 Insights &amp; Proyecciones de Demanda del Salón
+                </span>
+                <Badge bg="success" className="ms-auto" style={{ fontSize: '11px' }}>
+                  {effectiveness}% Efectividad
+                </Badge>
+              </div>
+              <Row className="g-2 small">
+                <Col md={4}>
+                  <div className="p-2 rounded bg-white border border-peach">
+                    <strong>📅 Día Pico de Atención:</strong>{' '}
+                    <span className="text-primary fw-semibold">
+                      {peakWeekday && peakWeekday.completedCount > 0
+                        ? `${peakWeekday.dayName} (${peakWeekday.completedCount} citas - ${peakWeekday.percentage}%)`
+                        : 'Sin datos suficientes'}
+                    </span>
+                  </div>
+                </Col>
+                <Col md={4}>
+                  <div className="p-2 rounded bg-white border border-peach">
+                    <strong>⏰ Franja Horaria de Mayor Flujo:</strong>{' '}
+                    <span className="text-success fw-semibold">
+                      {peakSlot && peakSlot.completedCount > 0
+                        ? `${peakSlot.slotName} ${peakSlot.timeRange} (${peakSlot.percentage}%)`
+                        : 'Sin datos suficientes'}
+                    </span>
+                  </div>
+                </Col>
+                <Col md={4}>
+                  <div className="p-2 rounded bg-white border border-peach">
+                    <strong>🎯 Optimización de Turnos:</strong>{' '}
+                    <span className="text-dark">
+                      {peakWeekday && peakWeekday.completedCount > 0
+                        ? `Reforzar disponibilidad los días ${peakWeekday.dayName} durante la franja de la ${peakSlot?.slotName?.toLowerCase() || 'tarde'}.`
+                        : 'Continúa registrando citas completadas para obtener sugerencias automáticas.'}
+                    </span>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+          );
+        })()}
+
         {/* Fila 1 de Gráficos: Línea de tiempo & Distribución de Estados */}
         <Row className="g-3">
           {/* Citas por Día */}

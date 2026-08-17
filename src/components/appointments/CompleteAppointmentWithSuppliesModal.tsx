@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Table, Form, Badge, Alert, Spinner, Row, Col } from 'react-bootstrap';
+import { Modal, Button, Table, Form, Alert, Spinner, Row, Col, Badge } from 'react-bootstrap';
 import { FiCheckCircle, FiAlertTriangle, FiPackage, FiFileText } from 'react-icons/fi';
+import { FaStar, FaWhatsapp } from 'react-icons/fa';
 import { inventoryApi } from '@/api/inventory.api';
 import { appointmentsApi } from '@/api/appointments.api';
 import { AppointmentSuppliesPreview } from '@/types/inventory.types';
+import { Appointment } from '@/types/appointment.types';
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
+import { buildGoogleReviewWhatsAppUrl } from '@/utils/appointmentUtils';
 
 interface Props {
   show: boolean;
@@ -33,8 +36,10 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [preview, setPreview] = useState<AppointmentSuppliesPreview | null>(null);
+  const [appointmentData, setAppointmentData] = useState<Appointment | null>(null);
   const [items, setItems] = useState<EditableItem[]>([]);
   const [generateInvoice, setGenerateInvoice] = useState(true);
+  const [sendGoogleReview, setSendGoogleReview] = useState(true);
   const [deductSupplies, setDeductSupplies] = useState(true);
   const [invoiceQuotaInfo, setInvoiceQuotaInfo] = useState<string | null>(null);
 
@@ -44,12 +49,14 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
     const loadData = async () => {
       setLoading(true);
       try {
-        const [previewData, quota] = await Promise.all([
+        const [previewData, quota, aptData] = await Promise.all([
           inventoryApi.getAppointmentSuppliesPreview(appointmentId),
           appointmentsApi.getInvoiceQuota().catch(() => null),
+          appointmentsApi.getById(appointmentId).catch(() => null),
         ]);
 
         setPreview(previewData);
+        setAppointmentData(aptData);
         setItems(
           previewData.supplies.map((s) => ({
             productId: s.productId,
@@ -104,6 +111,16 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
           ? '✅ Cita completada y stock descontado correctamente'
           : '✅ Cita marcada como completada'
       );
+
+      // Disparo de Google Reviews si está habilitado
+      if (sendGoogleReview && appointmentData?.customer) {
+        const phone = appointmentData.customer.phone;
+        const serviceName = preview?.serviceNames.join(' + ') || appointmentData.service?.name;
+        const url = buildGoogleReviewWhatsAppUrl(phone, appointmentData.customer.fullName, serviceName);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        toast.info(`Abriendo WhatsApp para solicitar reseña a ${appointmentData.customer.fullName}`);
+      }
+
       onCompleted();
       onHide();
     } catch (err: unknown) {
@@ -198,62 +215,71 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
                         <th>Insumo</th>
                         <th style={{ width: '130px' }}>Cantidad Usada</th>
                         <th>Stock Actual</th>
-                        <th>Stock Final</th>
-                        <th>Costo Est.</th>
+                        <th>Stock Resultante</th>
+                        <th className="text-end">Costo Est.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {items.map((item) => {
-                        const finalStock = item.currentStock - item.quantity;
-                        const isNegative = finalStock < 0;
+                        const stockAfter = item.currentStock - item.quantity;
+                        const isItemDeficit = stockAfter < 0;
 
                         return (
                           <tr key={item.productId}>
-                            <td className="fw-semibold text-dark">{item.productName}</td>
                             <td>
-                              <div className="d-flex align-items-center gap-1">
-                                <Form.Control
-                                  type="number"
-                                  size="sm"
-                                  step="0.01"
-                                  min="0"
-                                  disabled={!deductSupplies}
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    handleQuantityChange(item.productId, parseFloat(e.target.value) || 0)
-                                  }
-                                  style={{ width: '75px', fontWeight: 600 }}
-                                />
-                                <span className="text-muted small">{item.consumptionUnit}</span>
-                              </div>
+                              <div className="fw-semibold text-dark">{item.productName}</div>
+                              <small className="text-muted">{item.consumptionUnit}</small>
                             </td>
                             <td>
-                              <span className="text-muted">
-                                {item.currentStock} {item.consumptionUnit}
-                              </span>
-                            </td>
-                            <td>
-                              <Badge
-                                bg={isNegative ? 'danger' : 'success'}
-                                style={{ fontSize: '0.75rem', fontWeight: 600 }}
-                              >
-                                {finalStock.toFixed(1)} {item.consumptionUnit}
-                              </Badge>
+                              <Form.Control
+                                type="number"
+                                size="sm"
+                                min={0}
+                                step="any"
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  handleQuantityChange(item.productId, parseFloat(e.target.value) || 0)
+                                }
+                                disabled={!deductSupplies}
+                                style={{ width: '100px' }}
+                              />
                             </td>
                             <td className="text-muted">
-                              {formatCurrencyCLP(Math.round(item.quantity * item.unitConsumptionCost))}
+                              {item.currentStock.toFixed(1)} {item.consumptionUnit}
+                            </td>
+                            <td>
+                              <span
+                                className={`fw-semibold ${
+                                  isItemDeficit && deductSupplies ? 'text-danger' : 'text-success'
+                                }`}
+                              >
+                                {deductSupplies ? stockAfter.toFixed(1) : item.currentStock.toFixed(1)}{' '}
+                                {item.consumptionUnit}
+                              </span>
+                              {isItemDeficit && deductSupplies && (
+                                <Badge bg="danger" className="ms-1 small">
+                                  Déficit
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="text-end text-muted">
+                              {formatCurrencyCLP(item.quantity * item.unitConsumptionCost)}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
+                    <tfoot className="table-light">
+                      <tr>
+                        <td colSpan={4} className="fw-bold text-end">
+                          Costo Total de Materiales:
+                        </td>
+                        <td className="text-end fw-bold text-primary">
+                          {formatCurrencyCLP(totalCost)}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </Table>
-                </div>
-
-                <div className="d-flex justify-content-end mb-3">
-                  <small className="text-muted fw-semibold">
-                    Costo Total Estimado de Insumos: <span className="text-dark">{formatCurrencyCLP(Math.round(totalCost))}</span>
-                  </small>
                 </div>
               </>
             )}
@@ -265,6 +291,7 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
                 border: '1px solid #e2e8f0',
                 borderRadius: '8px',
                 padding: '10px 14px',
+                marginBottom: '10px',
               }}
             >
               <Form.Check
@@ -281,6 +308,33 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
               {invoiceQuotaInfo && (
                 <small className="text-muted d-block mt-1 ps-4">{invoiceQuotaInfo}</small>
               )}
+            </div>
+
+            {/* Opción de Solicitud Google Reviews */}
+            <div
+              style={{
+                background: '#fffdfb',
+                border: '1px solid #fed7aa',
+                borderRadius: '8px',
+                padding: '10px 14px',
+              }}
+            >
+              <Form.Check
+                type="checkbox"
+                id="send-google-review-checkbox"
+                label={
+                  <span className="d-flex align-items-center gap-2 small fw-semibold text-dark">
+                    <FaStar className="text-warning" />
+                    <FaWhatsapp className="text-success" />
+                    Enviar solicitud de valoración en Google Reviews vía WhatsApp
+                  </span>
+                }
+                checked={sendGoogleReview}
+                onChange={(e) => setSendGoogleReview(e.target.checked)}
+              />
+              <small className="text-muted d-block mt-1 ps-4">
+                Abre WhatsApp automáticamente con la plantilla oficial y el enlace a Google Reviews (<code>https://g.page/r/CfcuMpxkvLJ3EBM/review</code>).
+              </small>
             </div>
           </>
         )}
