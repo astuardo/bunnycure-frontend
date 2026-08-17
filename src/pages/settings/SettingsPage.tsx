@@ -28,6 +28,10 @@ import {
   DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
 } from '../../types/unavailability.types';
 import { CALENDAR_DISPLAY_STORAGE_KEY, DEFAULT_CALENDAR_DISPLAY_CONFIG } from '@/utils/calendarDisplay';
+import {
+  getPublicBookingEnabled,
+  setPublicBookingEnabled,
+} from '../../utils/bookingSettingsUtils';
 
 interface BusinessSettings {
   businessName: string;
@@ -125,7 +129,18 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [publicBookingEnabled, setPublicBookingEnabledState] = useState<boolean>(getPublicBookingEnabled());
   const { permission, isSupported, requestPermission, sendTestNotification } = useNotificationPermission();
+
+  const handleTogglePublicBooking = async (checked: boolean) => {
+    setPublicBookingEnabledState(checked);
+    await setPublicBookingEnabled(checked);
+    if (checked) {
+      toast.success('✅ Portal público de reservas (/reservar) habilitado');
+    } else {
+      toast.info('⏸️ Portal público de reservas (/reservar) pausado');
+    }
+  };
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -536,6 +551,23 @@ export default function SettingsPage() {
                   <FaWhatsapp className="me-2" />
                   Portal de Reservas y WhatsApp
                 </h6>
+
+                <Form.Group className="mb-3 p-3 rounded border bg-light-subtle">
+                  <Form.Check
+                    type="switch"
+                    id="public-booking-master-switch"
+                    label={
+                      <span className="fw-semibold text-primary">
+                        Habilitar Portal Público de Auto-Agendamiento (/reservar)
+                      </span>
+                    }
+                    checked={publicBookingEnabled}
+                    onChange={(e) => handleTogglePublicBooking(e.target.checked)}
+                  />
+                  <Form.Text className="text-muted d-block mt-1">
+                    Permite que tus clientas agenden citas de forma autónoma desde redes sociales. Si se desactiva, mostrará una pantalla de pausa con botón a tu WhatsApp.
+                  </Form.Text>
+                </Form.Group>
 
                 <Form.Group className="mb-3">
                   <Form.Check

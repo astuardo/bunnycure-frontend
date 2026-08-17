@@ -22,6 +22,7 @@ const AnalyticsPage = lazy(() => import('../pages/analytics/AnalyticsPage'));
 const GiftCardsPage = lazy(() => import('../pages/giftcards/GiftCardsPage'));
 const GenerateGiftCardPage = lazy(() => import('../pages/giftcards/GenerateGiftCardPage'));
 const PublicGiftCardPage = lazy(() => import('../pages/giftcards/PublicGiftCardPage'));
+const PublicBookingPage = lazy(() => import('../pages/booking-requests/PublicBookingPage'));
 const InstallPage = lazy(() => import('../pages/InstallPage'));
 const TestApiPage = lazy(() => import('../pages/TestApiPage'));
 
@@ -81,6 +82,7 @@ function RoutesWithTracking() {
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/test" element={<TestApiPage />} />
                 <Route path="/giftcards/public/:code" element={<PublicGiftCardPage />} />
+                <Route path="/reservar" element={<PublicBookingPage />} />
 
                 {/* Rutas Protegidas */}
                 <Route

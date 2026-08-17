@@ -6,6 +6,10 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import { useBookingRequestsStore } from '../../stores/bookingRequestsStore';
 import { BookingRequest, BookingRequestStatus } from '../../types/booking.types';
 import { useToast } from '../../hooks/useToast';
+import {
+  getPublicBookingEnabled,
+  setPublicBookingEnabled,
+} from '../../utils/bookingSettingsUtils';
 import './BookingRequestsPage.css';
 
 const BookingRequestsPage: React.FC = () => {
@@ -23,6 +27,17 @@ const BookingRequestsPage: React.FC = () => {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BookingRequest | null>(null);
+  const [bookingEnabled, setBookingEnabled] = useState<boolean>(getPublicBookingEnabled());
+
+  const handleToggleBooking = async (checked: boolean) => {
+    setBookingEnabled(checked);
+    await setPublicBookingEnabled(checked);
+    if (checked) {
+      toast.success('✅ Agendamiento online (/reservar) habilitado');
+    } else {
+      toast.info('⏸️ Agendamiento online (/reservar) pausado');
+    }
+  };
   
   // Form states for approve modal
   const [appointmentDate, setAppointmentDate] = useState('');
@@ -162,10 +177,40 @@ const BookingRequestsPage: React.FC = () => {
   return (
     <DashboardLayout>
       <Container fluid className="bunny-page booking-requests-page">
-        <Row className="mb-4">
-          <Col>
+        <Row className="mb-4 align-items-center">
+          <Col xs={12} md={6}>
             <h2>Solicitudes de Citas</h2>
-            <p className="text-muted">Gestiona las solicitudes de citas recibidas</p>
+            <p className="text-muted mb-0">Gestiona las solicitudes de citas recibidas desde el portal público</p>
+          </Col>
+          <Col xs={12} md={6} className="d-flex justify-content-md-end align-items-center gap-3 mt-3 mt-md-0 flex-wrap">
+            <div className="d-flex align-items-center gap-2 p-2 px-3 rounded shadow-sm border bg-white">
+              <Form.Check
+                type="switch"
+                id="booking-toggle-switch"
+                label={
+                  <span className="fw-semibold" style={{ fontSize: '13.5px' }}>
+                    Agendamiento Online:{' '}
+                    <span className={bookingEnabled ? 'text-success' : 'text-danger'}>
+                      {bookingEnabled ? 'ACTIVO' : 'PAUSADO'}
+                    </span>
+                  </span>
+                }
+                checked={bookingEnabled}
+                onChange={(e) => handleToggleBooking(e.target.checked)}
+              />
+            </div>
+
+            <Button
+              as="a"
+              href="/reservar"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outline-secondary"
+              size="sm"
+              style={{ borderRadius: '8px' }}
+            >
+              🌐 Ver Portal (/reservar)
+            </Button>
           </Col>
         </Row>
 

@@ -7,6 +7,7 @@ import { appointmentsApi } from '@/api/appointments.api';
 import { AppointmentSuppliesPreview } from '@/types/inventory.types';
 import { Appointment } from '@/types/appointment.types';
 import { useToast } from '@/hooks/useToast';
+import { useCustomersStore } from '@/stores/customersStore';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { buildGoogleReviewWhatsAppUrl } from '@/utils/appointmentUtils';
 
@@ -111,6 +112,19 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
           ? '✅ Cita completada y stock descontado correctamente'
           : '✅ Cita marcada como completada'
       );
+
+      // Sincronización y Notificación de Fidelización
+      if (appointmentData?.customer) {
+        const nextStamps = (appointmentData.customer.loyaltyStamps || 0) + 1;
+        if (nextStamps > 0 && nextStamps % 5 === 0) {
+          toast.success(
+            `🎉 ¡${appointmentData.customer.fullName} ha completado ${nextStamps} visitas y tiene un beneficio de fidelización disponible!`,
+            { autoClose: 6000 }
+          );
+        }
+        // Refrescar lista de clientes en segundo plano
+        useCustomersStore.getState().fetchCustomers().catch(() => {});
+      }
 
       // Disparo de Google Reviews si está habilitado
       if (sendGoogleReview && appointmentData?.customer) {
