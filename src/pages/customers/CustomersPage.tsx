@@ -5,17 +5,20 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
 import DeleteCustomerModal from '../../components/customers/DeleteCustomerModal';
 import CustomerReactivationTab from '../../components/customers/CustomerReactivationTab';
+import CustomerBirthdaysTab from '../../components/customers/CustomerBirthdaysTab';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Customer, NotificationPreference } from '../../types/customer.types';
 import { computeInactiveCustomers } from '../../utils/reactivationUtils';
+import { computeBirthdayCustomers } from '../../utils/birthdayUtils';
 
 export default function CustomersPage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [activeTab, setActiveTab] = useState<'directory' | 'reactivation'>('directory');
+    const initialTab = (searchParams.get('tab') as 'directory' | 'reactivation' | 'birthdays') || 'directory';
+    const [activeTab, setActiveTab] = useState<'directory' | 'reactivation' | 'birthdays'>(initialTab);
     const [search, setSearch] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -26,6 +29,13 @@ export default function CustomersPage() {
     const { services, isLoading: servicesLoading, fetchServices } = useServicesStore();
     const { isAuthenticated, user } = useAuthStore();
     const isQuickCreateMode = searchParams.get('create') === '1';
+
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam === 'birthdays' || tabParam === 'reactivation' || tabParam === 'directory') {
+            setActiveTab(tabParam);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         // Solo fetch si está autenticado y tiene usuario
@@ -45,6 +55,11 @@ export default function CustomersPage() {
     const inactiveCustomersCount = useMemo(() => {
         return computeInactiveCustomers(customers, appointments).length;
     }, [customers, appointments]);
+
+    // Calcular cumpleañeras del mes para la insignia del tab
+    const { metrics: birthdayMetrics } = useMemo(() => {
+        return computeBirthdayCustomers(customers);
+    }, [customers]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -147,11 +162,14 @@ export default function CustomersPage() {
                 </Row>
 
                 {/* Pestañas de Navegación */}
-                <Nav variant="pills" className="mb-3 mb-md-4 gap-2">
+                <Nav variant="pills" className="mb-3 mb-md-4 gap-2 flex-wrap">
                     <Nav.Item>
                         <Nav.Link
                             active={activeTab === 'directory'}
-                            onClick={() => setActiveTab('directory')}
+                            onClick={() => {
+                                setActiveTab('directory');
+                                setSearchParams({});
+                            }}
                             className="d-flex align-items-center gap-2"
                         >
                             <span>👥 Directorio de Clientes</span>
@@ -165,8 +183,32 @@ export default function CustomersPage() {
                     </Nav.Item>
                     <Nav.Item>
                         <Nav.Link
+                            active={activeTab === 'birthdays'}
+                            onClick={() => {
+                                setActiveTab('birthdays');
+                                setSearchParams({ tab: 'birthdays' });
+                            }}
+                            className="d-flex align-items-center gap-2"
+                        >
+                            <span>🎂 Cumpleañeras del Mes</span>
+                            {birthdayMetrics.totalThisMonth > 0 && (
+                                <Badge 
+                                    bg={activeTab === 'birthdays' ? 'danger' : 'light'} 
+                                    text={activeTab === 'birthdays' ? 'white' : 'dark'}
+                                    style={activeTab !== 'birthdays' ? { border: '1px solid #eed0c5' } : {}}
+                                >
+                                    {birthdayMetrics.totalThisMonth} este mes
+                                </Badge>
+                            )}
+                        </Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                        <Nav.Link
                             active={activeTab === 'reactivation'}
-                            onClick={() => setActiveTab('reactivation')}
+                            onClick={() => {
+                                setActiveTab('reactivation');
+                                setSearchParams({ tab: 'reactivation' });
+                            }}
                             className="d-flex align-items-center gap-2"
                         >
                             <span>✨ Reactivación de Clientas</span>
@@ -372,6 +414,14 @@ export default function CustomersPage() {
                             </Col>
                         </Row>
                     </>
+                )}
+
+                {/* Vista: Cumpleañeras del Mes */}
+                {activeTab === 'birthdays' && (
+                    <CustomerBirthdaysTab
+                        customers={customers}
+                        loading={loading}
+                    />
                 )}
 
                 {/* Vista: Reactivación de Clientas */}

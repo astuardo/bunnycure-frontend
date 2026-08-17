@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { ReactNode } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { Offcanvas } from 'react-bootstrap';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import { SpotlightSearchModal } from './SpotlightSearchModal';
+import { CashClosingModal } from '../finances/CashClosingModal';
 import './DashboardLayout.css';
 
 interface DashboardLayoutProps {
@@ -11,13 +12,28 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [showSidebar, setShowSidebar] = useState(false);
+    const [showSpotlight, setShowSpotlight] = useState(false);
+    const [showCashClosing, setShowCashClosing] = useState(false);
 
     const handleCloseSidebar = () => setShowSidebar(false);
     const handleShowSidebar  = () => setShowSidebar(true);
 
+    // Escuchador global para abrir el Spotlight con Cmd+K o Ctrl+K
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                setShowSpotlight((prev) => !prev);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     return (
         <div className="dashboard-layout">
-            <Navbar />
+            <Navbar onOpenSpotlight={() => setShowSpotlight(true)} />
 
             {/* ── Botón hamburguesa móvil — estilo BunnyCure ── */}
             <div
@@ -31,7 +47,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                     onClick={handleShowSidebar}
                     style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
                         background: '#fff',
                         border: '1px solid #f0d8d0',
                         borderRadius: '10px',
@@ -82,6 +100,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     {children}
                 </main>
             </div>
+
+            {/* Buscador Universal Spotlight (Cmd+K / Ctrl+K) */}
+            <SpotlightSearchModal
+                show={showSpotlight}
+                onHide={() => setShowSpotlight(false)}
+                onOpenCashClosing={() => setShowCashClosing(true)}
+            />
+
+            {/* Cierre de Caja Modal Global */}
+            <CashClosingModal
+                show={showCashClosing}
+                onHide={() => setShowCashClosing(false)}
+            />
         </div>
     );
 }

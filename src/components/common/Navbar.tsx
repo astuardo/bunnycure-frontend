@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
+import { FiSearch } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 
-export default function Navbar() {
+interface NavbarProps {
+    onOpenSpotlight?: () => void;
+}
+
+export default function Navbar({ onOpenSpotlight }: NavbarProps) {
     const { user, logout } = useAuth();
     const [open, setOpen] = useState(false);
     const dropRef = useRef<HTMLDivElement>(null);
@@ -32,17 +37,62 @@ export default function Navbar() {
             padding: '0 16px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             height: '56px',
+            gap: '12px',
         }}>
             {/* Brand */}
-            <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+            <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', flexShrink: 0 }}>
                 <span style={{ fontSize: '22px' }}>🐰</span>
                 <span style={{ fontWeight: 700, fontSize: '18px', color: '#5c3d2e', letterSpacing: '-0.3px' }}>
                     BunnyCure
                 </span>
             </a>
 
+            {/* Buscador Universal Spotlight (Ctrl+K) */}
+            {onOpenSpotlight && (
+                <button
+                    onClick={onOpenSpotlight}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: '#fdf6f3',
+                        border: '1px solid #eed0c5',
+                        borderRadius: '10px',
+                        padding: '6px 14px',
+                        cursor: 'pointer',
+                        color: '#8c6052',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        transition: 'all 0.15s ease',
+                        maxWidth: '360px',
+                        flex: '1 1 auto',
+                        justifyContent: 'space-between',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#fce8e4')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#fdf6f3')}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FiSearch style={{ color: '#8c2a3e', fontSize: '15px' }} />
+                        <span className="d-none d-sm-inline">Buscar clientas, citas...</span>
+                        <span className="d-sm-none">Buscar...</span>
+                    </div>
+                    <kbd
+                        style={{
+                            background: '#fff',
+                            color: '#8c2a3e',
+                            border: '1px solid #eed0c5',
+                            fontSize: '10.5px',
+                            padding: '2px 6px',
+                            borderRadius: '5px',
+                        }}
+                    >
+                        Ctrl+K
+                    </kbd>
+                </button>
+            )}
+
             {/* User dropdown */}
-            <div ref={dropRef} style={{ position: 'relative' }}>
+            <div ref={dropRef} style={{ position: 'relative', flexShrink: 0 }}>
                 <button
                     onClick={() => setOpen(o => !o)}
                     style={{
