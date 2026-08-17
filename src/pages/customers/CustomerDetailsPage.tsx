@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner, Nav } from 'react-bootstrap';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import StampCard from '../../components/customers/StampCard';
+import NailGalleryTab from '../../components/customers/nailProfile/NailGalleryTab';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
@@ -12,7 +13,12 @@ import { useToast } from '../../hooks/useToast';
 import { Customer } from '../../types/customer.types';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { GiftCard } from '../../types/giftcard.types';
-import { downloadGiftCardPng, sendGiftCardWhatsApp, toWhatsAppPhone } from '../../utils/giftcardRenderer';
+import {
+  downloadGiftCardPng,
+  printOrDownloadGiftCardPdf,
+  sendGiftCardWhatsApp,
+  toWhatsAppPhone,
+} from '../../utils/giftcardRenderer';
 import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
 import { customersApi } from '../../api/customers.api';
 
@@ -35,6 +41,7 @@ export default function CustomerDetailsPage() {
   const [directCustomerLoading, setDirectCustomerLoading] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [editingNotes, setEditingNotes] = useState(false);
+  const [activeTab, setActiveTab] = useState<'appointments' | 'gallery' | 'giftcards'>('appointments');
 
   const parseDateSafe = (value: unknown): Date | null => {
     if (!value) return null;
@@ -334,198 +341,296 @@ export default function CustomerDetailsPage() {
           </Col>
 
           <Col md={8}>
-            <StampCard 
-              customerId={customer.id}
-              loyaltyStamps={customer.loyaltyStamps} 
-              totalCompletedVisits={customer.totalCompletedVisits} 
-              currentRewardIndex={customer.currentRewardIndex}
-              onAdjust={handleLoyaltyAdjust}
-            />
-
-            <Card className="mb-4">
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center gap-2">
-                  <h5 className="mb-0">🎁 GiftCards del Cliente</h5>
-                  <Badge bg={activeCustomerGiftCards.length > 0 ? 'success' : 'secondary'}>
-                    {activeCustomerGiftCards.length} activa{activeCustomerGiftCards.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline-primary"
-                  onClick={() => navigate('/giftcards/generar')}
+            {/* Pestañas de Navegación de la Ficha */}
+            <Nav variant="pills" className="mb-3 gap-2 flex-wrap">
+              <Nav.Item>
+                <Nav.Link
+                  active={activeTab === 'appointments'}
+                  onClick={() => setActiveTab('appointments')}
+                  className="d-flex align-items-center gap-2"
+                  style={{
+                    borderRadius: '10px',
+                    fontWeight: 600,
+                    background: activeTab === 'appointments' ? '#8c2a3e' : '#fff',
+                    color: activeTab === 'appointments' ? '#fff' : '#5c3d2e',
+                    border: '1px solid #eed0c5',
+                  }}
                 >
-                  + Emitir GiftCard
-                </Button>
-              </Card.Header>
-              <Card.Body>
-                {giftCardsLoading ? (
-                  <div className="text-center py-3 text-muted">Cargando GiftCards...</div>
-                ) : customerGiftCards.length === 0 ? (
-                  <div className="text-muted small py-2">
-                    Esta clienta no tiene GiftCards asociadas (como beneficiaria ni compradora).
-                  </div>
-                ) : (
-                  <div className="table-responsive">
-                    <Table hover size="sm" className="align-middle mb-0">
-                      <thead>
-                        <tr>
-                          <th>Código</th>
-                          <th>Rol</th>
-                          <th>Estado</th>
-                          <th>Servicios Disponibles</th>
-                          <th>Vence</th>
-                          <th className="text-end">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {customerGiftCards.map((gc) => {
-                          const isBeneficiary = toWhatsAppPhone(gc.beneficiaryPhone) === toWhatsAppPhone(customer.phone);
-                          const remainingServices = gc.items.map(
-                            (item) => `${item.serviceName} (${item.remainingQuantity}/${item.quantity})`
-                          ).join(', ');
-                          const publicUrl = normalizeGiftCardPublicUrl(gc.publicUrl, gc.code);
+                  <span>📋 Historial & Citas</span>
+                  <Badge bg={activeTab === 'appointments' ? 'light' : 'secondary'} text={activeTab === 'appointments' ? 'dark' : undefined}>
+                    {customerAppointments.length}
+                  </Badge>
+                </Nav.Link>
+              </Nav.Item>
 
-                          return (
-                            <tr key={gc.id}>
-                              <td>
-                                <strong>{gc.code}</strong>
-                                <br />
-                                <small className="text-muted">${gc.totalAmount.toLocaleString('es-CL')}</small>
-                              </td>
-                              <td>
-                                <Badge bg={isBeneficiary ? 'primary' : 'info'}>
-                                  {isBeneficiary ? 'Beneficiaria' : 'Compradora'}
-                                </Badge>
-                              </td>
-                              <td>
-                                <Badge bg={gc.status === 'ACTIVE' ? 'success' : gc.status === 'PARTIAL' ? 'warning' : 'secondary'}>
-                                  {gc.status}
-                                </Badge>
-                              </td>
-                              <td>
-                                <small>{remainingServices || 'Sin servicios'}</small>
-                              </td>
-                              <td>
-                                <small>{gc.expiresOn}</small>
-                              </td>
-                              <td className="text-end">
-                                <div className="d-flex justify-content-end gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="outline-secondary"
-                                    title="Ver en Gestión"
-                                    onClick={() => navigate(`/giftcards?search=${encodeURIComponent(gc.code)}`)}
-                                  >
-                                    🔍
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline-success"
-                                    title="Enviar por WhatsApp"
-                                    onClick={() =>
-                                      sendGiftCardWhatsApp({
-                                        data: {
-                                          beneficiaryName: gc.beneficiaryName,
-                                          code: gc.code,
-                                          pin: gc.plainPin || 'No disponible',
-                                          expiresOn: gc.expiresOn,
-                                          publicUrl,
-                                        },
-                                        beneficiaryPhone: gc.beneficiaryPhone,
-                                        onError: (msg) => toast.error(msg),
-                                      })
-                                    }
-                                  >
-                                    📱
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline-primary"
-                                    title="Descargar PNG"
-                                    onClick={async () => {
-                                      try {
-                                        await downloadGiftCardPng({
-                                          beneficiaryName: gc.beneficiaryName,
-                                          code: gc.code,
-                                          pin: gc.plainPin || 'No disponible',
-                                          expiresOn: gc.expiresOn,
-                                          publicUrl,
-                                        });
-                                        toast.success('PNG descargado');
-                                      } catch {
-                                        toast.error('Error al descargar PNG');
-                                      }
-                                    }}
-                                  >
-                                    📥
-                                  </Button>
-                                  <a
-                                    className="btn btn-sm btn-outline-info"
-                                    href={publicUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    title="Abrir URL pública"
-                                  >
-                                    🌐
-                                  </a>
-                                </div>
-                              </td>
+              <Nav.Item>
+                <Nav.Link
+                  active={activeTab === 'gallery'}
+                  onClick={() => setActiveTab('gallery')}
+                  className="d-flex align-items-center gap-2"
+                  style={{
+                    borderRadius: '10px',
+                    fontWeight: 600,
+                    background: activeTab === 'gallery' ? '#8c2a3e' : '#fff',
+                    color: activeTab === 'gallery' ? '#fff' : '#5c3d2e',
+                    border: '1px solid #eed0c5',
+                  }}
+                >
+                  <span>💅 Galería de Diseños &amp; Ficha Técnica</span>
+                </Nav.Link>
+              </Nav.Item>
+
+              <Nav.Item>
+                <Nav.Link
+                  active={activeTab === 'giftcards'}
+                  onClick={() => setActiveTab('giftcards')}
+                  className="d-flex align-items-center gap-2"
+                  style={{
+                    borderRadius: '10px',
+                    fontWeight: 600,
+                    background: activeTab === 'giftcards' ? '#8c2a3e' : '#fff',
+                    color: activeTab === 'giftcards' ? '#fff' : '#5c3d2e',
+                    border: '1px solid #eed0c5',
+                  }}
+                >
+                  <span>🎁 GiftCards</span>
+                  {customerGiftCards.length > 0 && (
+                    <Badge bg={activeTab === 'giftcards' ? 'light' : 'primary'} text={activeTab === 'giftcards' ? 'dark' : undefined}>
+                      {customerGiftCards.length}
+                    </Badge>
+                  )}
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+
+            {/* Vista: Galería de Diseños & Ficha Técnica */}
+            {activeTab === 'gallery' && (
+              <NailGalleryTab
+                customerId={customer.id}
+                customerName={customer.fullName}
+              />
+            )}
+
+            {/* Vista: Historial & Citas */}
+            {activeTab === 'appointments' && (
+              <>
+                <StampCard 
+                  customerId={customer.id}
+                  loyaltyStamps={customer.loyaltyStamps} 
+                  totalCompletedVisits={customer.totalCompletedVisits} 
+                  currentRewardIndex={customer.currentRewardIndex}
+                  onAdjust={handleLoyaltyAdjust}
+                />
+
+                <Card>
+                  <Card.Header>
+                    <h5 className="mb-0">Historial de Citas</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    {customerAppointments.length === 0 ? (
+                      <Alert variant="info">
+                        Este cliente aún no tiene citas registradas.
+                      </Alert>
+                    ) : (
+                      <div className="table-responsive">
+                        <Table hover>
+                          <thead>
+                            <tr>
+                              <th>Fecha</th>
+                              <th>Hora</th>
+                              <th>Servicio</th>
+                              <th>Estado</th>
+                              <th>Notas</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
+                          </thead>
+                          <tbody>
+                            {customerAppointments.map((apt) => (
+                              <tr key={apt.id}>
+                                <td>{formatDateSafe(apt.appointmentDate)}</td>
+                                <td>{apt.appointmentTime}</td>
+                                <td>{getAppointmentServiceLabel(apt)}</td>
+                                <td>{getStatusBadge(apt.status)}</td>
+                                <td>
+                                  {apt.notes ? (
+                                    <span className="text-muted small">
+                                      {apt.notes.length > 50 ? `${apt.notes.substring(0, 50)}...` : apt.notes}
+                                    </span>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
+              </>
+            )}
 
-            <Card>
-              <Card.Header>
-                <h5 className="mb-0">Historial de Citas</h5>
-              </Card.Header>
-              <Card.Body>
-                {customerAppointments.length === 0 ? (
-                  <Alert variant="info">
-                    Este cliente aún no tiene citas registradas.
-                  </Alert>
-                ) : (
-                  <div className="table-responsive">
-                    <Table hover>
-                      <thead>
-                        <tr>
-                          <th>Fecha</th>
-                          <th>Hora</th>
-                          <th>Servicio</th>
-                          <th>Estado</th>
-                          <th>Notas</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {customerAppointments.map((apt) => (
-                          <tr key={apt.id}>
-                            <td>{formatDateSafe(apt.appointmentDate)}</td>
-                            <td>{apt.appointmentTime}</td>
-                            <td>{getAppointmentServiceLabel(apt)}</td>
-                            <td>{getStatusBadge(apt.status)}</td>
-                            <td>
-                              {apt.notes ? (
-                                <span className="text-muted small">
-                                  {apt.notes.length > 50 ? `${apt.notes.substring(0, 50)}...` : apt.notes}
-                                </span>
-                              ) : (
-                                '-'
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
+            {/* Vista: GiftCards */}
+            {activeTab === 'giftcards' && (
+              <Card className="mb-4">
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center gap-2">
+                    <h5 className="mb-0">🎁 GiftCards del Cliente</h5>
+                    <Badge bg={activeCustomerGiftCards.length > 0 ? 'success' : 'secondary'}>
+                      {activeCustomerGiftCards.length} activa{activeCustomerGiftCards.length !== 1 ? 's' : ''}
+                    </Badge>
                   </div>
-                )}
-              </Card.Body>
-            </Card>
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={() => navigate('/giftcards/generar')}
+                  >
+                    + Emitir GiftCard
+                  </Button>
+                </Card.Header>
+                <Card.Body>
+                  {giftCardsLoading ? (
+                    <div className="text-center py-3 text-muted">Cargando GiftCards...</div>
+                  ) : customerGiftCards.length === 0 ? (
+                    <div className="text-muted small py-2">
+                      Esta clienta no tiene GiftCards asociadas (como beneficiaria ni compradora).
+                    </div>
+                  ) : (
+                    <div className="table-responsive">
+                      <Table hover size="sm" className="align-middle mb-0">
+                        <thead>
+                          <tr>
+                            <th>Código</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Servicios Disponibles</th>
+                            <th>Vence</th>
+                            <th className="text-end">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {customerGiftCards.map((gc) => {
+                            const isBeneficiary = toWhatsAppPhone(gc.beneficiaryPhone) === toWhatsAppPhone(customer.phone);
+                            const remainingServices = gc.items.map(
+                              (item) => `${item.serviceName} (${item.remainingQuantity}/${item.quantity})`
+                            ).join(', ');
+                            const publicUrl = normalizeGiftCardPublicUrl(gc.publicUrl, gc.code);
+
+                            return (
+                              <tr key={gc.id}>
+                                <td>
+                                  <strong>{gc.code}</strong>
+                                  <br />
+                                  <small className="text-muted">${gc.totalAmount.toLocaleString('es-CL')}</small>
+                                </td>
+                                <td>
+                                  <Badge bg={isBeneficiary ? 'primary' : 'info'}>
+                                    {isBeneficiary ? 'Beneficiaria' : 'Compradora'}
+                                  </Badge>
+                                </td>
+                                <td>
+                                  <Badge bg={gc.status === 'ACTIVE' ? 'success' : gc.status === 'PARTIAL' ? 'warning' : 'secondary'}>
+                                    {gc.status}
+                                  </Badge>
+                                </td>
+                                <td>
+                                  <small>{remainingServices || 'Sin servicios'}</small>
+                                </td>
+                                <td>
+                                  <small>{gc.expiresOn}</small>
+                                </td>
+                                <td className="text-end">
+                                  <div className="d-flex justify-content-end gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline-secondary"
+                                      title="Ver en Gestión"
+                                      onClick={() => navigate(`/giftcards?search=${encodeURIComponent(gc.code)}`)}
+                                    >
+                                      🔍
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-success"
+                                      title="Enviar por WhatsApp"
+                                      onClick={() =>
+                                        sendGiftCardWhatsApp({
+                                          data: {
+                                            beneficiaryName: gc.beneficiaryName,
+                                            code: gc.code,
+                                            pin: gc.plainPin || 'No disponible',
+                                            expiresOn: gc.expiresOn,
+                                            publicUrl,
+                                          },
+                                          beneficiaryPhone: gc.beneficiaryPhone,
+                                          onError: (msg) => toast.error(msg),
+                                        })
+                                      }
+                                    >
+                                      📱
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-primary"
+                                      title="Descargar Imagen PNG"
+                                      onClick={async () => {
+                                        try {
+                                          await downloadGiftCardPng({
+                                            beneficiaryName: gc.beneficiaryName,
+                                            code: gc.code,
+                                            pin: gc.plainPin || 'No disponible',
+                                            expiresOn: gc.expiresOn,
+                                            publicUrl,
+                                          });
+                                          toast.success('PNG descargado');
+                                        } catch {
+                                          toast.error('Error al descargar PNG');
+                                        }
+                                      }}
+                                    >
+                                      📥 PNG
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-dark"
+                                      title="Imprimir / Guardar PDF"
+                                      onClick={async () => {
+                                        try {
+                                          await printOrDownloadGiftCardPdf({
+                                            beneficiaryName: gc.beneficiaryName,
+                                            code: gc.code,
+                                            pin: gc.plainPin || 'No disponible',
+                                            expiresOn: gc.expiresOn,
+                                            publicUrl,
+                                          });
+                                        } catch {
+                                          toast.error('Error al generar PDF');
+                                        }
+                                      }}
+                                    >
+                                      📄 PDF
+                                    </Button>
+                                    <a
+                                      className="btn btn-sm btn-outline-info"
+                                      href={publicUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      title="Abrir URL pública"
+                                    >
+                                      🌐
+                                    </a>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
           </Col>
         </Row>
       </Container>

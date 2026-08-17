@@ -12,6 +12,7 @@ import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 import {
   GIFTCARD_BACKGROUND_TEMPLATE,
   downloadGiftCardPng,
+  printOrDownloadGiftCardPdf,
   isBlankGiftCardBeneficiary,
   sendGiftCardWhatsApp,
   shareGiftCardPng,
@@ -262,6 +263,22 @@ export default function GenerateGiftCardPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!createdInfo) return;
+    try {
+      await printOrDownloadGiftCardPdf({
+        beneficiaryName: createdInfo.beneficiaryName,
+        code: createdInfo.code,
+        pin: createdInfo.plainPin || 'No disponible',
+        expiresOn: createdInfo.expiresOn,
+        publicUrl: createdInfo.publicUrl,
+      });
+      toast.success('Abriendo vista de impresión / PDF');
+    } catch {
+      toast.error('No se pudo generar el documento PDF');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="bunny-page">
@@ -353,6 +370,12 @@ export default function GenerateGiftCardPage() {
                 disabled={downloadingPng}
               >
                 {downloadingPng ? 'Descargando...' : '📥 Descargar PNG'}
+              </Button>
+              <Button
+                variant="outline-dark"
+                onClick={handleDownloadPdf}
+              >
+                📄 Imprimir / PDF
               </Button>
               <a
                 href={createdInfo.publicUrl}

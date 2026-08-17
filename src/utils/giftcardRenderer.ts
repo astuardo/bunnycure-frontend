@@ -290,6 +290,111 @@ export const downloadGiftCardPng = async (data: GiftCardRenderData, fileName?: s
   URL.revokeObjectURL(fileUrl);
 };
 
+/**
+ * Genera e imprime o guarda en PDF la GiftCard con formato de tarjeta de regalo lista para entregar
+ */
+export const printOrDownloadGiftCardPdf = async (data: GiftCardRenderData): Promise<void> => {
+  const pngBlob = await renderGiftCardPng(data);
+  const pngUrl = URL.createObjectURL(pngBlob);
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) throw new Error('No se pudo abrir ventana de impresión');
+
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>GiftCard BunnyCure - ${data.code}</title>
+        <style>
+          @page {
+            size: letter portrait;
+            margin: 15mm;
+          }
+          body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #422314;
+            background: #fff;
+            text-align: center;
+          }
+          .giftcard-container {
+            max-width: 650px;
+            margin: 0 auto;
+            border: 2px dashed #eed0c5;
+            border-radius: 16px;
+            padding: 16px;
+            page-break-inside: avoid;
+          }
+          .giftcard-image {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(90, 50, 30, 0.15);
+            display: block;
+          }
+          .instructions {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #8c6052;
+            line-height: 1.5;
+            text-align: left;
+            padding: 12px 16px;
+            background: #fdf6f3;
+            border-radius: 10px;
+            border: 1px solid #eed0c5;
+          }
+          .instructions strong {
+            color: #8c2a3e;
+          }
+          .cut-line {
+            margin-top: 14px;
+            font-size: 11px;
+            color: #b09080;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="giftcard-container">
+          <img src="${pngUrl}" class="giftcard-image" alt="GiftCard BunnyCure" />
+          <div class="instructions">
+            <div><strong>🐰 BunnyCure &bull; Tarjeta de Regalo Oficial</strong></div>
+            <div>&bull; <strong>Código:</strong> ${data.code} | <strong>PIN de canje:</strong> ${data.pin}</div>
+            <div>&bull; <strong>Válida hasta:</strong> ${data.expiresOn}</div>
+            <div>&bull; <strong>Cómo canjear:</strong> Presenta esta tarjeta o escanea el código QR al momento de tu atención en nuestro salón.</div>
+            <div>&bull; <strong>Reservas y Consultas:</strong> +56 9 8887 3031 | app.bunnycure.cl</div>
+          </div>
+          <div class="cut-line">✂️ ---------------- Recorta por la línea punteada para regalar ---------------- ✂️</div>
+        </div>
+      </body>
+    </html>
+  `);
+  doc.close();
+
+  iframe.contentWindow?.focus();
+  setTimeout(() => {
+    iframe.contentWindow?.print();
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      URL.revokeObjectURL(pngUrl);
+    }, 1000);
+  }, 400);
+};
+
 export const shareGiftCardPng = async (options: ShareGiftCardOptions): Promise<void> => {
   const { data, beneficiaryPhone, onSuccess, onError, onInfo } = options;
   const message = buildGiftCardWhatsAppMessage(data);

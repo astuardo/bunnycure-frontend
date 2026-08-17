@@ -17,6 +17,7 @@ import { matchRutSearch } from '@/utils/rutUtils';
 import {
   GIFTCARD_BACKGROUND_TEMPLATE,
   downloadGiftCardPng,
+  printOrDownloadGiftCardPdf,
   isBlankGiftCardBeneficiary,
   sendGiftCardWhatsApp,
   shareGiftCardPng,
@@ -495,6 +496,27 @@ export default function GiftCardsPage() {
       toast.error('No se pudo descargar la imagen PNG');
     } finally {
       setDownloadingPng(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!currentGiftCard) return;
+    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
+    const expiry = currentGiftCard.expiresOn || '-';
+    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
+    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
+
+    try {
+      await printOrDownloadGiftCardPdf({
+        beneficiaryName: beneficiary,
+        code: currentGiftCard.code,
+        pin: pinValue,
+        expiresOn: expiry,
+        publicUrl,
+      });
+      toast.success('Abriendo vista de impresión / PDF');
+    } catch {
+      toast.error('No se pudo generar el documento PDF');
     }
   };
 
@@ -1093,6 +1115,9 @@ export default function GiftCardsPage() {
                   disabled={downloadingPng}
                 >
                   {downloadingPng ? 'Descargando...' : '📥 Descargar PNG'}
+                </Button>
+                <Button variant="outline-dark" onClick={handleDownloadPdf}>
+                  📄 Imprimir / PDF
                 </Button>
                 <Button variant="success" onClick={handleSendWhatsAppBeneficiary}>
                   📱 Enviar WhatsApp
