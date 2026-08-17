@@ -31,14 +31,17 @@ import { appointmentsApi } from '../../api/appointments.api';
 import { useToast } from '../../hooks/useToast';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
-import { settingsApi } from '../../api/settings.api';
+import { 
+  settingsApi, 
+  loadCachedUnavailabilities, 
+  loadCachedUnavailabilityColors, 
+  loadCachedUnavailabilityNotifications 
+} from '../../api/settings.api';
 import { ScheduleUnavailabilitySection } from '../../components/settings/ScheduleUnavailabilitySection';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
   UnavailabilityNotificationConfig,
-  DEFAULT_UNAVAILABILITY_COLORS,
-  DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
 } from '../../types/unavailability.types';
 import {
   isDateBlockedFullDay,
@@ -90,9 +93,9 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showBlocksModal, setShowBlocksModal] = useState(false);
-  const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>([]);
-  const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(DEFAULT_UNAVAILABILITY_COLORS);
-  const [unavailabilityNotifications, setUnavailabilityNotifications] = useState<UnavailabilityNotificationConfig>(DEFAULT_UNAVAILABILITY_NOTIFICATIONS);
+  const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>(loadCachedUnavailabilities);
+  const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(loadCachedUnavailabilityColors);
+  const [unavailabilityNotifications, setUnavailabilityNotifications] = useState<UnavailabilityNotificationConfig>(loadCachedUnavailabilityNotifications);
 
   useEffect(() => {
     if (searchParams.get('manageBlocks') === '1' || searchParams.get('block') === '1') {
@@ -103,7 +106,9 @@ export default function CalendarPage() {
   useEffect(() => {
     fetchAppointments();
     settingsApi.getAll().then((data) => {
-      if (data.unavailabilities) setUnavailabilities(data.unavailabilities);
+      if (data.unavailabilities && data.unavailabilities.length > 0) {
+        setUnavailabilities(data.unavailabilities);
+      }
       if (data.unavailabilityColors) setUnavailabilityColors(data.unavailabilityColors);
       if (data.unavailabilityNotifications) setUnavailabilityNotifications(data.unavailabilityNotifications);
     }).catch((err) => console.error('Error loading unavailabilities in calendar:', err));

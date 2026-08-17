@@ -11,7 +11,13 @@ import { FiSave, FiSettings } from 'react-icons/fi';
 import { FaWhatsapp, FaBell } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
-import { settingsApi, SettingsData } from '../../api/settings.api';
+import { 
+  settingsApi, 
+  SettingsData, 
+  loadCachedUnavailabilities, 
+  loadCachedUnavailabilityColors, 
+  loadCachedUnavailabilityNotifications 
+} from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
 import {
@@ -189,9 +195,9 @@ export default function SettingsPage() {
         whatsappHumanDisplayName: serverSettings.whatsappHumanDisplayName || '',
         whatsappHandoffClientMessage: serverSettings.whatsappHandoffClientMessage || '',
         whatsappHandoffAdminPrefill: serverSettings.whatsappHandoffAdminPrefill || '',
-        unavailabilities: serverSettings.unavailabilities || [],
-        unavailabilityColors: serverSettings.unavailabilityColors || DEFAULT_UNAVAILABILITY_COLORS,
-        unavailabilityNotifications: serverSettings.unavailabilityNotifications || DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
+        unavailabilities: serverSettings.unavailabilities && serverSettings.unavailabilities.length > 0 ? serverSettings.unavailabilities : loadCachedUnavailabilities(),
+        unavailabilityColors: serverSettings.unavailabilityColors || loadCachedUnavailabilityColors(),
+        unavailabilityNotifications: serverSettings.unavailabilityNotifications || loadCachedUnavailabilityNotifications(),
         calendarDisplay: {
           morning: {
             start: localCalendar?.morning?.start || serverSettings.calendarMorningStart || defaultSettings.calendarDisplay.morning.start,

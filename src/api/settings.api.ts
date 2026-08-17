@@ -1,6 +1,6 @@
 /**
- * API de Configuración - endpoints para settings del sistema.
- * Reemplaza localStorage con persistencia en servidor.
+ * API de Configuración del Negocio
+ * Permite obtener y guardar configuraciones en el backend
  */
 
 import apiClient from './client';
@@ -13,11 +13,18 @@ import {
   DEFAULT_UNAVAILABILITY_NOTIFICATIONS,
 } from '../types/unavailability.types';
 
+export const UNAVAILABILITIES_STORAGE_KEY = 'bunnycure_schedule_unavailabilities_v1';
+export const UNAVAILABILITY_COLORS_STORAGE_KEY = 'bunnycure_schedule_unavailability_colors_v1';
+export const UNAVAILABILITY_NOTIFICATIONS_STORAGE_KEY = 'bunnycure_schedule_unavailability_notifications_v1';
+
 export interface SettingsData {
+  // Business Info
   businessName?: string;
   businessEmail?: string;
   businessPhone?: string;
   businessAddress?: string;
+
+  // Working Hours
   mondayEnabled?: boolean;
   mondayStart?: string;
   mondayEnd?: string;
@@ -39,20 +46,32 @@ export interface SettingsData {
   sundayEnabled?: boolean;
   sundayStart?: string;
   sundayEnd?: string;
+
+  // Appointment Settings
   appointmentDuration?: number;
+
+  // Notifications
   emailNotificationsEnabled?: boolean;
   whatsappNumber?: string;
+
+  // Reminder Settings
   reminderStrategy?: 'TWO_HOURS' | 'MORNING' | 'DAY_BEFORE' | 'BOTH';
+
+  // WhatsApp Handoff
   whatsappHandoffEnabled?: boolean;
   whatsappHumanNumber?: string;
   whatsappHumanDisplayName?: string;
   whatsappHandoffClientMessage?: string;
   whatsappHandoffAdminPrefill?: string;
+
+  // Legacy & Calendar Blocks
   holidays?: string;
   scheduleBlocks?: string;
   unavailabilities?: ScheduleUnavailability[];
   unavailabilityColors?: UnavailabilityColorConfig;
   unavailabilityNotifications?: UnavailabilityNotificationConfig;
+
+  // Calendar Display Slots
   calendarMorningStart?: string;
   calendarMorningEnd?: string;
   calendarMorningColor?: string;
@@ -64,42 +83,33 @@ export interface SettingsData {
   calendarNightColor?: string;
 }
 
-const readBoolean = (value?: string): boolean | undefined => {
-  if (value === undefined) return undefined;
-  return value === 'true';
+const readBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const lower = value.trim().toLowerCase();
+    if (lower === 'true' || lower === '1') return true;
+    if (lower === 'false' || lower === '0') return false;
+  }
+  return undefined;
 };
 
-const parseReminderStrategy = (value?: string): SettingsData['reminderStrategy'] => {
-  if (!value) return 'TWO_HOURS';
-  switch (value.toLowerCase()) {
-    case '2hours':
-    case 'two_hours':
-    case 'two-hours':
-      return 'TWO_HOURS';
-    case 'morning':
-      return 'MORNING';
-    case 'day_before':
-    case 'day-before':
-      return 'DAY_BEFORE';
-    case 'both':
-      return 'BOTH';
-    default:
-      return 'TWO_HOURS';
-  }
+const parseReminderStrategy = (value: unknown): SettingsData['reminderStrategy'] => {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toUpperCase();
+  if (normalized === '2HOURS' || normalized === 'TWO_HOURS') return 'TWO_HOURS';
+  if (normalized === 'MORNING') return 'MORNING';
+  if (normalized === 'DAY_BEFORE') return 'DAY_BEFORE';
+  if (normalized === 'BOTH') return 'BOTH';
+  return undefined;
 };
 
-const serializeReminderStrategy = (value?: SettingsData['reminderStrategy']): string => {
-  switch (value) {
-    case 'MORNING':
-      return 'morning';
-    case 'DAY_BEFORE':
-      return 'day_before';
-    case 'BOTH':
-      return 'both';
-    case 'TWO_HOURS':
-    default:
-      return '2hours';
-  }
+const serializeReminderStrategy = (value: SettingsData['reminderStrategy']): string | undefined => {
+  if (!value) return undefined;
+  if (value === 'TWO_HOURS') return '2hours';
+  if (value === 'MORNING') return 'morning';
+  if (value === 'DAY_BEFORE') return 'day_before';
+  if (value === 'BOTH') return 'both';
+  return undefined;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -110,15 +120,159 @@ const isFlatSettingsMap = (value: unknown): value is Record<string, string> => {
   return Object.values(value).every((v) => typeof v === 'string');
 };
 
+export const loadCachedUnavailabilities = (): ScheduleUnavailability[] => {
+  try {
+    const raw = localStorage.getItem(UNAVAILABILITIES_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error loading cached unavailabilities:', e);
+  }
+  return [];
+};
+
+export const loadCachedUnavailabilityColors = (): UnavailabilityColorConfig => {
+  try {
+    const raw = localStorage.getItem(UNAVAILABILITY_COLORS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.fullDayColor === 'string') return parsed;
+    }
+  } catch {}
+  return DEFAULT_UNAVAILABILITY_COLORS;
+};
+
+export const loadCachedUnavailabilityNotifications = (): UnavailabilityNotificationConfig => {
+  try {
+    const raw = localStorage.getItem(UNAVAILABILITY_NOTIFICATIONS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.enabled === 'boolean') return parsed;
+    }
+  } catch {}
+  return DEFAULT_UNAVAILABILITY_NOTIFICATIONS;
+};
+
 export const settingsApi = {
   /**
-   * Obtener todas las configuraciones del servidor
+   * Obtener todas las configuraciones del servidor con soporte de fallback
    */
   getAll: async (): Promise<SettingsData> => {
-    const response = await apiClient.get<ApiResponse<unknown>>('/api/settings');
-    const payload = response.data.data;
+    let payload: unknown = null;
+    try {
+      const response = await apiClient.get<ApiResponse<unknown>>('/api/settings');
+      payload = response.data.data;
+    } catch (e) {
+      console.warn('Error fetching /api/settings, using local fallback:', e);
+    }
+
     const flatSettings: Record<string, string> = isFlatSettingsMap(payload) ? payload : {};
 
+    // 1. Extraer o parsear unavailabilities desde servidor o cache
+    let parsedUnavailabilities: ScheduleUnavailability[] = [];
+    try {
+      const rawServer = isRecord(payload) 
+        ? (payload['schedule.unavailabilities'] ?? payload['scheduleUnavailabilities'] ?? payload['unavailabilities'])
+        : flatSettings['schedule.unavailabilities'];
+
+      if (typeof rawServer === 'string') {
+        parsedUnavailabilities = JSON.parse(rawServer) as ScheduleUnavailability[];
+      } else if (Array.isArray(rawServer)) {
+        parsedUnavailabilities = rawServer as ScheduleUnavailability[];
+      }
+
+      // Backward compatibility: migrar antiguos holidays o scheduleBlocks si no hay unavailabilities
+      if (parsedUnavailabilities.length === 0 && isRecord(payload)) {
+        const rawHolidays = flatSettings['business.holidays'] || (payload['business.holidays'] as string);
+        const rawBlocks = flatSettings['business.schedule_blocks'] || (payload['business.schedule_blocks'] as string);
+
+        if (rawHolidays) {
+          const hList = typeof rawHolidays === 'string' ? JSON.parse(rawHolidays) : rawHolidays;
+          if (Array.isArray(hList)) {
+            hList.forEach((h: string, idx: number) => {
+              parsedUnavailabilities.push({
+                id: `legacy-h-${idx}-${h}`,
+                type: 'FULL_DAY',
+                startDate: h,
+                endDate: h,
+                reason: 'Feriado / Día Cerrado',
+                createdAt: new Date().toISOString(),
+              });
+            });
+          }
+        }
+
+        if (rawBlocks) {
+          const bList = typeof rawBlocks === 'string' ? JSON.parse(rawBlocks) : rawBlocks;
+          if (Array.isArray(bList)) {
+            bList.forEach((b: { id?: string; date: string; startTime: string; endTime: string; reason?: string }) => {
+              parsedUnavailabilities.push({
+                id: b.id || `legacy-b-${Date.now()}`,
+                type: 'TIME_SLOT',
+                startDate: b.date,
+                endDate: b.date,
+                startTime: b.startTime,
+                endTime: b.endTime,
+                reason: b.reason || 'Bloqueo de horario',
+                createdAt: new Date().toISOString(),
+              });
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error parsing server unavailabilities:', e);
+    }
+
+    // Si el servidor devolvió unavailabilities, actualizar caché local
+    if (parsedUnavailabilities.length > 0) {
+      try {
+        localStorage.setItem(UNAVAILABILITIES_STORAGE_KEY, JSON.stringify(parsedUnavailabilities));
+      } catch {}
+    } else {
+      // Si el servidor no trajo registros, usar caché local para que no se borren
+      parsedUnavailabilities = loadCachedUnavailabilities();
+    }
+
+    // 2. Extraer o parsear Colores de Bloqueos
+    let parsedColors = DEFAULT_UNAVAILABILITY_COLORS;
+    try {
+      const rawColors = isRecord(payload)
+        ? (payload['schedule.unavailability.colors'] ?? payload['unavailabilityColors'])
+        : flatSettings['schedule.unavailability.colors'];
+
+      if (typeof rawColors === 'string') {
+        parsedColors = JSON.parse(rawColors) as UnavailabilityColorConfig;
+      } else if (rawColors && typeof rawColors === 'object') {
+        parsedColors = rawColors as UnavailabilityColorConfig;
+      } else {
+        parsedColors = loadCachedUnavailabilityColors();
+      }
+    } catch {
+      parsedColors = loadCachedUnavailabilityColors();
+    }
+
+    // 3. Extraer o parsear Notificaciones de Bloqueos
+    let parsedNotifs = DEFAULT_UNAVAILABILITY_NOTIFICATIONS;
+    try {
+      const rawNotifs = isRecord(payload)
+        ? (payload['schedule.unavailability.notifications'] ?? payload['unavailabilityNotifications'])
+        : flatSettings['schedule.unavailability.notifications'];
+
+      if (typeof rawNotifs === 'string') {
+        parsedNotifs = JSON.parse(rawNotifs) as UnavailabilityNotificationConfig;
+      } else if (rawNotifs && typeof rawNotifs === 'object') {
+        parsedNotifs = rawNotifs as UnavailabilityNotificationConfig;
+      } else {
+        parsedNotifs = loadCachedUnavailabilityNotifications();
+      }
+    } catch {
+      parsedNotifs = loadCachedUnavailabilityNotifications();
+    }
+
+    // Si payload es una estructura compleja como AppSettingsDto
     if (!isFlatSettingsMap(payload) && isRecord(payload)) {
       const branding = isRecord(payload.branding) ? payload.branding : {};
       const whatsapp = isRecord(payload.whatsapp) ? payload.whatsapp : {};
@@ -139,6 +293,9 @@ export const settingsApi = {
         whatsappHumanDisplayName: typeof whatsapp.humanDisplayName === 'string' ? whatsapp.humanDisplayName : undefined,
         whatsappHandoffClientMessage: typeof whatsapp.handoffClientMessage === 'string' ? whatsapp.handoffClientMessage : undefined,
         whatsappHandoffAdminPrefill: typeof whatsapp.handoffAdminPrefill === 'string' ? whatsapp.handoffAdminPrefill : undefined,
+        unavailabilities: parsedUnavailabilities,
+        unavailabilityColors: parsedColors,
+        unavailabilityNotifications: parsedNotifs,
       };
     }
     
@@ -192,69 +349,9 @@ export const settingsApi = {
       whatsappHandoffAdminPrefill: flatSettings['whatsapp.handoff.admin-prefill'],
       holidays: flatSettings['business.holidays'],
       scheduleBlocks: flatSettings['business.schedule_blocks'],
-      unavailabilities: (() => {
-        try {
-          const raw = flatSettings['schedule.unavailabilities'];
-          if (raw) return JSON.parse(raw) as ScheduleUnavailability[];
-          // Backward compatibility: migrate old holidays or scheduleBlocks if present
-          const list: ScheduleUnavailability[] = [];
-          if (flatSettings['business.holidays']) {
-            const hList = JSON.parse(flatSettings['business.holidays']) as string[];
-            hList.forEach((h, idx) => {
-              list.push({
-                id: `legacy-h-${idx}-${h}`,
-                type: 'FULL_DAY',
-                startDate: h,
-                endDate: h,
-                reason: 'Feriado / Día Cerrado',
-                createdAt: new Date().toISOString(),
-              });
-            });
-          }
-          if (flatSettings['business.schedule_blocks']) {
-            const bList = JSON.parse(flatSettings['business.schedule_blocks']) as Array<{
-              id: string;
-              date: string;
-              startTime: string;
-              endTime: string;
-              reason: string;
-            }>;
-            bList.forEach((b) => {
-              list.push({
-                id: b.id || `legacy-b-${Date.now()}`,
-                type: 'TIME_SLOT',
-                startDate: b.date,
-                endDate: b.date,
-                startTime: b.startTime,
-                endTime: b.endTime,
-                reason: b.reason || 'Bloqueo de horario',
-                createdAt: new Date().toISOString(),
-              });
-            });
-          }
-          return list;
-        } catch {
-          return [];
-        }
-      })(),
-      unavailabilityColors: (() => {
-        try {
-          const raw = flatSettings['schedule.unavailability.colors'];
-          if (raw) return JSON.parse(raw) as UnavailabilityColorConfig;
-          return DEFAULT_UNAVAILABILITY_COLORS;
-        } catch {
-          return DEFAULT_UNAVAILABILITY_COLORS;
-        }
-      })(),
-      unavailabilityNotifications: (() => {
-        try {
-          const raw = flatSettings['schedule.unavailability.notifications'];
-          if (raw) return JSON.parse(raw) as UnavailabilityNotificationConfig;
-          return DEFAULT_UNAVAILABILITY_NOTIFICATIONS;
-        } catch {
-          return DEFAULT_UNAVAILABILITY_NOTIFICATIONS;
-        }
-      })(),
+      unavailabilities: parsedUnavailabilities,
+      unavailabilityColors: parsedColors,
+      unavailabilityNotifications: parsedNotifs,
       calendarMorningStart: flatSettings['calendar.slot.morning.start'],
       calendarMorningEnd: flatSettings['calendar.slot.morning.end'],
       calendarMorningColor: flatSettings['calendar.slot.morning.color'],
@@ -268,10 +365,29 @@ export const settingsApi = {
   },
 
   /**
-   * Guardar múltiples configuraciones
+   * Guardar múltiples configuraciones con persistencia segura
    */
   saveAll: async (settings: SettingsData): Promise<void> => {
-    // Convertir de nuestro formato tipado al formato plano del backend
+    // 1. Guardar inmediatamente en localStorage como respaldo local síncrono
+    if (settings.unavailabilities !== undefined) {
+      try {
+        localStorage.setItem(UNAVAILABILITIES_STORAGE_KEY, JSON.stringify(settings.unavailabilities));
+      } catch (err) {
+        console.error('Error saving unavailabilities to localStorage:', err);
+      }
+    }
+    if (settings.unavailabilityColors !== undefined) {
+      try {
+        localStorage.setItem(UNAVAILABILITY_COLORS_STORAGE_KEY, JSON.stringify(settings.unavailabilityColors));
+      } catch {}
+    }
+    if (settings.unavailabilityNotifications !== undefined) {
+      try {
+        localStorage.setItem(UNAVAILABILITY_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(settings.unavailabilityNotifications));
+      } catch {}
+    }
+
+    // 2. Convertir al formato plano para el endpoint bulk
     const flatSettings: Record<string, string> = {};
 
     // Business Info
@@ -284,7 +400,10 @@ export const settingsApi = {
     if (settings.whatsappNumber !== undefined) flatSettings['whatsapp.number'] = settings.whatsappNumber;
 
     // Reminder Settings
-    if (settings.reminderStrategy !== undefined) flatSettings['reminder.strategy'] = serializeReminderStrategy(settings.reminderStrategy);
+    if (settings.reminderStrategy !== undefined) {
+      const s = serializeReminderStrategy(settings.reminderStrategy);
+      if (s) flatSettings['reminder.strategy'] = s;
+    }
 
     // WhatsApp Handoff
     if (settings.whatsappHandoffEnabled !== undefined) flatSettings['whatsapp.handoff.enabled'] = String(settings.whatsappHandoffEnabled);
@@ -295,7 +414,8 @@ export const settingsApi = {
 
     // Unavailabilities, Colors and Notifications
     if (settings.unavailabilities !== undefined) {
-      flatSettings['schedule.unavailabilities'] = JSON.stringify(settings.unavailabilities);
+      const jsonStr = JSON.stringify(settings.unavailabilities);
+      flatSettings['schedule.unavailabilities'] = jsonStr;
     }
     if (settings.unavailabilityColors !== undefined) {
       flatSettings['schedule.unavailability.colors'] = JSON.stringify(settings.unavailabilityColors);
@@ -304,7 +424,29 @@ export const settingsApi = {
       flatSettings['schedule.unavailability.notifications'] = JSON.stringify(settings.unavailabilityNotifications);
     }
 
-    await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
+    // Guardar en backend vía bulk y key específica
+    try {
+      await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
+    } catch (bulkErr) {
+      console.warn('Bulk settings save returned error, attempting fallback updates:', bulkErr);
+    }
+
+    // Si se enviaron unavailabilities, asegurar persistencia individual
+    if (settings.unavailabilities !== undefined) {
+      const jsonStr = JSON.stringify(settings.unavailabilities);
+      try {
+        await apiClient.put<ApiResponse<void>>('/api/settings/schedule.unavailabilities', { value: jsonStr })
+          .catch(() => apiClient.patch<ApiResponse<void>>('/api/settings/schedule.unavailabilities', { value: jsonStr }))
+          .catch(() => null);
+      } catch {}
+    }
+  },
+
+  /**
+   * Actualizar una configuración específica
+   */
+  update: async (key: string, value: string): Promise<void> => {
+    await apiClient.put<ApiResponse<void>>(`/api/settings/${key}`, { value });
   },
 
   /**
@@ -321,9 +463,9 @@ export const settingsApi = {
   },
 
   /**
-   * Actualizar una configuración específica
+   * Guardar una configuración específica
    */
-  update: async (key: string, value: string): Promise<void> => {
+  save: async (key: string, value: string): Promise<void> => {
     await apiClient.patch<ApiResponse<void>>(`/api/settings/${key}`, { value });
   },
 };

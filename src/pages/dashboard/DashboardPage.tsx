@@ -19,13 +19,16 @@ import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { ServiceSummary } from '@/types/service.types';
-import { statsApi } from '@/api/stats.api';
-import { settingsApi } from '@/api/settings.api';
+import { statsApi } from '../../api/stats.api';
 import { DashboardStats } from '@/types/stats.types';
+import { 
+    settingsApi, 
+    loadCachedUnavailabilities, 
+    loadCachedUnavailabilityColors 
+} from '@/api/settings.api';
 import {
     ScheduleUnavailability,
     UnavailabilityColorConfig,
-    DEFAULT_UNAVAILABILITY_COLORS,
 } from '@/types/unavailability.types';
 import {
     isDateBlockedFullDay,
@@ -171,8 +174,8 @@ export default function DashboardPage() {
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-    const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>([]);
-    const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(DEFAULT_UNAVAILABILITY_COLORS);
+    const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>(loadCachedUnavailabilities);
+    const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(loadCachedUnavailabilityColors);
     const [calendarMonth] = useState(new Date());
     const calendarDisplayConfig = useCalendarDisplayConfig();
     const [completeDialog, setCompleteDialog] = useState<{ show: boolean; appointmentId: number | null }>({ show: false, appointmentId: null });
@@ -598,8 +601,8 @@ export default function DashboardPage() {
                             <p style={{ fontSize: '13px', color: '#c9a898' }}>Aún no hay datos de servicios.</p>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {dashboardStats.topServices.map((s) => {
-                                    const maxRevenue = Math.max(...dashboardStats.topServices.map(ts => ts.revenue), 1);
+                                {dashboardStats.topServices.map((s: any) => {
+                                    const maxRevenue = Math.max(...dashboardStats.topServices.map((ts: any) => ts.revenue), 1);
                                     const percentage = (s.revenue / maxRevenue) * 100;
                                     return (
                                         <div key={s.name}>
