@@ -1,6 +1,6 @@
 /**
  * API de Configuración del Negocio
- * Permite obtener y guardar configuraciones en el backend
+ * Permite obtener y guardar configuraciones en el backend con persistencia garantizada
  */
 
 import apiClient from './client';
@@ -157,7 +157,40 @@ export const loadCachedUnavailabilityNotifications = (): UnavailabilityNotificat
 
 export const settingsApi = {
   /**
-   * Obtener todas las configuraciones del servidor con soporte de fallback
+   * Obtener una configuración específica por clave directamente de la BD
+   */
+  get: async (key: string): Promise<string | null> => {
+    try {
+      const response = await apiClient.get<ApiResponse<string | { key: string; value: string }>>(`/api/settings/${key}`);
+      const data = response.data.data;
+      if (typeof data === 'string') return data;
+      if (data && typeof data === 'object' && 'value' in data) return (data as { value: string }).value;
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Actualizar una configuración específica en la BD
+   */
+  update: async (key: string, value: string): Promise<void> => {
+    try {
+      await apiClient.put<ApiResponse<void>>(`/api/settings/${key}`, { value });
+    } catch {
+      await apiClient.patch<ApiResponse<void>>(`/api/settings/${key}`, { value }).catch(() => null);
+    }
+  },
+
+  /**
+   * Guardar una configuración específica
+   */
+  save: async (key: string, value: string): Promise<void> => {
+    await settingsApi.update(key, value);
+  },
+
+  /**
+   * Obtener todas las configuraciones del servidor con soporte exhaustivo de BD y fallback
    */
   getAll: async (): Promise<SettingsData> => {
     let payload: unknown = null;
@@ -170,7 +203,7 @@ export const settingsApi = {
 
     const flatSettings: Record<string, string> = isFlatSettingsMap(payload) ? payload : {};
 
-    // 1. Extraer o parsear unavailabilities desde servidor o cache
+    // 1. Extraer o parsear unavailabilities desde servidor (payload / claves BD individuales / cache)
     let parsedUnavailabilities: ScheduleUnavailability[] = [];
     try {
       const rawServer = isRecord(payload) 
@@ -183,7 +216,7 @@ export const settingsApi = {
         parsedUnavailabilities = rawServer as ScheduleUnavailability[];
       }
 
-      // Backward compatibility: migrar antiguos holidays o scheduleBlocks si no hay unavailabilities
+      // Migrar antiguos holidays o scheduleBlocks si no hay unavailabilities en el payload principal
       if (parsedUnavailabilities.length === 0 && isRecord(payload)) {
         const rawHolidays = flatSettings['business.holidays'] || (payload['business.holidays'] as string);
         const rawBlocks = flatSettings['business.schedule_blocks'] || (payload['business.schedule_blocks'] as string);
@@ -223,7 +256,69 @@ export const settingsApi = {
         }
       }
     } catch (e) {
-      console.warn('Error parsing server unavailabilities:', e);
+      console.warn('Error parsing server unavailabilities from payload:', e);
+    }
+
+    // Si aún no se encontraron en payload, consultar directamente a la base de datos por clave específica
+    if (parsedUnavailabilities.length === 0) {
+      try {
+        const [directUnavailabilities, directHolidays, directBlocks] = await Promise.all([
+          settingsApi.get('schedule.unavailabilities').catch(() => null),
+          settingsApi.get('business.holidays').catch(() => null),
+          settingsApi.get('business.schedule_blocks').catch(() => null),
+        ]);
+
+        if (directUnavailabilities) {
+          const parsed = JSON.parse(directUnavailabilities);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsedUnavailabilities = parsed as ScheduleUnavailability[];
+          }
+        }
+
+        if (directHolidays) {
+          const hList = typeof directHolidays === 'string' ? JSON.parse(directHolidays) : directHolidays;
+          if (Array.isArray(hList)) {
+            hList.forEach((h: string, idx: number) => {
+              const exists = parsedUnavailabilities.some((u) => u.type === 'FULL_DAY' && u.startDate === h);
+              if (!exists) {
+                parsedUnavailabilities.push({
+                  id: `db-holiday-${idx}-${h}`,
+                  type: 'FULL_DAY',
+                  startDate: h,
+                  endDate: h,
+                  reason: 'Feriado / Día Cerrado',
+                  createdAt: new Date().toISOString(),
+                });
+              }
+            });
+          }
+        }
+
+        if (directBlocks) {
+          const bList = typeof directBlocks === 'string' ? JSON.parse(directBlocks) : directBlocks;
+          if (Array.isArray(bList)) {
+            bList.forEach((b: { id?: string; date: string; startTime: string; endTime: string; reason?: string }) => {
+              const exists = parsedUnavailabilities.some(
+                (u) => u.type === 'TIME_SLOT' && u.startDate === b.date && u.startTime === b.startTime
+              );
+              if (!exists) {
+                parsedUnavailabilities.push({
+                  id: b.id || `db-block-${Date.now()}-${Math.random()}`,
+                  type: 'TIME_SLOT',
+                  startDate: b.date,
+                  endDate: b.date,
+                  startTime: b.startTime,
+                  endTime: b.endTime,
+                  reason: b.reason || 'Bloqueo de horario',
+                  createdAt: new Date().toISOString(),
+                });
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching individual schedule keys from DB:', e);
+      }
     }
 
     // Si el servidor devolvió unavailabilities, actualizar caché local
@@ -232,7 +327,7 @@ export const settingsApi = {
         localStorage.setItem(UNAVAILABILITIES_STORAGE_KEY, JSON.stringify(parsedUnavailabilities));
       } catch {}
     } else {
-      // Si el servidor no trajo registros, usar caché local para que no se borren
+      // Si el servidor no trajo registros, usar caché local para que no se pierdan
       parsedUnavailabilities = loadCachedUnavailabilities();
     }
 
@@ -365,7 +460,7 @@ export const settingsApi = {
   },
 
   /**
-   * Guardar múltiples configuraciones con persistencia segura
+   * Guardar múltiples configuraciones con persistencia segura en BD y local
    */
   saveAll: async (settings: SettingsData): Promise<void> => {
     // 1. Guardar inmediatamente en localStorage como respaldo local síncrono
@@ -413,9 +508,32 @@ export const settingsApi = {
     if (settings.whatsappHandoffAdminPrefill !== undefined) flatSettings['whatsapp.handoff.admin-prefill'] = settings.whatsappHandoffAdminPrefill;
 
     // Unavailabilities, Colors and Notifications
+    let holidaysJson = '';
+    let blocksJson = '';
+    let unavailabilitiesJson = '';
+
     if (settings.unavailabilities !== undefined) {
-      const jsonStr = JSON.stringify(settings.unavailabilities);
-      flatSettings['schedule.unavailabilities'] = jsonStr;
+      unavailabilitiesJson = JSON.stringify(settings.unavailabilities);
+      flatSettings['schedule.unavailabilities'] = unavailabilitiesJson;
+
+      // Sincronizar también con formato legado de feriados y bloqueos para compatibilidad 100% con la BD
+      const holidaysList = settings.unavailabilities
+        .filter((u) => u.type === 'FULL_DAY')
+        .map((u) => u.startDate);
+      holidaysJson = JSON.stringify(holidaysList);
+      flatSettings['business.holidays'] = holidaysJson;
+
+      const blocksList = settings.unavailabilities
+        .filter((u) => u.type === 'TIME_SLOT')
+        .map((u) => ({
+          id: u.id,
+          date: u.startDate,
+          startTime: u.startTime || '09:00',
+          endTime: u.endTime || '18:00',
+          reason: u.reason || 'Bloqueo de horario',
+        }));
+      blocksJson = JSON.stringify(blocksList);
+      flatSettings['business.schedule_blocks'] = blocksJson;
     }
     if (settings.unavailabilityColors !== undefined) {
       flatSettings['schedule.unavailability.colors'] = JSON.stringify(settings.unavailabilityColors);
@@ -424,48 +542,22 @@ export const settingsApi = {
       flatSettings['schedule.unavailability.notifications'] = JSON.stringify(settings.unavailabilityNotifications);
     }
 
-    // Guardar en backend vía bulk y key específica
+    // Guardar en backend vía bulk
     try {
       await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
     } catch (bulkErr) {
-      console.warn('Bulk settings save returned error, attempting fallback updates:', bulkErr);
+      console.warn('Bulk settings save returned error, attempting direct updates:', bulkErr);
     }
 
-    // Si se enviaron unavailabilities, asegurar persistencia individual
+    // Guardar de forma directa por clave en la BD para asegurar que las tablas de Spring Boot persistan el valor
     if (settings.unavailabilities !== undefined) {
-      const jsonStr = JSON.stringify(settings.unavailabilities);
       try {
-        await apiClient.put<ApiResponse<void>>('/api/settings/schedule.unavailabilities', { value: jsonStr })
-          .catch(() => apiClient.patch<ApiResponse<void>>('/api/settings/schedule.unavailabilities', { value: jsonStr }))
-          .catch(() => null);
+        await Promise.allSettled([
+          settingsApi.update('schedule.unavailabilities', unavailabilitiesJson),
+          settingsApi.update('business.holidays', holidaysJson),
+          settingsApi.update('business.schedule_blocks', blocksJson),
+        ]);
       } catch {}
     }
-  },
-
-  /**
-   * Actualizar una configuración específica
-   */
-  update: async (key: string, value: string): Promise<void> => {
-    await apiClient.put<ApiResponse<void>>(`/api/settings/${key}`, { value });
-  },
-
-  /**
-   * Obtener una configuración específica por clave
-   */
-  get: async (key: string): Promise<string | null> => {
-    try {
-      const response = await apiClient.get<ApiResponse<string>>(`/api/settings/${key}`);
-      return response.data.data || null;
-    } catch {
-      console.warn(`Setting ${key} not found`);
-      return null;
-    }
-  },
-
-  /**
-   * Guardar una configuración específica
-   */
-  save: async (key: string, value: string): Promise<void> => {
-    await apiClient.patch<ApiResponse<void>>(`/api/settings/${key}`, { value });
   },
 };
