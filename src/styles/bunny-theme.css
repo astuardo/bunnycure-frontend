@@ -25,16 +25,21 @@ body {
 .bunny-page {
   min-height: calc(100vh - 56px);
   background: var(--bc-page-bg);
-  padding: 16px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   color: var(--bc-text);
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box;
 }
 
 .bunny-page .row {
   margin-left: 0;
   margin-right: 0;
+  width: 100%;
 }
 
 .bunny-page .row > * {

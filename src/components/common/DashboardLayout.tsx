@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ReactNode } from 'react';
-import { Container, Row, Col, Offcanvas } from 'react-bootstrap';
+import { Offcanvas } from 'react-bootstrap';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import './DashboardLayout.css';
@@ -70,21 +70,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Offcanvas.Body>
             </Offcanvas>
 
-            <Container fluid className="px-0">
-                <Row className="g-0">
-                    {/* Sidebar fijo desktop */}
-                    <Col className="d-none d-md-block sidebar-col">
-                        <Sidebar />
-                    </Col>
+            {/* ── Layout Principal: Sidebar Fijo + Contenido Fluido ── */}
+            <div className="dashboard-body">
+                {/* Sidebar fijo desktop */}
+                <aside className="d-none d-md-block dashboard-sidebar-wrapper">
+                    <Sidebar />
+                </aside>
 
-                    {/* Main content */}
-                    <Col className="main-content-col">
-                        <main className="p-0">
-                            {children}
-                        </main>
-                    </Col>
-                </Row>
-            </Container>
+                {/* Main content que llena el 100% del espacio restante */}
+                <main className="dashboard-main-content">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }

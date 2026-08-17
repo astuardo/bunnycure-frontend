@@ -5,39 +5,50 @@
     flex-direction: column;
     width: 100%;
     max-width: 100%;
+    margin: 0;
+    padding: 0;
     overflow-x: hidden;
     background-color: var(--bc-page-bg, #fdf0ec);
 }
 
-/* Main content area */
-.main-content-col {
+/* Flex container for sidebar + main content */
+.dashboard-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: calc(100vh - 56px);
+    margin: 0;
+    padding: 0;
+}
+
+/* Sidebar wrapper desktop */
+.dashboard-sidebar-wrapper {
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
+    flex: 0 0 250px;
+    background: #fdf6f3;
+    border-right: 1px solid #f0e0d8;
+    margin: 0;
+    padding: 0;
+}
+
+/* Main content wrapper */
+.dashboard-main-content {
     flex: 1 1 0%;
     min-width: 0;
-    max-width: 100%;
+    width: calc(100% - 250px);
+    margin: 0;
+    padding: 0;
     overflow-x: hidden;
 }
 
-@media (min-width: 768px) {
-    .main-content-col {
-        width: calc(100% - 250px);
+@media (max-width: 767px) {
+    .dashboard-main-content {
+        width: 100%;
+        flex: 1 1 100%;
     }
-}
-
-.main-content-col main {
-    width: 100%;
-    max-width: 100%;
-}
-
-/* Ensure rows don't overflow */
-.main-content-col .row {
-    margin-left: 0;
-    margin-right: 0;
-    max-width: 100%;
-}
-
-.main-content-col [class*="col-"] {
-    padding-left: 8px;
-    padding-right: 8px;
 }
 
 /* Fix body overflow */

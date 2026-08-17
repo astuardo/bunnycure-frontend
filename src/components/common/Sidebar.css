@@ -1,10 +1,9 @@
 /* ── Sidebar container ─────────────────────────────────────────────────── */
 .sidebar {
     min-height: calc(100vh - 56px);
-    width: 100%;
+    width: 250px;
     max-width: 250px;
     background: #fdf6f3;
-    border-right: 1px solid #f0e0d8;
 }
 
 @media (min-width: 768px) {
@@ -14,16 +13,11 @@
         overflow-y: auto;
         overflow-x: hidden;
     }
-    .sidebar-col {
-        width: 250px;
-        max-width: 250px;
-        min-width: 250px;
-        flex: 0 0 250px;
-    }
 }
 
 @media (max-width: 767px) {
     .sidebar {
+        width: 100%;
         max-width: 100%;
         min-height: auto;
         position: relative;
