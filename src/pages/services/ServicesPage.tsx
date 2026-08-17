@@ -1,14 +1,14 @@
-/**
- * Página de gestión de servicios.
- * CRUD completo del catálogo de servicios.
- */
-
 import { useEffect, useState } from 'react';
 import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert } from 'react-bootstrap';
+import { FiLayers } from 'react-icons/fi';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useServicesStore } from '../../stores/servicesStore';
 import { ServiceCatalog, ServiceFormData } from '../../types/service.types';
+import { Product, ServiceCostSummary } from '@/types/inventory.types';
+import { inventoryApi } from '@/api/inventory.api';
+import ServiceSuppliesModal from '@/components/services/ServiceSuppliesModal';
 import { useToast } from '../../hooks/useToast';
+import { formatCurrencyCLP } from '@/utils/formatters';
 
 export default function ServicesPage() {
   const toast = useToast();
@@ -24,6 +24,11 @@ export default function ServicesPage() {
     clearError 
   } = useServicesStore();
 
+  const [products, setProducts] = useState<Product[]>([]);
+  const [costsSummary, setCostsSummary] = useState<ServiceCostSummary[]>([]);
+  const [selectedSuppliesService, setSelectedSuppliesService] = useState<ServiceCatalog | null>(null);
+  const [showSuppliesModal, setShowSuppliesModal] = useState(false);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
@@ -35,8 +40,22 @@ export default function ServicesPage() {
     displayOrder: 0,
   });
 
+  const loadSuppliesAndProducts = async () => {
+    try {
+      const [prods, costs] = await Promise.all([
+        inventoryApi.listProducts().catch(() => []),
+        inventoryApi.getAllServicesCostsSummary().catch(() => []),
+      ]);
+      setProducts(prods);
+      setCostsSummary(costs);
+    } catch (err) {
+      console.error('Error loading supplies data in services page:', err);
+    }
+  };
+
   useEffect(() => {
     fetchServices();
+    loadSuppliesAndProducts();
   }, [fetchServices]);
 
   const handleCloseCreateModal = () => {
@@ -106,6 +125,15 @@ export default function ServicesPage() {
     }
   };
 
+  const handleOpenSupplies = (service: ServiceCatalog) => {
+    setSelectedSuppliesService(service);
+    setShowSuppliesModal(true);
+  };
+
+  const getServiceCostData = (serviceId: number) => {
+    return costsSummary.find((c) => c.serviceId === serviceId);
+  };
+
   // Eliminar servicio
   const handleDeleteService = async (id: number) => {
     if (confirm('¿Estás seguro de eliminar este servicio? Esta acción no se puede deshacer.')) {
@@ -124,7 +152,7 @@ export default function ServicesPage() {
       <Row className="mb-4">
         <Col>
           <h1>💅 Gestión de Servicios</h1>
-          <p className="text-muted">Administra el catálogo de servicios ofrecidos</p>
+          <p className="text-muted">Administra el catálogo de servicios ofrecidos y sus recetas de insumos</p>
         </Col>
         <Col xs="auto">
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
@@ -153,79 +181,134 @@ export default function ServicesPage() {
             </Alert>
           ) : (
             <>
-
-              {/* Vista Desktop: Tabla */}<div className="d-none d-md-block"><div className="table-responsive">
-                <Table striped bordered hover className="mb-0">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Descripción</th>
-                      <th>Duración</th>
-                      <th>Precio</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {services.map((service) => (
-                      <tr key={service.id}>
-                        <td className="fw-bold">{service.name}</td>
-                        <td>{service.description || <span className="text-muted small">Sin descripción</span>}</td>
-                        <td>{service.durationMinutes} min</td>
-                        <td>${service.price.toLocaleString('es-CL')}</td>
-                        <td>
-                          <Badge bg={service.active ? "success" : "secondary"}>
-                            {service.active ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-1">
-                            <Button size="sm" variant="outline-primary" onClick={() => openEditModal(service)}>
-                              Editar
-                            </Button>
-                            <Button size="sm" variant={service.active ? "outline-warning" : "outline-success"} onClick={() => handleToggleActive(service.id)}>
-                              {service.active ? "Desactivar" : "Activar"}
-                            </Button>
-                            <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>
-                              Eliminar
-                            </Button>
-                          </div>
-                        </td>
+              {/* Vista Desktop: Tabla */}
+              <div className="d-none d-md-block">
+                <div className="table-responsive">
+                  <Table striped bordered hover className="mb-0 align-middle">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Duración</th>
+                        <th>Precio</th>
+                        <th>Insumos & Margen</th>
+                        <th>Estado</th>
+                        <th className="text-end">Acciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div></div>
+                    </thead>
+                    <tbody>
+                      {services.map((service) => {
+                        const costData = getServiceCostData(service.id);
+                        const supplyCount = costData?.supplies?.length || 0;
+                        const matCost = costData?.totalMaterialsCost || 0;
+                        const marginPct = costData?.grossMarginPercentage || 0;
+
+                        return (
+                          <tr key={service.id}>
+                            <td className="fw-bold">{service.name}</td>
+                            <td>{service.description || <span className="text-muted small">Sin descripción</span>}</td>
+                            <td>{service.durationMinutes} min</td>
+                            <td className="fw-bold text-dark">{formatCurrencyCLP(service.price)}</td>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline-info"
+                                  className="d-inline-flex align-items-center gap-1"
+                                  onClick={() => handleOpenSupplies(service)}
+                                  title="Gestionar insumos y receta del servicio"
+                                >
+                                  <FiLayers /> Insumos ({supplyCount})
+                                </Button>
+                                {supplyCount > 0 ? (
+                                  <span className="badge bg-light text-dark border small" title="Costo de materiales y margen de ganancia">
+                                    Costo: {formatCurrencyCLP(Math.round(matCost))} | Margen: {marginPct.toFixed(0)}%
+                                  </span>
+                                ) : (
+                                  <span className="text-muted small">Sin receta</span>
+                                )}
+                              </div>
+                            </td>
+                            <td>
+                              <Badge bg={service.active ? "success" : "secondary"}>
+                                {service.active ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </td>
+                            <td className="text-end">
+                              <div className="d-flex gap-1 justify-content-end">
+                                <Button size="sm" variant="outline-primary" onClick={() => openEditModal(service)}>
+                                  Editar
+                                </Button>
+                                <Button size="sm" variant={service.active ? "outline-warning" : "outline-success"} onClick={() => handleToggleActive(service.id)}>
+                                  {service.active ? "Desactivar" : "Activar"}
+                                </Button>
+                                <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>
+                                  Eliminar
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </div>
+              </div>
 
               {/* Vista Móvil: Cards */}
               <div className="d-md-none">
-                {services.map((service) => (
-                  <Card key={service.id} className="mb-3 border-peach shadow-sm">
-                    <Card.Body className="p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
-                        <h6 className="mb-0 fw-bold text-bunny-dark text-break" style={{ minWidth: 0 }}>{service.name}</h6>
-                        <Badge bg={service.active ? "success" : "secondary"} className="flex-shrink-0">
-                          {service.active ? "Activo" : "Inactivo"}
-                        </Badge>
-                      </div>
+                {services.map((service) => {
+                  const costData = getServiceCostData(service.id);
+                  const supplyCount = costData?.supplies?.length || 0;
+                  const matCost = costData?.totalMaterialsCost || 0;
+                  const marginPct = costData?.grossMarginPercentage || 0;
 
-                      <div className="text-muted small mb-2 text-break">{service.description || "Sin descripción"}</div> 
+                  return (
+                    <Card key={service.id} className="mb-3 border-peach shadow-sm">
+                      <Card.Body className="p-3">
+                        <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                          <h6 className="mb-0 fw-bold text-bunny-dark text-break" style={{ minWidth: 0 }}>{service.name}</h6>
+                          <Badge bg={service.active ? "success" : "secondary"} className="flex-shrink-0">
+                            {service.active ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </div>
 
-                      <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
-                        <span className="text-bunny-mid small text-break" style={{ minWidth: 0 }}>{service.durationMinutes} min</span>
-                        <span className="fw-bold text-success flex-shrink-0">${service.price.toLocaleString('es-CL')}</span> 
-                      </div>
+                        <div className="text-muted small mb-2 text-break">{service.description || "Sin descripción"}</div> 
 
-                      <div className="d-flex gap-2 flex-wrap">
-                        <Button size="sm" variant="outline-primary" className="flex-fill" onClick={() => openEditModal(service)}>Editar</Button>
-                        <Button size="sm" variant={service.active ? "warning" : "success"} className="flex-fill" onClick={() => handleToggleActive(service.id)}>
-                          {service.active ? "Desactivar" : "Activar"}
-                        </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>Eliminar</Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                ))}
+                        <div className="d-flex justify-content-between align-items-center mb-2 gap-2">
+                          <span className="text-bunny-mid small">{service.durationMinutes} min</span>
+                          <span className="fw-bold text-success">{formatCurrencyCLP(service.price)}</span> 
+                        </div>
+
+                        <div className="mb-3 p-2 bg-light rounded d-flex justify-content-between align-items-center">
+                          <Button
+                            size="sm"
+                            variant="outline-info"
+                            className="d-inline-flex align-items-center gap-1"
+                            onClick={() => handleOpenSupplies(service)}
+                          >
+                            <FiLayers /> Insumos ({supplyCount})
+                          </Button>
+                          {supplyCount > 0 ? (
+                            <span className="badge bg-white text-dark border small">
+                              Costo: {formatCurrencyCLP(Math.round(matCost))} ({marginPct.toFixed(0)}%)
+                            </span>
+                          ) : (
+                            <span className="text-muted small">Sin receta</span>
+                          )}
+                        </div>
+
+                        <div className="d-flex gap-2 flex-wrap">
+                          <Button size="sm" variant="outline-primary" className="flex-fill" onClick={() => openEditModal(service)}>Editar</Button>
+                          <Button size="sm" variant={service.active ? "warning" : "success"} className="flex-fill" onClick={() => handleToggleActive(service.id)}>
+                            {service.active ? "Desactivar" : "Activar"}
+                          </Button>
+                          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteService(service.id)}>Eliminar</Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  );
+                })}
               </div>
             </>
           )}
@@ -390,6 +473,18 @@ export default function ServicesPage() {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      {/* Modal Insumos y Receta */}
+      <ServiceSuppliesModal
+        show={showSuppliesModal}
+        onHide={() => {
+          setShowSuppliesModal(false);
+          setSelectedSuppliesService(null);
+        }}
+        service={selectedSuppliesService}
+        products={products}
+        onSaved={loadSuppliesAndProducts}
+      />
       </div>
     </DashboardLayout>
   );

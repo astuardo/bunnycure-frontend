@@ -9,6 +9,7 @@ import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { CancelAppointmentDialog } from '../../components/appointments/CancelAppointmentDialog';
+import { CompleteAppointmentWithSuppliesModal } from '../../components/appointments/CompleteAppointmentWithSuppliesModal';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
@@ -96,6 +97,10 @@ export default function AppointmentsPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelingAppointmentId, setCancelingAppointmentId] = useState<number | null>(null);
   const [isCancelLoading, setIsCancelLoading] = useState(false);
+
+  // Estados para modal de completar con insumos
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completingAppointmentId, setCompletingAppointmentId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState<AppointmentFormState>({
     customerId: 0,
@@ -613,36 +618,18 @@ export default function AppointmentsPage() {
   };
 
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
+    if (status === AppointmentStatus.COMPLETED) {
+      setCompletingAppointmentId(id);
+      setShowCompleteModal(true);
+      return;
+    }
+
     if (!confirm(`¿Cambiar estado a ${status}?`)) {
       return;
     }
 
     try {
-      let generateInvoice = true;
-      if (status === AppointmentStatus.COMPLETED) {
-        const quota = await appointmentsApi.getInvoiceQuota();
-
-        if (!quota.generateByDefault) {
-          const continueWithoutInvoice = confirm(
-            `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
-            'Se alcanzó el límite mensual, esta cita se completará SIN generar boleta.\n' +
-            '¿Deseas continuar?'
-          );
-          if (!continueWithoutInvoice) {
-            return;
-          }
-          generateInvoice = false;
-        } else {
-          generateInvoice = confirm(
-            `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
-            '¿Generar boleta para esta cita?\n' +
-            'Aceptar = Sí generar\n' +
-            'Cancelar = No generar'
-          );
-        }
-      }
-
-      await updateAppointmentStatus(id, status, { generateInvoice });
+      await updateAppointmentStatus(id, status);
       toast.success('Estado actualizado correctamente');
       fetchAppointments();
     } catch (err: unknown) {
@@ -1697,6 +1684,18 @@ export default function AppointmentsPage() {
           isLoading={isCancelLoading}
         />
       )}
+      {/* Modal de Completar Cita con Insumos */}
+      <CompleteAppointmentWithSuppliesModal
+        show={showCompleteModal}
+        appointmentId={completingAppointmentId}
+        onHide={() => {
+          setShowCompleteModal(false);
+          setCompletingAppointmentId(null);
+        }}
+        onCompleted={() => {
+          fetchAppointments();
+        }}
+      />
       </div>
     </DashboardLayout>
   );

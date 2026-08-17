@@ -1,6 +1,20 @@
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
-import { Product, ProductFormData, ConsumeRequest, PurchaseRequest, InventoryMovement, ProductImportPreview } from '../types/inventory.types';
+import {
+  Product,
+  ProductFormData,
+  ConsumeRequest,
+  PurchaseRequest,
+  InventoryMovement,
+  ProductImportPreview,
+  ServiceSupply,
+  ServiceSupplyFormData,
+  ServiceCostSummary,
+  ProductPriceAnalysis,
+  StockProjection,
+  AppointmentSuppliesPreview,
+  CompleteAppointmentWithSuppliesPayload,
+} from '../types/inventory.types';
 
 export const inventoryApi = {
   listProducts: async (): Promise<Product[]> => {
@@ -57,5 +71,56 @@ export const inventoryApi = {
       params: { productId }
     });
     return response.data.data || [];
-  }
+  },
+
+  // ─── Recetas de Insumos por Servicio ───────────────────────────────────────
+
+  getServiceSupplies: async (serviceId: number): Promise<ServiceSupply[]> => {
+    const response = await apiClient.get<ApiResponse<ServiceSupply[]>>(`/api/services/${serviceId}/supplies`);
+    return response.data.data || [];
+  },
+
+  saveServiceSupplies: async (serviceId: number, supplies: ServiceSupplyFormData[]): Promise<ServiceSupply[]> => {
+    const response = await apiClient.put<ApiResponse<ServiceSupply[]>>(`/api/services/${serviceId}/supplies`, supplies);
+    return response.data.data || [];
+  },
+
+  getServiceCostSummary: async (serviceId: number): Promise<ServiceCostSummary> => {
+    const response = await apiClient.get<ApiResponse<ServiceCostSummary>>(`/api/services/${serviceId}/cost-summary`);
+    if (!response.data.data) throw new Error('Error al obtener desglose de costo');
+    return response.data.data;
+  },
+
+  getAllServicesCostsSummary: async (): Promise<ServiceCostSummary[]> => {
+    const response = await apiClient.get<ApiResponse<ServiceCostSummary[]>>('/api/services/costs-summary');
+    return response.data.data || [];
+  },
+
+  // ─── Análisis de Precios de Compra ─────────────────────────────────────────
+
+  getPriceAnalysis: async (productId: number): Promise<ProductPriceAnalysis> => {
+    const response = await apiClient.get<ApiResponse<ProductPriceAnalysis>>(`/api/inventory/products/${productId}/price-analysis`);
+    if (!response.data.data) throw new Error('Error al obtener análisis de precios');
+    return response.data.data;
+  },
+
+  // ─── Proyecciones de Stock a 7 Días ────────────────────────────────────────
+
+  getStockProjections: async (): Promise<StockProjection[]> => {
+    const response = await apiClient.get<ApiResponse<StockProjection[]>>('/api/inventory/projections');
+    return response.data.data || [];
+  },
+
+  // ─── Previsualización y Deducción en Citas ─────────────────────────────────
+
+  getAppointmentSuppliesPreview: async (appointmentId: number): Promise<AppointmentSuppliesPreview> => {
+    const response = await apiClient.get<ApiResponse<AppointmentSuppliesPreview>>(`/api/inventory/appointments/${appointmentId}/supplies-preview`);
+    if (!response.data.data) throw new Error('Error al previsualizar insumos de la cita');
+    return response.data.data;
+  },
+
+  completeAppointmentWithSupplies: async (payload: CompleteAppointmentWithSuppliesPayload): Promise<void> => {
+    await apiClient.post('/api/inventory/appointments/complete-with-supplies', payload);
+  },
 };
+

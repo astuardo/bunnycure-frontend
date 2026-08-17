@@ -13,13 +13,12 @@ import {
     Users,
 } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { CancelAppointmentDialog } from '@/components/appointments/CancelAppointmentDialog';
+import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { ServiceSummary } from '@/types/service.types';
-import { appointmentsApi } from '@/api/appointments.api';
 import { statsApi } from '@/api/stats.api';
 import { settingsApi } from '@/api/settings.api';
 import { DashboardStats } from '@/types/stats.types';
@@ -202,40 +201,6 @@ export default function DashboardPage() {
         };
         load();
     }, [fetchAppointments, fetchCustomers]);
-
-    const handleCompleteAppointment = async () => {
-        if (!completeDialog.appointmentId) return;
-        
-        try {
-            const quota = await appointmentsApi.getInvoiceQuota();
-            let generateInvoice = true;
-
-            if (!quota.generateByDefault) {
-                const continueWithoutInvoice = window.confirm(
-                    `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
-                    'Se alcanzó el límite mensual, esta cita se completará SIN generar boleta.\n' +
-                    '¿Deseas continuar?'
-                );
-                if (!continueWithoutInvoice) {
-                    return;
-                }
-                generateInvoice = false;
-            } else {
-                generateInvoice = window.confirm(
-                    `Boletas del mes: ${quota.generatedThisMonth}/${quota.monthlyLimit}.\n` +
-                    '¿Generar boleta para esta cita?\n' +
-                    'Aceptar = Sí generar\n' +
-                    'Cancelar = No generar'
-                );
-            }
-
-            await updateAppointmentStatus(completeDialog.appointmentId, AppointmentStatus.COMPLETED, { generateInvoice });
-            toast.success('Cita marcada como completada');
-            setCompleteDialog({ show: false, appointmentId: null });
-        } catch {
-            toast.error('Error al completar cita');
-        }
-    };
 
     const handleCancelAppointment = (id: number) => {
         setCancelingAppointmentId(id);
@@ -778,13 +743,19 @@ export default function DashboardPage() {
 
             </div>
 
-            <ConfirmDialog
+            <CompleteAppointmentWithSuppliesModal
                 show={completeDialog.show}
-                title="Completar Cita"
-                message="¿Estás seguro de que deseas marcar esta cita como completada?"
-                variant="success"
-                onConfirm={handleCompleteAppointment}
-                onCancel={() => setCompleteDialog({ show: false, appointmentId: null })}
+                appointmentId={completeDialog.appointmentId}
+                onHide={() => setCompleteDialog({ show: false, appointmentId: null })}
+                onCompleted={async () => {
+                    await fetchAppointments();
+                    try {
+                        const stats = await statsApi.getDashboardStats();
+                        setDashboardStats(stats);
+                    } catch (e) {
+                        console.error('Error refreshing stats after appointment complete:', e);
+                    }
+                }}
             />
 
             {cancelingAppointmentId && (
