@@ -26,13 +26,19 @@ export interface Customer {
   loyaltyStamps?: number;
   totalCompletedVisits?: number;
   currentRewardIndex?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CustomerSummary {
   id: number;
+  publicId?: string;
   fullName: string;
   phone: string;
+  rut?: string;
+  email?: string;
   loyaltyStamps?: number;
+  createdAt?: string;
 }
 
 export interface CustomerLookupResponse {

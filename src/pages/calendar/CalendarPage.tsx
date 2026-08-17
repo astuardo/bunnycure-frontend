@@ -11,6 +11,7 @@ import {
   endOfMonth, 
   eachDayOfInterval, 
   format, 
+  isValid,
   isSameDay, 
   isToday, 
   isSameMonth,
@@ -256,6 +257,21 @@ export default function CalendarPage() {
     if (!selectedDate) return [];
     return getDateUnavailabilities(selectedDate, unavailabilities);
   }, [selectedDate, unavailabilities]);
+
+  // Citas del mes en curso / seleccionado
+  const currentMonthAppointments = useMemo(() => {
+    return appointments.filter(apt => {
+      const aptDateStr = apt.appointmentDate;
+      if (!aptDateStr) return false;
+      const aptDate = aptDateStr.includes('T') ? new Date(aptDateStr) : new Date(aptDateStr + 'T00:00:00');
+      return isValid(aptDate) && isSameMonth(aptDate, currentMonth);
+    });
+  }, [appointments, currentMonth]);
+
+  const monthConfirmed = useMemo(() => currentMonthAppointments.filter(a => a.status === 'CONFIRMED').length, [currentMonthAppointments]);
+  const monthPending = useMemo(() => currentMonthAppointments.filter(a => a.status === 'PENDING').length, [currentMonthAppointments]);
+  const monthCompleted = useMemo(() => currentMonthAppointments.filter(a => a.status === 'COMPLETED').length, [currentMonthAppointments]);
+  const monthCancelled = useMemo(() => currentMonthAppointments.filter(a => a.status === 'CANCELLED').length, [currentMonthAppointments]);
 
   const handlePrevMonth = () => {
     setCurrentMonth(prev => subMonths(prev, 1));
@@ -515,16 +531,21 @@ export default function CalendarPage() {
                           </span>
                         </td>
                         <td>
-                          <a
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              navigate(`/customers/${apt.customer.id}`);
-                            }}
-                            className="text-decoration-none"
-                          >
-                            {apt.customer.fullName}
-                          </a>
+                          <div>
+                            <a
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate(`/customers/${apt.customer.id}`);
+                              }}
+                              className="text-decoration-none fw-bold d-block"
+                            >
+                              {apt.customer.fullName}
+                            </a>
+                            <small className="text-muted d-block" style={{ fontSize: '0.8rem' }}>
+                              🪪 {apt.customer.rut?.trim() ? apt.customer.rut.trim() : 'No tiene'}
+                            </small>
+                          </div>
                         </td>
                         <td>{getAppointmentServiceLabel(apt)}</td>
                         <td>
@@ -579,32 +600,37 @@ export default function CalendarPage() {
           </Card>
         )}
 
-        {/* Resumen estadístico */}
-        <Card className="mt-3">
+        {/* Resumen estadístico del mes en curso */}
+        <Card className="mt-3 shadow-sm border-0" style={{ borderRadius: '12px' }}>
           <Card.Body>
-            <h6 className="mb-3">📊 Resumen</h6>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h6 className="mb-0 fw-bold">
+                📊 Resumen del Mes ({format(currentMonth, 'MMMM yyyy', { locale: es })})
+              </h6>
+              <Badge bg="light" text="dark" className="border">
+                Total Histórico: {appointments.length} citas
+              </Badge>
+            </div>
             <div className="row text-center">
               <div className="col">
-                <div className="h3 mb-0">{appointments.length}</div>
-                <div className="small text-muted">Total Citas</div>
+                <div className="h3 mb-0 fw-bold text-dark">{currentMonthAppointments.length}</div>
+                <div className="small text-muted">Citas del Mes</div>
               </div>
               <div className="col">
-                <div className="h3 mb-0">
-                  {appointments.filter((a: Appointment) => a.status === 'CONFIRMED').length}
-                </div>
+                <div className="h3 mb-0 fw-bold text-primary">{monthConfirmed}</div>
                 <div className="small text-muted">Confirmadas</div>
               </div>
               <div className="col">
-                <div className="h3 mb-0">
-                  {appointments.filter((a: Appointment) => a.status === 'PENDING').length}
-                </div>
+                <div className="h3 mb-0 fw-bold text-warning">{monthPending}</div>
                 <div className="small text-muted">Pendientes</div>
               </div>
               <div className="col">
-                <div className="h3 mb-0">
-                  {appointments.filter((a: Appointment) => a.status === 'COMPLETED').length}
-                </div>
+                <div className="h3 mb-0 fw-bold text-success">{monthCompleted}</div>
                 <div className="small text-muted">Completadas</div>
+              </div>
+              <div className="col">
+                <div className="h3 mb-0 fw-bold text-danger">{monthCancelled}</div>
+                <div className="small text-muted">Canceladas</div>
               </div>
             </div>
           </Card.Body>

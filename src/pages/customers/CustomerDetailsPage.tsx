@@ -14,8 +14,7 @@ import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { GiftCard } from '../../types/giftcard.types';
 import { downloadGiftCardPng, sendGiftCardWhatsApp, toWhatsAppPhone } from '../../utils/giftcardRenderer';
 import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
-
-type CustomerWithCreatedAt = Customer & { createdAt?: string };
+import { customersApi } from '../../api/customers.api';
 
 export default function CustomerDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +31,8 @@ export default function CustomerDetailsPage() {
   const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
   const { giftCards, loading: giftCardsLoading, fetchGiftCards } = useGiftCardsStore();
 
+  const [directCustomer, setDirectCustomer] = useState<Customer | null>(null);
+  const [directCustomerLoading, setDirectCustomerLoading] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [editingNotes, setEditingNotes] = useState(false);
 
@@ -43,12 +44,20 @@ export default function CustomerDetailsPage() {
 
   const formatDateSafe = (value: unknown, pattern: string = 'dd/MM/yyyy'): string => {
     const date = parseDateSafe(value);
-    if (!date) return '-';
+    if (!date) return 'No tiene';
     return format(date, pattern, { locale: es });
   };
 
   useEffect(() => {
     if (id) {
+      const cId = Number(id);
+      if (Number.isFinite(cId)) {
+        setDirectCustomerLoading(true);
+        customersApi.getById(cId)
+          .then((res) => setDirectCustomer(res))
+          .catch((err) => console.error('Error cargando cliente por ID:', err))
+          .finally(() => setDirectCustomerLoading(false));
+      }
       fetchCustomers();
       fetchAppointments();
       fetchGiftCards();
@@ -56,10 +65,11 @@ export default function CustomerDetailsPage() {
   }, [id, fetchCustomers, fetchAppointments, fetchGiftCards]);
 
   const customerId = Number(id);
-  const customer = useMemo<CustomerWithCreatedAt | null>(() => {
+  const customer = useMemo<Customer | null>(() => {
+    if (directCustomer) return directCustomer;
     if (!Number.isFinite(customerId)) return null;
-    return (customers.find((c) => c.id === customerId) as CustomerWithCreatedAt | undefined) ?? null;
-  }, [customers, customerId]);
+    return customers.find((c) => c.id === customerId) ?? null;
+  }, [directCustomer, customers, customerId]);
 
   const customerAppointments = useMemo<Appointment[]>(() => {
     if (!customer) return [];
@@ -132,7 +142,7 @@ export default function CustomerDetailsPage() {
     return services.map((service) => service.name).join(' + ');
   };
 
-  if (customersLoading || appointmentsLoading) {
+  if ((customersLoading || appointmentsLoading || directCustomerLoading) && !customer) {
     return (
       <DashboardLayout>
         <Container fluid className="bunny-page text-center py-5">
@@ -186,25 +196,23 @@ export default function CustomerDetailsPage() {
               <Card.Body>
                 <div className="mb-3">
                   <strong>🪪 RUT:</strong>
-                  <p className="mb-0">{customer.rut}</p>
+                  <p className="mb-0">{customer.rut?.trim() ? customer.rut.trim() : 'No tiene'}</p>
                 </div>
                 <div className="mb-3">
                   <strong>📧 Email:</strong>
-                  <p className="mb-0">{customer.email || 'No especificado'}</p>
+                  <p className="mb-0">{customer.email?.trim() ? customer.email.trim() : 'No tiene'}</p>
                 </div>
                 <div className="mb-3">
                   <strong>📱 Teléfono:</strong>
-                  <p className="mb-0">{customer.phone}</p>
+                  <p className="mb-0">{customer.phone?.trim() ? customer.phone.trim() : 'No tiene'}</p>
                 </div>
-                {customer.birthDate && (
-                  <div className="mb-3">
-                    <strong>🎂 Fecha de Nacimiento:</strong>
-                    <p className="mb-0">{formatDateSafe(customer.birthDate)}</p>
-                  </div>
-                )}
+                <div className="mb-3">
+                  <strong>🎂 Fecha de Nacimiento:</strong>
+                  <p className="mb-0">{customer.birthDate ? formatDateSafe(customer.birthDate) : 'No tiene'}</p>
+                </div>
                 <div className="mb-3">
                   <strong>📅 Cliente desde:</strong>
-                  <p className="mb-0">{formatDateSafe(customer.createdAt)}</p>
+                  <p className="mb-0">{customer.createdAt ? formatDateSafe(customer.createdAt) : 'No tiene'}</p>
                 </div>
               </Card.Body>
             </Card>
