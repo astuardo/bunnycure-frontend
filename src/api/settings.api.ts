@@ -262,11 +262,7 @@ export const settingsApi = {
     // Si aún no se encontraron en payload, consultar directamente a la base de datos por clave específica
     if (parsedUnavailabilities.length === 0) {
       try {
-        const [directUnavailabilities, directHolidays, directBlocks] = await Promise.all([
-          settingsApi.get('schedule.unavailabilities').catch(() => null),
-          settingsApi.get('business.holidays').catch(() => null),
-          settingsApi.get('business.schedule_blocks').catch(() => null),
-        ]);
+        const directUnavailabilities = await settingsApi.get('schedule.unavailabilities').catch(() => null);
 
         if (directUnavailabilities) {
           const parsed = JSON.parse(directUnavailabilities);
@@ -274,50 +270,8 @@ export const settingsApi = {
             parsedUnavailabilities = parsed as ScheduleUnavailability[];
           }
         }
-
-        if (directHolidays) {
-          const hList = typeof directHolidays === 'string' ? JSON.parse(directHolidays) : directHolidays;
-          if (Array.isArray(hList)) {
-            hList.forEach((h: string, idx: number) => {
-              const exists = parsedUnavailabilities.some((u) => u.type === 'FULL_DAY' && u.startDate === h);
-              if (!exists) {
-                parsedUnavailabilities.push({
-                  id: `db-holiday-${idx}-${h}`,
-                  type: 'FULL_DAY',
-                  startDate: h,
-                  endDate: h,
-                  reason: 'Feriado / Día Cerrado',
-                  createdAt: new Date().toISOString(),
-                });
-              }
-            });
-          }
-        }
-
-        if (directBlocks) {
-          const bList = typeof directBlocks === 'string' ? JSON.parse(directBlocks) : directBlocks;
-          if (Array.isArray(bList)) {
-            bList.forEach((b: { id?: string; date: string; startTime: string; endTime: string; reason?: string }) => {
-              const exists = parsedUnavailabilities.some(
-                (u) => u.type === 'TIME_SLOT' && u.startDate === b.date && u.startTime === b.startTime
-              );
-              if (!exists) {
-                parsedUnavailabilities.push({
-                  id: b.id || `db-block-${Date.now()}-${Math.random()}`,
-                  type: 'TIME_SLOT',
-                  startDate: b.date,
-                  endDate: b.date,
-                  startTime: b.startTime,
-                  endTime: b.endTime,
-                  reason: b.reason || 'Bloqueo de horario',
-                  createdAt: new Date().toISOString(),
-                });
-              }
-            });
-          }
-        }
       } catch (e) {
-        console.warn('Error fetching individual schedule keys from DB:', e);
+        console.warn('Error fetching individual schedule.unavailabilities:', e);
       }
     }
 
