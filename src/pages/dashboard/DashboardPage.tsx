@@ -11,10 +11,12 @@ import {
     BarChart3,
     TrendingUp,
     Users,
+    DollarSign,
 } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { CancelAppointmentDialog } from '@/components/appointments/CancelAppointmentDialog';
 import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
+import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
@@ -113,44 +115,52 @@ const variantStyles: Record<ActionVariant, { bg: string; hover: string; text: st
     sky:   { bg: '#e8f0f8', hover: '#d4e4f2', text: '#2d4f7c', icon: '#5a7eb0' },
 };
 
-function ActionButton({ icon, label, to, variant }: {
-    icon: React.ReactNode; label: string; to: string; variant: ActionVariant;
+function ActionButton({ icon, label, to, onClick, variant }: {
+    icon: React.ReactNode; label: string; to?: string; onClick?: () => void; variant: ActionVariant;
 }) {
     const s = variantStyles[variant];
-    return (
-        <Link to={to} style={{ display: 'block', textDecoration: 'none' }}>
-            <div
-                style={{
-                    background: s.bg,
-                    borderRadius: '12px',
-                    padding: '12px 10px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s',
-                    minHeight: '72px',
-                    textAlign: 'center',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = s.hover)}
-                onMouseLeave={e => (e.currentTarget.style.background = s.bg)}
-            >
-                <span style={{ color: s.icon, display: 'flex' }}>{icon}</span>
-                <span style={{
-                    color: s.text,
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    lineHeight: '1.3',
-                    wordBreak: 'break-word',
-                    width: '100%',
-                }}>
-                    {label}
-                </span>
-            </div>
-        </Link>
+    const content = (
+        <div
+            style={{
+                background: s.bg,
+                borderRadius: '12px',
+                padding: '12px 10px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                minHeight: '72px',
+                textAlign: 'center',
+                width: '100%',
+            }}
+            onClick={onClick}
+            onMouseEnter={e => (e.currentTarget.style.background = s.hover)}
+            onMouseLeave={e => (e.currentTarget.style.background = s.bg)}
+        >
+            <span style={{ color: s.icon, display: 'flex' }}>{icon}</span>
+            <span style={{
+                color: s.text,
+                fontSize: '12px',
+                fontWeight: 600,
+                lineHeight: 1.2,
+                wordBreak: 'break-word',
+            }}>
+                {label}
+            </span>
+        </div>
     );
+
+    if (to) {
+        return (
+            <Link to={to} style={{ display: 'block', textDecoration: 'none' }}>
+                {content}
+            </Link>
+        );
+    }
+    return content;
 }
 
 function Spinner() {
@@ -180,6 +190,7 @@ export default function DashboardPage() {
     const calendarDisplayConfig = useCalendarDisplayConfig();
     const [completeDialog, setCompleteDialog] = useState<{ show: boolean; appointmentId: number | null }>({ show: false, appointmentId: null });
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showCashClosingModal, setShowCashClosingModal] = useState(false);
     const [cancelingAppointmentId, setCancelingAppointmentId] = useState<number | null>(null);
     const [isCancelLoading, setIsCancelLoading] = useState(false);
 
@@ -332,6 +343,7 @@ export default function DashboardPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                         <ActionButton icon={<CalendarDays size={22} />} label="Nueva Cita"          to="/appointments?create=1&returnTo=%2Fdashboard"    variant="rose" />
                         <ActionButton icon={<UserPlus    size={22} />} label="Nuevo Cliente"        to="/customers?create=1&returnTo=%2Fdashboard"       variant="mint" />
+                        <ActionButton icon={<DollarSign  size={22} />} label="Cierre de Caja"       onClick={() => setShowCashClosingModal(true)}         variant="mint" />
                         <ActionButton icon={<CalendarOff size={22} />} label="Bloquear Agenda"      to="/calendar?manageBlocks=1"                        variant="rose" />
                         <ActionButton icon={<CalendarDays size={22} />} label="Calendario"          to="/calendar"                                       variant="beige" />
                         <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky"  />
@@ -776,6 +788,12 @@ export default function DashboardPage() {
                     isLoading={isCancelLoading}
                 />
             )}
+
+            {/* Modal de Cierre de Caja */}
+            <CashClosingModal
+                show={showCashClosingModal}
+                onHide={() => setShowCashClosingModal(false)}
+            />
         </DashboardLayout>
     );
 }

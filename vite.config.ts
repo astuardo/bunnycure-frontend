@@ -143,6 +143,20 @@ export default defineConfig({
       }
     }
   },
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['react-bootstrap', 'bootstrap'],
+          'vendor-charts': ['recharts'],
+          'vendor-icons': ['lucide-react', 'react-icons'],
+          'vendor-utils': ['date-fns', 'axios', 'zustand', 'yup'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

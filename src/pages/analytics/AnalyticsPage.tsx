@@ -45,6 +45,8 @@ import {
   endOfYear,
 } from 'date-fns';
 import { exportToCSV } from '@/utils/exportUtils';
+import { CashClosingModal } from '@/components/finances/CashClosingModal';
+import { useAppointmentsStore } from '@/stores/appointmentsStore';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
@@ -52,13 +54,19 @@ type PresetKey = 'today' | 'last7' | 'thisMonth' | 'lastMonth' | 'last90' | 'thi
 
 export default function AnalyticsPage() {
   const toast = useToast();
+  const { fetchAppointments } = useAppointmentsStore();
   const [loading, setLoading] = useState(false);
+  const [showCashClosing, setShowCashClosing] = useState(false);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [cancelledDetail, setCancelledDetail] = useState<any[]>([]);
   const [clientsMetrics, setClientsMetrics] = useState<any[]>([]);
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [activePreset, setActivePreset] = useState<PresetKey>('thisMonth');
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   const loadAnalytics = async (overrideStart?: string, overrideEnd?: string) => {
     const sDate = overrideStart || startDate;
@@ -229,36 +237,58 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {/* Selector de Rango Personalizado */}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <Form.Control
-                type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
-                  setActivePreset('custom');
-                }}
-                style={{ width: '135px', fontSize: '13px', borderRadius: '8px' }}
-              />
-              <span style={{ color: TEXT_MID, fontSize: '13px' }}>a</span>
-              <Form.Control
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setActivePreset('custom');
-                }}
-                style={{ width: '135px', fontSize: '13px', borderRadius: '8px' }}
-              />
+            {/* Acciones y Selector de Rango Personalizado */}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <Button
-                variant="primary"
-                onClick={() => loadAnalytics()}
-                disabled={loading}
+                variant="outline-primary"
                 size="sm"
-                style={{ background: '#c9897a', borderColor: '#c9897a', borderRadius: '8px', padding: '6px 14px' }}
+                onClick={() => setShowCashClosing(true)}
+                style={{
+                  borderRadius: '10px',
+                  background: '#fdf4f2',
+                  borderColor: '#eed0c5',
+                  color: '#8c2a3e',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
+                }}
               >
-                {loading ? 'Cargando...' : 'Filtrar'}
+                <DollarSign size={16} /> 💰 Cierre de Caja & Finanzas
               </Button>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <Form.Control
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setActivePreset('custom');
+                  }}
+                  style={{ width: '130px', fontSize: '13px', borderRadius: '8px' }}
+                />
+                <span style={{ color: TEXT_MID, fontSize: '13px' }}>a</span>
+                <Form.Control
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setActivePreset('custom');
+                  }}
+                  style={{ width: '130px', fontSize: '13px', borderRadius: '8px' }}
+                />
+                <Button
+                  variant="primary"
+                  onClick={() => loadAnalytics()}
+                  disabled={loading}
+                  size="sm"
+                  style={{ background: '#c9897a', borderColor: '#c9897a', borderRadius: '8px', padding: '6px 14px' }}
+                >
+                  {loading ? 'Cargando...' : 'Filtrar'}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -961,6 +991,9 @@ export default function AnalyticsPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de Cierre de Caja & Finanzas */}
+      <CashClosingModal show={showCashClosing} onHide={() => setShowCashClosing(false)} />
     </DashboardLayout>
   );
 }
