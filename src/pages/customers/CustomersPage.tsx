@@ -13,6 +13,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { Customer, NotificationPreference } from '../../types/customer.types';
 import { computeInactiveCustomers } from '../../utils/reactivationUtils';
 import { computeBirthdayCustomers } from '../../utils/birthdayUtils';
+import { formatRutWithDots } from '../../utils/rutUtils';
 
 export default function CustomersPage() {
     const navigate = useNavigate();
@@ -116,24 +117,47 @@ export default function CustomersPage() {
         }
     };
 
-    const getNotificationBadge = (pref: NotificationPreference) => {
-        switch (pref) {
-            case NotificationPreference.EMAIL:
-                return <Badge bg="info">📧 Email</Badge>;
-            case NotificationPreference.WHATSAPP:
-                return <Badge bg="success">💬 WhatsApp</Badge>;
-            case NotificationPreference.BOTH:
-                return <Badge bg="primary">📧💬 Ambos</Badge>;
-            case NotificationPreference.NONE:
-                return <Badge bg="secondary">🔕 Ninguno</Badge>;
-            default:
-                return <Badge bg="secondary">-</Badge>;
+    const isBirthdayThisMonth = (birthDate?: string) => {
+        if (!birthDate) return false;
+        try {
+            const currentMonth = new Date().getMonth() + 1;
+            const parts = birthDate.split('-');
+            if (parts.length >= 2) {
+                return parseInt(parts[1], 10) === currentMonth;
+            }
+        } catch {
+            return false;
         }
+        return false;
+    };
+
+    const getNotificationBadge = (pref?: NotificationPreference | string) => {
+        if (!pref || pref === NotificationPreference.BOTH || pref === 'BOTH') {
+            return <Badge bg="primary" style={{ fontSize: '11px' }}>📧💬 WhatsApp + Email</Badge>;
+        }
+        if (pref === NotificationPreference.WHATSAPP || pref === 'WHATSAPP') {
+            return <Badge bg="success" style={{ fontSize: '11px' }}>💬 Solo WhatsApp</Badge>;
+        }
+        if (pref === NotificationPreference.EMAIL || pref === 'EMAIL') {
+            return <Badge bg="info" style={{ fontSize: '11px' }}>📧 Solo Email</Badge>;
+        }
+        if (pref === NotificationPreference.NONE || pref === 'NONE') {
+            return <Badge bg="secondary" style={{ fontSize: '11px' }}>🔕 Sin avisos</Badge>;
+        }
+        return <Badge bg="success" style={{ fontSize: '11px' }}>💬 WhatsApp</Badge>;
     };
 
     const formatHealthNotes = (notes?: string) => {
-        if (!notes || !notes.trim()) return <span className="text-muted">Sin notas</span>;
-        return notes.length > 60 ? `${notes.slice(0, 60)}...` : notes;
+        if (!notes || !notes.trim()) return <span className="text-muted small">Sin observaciones</span>;
+        const isAlert = /alerg|diabet|hong|medic|sensib|dolor/i.test(notes);
+        return (
+            <div>
+                {isAlert && <Badge bg="danger" className="mb-1 d-inline-block" style={{ fontSize: '10px' }}>⚠️ Alerta de Salud</Badge>}
+                <div className="small text-muted" style={{ lineHeight: 1.3 }}>
+                    {notes.length > 70 ? `${notes.slice(0, 70)}...` : notes}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -299,113 +323,210 @@ export default function CustomersPage() {
                                             <>
                                                 {/* Vista Desktop: Tabla */}
                                                 <div className="d-none d-md-block">
-                                                    <Table responsive hover className="mb-0">
+                                                    <Table responsive hover className="align-middle mb-0">
                                                         <thead className="table-light">
                                                             <tr>
-                                                                <th>Nombre</th>
-                                                                <th>Teléfono / Instagram</th>
+                                                                <th style={{ minWidth: '220px' }}>Cliente</th>
+                                                                <th>Contacto Directo</th>
                                                                 <th>Notificaciones</th>
-                                                                <th>Notas de Salud</th>
-                                                                <th className="text-center">Acciones</th>
+                                                                <th>Ficha & Salud</th>
+                                                                <th className="text-center" style={{ minWidth: '160px' }}>Acciones</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {customers.map((customer) => (
-                                                                <tr key={customer.id}>
-                                                                    <td className="fw-semibold">{customer.fullName}</td>
-                                                                    <td>
-                                                                        <div className="d-flex flex-column">
-                                                                            <a href={`tel:${customer.phone}`} className="text-decoration-none small mb-1">
-                                                                                📱 {customer.phone}
-                                                                            </a>
-                                                                            {customer.instagram && (
-                                                                                <span className="text-primary small">
-                                                                                    📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </td>
-                                                                    <td>{getNotificationBadge(customer.notificationPreference)}</td>
-                                                                    <td>{formatHealthNotes(customer.healthNotes)}</td>
-                                                                    <td className="text-center">
-                                                                        <Button 
-                                                                            variant="outline-primary" 
-                                                                            size="sm"
-                                                                            className="me-2"
-                                                                            onClick={() => navigate(`/customers/${customer.id}`)}
-                                                                        >
-                                                                            👁️ Ver
-                                                                        </Button>
-                                                                        <Button 
-                                                                            variant="outline-secondary" 
-                                                                            size="sm"
-                                                                            className="me-2"
-                                                                            onClick={() => handleEditCustomer(customer)}
-                                                                        >
-                                                                            ✏️ Editar
-                                                                        </Button>
-                                                                        <Button 
-                                                                            variant="outline-danger" 
-                                                                            size="sm"
-                                                                            onClick={() => handleDeleteCustomer(customer)}
-                                                                        >
-                                                                            🗑️
-                                                                        </Button>
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
+                                                            {customers.map((customer) => {
+                                                                const rawPhone = (customer.phone || '').replace(/\D/g, '');
+                                                                const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
+
+                                                                return (
+                                                                    <tr key={customer.id}>
+                                                                        <td>
+                                                                            <div className="d-flex flex-column gap-1">
+                                                                                <div className="d-flex align-items-center gap-2 flex-wrap">
+                                                                                    <span className="fw-bold" style={{ color: '#422314', fontSize: '14.5px' }}>
+                                                                                        {customer.fullName}
+                                                                                    </span>
+                                                                                    {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits >= 5 && (
+                                                                                        <Badge bg="warning" text="dark" style={{ fontSize: '10px' }}>👑 VIP</Badge>
+                                                                                    )}
+                                                                                    {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits < 2 && (
+                                                                                        <Badge bg="light" text="dark" style={{ fontSize: '10px', border: '1px solid #eed0c5' }}>✨ Nueva</Badge>
+                                                                                    )}
+                                                                                    {isBirthdayThisMonth(customer.birthDate) && (
+                                                                                        <Badge bg="danger" style={{ fontSize: '10px' }}>🎂 Cumpleañera</Badge>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="d-flex align-items-center gap-2 flex-wrap small">
+                                                                                    {customer.rut ? (
+                                                                                        <span className="badge bg-light text-secondary border px-2 py-1 font-monospace" style={{ fontSize: '11px' }}>
+                                                                                            🆔 {formatRutWithDots(customer.rut)}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-muted fst-italic" style={{ fontSize: '11px' }}>Sin RUT</span>
+                                                                                    )}
+                                                                                    <span className="text-muted" style={{ fontSize: '11.5px' }}>
+                                                                                        ⭐ <strong>{customer.loyaltyStamps || 0}/10</strong> sellos &bull; {customer.totalCompletedVisits || 0} visitas
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div className="d-flex flex-column gap-1">
+                                                                                <div className="d-flex align-items-center gap-2">
+                                                                                    <a href={`tel:${customer.phone}`} className="text-decoration-none small fw-semibold" style={{ color: '#422314' }}>
+                                                                                        📱 {customer.phone}
+                                                                                    </a>
+                                                                                    {rawPhone && (
+                                                                                        <a
+                                                                                            href={`https://wa.me/${waPhone}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="badge bg-success text-white text-decoration-none px-2 py-1"
+                                                                                            title="Enviar WhatsApp"
+                                                                                            style={{ fontSize: '11px' }}
+                                                                                        >
+                                                                                            💬 WhatsApp
+                                                                                        </a>
+                                                                                    )}
+                                                                                </div>
+                                                                                {customer.email && (
+                                                                                    <span className="text-muted small text-truncate" style={{ maxWidth: '200px', fontSize: '11.5px' }}>
+                                                                                        ✉️ {customer.email}
+                                                                                    </span>
+                                                                                )}
+                                                                                {customer.instagram && (
+                                                                                    <span className="text-primary small" style={{ fontSize: '11.5px' }}>
+                                                                                        📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>{getNotificationBadge(customer.notificationPreference)}</td>
+                                                                        <td>{formatHealthNotes(customer.healthNotes)}</td>
+                                                                        <td className="text-center">
+                                                                            <Button 
+                                                                                variant="outline-primary" 
+                                                                                size="sm" 
+                                                                                className="me-1"
+                                                                                onClick={() => navigate(`/customers/${customer.id}`)}
+                                                                                style={{ borderRadius: '6px' }}
+                                                                            >
+                                                                                👁️ Ver Ficha
+                                                                            </Button>
+                                                                            <Button 
+                                                                                variant="outline-secondary" 
+                                                                                size="sm" 
+                                                                                className="me-1"
+                                                                                onClick={() => handleEditCustomer(customer)}
+                                                                                style={{ borderRadius: '6px' }}
+                                                                            >
+                                                                                ✏️
+                                                                            </Button>
+                                                                            <Button 
+                                                                                variant="outline-danger" 
+                                                                                size="sm" 
+                                                                                onClick={() => handleDeleteCustomer(customer)}
+                                                                                style={{ borderRadius: '6px' }}
+                                                                            >
+                                                                                🗑️
+                                                                            </Button>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
                                                         </tbody>
                                                     </Table>
                                                 </div>
 
                                                 {/* Vista Móvil: Cards */}
                                                 <div className="d-md-none">
-                                                    {customers.map((customer) => (
-                                                        <Card key={customer.id} className="mb-3 mx-3 mt-3">
-                                                            <Card.Body>
-                                                                <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
-                                                                    <div style={{ minWidth: 0 }}>
-                                                                        <h6 className="mb-1 fw-bold text-break">{customer.fullName}</h6>
-                                                                        <small className="text-muted d-block text-break">📱 {customer.phone}</small>
+                                                    {customers.map((customer) => {
+                                                        const rawPhone = (customer.phone || '').replace(/\D/g, '');
+                                                        const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
+
+                                                        return (
+                                                            <Card key={customer.id} className="mb-3 mx-3 mt-3 border-0 shadow-sm" style={{ borderRadius: '12px', background: '#fff' }}>
+                                                                <Card.Body className="p-3">
+                                                                    <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                                                                        <div style={{ minWidth: 0 }}>
+                                                                            <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                                                <h6 className="mb-0 fw-bold text-break" style={{ color: '#422314' }}>{customer.fullName}</h6>
+                                                                                {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits >= 5 && (
+                                                                                    <Badge bg="warning" text="dark" style={{ fontSize: '9px' }}>👑 VIP</Badge>
+                                                                                )}
+                                                                                {isBirthdayThisMonth(customer.birthDate) && (
+                                                                                    <Badge bg="danger" style={{ fontSize: '9px' }}>🎂</Badge>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="d-flex align-items-center gap-2 flex-wrap small">
+                                                                                {customer.rut ? (
+                                                                                    <span className="badge bg-light text-secondary border font-monospace" style={{ fontSize: '10.5px' }}>
+                                                                                        🆔 {formatRutWithDots(customer.rut)}
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="text-muted fst-italic" style={{ fontSize: '10.5px' }}>Sin RUT</span>
+                                                                                )}
+                                                                                <span className="text-muted" style={{ fontSize: '11px' }}>
+                                                                                    ⭐ {customer.loyaltyStamps || 0}/10 sellos
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex-shrink-0">
+                                                                            {getNotificationBadge(customer.notificationPreference)}
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="flex-shrink-0">
-                                                                        {getNotificationBadge(customer.notificationPreference)}
+                                                                    
+                                                                    <div className="d-flex align-items-center gap-2 mb-2">
+                                                                        <small className="text-muted text-break">📱 {customer.phone}</small>
+                                                                        {rawPhone && (
+                                                                            <a
+                                                                                href={`https://wa.me/${waPhone}`}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="badge bg-success text-white text-decoration-none px-2 py-1"
+                                                                                style={{ fontSize: '10px' }}
+                                                                            >
+                                                                                💬 WhatsApp
+                                                                            </a>
+                                                                        )}
                                                                     </div>
-                                                                </div>
-                                                                
-                                                                <div className="mb-2">
-                                                                    <small className="text-muted d-block">Notas de Salud:</small>
-                                                                    <small className="text-break">{formatHealthNotes(customer.healthNotes)}</small>
-                                                                </div>
-                                                                
-                                                                <div className="d-flex gap-2 flex-wrap">
-                                                                    <Button 
-                                                                        variant="outline-primary" 
-                                                                        size="sm"
-                                                                        className="flex-fill"
-                                                                        onClick={() => navigate(`/customers/${customer.id}`)}
-                                                                    >
-                                                                        👁️ Ver
-                                                                    </Button>
-                                                                    <Button 
-                                                                        variant="outline-secondary" 
-                                                                        size="sm"
-                                                                        className="flex-fill"
-                                                                        onClick={() => handleEditCustomer(customer)}
-                                                                    >
-                                                                        ✏️ Editar
-                                                                    </Button>
-                                                                    <Button 
-                                                                        variant="outline-danger" 
-                                                                        size="sm"
-                                                                        onClick={() => handleDeleteCustomer(customer)}
-                                                                    >
-                                                                        🗑️
-                                                                    </Button>
-                                                                </div>
-                                                            </Card.Body>
-                                                        </Card>
-                                                    ))}
+
+                                                                    <div className="mb-3">
+                                                                        {formatHealthNotes(customer.healthNotes)}
+                                                                    </div>
+                                                                    
+                                                                    <div className="d-flex gap-2 flex-wrap">
+                                                                        <Button 
+                                                                            variant="outline-primary" 
+                                                                            size="sm" 
+                                                                            className="flex-fill"
+                                                                            onClick={() => navigate(`/customers/${customer.id}`)}
+                                                                            style={{ borderRadius: '8px' }}
+                                                                        >
+                                                                            👁️ Ver Ficha
+                                                                        </Button>
+                                                                        <Button 
+                                                                            variant="outline-secondary" 
+                                                                            size="sm" 
+                                                                            className="flex-fill"
+                                                                            onClick={() => handleEditCustomer(customer)}
+                                                                            style={{ borderRadius: '8px' }}
+                                                                        >
+                                                                            ✏️ Editar
+                                                                        </Button>
+                                                                        <Button 
+                                                                            variant="outline-danger" 
+                                                                            size="sm" 
+                                                                            onClick={() => handleDeleteCustomer(customer)}
+                                                                            style={{ borderRadius: '8px' }}
+                                                                        >
+                                                                            🗑️
+                                                                        </Button>
+                                                                    </div>
+                                                                </Card.Body>
+                                                            </Card>
+                                                        );
+                                                    })}
                                                 </div>
                                             </>
                                         )}

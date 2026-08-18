@@ -257,19 +257,23 @@ export default function DashboardPage() {
         return getTodayUnavailabilities(unavailabilities);
     }, [unavailabilities]);
 
-    const thisWeekAppointments = appointments.filter((apt: Appointment) => {
-        if (!apt.appointmentDate) return false;
-        const d = parseISO(apt.appointmentDate);
-        const weekStart = startOfWeek(new Date(), { locale: es });
-        const weekEnd   = endOfWeek(new Date(),   { locale: es });
-        return d >= weekStart && d <= weekEnd;
-    });
-    const weekStats = [
+    const thisWeekAppointments = useMemo(() => {
+        const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const weekEnd   = endOfWeek(new Date(),   { weekStartsOn: 1 });
+        return appointments.filter((apt: Appointment) => {
+            if (!apt.appointmentDate) return false;
+            const dateStr = apt.appointmentDate.split('T')[0];
+            const d = parseISO(dateStr);
+            return d >= weekStart && d <= weekEnd;
+        });
+    }, [appointments]);
+
+    const weekStats = useMemo(() => [
         { label: 'Confirmadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CONFIRMED).length, bg: '#d4edda', color: '#155724' },
         { label: 'Completadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.COMPLETED).length, bg: '#c8e6e0', color: '#0d5c4a' },
         { label: 'Pendientes',  count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.PENDING).length,   bg: '#fde8cc', color: '#7c4a00' },
         { label: 'Canceladas',  count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CANCELLED).length,  bg: '#fce4e4', color: '#7c1c1c' },
-    ];
+    ], [thisWeekAppointments]);
 
     const monthCalendarCells = useMemo(() => {
         const monthStart = startOfMonth(calendarMonth);
@@ -583,13 +587,31 @@ export default function DashboardPage() {
 
                 {/* ══ 5. Insights de negocio ═══════════════════════════════ */}
                 <DashCard style={{ padding: CARD_PAD }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                        <TrendingUp size={18} style={{ color: '#c9897a' }} />
-                        <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>Insights del Mes</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <TrendingUp size={18} style={{ color: '#c9897a' }} />
+                            <span style={{ fontWeight: 600, fontSize: '15px', color: TEXT_DARK }}>Insights del Mes</span>
+                        </div>
+                        <Link to="/analytics" style={{ fontSize: '12px', color: TEXT_MID, textDecoration: 'underline' }}>
+                            Ver Analíticas &rarr;
+                        </Link>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: DIVIDER }}>
-                        <span style={{ fontSize: '14px', color: TEXT_MID }}>Ingresos Proyectados</span>
+                        <div>
+                            <span style={{ fontSize: '14px', color: TEXT_DARK, fontWeight: 500, display: 'block' }}>Ingresos Reales (Cobrados)</span>
+                            <span style={{ fontSize: '11px', color: TEXT_MID }}>{dashboardStats?.completedAppointmentsMonth ?? 0} citas atendidas</span>
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: '16px', color: '#2d6b55' }}>
+                            {formatCurrency(dashboardStats?.completedRevenueMonth ?? 0)}
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: DIVIDER }}>
+                        <div>
+                            <span style={{ fontSize: '14px', color: TEXT_MID, display: 'block' }}>Ingresos Proyectados</span>
+                            <span style={{ fontSize: '11px', color: TEXT_MID }}>{dashboardStats?.totalAppointmentsMonth ?? 0} citas activas en el mes</span>
+                        </div>
                         <span style={{ fontWeight: 700, fontSize: '16px', color: '#5a8f7b' }}>
                             {formatCurrency(dashboardStats?.totalRevenueMonth || 0)}
                         </span>
@@ -598,10 +620,13 @@ export default function DashboardPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: DIVIDER, gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                             <Users size={14} style={{ color: '#b09080' }} />
-                            <span style={{ fontSize: '14px', color: TEXT_MID }}>Fidelidad</span>
+                            <div>
+                                <span style={{ fontSize: '14px', color: TEXT_MID, display: 'block' }}>Clienta Destacada</span>
+                                <span style={{ fontSize: '11px', color: TEXT_MID }}>Mayor frecuencia este mes</span>
+                            </div>
                         </div>
-                        <span style={{ fontWeight: 600, fontSize: '13px', color: TEXT_DARK, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }} title={dashboardStats?.topCustomer?.name}>
-                            {dashboardStats?.topCustomer ? `${dashboardStats.topCustomer.name} (${dashboardStats.topCustomer.appointmentCount})` : 'Sin datos'}
+                        <span style={{ fontWeight: 600, fontSize: '13px', color: TEXT_DARK, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }} title={dashboardStats?.topCustomer ? `${dashboardStats.topCustomer.name} (${dashboardStats.topCustomer.appointmentCount} visitas - ${formatCurrency(dashboardStats.topCustomer.totalSpent)})` : undefined}>
+                            {dashboardStats?.topCustomer ? `${dashboardStats.topCustomer.name} (${dashboardStats.topCustomer.appointmentCount} visitas)` : 'Sin datos'}
                         </span>
                     </div>
 

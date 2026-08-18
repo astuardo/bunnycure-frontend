@@ -37,7 +37,15 @@ export interface CustomerSummary {
   phone: string;
   rut?: string;
   email?: string;
+  gender?: string;
+  birthDate?: string;
+  emergencyPhone?: string;
+  healthNotes?: string;
+  notes?: string;
+  notificationPreference?: NotificationPreference;
   loyaltyStamps?: number;
+  totalCompletedVisits?: number;
+  currentRewardIndex?: number;
   createdAt?: string;
 }
 
