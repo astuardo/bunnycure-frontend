@@ -1,9 +1,9 @@
 /**
- * API de Recordatorios - endpoints resilientes para gestión de reminders.
- * Soporta rutas modernas `/api/reminders/*`, legacy `/admin/reminders/*` y `/api/appointments/:id/whatsapp/reminder`.
+ * API de Recordatorios - endpoints modernos REST para gestión de reminders.
  */
 
 import apiClient from './client';
+import { ApiResponse } from '../types/api.types';
 
 export interface ReminderStats {
   pendingReminders: number;
@@ -18,27 +18,22 @@ export interface SendReminderResponse {
 
 export const remindersApi = {
   /**
-   * Obtener estadísticas de recordatorios
+   * Obtener estadísticas de recordatorios para hoy
    */
   getStats: async (): Promise<ReminderStats> => {
-    try {
-      const response = await apiClient.get<ReminderStats>('/api/reminders/stats');
-      return response.data;
-    } catch {
-      const fallbackResponse = await apiClient.get<ReminderStats>('/admin/reminders/stats');
-      return fallbackResponse.data;
+    const response = await apiClient.get<ApiResponse<ReminderStats> | ReminderStats>('/api/reminders/stats');
+    const data = response.data;
+    if (data && typeof data === 'object' && 'data' in data && data.data) {
+      return data.data;
     }
+    return data as ReminderStats;
   },
 
   /**
    * Enviar recordatorios de hoy (envío masivo)
    */
   sendTodayReminders: async (): Promise<void> => {
-    try {
-      await apiClient.post('/api/reminders/send-today');
-    } catch {
-      await apiClient.post('/admin/reminders/send-today');
-    }
+    await apiClient.post<ApiResponse<unknown>>('/api/reminders/send-today');
   },
 
   /**
@@ -46,21 +41,23 @@ export const remindersApi = {
    */
   sendReminderForAppointment: async (appointmentId: number): Promise<SendReminderResponse> => {
     try {
-      const response = await apiClient.post<SendReminderResponse>(
+      const response = await apiClient.post<ApiResponse<SendReminderResponse> | SendReminderResponse>(
         `/api/reminders/send/${appointmentId}`
       );
-      return response.data;
-    } catch {
-      try {
-        const response = await apiClient.post<SendReminderResponse>(
-          `/admin/reminders/send/${appointmentId}`
-        );
-        return response.data;
-      } catch {
-        // Fallback al endpoint REST de appointments
-        await apiClient.post(`/api/appointments/${appointmentId}/whatsapp/reminder`);
-        return { success: true, message: 'Recordatorio enviado correctamente' };
+      const data = response.data;
+      if (data && typeof data === 'object' && 'data' in data && data.data) {
+        return data.data;
       }
+      return (data as SendReminderResponse) || { success: true, message: 'Recordatorio enviado exitosamente' };
+    } catch {
+      // Fallback a endpoint en appointments
+      const resp = await apiClient.post<ApiResponse<{ message?: string }>>(
+        `/api/appointments/${appointmentId}/whatsapp/reminder`
+      );
+      return {
+        success: true,
+        message: resp.data?.data?.message || 'Recordatorio enviado correctamente',
+      };
     }
   },
 };

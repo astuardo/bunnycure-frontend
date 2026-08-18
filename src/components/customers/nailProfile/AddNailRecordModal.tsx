@@ -13,6 +13,7 @@ import {
   addNailPhotoRecord,
 } from '../../../utils/nailProfileUtils';
 import { useToast } from '../../../hooks/useToast';
+import { customersApi } from '../../../api/customers.api';
 
 interface AddNailRecordModalProps {
   show: boolean;
@@ -102,6 +103,18 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
         tags,
         photoUrls,
       });
+
+      // Sincronizar en segundo plano con la base de datos del backend
+      if (photoUrls.length > 0) {
+        customersApi.createServiceRecord(customerId, {
+          serviceDetail: `${title.trim()} (${BASE_TECHNIQUE_LABELS[baseType]})`,
+          photoCaption: polishColors.trim() ? `Colores: ${polishColors.trim()}` : undefined,
+          photoBase64: photoUrls[0],
+          mimeType: 'image/jpeg',
+        }).catch((err) => {
+          console.warn('[BACKEND SYNC] Error al sincronizar foto con BD:', err);
+        });
+      }
 
       toast.success('📸 Diseño y ficha técnica guardados con éxito');
       onRecordSaved(created);

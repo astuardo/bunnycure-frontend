@@ -205,4 +205,66 @@ export const customersApi = {
     const { qrUrl } = await customersApi.getGoogleWalletLinks(id);
     return qrUrl;
   },
+
+  /**
+   * Listar registros de servicio y fotos desde el backend
+   */
+  listServiceRecords: async (id: number): Promise<Array<{
+    id: number;
+    customerId: number;
+    serviceDetail: string;
+    photoCaption?: string;
+    mimeType?: string;
+    hasPhoto: boolean;
+    createdAt: string;
+  }>> => {
+    const response = await apiClient.get<ApiResponse<Array<{
+      id: number;
+      customerId: number;
+      serviceDetail: string;
+      photoCaption?: string;
+      mimeType?: string;
+      hasPhoto: boolean;
+      createdAt: string;
+    }>>>(`/api/customers/${id}/service-records`);
+    return response.data.data || [];
+  },
+
+  /**
+   * Guardar nuevo registro de servicio con foto en el backend
+   */
+  createServiceRecord: async (
+    id: number,
+    payload: {
+      serviceDetail: string;
+      photoCaption?: string;
+      photoBase64?: string;
+      mimeType?: string;
+    }
+  ) => {
+    const response = await apiClient.post<ApiResponse<{
+      id: number;
+      customerId: number;
+      serviceDetail: string;
+      photoCaption?: string;
+      mimeType?: string;
+      hasPhoto: boolean;
+      createdAt: string;
+    }>>(`/api/customers/${id}/service-records`, payload);
+    return response.data.data;
+  },
+
+  /**
+   * Eliminar un registro de servicio en el backend
+   */
+  deleteServiceRecord: async (customerId: number, recordId: number): Promise<void> => {
+    await apiClient.delete(`/api/customers/${customerId}/service-records/${recordId}`);
+  },
+
+  /**
+   * Obtener URL directa para streaming de foto de servicio
+   */
+  getServiceRecordPhotoUrl: (customerId: number, recordId: number): string => {
+    return `/api/customers/${customerId}/service-records/${recordId}/photo`;
+  },
 };

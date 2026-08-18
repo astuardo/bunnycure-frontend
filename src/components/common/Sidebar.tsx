@@ -75,6 +75,12 @@ const menuItems = [
             description: 'Ciclos de premios'
         },
         { 
+            path: '/users', 
+            icon: '👤', 
+            label: 'Usuarios',
+            description: 'Personal y accesos'
+        },
+        { 
             path: '/settings', 
             icon: '⚙️', 
             label: 'Configuración',
