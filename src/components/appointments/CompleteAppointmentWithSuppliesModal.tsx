@@ -126,13 +126,21 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
         useCustomersStore.getState().fetchCustomers().catch(() => {});
       }
 
-      // Disparo de Google Reviews si está habilitado
+      // Disparo de Google Reviews (Plantilla oficial 'valoracion_servicio_google')
       if (sendGoogleReview && appointmentData?.customer) {
         const phone = appointmentData.customer.phone;
         const serviceName = preview?.serviceNames.join(' + ') || appointmentData.service?.name;
-        const url = buildGoogleReviewWhatsAppUrl(phone, appointmentData.customer.fullName, serviceName);
-        window.open(url, '_blank', 'noopener,noreferrer');
-        toast.info(`Abriendo WhatsApp para solicitar reseña a ${appointmentData.customer.fullName}`);
+
+        try {
+          // Intento de envío automático por backend vía Cloud API (Plantilla valoracion_servicio_google)
+          await appointmentsApi.sendWhatsAppReviewRequest(appointmentId);
+          toast.success(`⭐ Solicitud de reseña enviada por WhatsApp a ${appointmentData.customer.fullName}`);
+        } catch {
+          // Contingencia: apertura de WhatsApp con texto preconfigurado
+          const url = buildGoogleReviewWhatsAppUrl(phone, appointmentData.customer.fullName, serviceName);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          toast.info(`Abriendo WhatsApp para solicitar reseña a ${appointmentData.customer.fullName}`);
+        }
       }
 
       onCompleted();

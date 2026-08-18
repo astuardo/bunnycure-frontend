@@ -47,10 +47,18 @@ export function extractCancellationReason(apt: Appointment): string {
 }
 
 /**
- * Enlace oficial y constructor de mensajes de valoración en Google Reviews
+ * Nombre de la plantilla oficial en Meta Business Manager / WhatsApp Cloud API
+ */
+export const GOOGLE_REVIEW_TEMPLATE_NAME = 'valoracion_servicio_google';
+
+/**
+ * Enlace oficial de valoración en Google Reviews
  */
 export const GOOGLE_REVIEWS_URL = 'https://g.page/r/CfcuMpxkvLJ3EBM/review';
 
+/**
+ * Construye el mensaje oficial alineado con la plantilla 'valoracion_servicio_google'
+ */
 export function buildGoogleReviewMessage(customerName?: string, serviceName?: string): string {
   const firstName = (customerName || '').trim().split(/\s+/)[0] || 'amiga';
   const service = serviceName || 'tu atención de manicure';

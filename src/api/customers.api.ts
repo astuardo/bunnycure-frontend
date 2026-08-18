@@ -168,13 +168,15 @@ export const customersApi = {
    * Ajustar sellos de fidelización manualmente
    */
   adjustLoyalty: async (id: number, delta: number): Promise<Customer> => {
-    const response = await apiClient.post<ApiResponse<Customer>>(
+    const response = await apiClient.post<ApiResponse<Customer> | Customer>(
       `/api/customers/${id}/loyalty/adjust`,
       null,
       { params: { delta } }
     );
-    if (!response.data.data) throw new Error('Error al ajustar sellos');
-    return response.data.data;
+    const payload = response.data;
+    const customer = (payload as ApiResponse<Customer>)?.data ?? (payload as Customer);
+    if (!customer || typeof customer !== 'object') throw new Error('Error al ajustar sellos');
+    return customer;
   },
 
   /**

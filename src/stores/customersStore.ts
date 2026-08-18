@@ -150,12 +150,14 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             
             // Actualizar en la lista y en el actual
             set((state) => {
-                const updatedCustomers = state.customers.map((c) => 
-                    c.id === id ? updatedCustomer : c
-                );
+                const exists = state.customers.some((c) => c.id === id);
+                const updatedCustomers = exists
+                    ? state.customers.map((c) => (c.id === id ? { ...c, ...updatedCustomer } : c))
+                    : [...state.customers, updatedCustomer];
                 
-                // Si el cliente actualizado es el que estamos viendo en detalles, lo actualizamos también
-                const currentCustomer = state.currentCustomer?.id === id ? updatedCustomer : state.currentCustomer;
+                const currentCustomer = state.currentCustomer?.id === id 
+                    ? { ...state.currentCustomer, ...updatedCustomer } 
+                    : (state.currentCustomer ?? updatedCustomer);
                 
                 return {
                     customers: updatedCustomers,

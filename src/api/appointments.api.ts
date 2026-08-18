@@ -112,6 +112,16 @@ export const appointmentsApi = {
   },
 
   /**
+   * Enviar solicitud de valoración en Google Reviews por WhatsApp (Plantilla Meta 'valoracion_servicio_google')
+   */
+  sendWhatsAppReviewRequest: async (id: number): Promise<{ success: boolean; message?: string }> => {
+    const response = await apiClient.post<{ success: boolean; message?: string }>(
+      `/api/appointments/${id}/whatsapp/review`
+    );
+    return response.data;
+  },
+
+  /**
    * Obtener citas próximas en ventana de tiempo.
    * Retorna citas confirmadas que ocurrirán en las próximas N horas.
    * Solo incluye citas que NO tienen reminderSent = true.

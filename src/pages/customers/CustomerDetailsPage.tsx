@@ -72,11 +72,16 @@ export default function CustomerDetailsPage() {
   }, [id, fetchCustomers, fetchAppointments, fetchGiftCards]);
 
   const customerId = Number(id);
-  const customer = useMemo<Customer | null>(() => {
-    if (directCustomer) return directCustomer;
+  const storeCustomer = useMemo<Customer | null>(() => {
     if (!Number.isFinite(customerId)) return null;
     return customers.find((c) => c.id === customerId) ?? null;
-  }, [directCustomer, customers, customerId]);
+  }, [customers, customerId]);
+
+  const customer = useMemo<Customer | null>(() => {
+    if (storeCustomer) return storeCustomer;
+    if (directCustomer) return directCustomer;
+    return null;
+  }, [storeCustomer, directCustomer]);
 
   const customerAppointments = useMemo<Appointment[]>(() => {
     if (!customer) return [];
@@ -124,7 +129,10 @@ export default function CustomerDetailsPage() {
       : `¿Deseas quitar ${Math.abs(delta)} sello(s) a ${customer.fullName}?`;
     
     if (window.confirm(confirmMsg)) {
-      await adjustCustomerLoyalty(customer.id, delta);
+      const updated = await adjustCustomerLoyalty(customer.id, delta);
+      if (updated) {
+        setDirectCustomer(updated);
+      }
     }
   };
 
