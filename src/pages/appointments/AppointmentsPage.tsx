@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
-import { FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FaWhatsapp, FaBell, FaEnvelope, FaSearch, FaTimes, FaCalendarAlt, FaSyncAlt, FaCalendarDay } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { CancelAppointmentDialog } from '../../components/appointments/CancelAppointmentDialog';
@@ -15,11 +15,12 @@ import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { AppointmentStatus, AppointmentCreateRequest, AppointmentUpdateRequest, Appointment } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/useToast';
 import { trackAppointmentCancelled } from '../../utils/analytics';
-import { getAppointmentTotal } from '../../utils/appointmentUtils';
+import { getAppointmentTotal, getAppointmentServices } from '../../utils/appointmentUtils';
+import { matchRutSearch } from '../../utils/rutUtils';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardItem } from '../../types/giftcard.types';
 import { toWhatsAppPhone } from '../../utils/giftcardRenderer';
@@ -81,8 +82,15 @@ export default function AppointmentsPage() {
   const [nextCustomChargeId, setNextCustomChargeId] = useState(1);
   const [nextEditCustomChargeId, setNextEditCustomChargeId] = useState(1);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatusFilter>('ACTIVE');
-  const [dateFilter, setDateFilter] = useState<string>('');
+
+  // Inicializar filtros desde URL params si vienen presentes
+  const initialDate = searchParams.get('date') || '';
+  const initialStatus = (searchParams.get('status') as AppointmentStatusFilter) || 'ACTIVE';
+  const initialSearch = searchParams.get('search') || '';
+
+  const [statusFilter, setStatusFilter] = useState<AppointmentStatusFilter>(initialStatus);
+  const [dateFilter, setDateFilter] = useState<string>(initialDate);
+  const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [serviceSearch, setServiceSearch] = useState('');
@@ -128,11 +136,19 @@ export default function AppointmentsPage() {
   };
 
   useEffect(() => {
-    fetchAppointments();
+    const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
+    if (initialStatus !== 'ACTIVE' && initialStatus !== 'ALL') {
+      filters.status = initialStatus;
+    }
+    if (initialDate) {
+      filters.startDate = initialDate;
+      filters.endDate = initialDate;
+    }
+    fetchAppointments(Object.keys(filters).length > 0 ? filters : undefined);
     fetchCustomers();
     fetchServices(true);
     fetchGiftCards();
-  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards]);
+  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards, initialStatus, initialDate]);
 
   // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
   useEffect(() => {
@@ -248,16 +264,50 @@ export default function AppointmentsPage() {
   );
 
   const displayedAppointments = useMemo(() => {
-    if (statusFilter === 'ALL') {
-      return appointments;
-    }
-    if (statusFilter === 'ACTIVE') {
-      return appointments.filter(
-        (apt) => apt.status === AppointmentStatus.PENDING || apt.status === AppointmentStatus.CONFIRMED
-      );
-    }
-    return appointments.filter((apt) => apt.status === statusFilter);
-  }, [appointments, statusFilter]);
+    return appointments.filter((apt) => {
+      // 1. Filtrar por Estado
+      if (statusFilter === 'ACTIVE') {
+        if (apt.status !== AppointmentStatus.PENDING && apt.status !== AppointmentStatus.CONFIRMED) {
+          return false;
+        }
+      } else if (statusFilter !== 'ALL') {
+        if (apt.status !== statusFilter) {
+          return false;
+        }
+      }
+
+      // 2. Filtrar por Fecha (compara YYYY-MM-DD)
+      if (dateFilter) {
+        const aptDateStr = apt.appointmentDate ? apt.appointmentDate.slice(0, 10) : '';
+        if (aptDateStr !== dateFilter) {
+          return false;
+        }
+      }
+
+      // 3. Filtrar por Búsqueda de Texto (Clienta, RUT, Teléfono, Servicios, Notas)
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const customerName = (apt.customer?.fullName || '').toLowerCase();
+        const customerPhone = (apt.customer?.phone || '').toLowerCase();
+        const customerRut = (apt.customer as { rut?: string })?.rut || '';
+        const notes = (apt.notes || '').toLowerCase();
+        const aptServices = getAppointmentServices(apt);
+        const serviceNames = aptServices.map((s) => s.name.toLowerCase()).join(' ');
+
+        const matchesRut = matchRutSearch(q, customerRut);
+        const matchesName = customerName.includes(q);
+        const matchesPhone = customerPhone.includes(q);
+        const matchesService = serviceNames.includes(q);
+        const matchesNotes = notes.includes(q);
+
+        if (!matchesName && !matchesRut && !matchesPhone && !matchesService && !matchesNotes) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [appointments, statusFilter, dateFilter, searchQuery]);
 
   const handleApplyFilters = () => {
     const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
@@ -274,6 +324,7 @@ export default function AppointmentsPage() {
   const handleClearFilters = () => {
     setStatusFilter('ACTIVE');
     setDateFilter('');
+    setSearchQuery('');
     fetchAppointments();
   };
 
@@ -790,11 +841,6 @@ export default function AppointmentsPage() {
     return <Badge bg={variants[status]}>{labels[status]}</Badge>;
   };
 
-  const getAppointmentServices = (appointment: Appointment) =>
-    appointment.services && appointment.services.length > 0
-      ? appointment.services
-      : [appointment.service];
-
   return (
     <DashboardLayout>
       <div className="bunny-page">
@@ -816,42 +862,136 @@ export default function AppointmentsPage() {
         </Alert>
       )}
 
-      <Row className="mb-4">
-        <Col md={4}>
-          <Form.Group>
-            <Form.Label>Fecha</Form.Label>
-            <Form.Control
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-          </Form.Group>
-        </Col>
-        <Col md={4}>
-          <Form.Group>
-            <Form.Label>Estado</Form.Label>
-            <Form.Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as AppointmentStatusFilter)}
-            >
-              <option value="ACTIVE">Pendientes y confirmadas</option>
-              <option value="ALL">Todos</option>
-              <option value={AppointmentStatus.PENDING}>Pendiente</option>
-              <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
-              <option value={AppointmentStatus.COMPLETED}>Completada</option>
-              <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={4} className="d-flex align-items-end gap-2">
-          <Button variant="secondary" onClick={handleApplyFilters}>
-            Filtrar
-          </Button>
-          <Button variant="outline-secondary" onClick={handleClearFilters}>
-            Limpiar
-          </Button>
-        </Col>
-      </Row>
+      {/* Barra de Búsqueda y Filtros */}
+      <Card className="mb-4 shadow-sm border-0 bg-white">
+        <Card.Body className="p-3 p-md-4">
+          <Row className="g-3">
+            {/* Buscador de texto */}
+            <Col xs={12} lg={4}>
+              <Form.Group>
+                <Form.Label className="small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                  <FaSearch className="text-primary" /> Búsqueda
+                </Form.Label>
+                <div className="position-relative">
+                  <Form.Control
+                    type="text"
+                    placeholder="Clienta, RUT, teléfono, servicio o notas..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pe-5"
+                  />
+                  {searchQuery && (
+                    <Button
+                      variant="link"
+                      className="position-absolute top-50 end-0 translate-middle-y text-muted p-2"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setSearchQuery('')}
+                      title="Limpiar búsqueda"
+                    >
+                      <FaTimes />
+                    </Button>
+                  )}
+                </div>
+              </Form.Group>
+            </Col>
+
+            {/* Selector de Fecha */}
+            <Col xs={12} sm={6} lg={3}>
+              <Form.Group>
+                <Form.Label className="small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                  <FaCalendarAlt className="text-primary" /> Fecha
+                </Form.Label>
+                <Form.Control
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                />
+              </Form.Group>
+              <div className="d-flex gap-1 mt-1">
+                <Button
+                  size="sm"
+                  variant={dateFilter === format(new Date(), 'yyyy-MM-dd') ? 'primary' : 'outline-secondary'}
+                  className="py-0 px-2 small"
+                  style={{ fontSize: '0.75rem' }}
+                  onClick={() => setDateFilter(format(new Date(), 'yyyy-MM-dd'))}
+                >
+                  Hoy
+                </Button>
+                <Button
+                  size="sm"
+                  variant={dateFilter === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'primary' : 'outline-secondary'}
+                  className="py-0 px-2 small"
+                  style={{ fontSize: '0.75rem' }}
+                  onClick={() => setDateFilter(format(addDays(new Date(), 1), 'yyyy-MM-dd'))}
+                >
+                  Mañana
+                </Button>
+                {dateFilter && (
+                  <Button
+                    size="sm"
+                    variant="outline-danger"
+                    className="py-0 px-2 small"
+                    style={{ fontSize: '0.75rem' }}
+                    onClick={() => setDateFilter('')}
+                  >
+                    Todas
+                  </Button>
+                )}
+              </div>
+            </Col>
+
+            {/* Selector de Estado */}
+            <Col xs={12} sm={6} lg={3}>
+              <Form.Group>
+                <Form.Label className="small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                  <FaCalendarDay className="text-primary" /> Estado
+                </Form.Label>
+                <Form.Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as AppointmentStatusFilter)}
+                >
+                  <option value="ACTIVE">⚡ Pendientes y confirmadas</option>
+                  <option value="ALL">📋 Todas las citas</option>
+                  <option value={AppointmentStatus.PENDING}>⏳ Pendiente</option>
+                  <option value={AppointmentStatus.CONFIRMED}>✅ Confirmada</option>
+                  <option value={AppointmentStatus.COMPLETED}>🎉 Completada</option>
+                  <option value={AppointmentStatus.CANCELLED}>❌ Cancelada</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+
+            {/* Botones de acción */}
+            <Col xs={12} lg={2} className="d-flex align-items-end gap-2">
+              <Button
+                variant="primary"
+                className="w-100 d-flex align-items-center justify-content-center gap-1"
+                onClick={handleApplyFilters}
+                title="Actualizar citas desde el servidor"
+              >
+                <FaSyncAlt className={isLoading ? 'fa-spin' : ''} />
+                <span>Filtrar</span>
+              </Button>
+              <Button
+                variant="outline-secondary"
+                onClick={handleClearFilters}
+                title="Restablecer todos los filtros"
+              >
+                Limpiar
+              </Button>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
+      {/* Resumen de resultados */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="text-muted small">
+          Mostrando <strong className="text-dark">{displayedAppointments.length}</strong> de <strong className="text-dark">{appointments.length}</strong> citas
+          {(dateFilter || searchQuery || statusFilter !== 'ACTIVE') && (
+            <Badge bg="info" className="ms-2 text-dark fw-normal">Filtros activos</Badge>
+          )}
+        </div>
+      </div>
 
       <Row>
         <Col>
@@ -863,7 +1003,7 @@ export default function AppointmentsPage() {
             </div>
           ) : displayedAppointments.length === 0 ? (
             <Alert variant="info">
-              No hay citas que mostrar. {dateFilter || statusFilter !== 'ACTIVE' ? 'Intenta cambiar los filtros.' : 'Crea tu primera cita.'}
+              No hay citas que mostrar. {dateFilter || searchQuery || statusFilter !== 'ACTIVE' ? 'Intenta cambiar los filtros o el término de búsqueda.' : 'Crea tu primera cita.'}
             </Alert>
           ) : (
             <>

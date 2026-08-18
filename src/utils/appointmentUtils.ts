@@ -3,6 +3,15 @@
  */
 
 import { Appointment } from '@/types/appointment.types';
+import { ServiceSummary } from '@/types/service.types';
+
+/**
+ * Obtiene los servicios asociados a una cita (soporta formato nuevo 'services' y legacy 'service')
+ */
+export function getAppointmentServices(apt: Appointment): ServiceSummary[] {
+  if (apt.services && apt.services.length > 0) return apt.services;
+  return apt.service ? [apt.service] : [];
+}
 
 /**
  * Calcula el total de una cita considerando:
