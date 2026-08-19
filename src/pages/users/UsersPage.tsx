@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Table, Button, Badge, Form, Spinner, Modal }
 import { FiUsers, FiPlus, FiEdit2, FiLock, FiTrash2, FiSearch, FiCheckCircle, FiXCircle, FiRefreshCw } from 'react-icons/fi';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { usersApi } from '../../api/users.api';
-import { User, CreateUserFormData, UpdateUserFormData, ChangeUserPasswordFormData } from '../../types/user.types';
+import { User, CreateUserFormData, UpdateUserFormData, ChangeUserPasswordFormData, ROLE_LABELS, ROLE_BADGE_VARIANTS } from '../../types/user.types';
 import { UserFormModal } from '../../components/users/UserFormModal';
 import { ChangeUserPasswordModal } from '../../components/users/ChangeUserPasswordModal';
 import { useToast } from '../../hooks/useToast';
@@ -212,10 +212,10 @@ export default function UsersPage() {
                           <td className="text-muted small">{u.email || <span className="opacity-50">—</span>}</td>
                           <td>
                             <Badge
-                              bg={u.role === 'ROLE_ADMIN' ? 'dark' : 'secondary'}
-                              style={{ fontSize: '11px', textTransform: 'uppercase' }}
+                              bg={ROLE_BADGE_VARIANTS[u.role.replace('ROLE_', '').toUpperCase()] || 'secondary'}
+                              style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '6px' }}
                             >
-                              {u.role.replace('ROLE_', '')}
+                              {ROLE_LABELS[u.role.replace('ROLE_', '').toUpperCase()] || u.role.replace('ROLE_', '')}
                             </Badge>
                           </td>
                           <td className="text-center">

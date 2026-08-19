@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
-import { FiUser, FiMail, FiLock, FiCheck, FiX } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiCheck, FiX, FiShield } from 'react-icons/fi';
 import { User, CreateUserFormData, UpdateUserFormData } from '../../types/user.types';
 
 interface UserFormModalProps {
@@ -22,6 +22,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('SPECIALIST');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,11 +31,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setUsername(user.username);
       setFullName(user.fullName);
       setEmail(user.email || '');
+      setRole(user.role ? user.role.replace('ROLE_', '').toUpperCase() : 'SPECIALIST');
       setPassword('');
     } else {
       setUsername('');
       setFullName('');
       setEmail('');
+      setRole('SPECIALIST');
       setPassword('');
     }
     setError(null);
@@ -74,7 +77,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           username: username.trim(),
           fullName: fullName.trim(),
           email: email.trim() || undefined,
-          role: user.role,
+          role,
         });
       } else {
         await onSave({
@@ -82,6 +85,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           fullName: fullName.trim(),
           email: email.trim() || undefined,
           password,
+          role,
         });
       }
       onHide();
@@ -130,6 +134,21 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               required
               style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
             />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="small fw-bold text-muted">
+              <FiShield className="me-1" /> Rol y Nivel de Acceso
+            </Form.Label>
+            <Form.Select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
+            >
+              <option value="SPECIALIST">💅 Especialista / Manicurista (Agenda y clientas propias)</option>
+              <option value="RECEPTIONIST">🛎️ Recepcionista (Citas, clientes, caja y solicitudes)</option>
+              <option value="SALON_ADMIN">🏢 Dueña / Administradora (Control total del salón)</option>
+            </Form.Select>
           </Form.Group>
 
           <Form.Group className="mb-3">

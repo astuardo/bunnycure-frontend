@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
+import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import { usePageViewTracking } from '../hooks/usePageViewTracking';
 
 // ─── Carga Perezosa (Lazy Loading) de Páginas ──────────────────────────────
@@ -85,7 +86,7 @@ function RoutesWithTracking() {
                 <Route path="/giftcards/public/:code" element={<PublicGiftCardPage />} />
                 <Route path="/reservar" element={<PublicBookingPage />} />
 
-                {/* Rutas Protegidas */}
+                {/* Rutas Protegidas Universales */}
                 <Route
                     path="/dashboard"
                     element={
@@ -123,37 +124,10 @@ function RoutesWithTracking() {
                 />
 
                 <Route
-                    path="/services"
-                    element={
-                        <ProtectedRoute>
-                            <ServicesPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/products"
-                    element={
-                        <ProtectedRoute>
-                            <ProductsPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
                     path="/calendar"
                     element={
                         <ProtectedRoute>
                             <CalendarPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/settings"
-                    element={
-                        <ProtectedRoute>
-                            <SettingsPage />
                         </ProtectedRoute>
                     }
                 />
@@ -167,56 +141,86 @@ function RoutesWithTracking() {
                     }
                 />
 
+                {/* Rutas Protegidas para Administración y Recepción */}
+                <Route
+                    path="/services"
+                    element={
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
+                            <ServicesPage />
+                        </RoleProtectedRoute>
+                    }
+                />
+
                 <Route
                     path="/giftcards"
                     element={
-                        <ProtectedRoute>
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
                             <GiftCardsPage />
-                        </ProtectedRoute>
+                        </RoleProtectedRoute>
                     }
                 />
+
                 <Route
                     path="/giftcards/generar"
                     element={
-                        <ProtectedRoute>
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
                             <GenerateGiftCardPage />
-                        </ProtectedRoute>
+                        </RoleProtectedRoute>
                     }
                 />
 
                 <Route
                     path="/booking-requests"
                     element={
-                        <ProtectedRoute>
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
                             <BookingRequestsPage />
-                        </ProtectedRoute>
+                        </RoleProtectedRoute>
                     }
                 />
 
                 <Route
                     path="/reminders"
                     element={
-                        <ProtectedRoute>
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
                             <RemindersPage />
-                        </ProtectedRoute>
+                        </RoleProtectedRoute>
                     }
                 />
 
                 <Route
                     path="/analytics"
                     element={
-                        <ProtectedRoute>
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
                             <AnalyticsPage />
-                        </ProtectedRoute>
+                        </RoleProtectedRoute>
+                    }
+                />
+
+                {/* Rutas Exclusivas para Dueña / SuperAdmin */}
+                <Route
+                    path="/products"
+                    element={
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
+                            <ProductsPage />
+                        </RoleProtectedRoute>
                     }
                 />
 
                 <Route
                     path="/users"
                     element={
-                        <ProtectedRoute>
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
                             <UsersPage />
-                        </ProtectedRoute>
+                        </RoleProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/settings"
+                    element={
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
+                            <SettingsPage />
+                        </RoleProtectedRoute>
                     }
                 />
 

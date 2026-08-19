@@ -24,7 +24,9 @@ export interface Appointment {
   totalPrice?: number;
   totalDurationMinutes?: number;
   reminderSent: boolean;
-  whatsAppConfirmationSent: boolean; // Campo no existe en modelo, por ahora incluido en DTO
+  whatsAppConfirmationSent: boolean;
+  specialistId?: number;
+  specialistName?: string;
 }
 
 export interface AppointmentCreateRequest {
@@ -35,8 +37,8 @@ export interface AppointmentCreateRequest {
   appointmentTime: string;
   notes?: string;
   totalPrice?: number;
+  specialistId?: number;
 }
-
 
 export interface AppointmentUpdateRequest {
   customerId?: number;
@@ -47,6 +49,7 @@ export interface AppointmentUpdateRequest {
   status?: AppointmentStatus;
   notes?: string;
   totalPrice?: number;
+  specialistId?: number;
 }
 
 export interface InvoiceQuotaInfo {
