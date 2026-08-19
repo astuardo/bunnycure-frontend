@@ -26,6 +26,24 @@ const normalizePhone = (value?: string): string => {
 
 import { normalizeRut, isValidRutFormat } from '../../utils/rutUtils';
 
+const normalizeGenderForForm = (gender?: string): string => {
+    if (!gender) return '';
+    const upper = gender.trim().toUpperCase();
+    if (upper === 'F' || upper === 'FEMALE' || upper === 'FEMENINO') return 'FEMENINO';
+    if (upper === 'M' || upper === 'MALE' || upper === 'MASCULINO') return 'MASCULINO';
+    return upper;
+};
+
+const normalizePreferenceForForm = (pref?: NotificationPreference | string): NotificationPreference => {
+    if (!pref) return NotificationPreference.WHATSAPP_ONLY;
+    const upper = String(pref).trim().toUpperCase();
+    if (upper === 'WHATSAPP' || upper === 'WHATSAPP_ONLY') return NotificationPreference.WHATSAPP_ONLY;
+    if (upper === 'EMAIL' || upper === 'EMAIL_ONLY') return NotificationPreference.EMAIL_ONLY;
+    if (upper === 'BOTH') return NotificationPreference.BOTH;
+    if (upper === 'NONE') return NotificationPreference.NONE;
+    return NotificationPreference.WHATSAPP_ONLY;
+};
+
 // Esquema de validación
 const customerSchema: yup.ObjectSchema<CustomerFormData> = yup.object({
     fullName: yup
@@ -98,13 +116,12 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
         register,
         handleSubmit,
         formState: { errors },
-        reset,
-        setValue
+        reset
     } = useForm<CustomerFormData>({
         resolver: yupResolver(customerSchema),
         mode: 'onChange',
         reValidateMode: 'onChange',
-            defaultValues: {
+        defaultValues: {
             fullName: '',
             phone: '',
             rut: '',
@@ -115,28 +132,42 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
             healthNotes: '',
             notes: '',
             instagram: '',
-            notificationPreference: NotificationPreference.WHATSAPP
+            notificationPreference: NotificationPreference.WHATSAPP_ONLY
         }
     });
 
     // Cargar datos cuando se edita
     useEffect(() => {
         if (customer) {
-            setValue('fullName', customer.fullName);
-            setValue('phone', customer.phone);
-            setValue('rut', customer.rut || '');
-            setValue('email', customer.email || '');
-            setValue('gender', customer.gender || '');
-            setValue('birthDate', customer.birthDate || '');
-            setValue('emergencyPhone', customer.emergencyPhone || '');
-            setValue('healthNotes', customer.healthNotes || '');
-            setValue('notes', customer.notes || '');
-            setValue('instagram', customer.instagram || '');
-            setValue('notificationPreference', customer.notificationPreference);
+            reset({
+                fullName: customer.fullName || '',
+                phone: customer.phone || '',
+                rut: customer.rut || '',
+                email: customer.email || '',
+                gender: normalizeGenderForForm(customer.gender),
+                birthDate: customer.birthDate || '',
+                emergencyPhone: customer.emergencyPhone || '',
+                healthNotes: customer.healthNotes || '',
+                notes: customer.notes || '',
+                instagram: customer.instagram || '',
+                notificationPreference: normalizePreferenceForForm(customer.notificationPreference)
+            });
         } else {
-            reset();
+            reset({
+                fullName: '',
+                phone: '',
+                rut: '',
+                email: '',
+                gender: '',
+                birthDate: '',
+                emergencyPhone: '',
+                healthNotes: '',
+                notes: '',
+                instagram: '',
+                notificationPreference: NotificationPreference.WHATSAPP_ONLY
+            });
         }
-    }, [customer, setValue, reset]);
+    }, [customer, reset]);
 
     const onSubmit = async (data: CustomerFormData) => {
         const normalizedData: CustomerFormData = {
@@ -287,9 +318,8 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                 <Form.Label>Género</Form.Label>
                                 <Form.Select {...register('gender')}>
                                     <option value="">Seleccione...</option>
-                                    <option value="F">Femenino</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="O">Otro</option>
+                                    <option value="FEMENINO">Femenino</option>
+                                    <option value="MASCULINO">Masculino</option>
                                 </Form.Select>
                             </Form.Group>
                         </Col>
@@ -331,10 +361,10 @@ export default function CustomerFormModal({ show, onHide, customer, onSuccess }:
                                     {...register('notificationPreference')}
                                     isInvalid={!!errors.notificationPreference}
                                 >
-                                    <option value={NotificationPreference.WHATSAPP}>
+                                    <option value={NotificationPreference.WHATSAPP_ONLY}>
                                         💬 WhatsApp
                                     </option>
-                                    <option value={NotificationPreference.EMAIL}>
+                                    <option value={NotificationPreference.EMAIL_ONLY}>
                                         📧 Email
                                     </option>
                                     <option value={NotificationPreference.BOTH}>

@@ -180,6 +180,19 @@ export const customersApi = {
   },
 
   /**
+   * Sincronizar y recalcular visitas completadas a partir de las citas reales
+   */
+  syncVisits: async (id: number): Promise<Customer> => {
+    const response = await apiClient.post<ApiResponse<Customer> | Customer>(
+      `/api/customers/${id}/sync-visits`
+    );
+    const payload = response.data;
+    const customer = (payload as ApiResponse<Customer>)?.data ?? (payload as Customer);
+    if (!customer || typeof customer !== 'object') throw new Error('Error al sincronizar visitas');
+    return customer;
+  },
+
+  /**
    * Obtener enlace de Google Wallet para el cliente
    */
   getGoogleWalletLinks: async (id: number): Promise<{ openUrl: string; qrUrl: string }> => {

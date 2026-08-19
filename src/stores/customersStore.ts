@@ -16,6 +16,7 @@ interface CustomersState {
     updateCustomer: (id: number, data: CustomerFormData) => Promise<Customer | null>;
     deleteCustomer: (id: number) => Promise<boolean>;
     adjustCustomerLoyalty: (id: number, delta: number) => Promise<Customer | null>;
+    syncCustomerVisits: (id: number) => Promise<Customer | null>;
     clearCurrentCustomer: () => void;
     clearError: () => void;
 }
@@ -173,6 +174,27 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             return updatedCustomer;
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 'Error al ajustar sellos';
+            set({ error: errorMessage, loading: false });
+            toast.error(errorMessage);
+            return null;
+        }
+    },
+
+    syncCustomerVisits: async (id: number) => {
+        set({ loading: true, error: null });
+        try {
+            const updatedCustomer = await customersApi.syncVisits(id);
+            set((state) => ({
+                customers: state.customers.map((c) => (c.id === id ? { ...c, ...updatedCustomer } : c)),
+                currentCustomer: state.currentCustomer?.id === id 
+                    ? { ...state.currentCustomer, ...updatedCustomer }
+                    : (state.currentCustomer ?? updatedCustomer),
+                loading: false
+            }));
+            toast.success('Visitas sincronizadas correctamente con el historial de citas');
+            return updatedCustomer;
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Error al sincronizar visitas';
             set({ error: errorMessage, loading: false });
             toast.error(errorMessage);
             return null;

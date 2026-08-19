@@ -10,7 +10,7 @@ import { useCustomersStore } from '../../stores/customersStore';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { useToast } from '../../hooks/useToast';
-import { Customer } from '../../types/customer.types';
+import { Customer, NotificationPreference } from '../../types/customer.types';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { GiftCard } from '../../types/giftcard.types';
 import {
@@ -31,7 +31,8 @@ export default function CustomerDetailsPage() {
     customers, 
     loading: customersLoading, 
     fetchCustomers,
-    adjustCustomerLoyalty 
+    adjustCustomerLoyalty,
+    syncCustomerVisits
   } = useCustomersStore();
 
   const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
@@ -130,6 +131,16 @@ export default function CustomerDetailsPage() {
     
     if (window.confirm(confirmMsg)) {
       const updated = await adjustCustomerLoyalty(customer.id, delta);
+      if (updated) {
+        setDirectCustomer(updated);
+      }
+    }
+  };
+
+  const handleSyncVisits = async () => {
+    if (!customer) return;
+    if (window.confirm(`¿Deseas recalcular y sincronizar las visitas registradas de ${customer.fullName} con sus citas completadas reales (${completedAppointments} citas)?`)) {
+      const updated = await syncCustomerVisits(customer.id);
       if (updated) {
         setDirectCustomer(updated);
       }
@@ -244,7 +255,11 @@ export default function CustomerDetailsPage() {
                 </div>
                 <div className="mb-3">
                   <strong>🚻 Género:</strong>
-                  <p className="mb-0">{customer.gender?.trim() ? customer.gender.trim() : 'No especificado'}</p>
+                  <p className="mb-0">
+                    {customer.gender === 'FEMENINO' || customer.gender === 'F' ? 'Femenino' :
+                     customer.gender === 'MASCULINO' || customer.gender === 'M' ? 'Masculino' :
+                     customer.gender?.trim() ? customer.gender.trim() : 'No especificado'}
+                  </p>
                 </div>
                 <div className="mb-3">
                   <strong>🎂 Fecha de Nacimiento:</strong>
@@ -257,9 +272,15 @@ export default function CustomerDetailsPage() {
                 <div className="mb-3">
                   <strong>🔔 Notificaciones:</strong>
                   <p className="mb-0">
-                    <Badge bg="info" className="text-dark">
-                      {customer.notificationPreference || 'WHATSAPP'}
-                    </Badge>
+                    {customer.notificationPreference === NotificationPreference.WHATSAPP_ONLY ? (
+                      <Badge bg="success">💬 Solo WhatsApp</Badge>
+                    ) : customer.notificationPreference === NotificationPreference.EMAIL_ONLY ? (
+                      <Badge bg="info">📧 Solo Email</Badge>
+                    ) : customer.notificationPreference === NotificationPreference.NONE ? (
+                      <Badge bg="secondary">🔕 Sin avisos</Badge>
+                    ) : (
+                      <Badge bg="primary">📧💬 WhatsApp + Email</Badge>
+                    )}
                   </p>
                 </div>
                 <div className="mb-0">
@@ -287,6 +308,21 @@ export default function CustomerDetailsPage() {
                 <div className="d-flex justify-content-between mb-2">
                   <span>Canceladas:</span>
                   <strong className="text-danger">{cancelledAppointments}</strong>
+                </div>
+                <div className="d-flex justify-content-between align-items-center pt-2 mt-2 border-top">
+                  <div>
+                    <span className="small text-muted d-block">Visitas registradas:</span>
+                    <strong>{customer.totalCompletedVisits || 0}</strong>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline-secondary"
+                    onClick={handleSyncVisits}
+                    style={{ fontSize: '11.5px' }}
+                    title="Recalcula las visitas registradas según las citas completadas reales"
+                  >
+                    🔄 Sincronizar
+                  </Button>
                 </div>
                 {lastAppointment && (
                   <div className="mt-3 pt-3 border-top">
