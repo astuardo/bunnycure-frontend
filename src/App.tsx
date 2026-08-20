@@ -7,10 +7,11 @@ import 'react-toastify/dist/ReactToastify.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/mobile.css'
 import BuildVersionGuard from './components/BuildVersionGuard'
+import { TenantProvider } from './context/TenantContext'
 
 function App() {
   return (
-    <>
+    <TenantProvider>
       <BuildVersionGuard>
         <OfflineIndicator />
         <AppRouter />
@@ -28,7 +29,7 @@ function App() {
         draggable
         pauseOnHover
       />
-    </>
+    </TenantProvider>
   )
 }
 

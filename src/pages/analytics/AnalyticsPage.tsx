@@ -2,7 +2,7 @@
  * Página de Analíticas - Dashboard con métricas de negocio
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Row, Col, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
 import {
   LineChart,
@@ -54,7 +54,7 @@ type PresetKey = 'today' | 'last7' | 'thisMonth' | 'lastMonth' | 'last90' | 'thi
 
 export default function AnalyticsPage() {
   const toast = useToast();
-  const { fetchAppointments } = useAppointmentsStore();
+  const { appointments, fetchAppointments } = useAppointmentsStore();
   const [loading, setLoading] = useState(false);
   const [showCashClosing, setShowCashClosing] = useState(false);
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -67,6 +67,40 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
+
+  const specialistPerformance = useMemo(() => {
+    const map = new Map<string, {
+      specialistName: string;
+      totalCount: number;
+      completedCount: number;
+      cancelledCount: number;
+      revenue: number;
+    }>();
+
+    appointments.forEach((apt) => {
+      if (!apt.appointmentDate || apt.appointmentDate < startDate || apt.appointmentDate > endDate) return;
+      const name = apt.specialistName || 'Sin asignar / General';
+      const current = map.get(name) || {
+        specialistName: name,
+        totalCount: 0,
+        completedCount: 0,
+        cancelledCount: 0,
+        revenue: 0,
+      };
+
+      current.totalCount++;
+      if (apt.status === 'COMPLETED') {
+        current.completedCount++;
+        current.revenue += (apt.service?.price || 0);
+      } else if (apt.status === 'CANCELLED') {
+        current.cancelledCount++;
+      }
+
+      map.set(name, current);
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.completedCount - a.completedCount);
+  }, [appointments, startDate, endDate]);
 
   const loadAnalytics = async (overrideStart?: string, overrideEnd?: string) => {
     const sDate = overrideStart || startDate;
@@ -880,6 +914,92 @@ export default function AnalyticsPage() {
                   Mostrando las primeras 20 de {cancelledDetail.length} cancelaciones. Descarga el CSV para el informe completo.
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Rendimiento & Atenciones por Especialista (Fase 3) */}
+        <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                <Sparkles size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#c9897a' }} />
+                💅 Rendimiento &amp; Atenciones por Especialista
+              </h5>
+              <small style={{ color: TEXT_MID }}>Métricas operativas y recaudación generada por manicurista en el período</small>
+            </div>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              style={{ borderRadius: '8px', borderColor: '#d4a89a', color: TEXT_DARK }}
+              onClick={() => {
+                exportToCSV({
+                  filename: `rendimiento-especialistas-${startDate}-${endDate}`,
+                  headers: ['Especialista', 'Citas Asignadas', 'Completadas', 'Canceladas', 'Recaudación Estimada'],
+                  data: specialistPerformance.map((item) => ({
+                    'Especialista': item.specialistName,
+                    'Citas Asignadas': item.totalCount,
+                    'Completadas': item.completedCount,
+                    'Canceladas': item.cancelledCount,
+                    'Recaudación Estimada': `$${item.revenue.toLocaleString('es-CL')}`,
+                  })),
+                });
+                toast.success('Informe de especialistas descargado');
+              }}
+            >
+              <Download size={14} style={{ marginRight: '6px' }} />
+              Descargar CSV
+            </Button>
+          </div>
+
+          {specialistPerformance.length === 0 ? (
+            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+              No hay citas registradas con especialistas en este período
+            </Alert>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#fdf6f3', borderBottom: '1px solid #f2e4de' }}>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Especialista / Manicurista
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Citas Asignadas
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#28a745' }}>
+                      Completadas
+                    </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#dc3545' }}>
+                      Canceladas
+                    </th>
+                    <th style={{ textAlign: 'right', padding: '10px', fontWeight: 700, color: '#5a8f7b' }}>
+                      Recaudación Generada
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {specialistPerformance.map((spec, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f8ede8' }}>
+                      <td style={{ padding: '10px', color: TEXT_DARK, fontWeight: 600 }}>
+                        {spec.specialistName}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: TEXT_DARK }}>
+                        {spec.totalCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#28a745', fontWeight: 700 }}>
+                        {spec.completedCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: spec.cancelledCount > 0 ? '#dc3545' : TEXT_MID }}>
+                        {spec.cancelledCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: '#5a8f7b', fontWeight: 700 }}>
+                        ${spec.revenue.toLocaleString('es-CL')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

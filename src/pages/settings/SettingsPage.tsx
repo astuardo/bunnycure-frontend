@@ -1,14 +1,26 @@
 /**
- * Página de Configuración del Negocio
- * Permite al administrador configurar información del negocio, horarios, notificaciones.
- * Ahora con persistencia en servidor vía API
+ * Página de Configuración del Negocio (Rediseño Fase 3)
+ * Organizada en pestañas temáticas: Identidad & Marca, Horarios & Agenda, Bloqueos,
+ * Portal de Reservas, WhatsApp & Handoff, Notificaciones & Plantillas y Fidelización.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { FiSave, FiSettings } from 'react-icons/fi';
-import { FaWhatsapp, FaBell } from 'react-icons/fa';
+import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge, Nav, InputGroup } from 'react-bootstrap';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { 
+  FiSave, 
+  FiSettings, 
+  FiGlobe, 
+  FiClock, 
+  FiSlash, 
+  FiBell, 
+  FiAward, 
+  FiCopy, 
+  FiExternalLink, 
+  FiCheck,
+  FiEye
+} from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useToast } from '../../hooks/useToast';
 import { 
@@ -20,6 +32,7 @@ import {
 } from '../../api/settings.api';
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
+import { ScheduleUnavailabilitySection } from '../../components/settings/ScheduleUnavailabilitySection';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
@@ -32,12 +45,18 @@ import {
   getPublicBookingEnabled,
   setPublicBookingEnabled,
 } from '../../utils/bookingSettingsUtils';
+import { useTenant } from '../../context/TenantContext';
 
 interface BusinessSettings {
   businessName: string;
+  slogan: string;
   email: string;
   phone: string;
   address: string;
+  customDomain: string;
+  slug: string;
+  logoUrl: string;
+  primaryColor: string;
   workingHours: {
     monday: { start: string; end: string; enabled: boolean };
     tuesday: { start: string; end: string; enabled: boolean };
@@ -69,9 +88,14 @@ interface BusinessSettings {
 
 const defaultSettings: BusinessSettings = {
   businessName: 'BunnyCure',
+  slogan: 'Arte en tus manos ✨',
   email: 'contacto@bunnycure.cl',
-  phone: '+56988873031',
+  phone: '+56983692046',
   address: 'Santiago, Chile',
+  customDomain: 'app.bunnycure.cl',
+  slug: 'bunnycure',
+  logoUrl: '/images/logo.png',
+  primaryColor: '#d48b70',
   workingHours: {
     monday: { start: '09:00', end: '18:00', enabled: true },
     tuesday: { start: '09:00', end: '18:00', enabled: true },
@@ -84,12 +108,12 @@ const defaultSettings: BusinessSettings = {
   appointmentDuration: 60,
   notificationsEnabled: true,
   whatsappEnabled: true,
-  whatsappPhone: '+56988873031',
+  whatsappPhone: '+56983692046',
   reminderStrategy: 'TWO_HOURS',
   whatsappHandoffEnabled: true,
-  whatsappHumanNumber: '+56988873031',
+  whatsappHumanNumber: '+56983692046',
   whatsappHumanDisplayName: 'Atención BunnyCure',
-  whatsappHandoffClientMessage: 'Te estoy conectando con nuestro equipo oficial de BunnyCure (+56 9 8887 3031)...',
+  whatsappHandoffClientMessage: 'Te estoy conectando con nuestro equipo oficial (+56 9 8369 2046)...',
   whatsappHandoffAdminPrefill: 'Hola, la clienta {customer} necesita asistencia para su cita de {service}',
   unavailabilities: [],
   unavailabilityColors: DEFAULT_UNAVAILABILITY_COLORS,
@@ -123,14 +147,32 @@ const dayNames: Record<keyof BusinessSettings['workingHours'], string> = {
   sunday: 'Domingo',
 };
 
+type SettingsTab = 'identity' | 'hours' | 'blocks' | 'booking' | 'whatsapp' | 'notifications' | 'loyalty';
+
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as SettingsTab) || 'identity';
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  
   const toast = useToast();
+  const { tenant, refreshTenant } = useTenant();
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [publicBookingEnabled, setPublicBookingEnabledState] = useState<boolean>(getPublicBookingEnabled());
-  const { permission, isSupported, requestPermission, sendTestNotification } = useNotificationPermission();
+  const { permission, requestPermission, sendTestNotification } = useNotificationPermission();
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as SettingsTab;
+    if (tabParam) setActiveTab(tabParam);
+  }, [searchParams]);
+
+  const handleTabChange = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
 
   const handleTogglePublicBooking = async (checked: boolean) => {
     setPublicBookingEnabledState(checked);
@@ -146,100 +188,93 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       const serverSettings = await settingsApi.getAll();
-      
-      // Convertir de SettingsData a BusinessSettings
-      const localCalendarRaw = localStorage.getItem(CALENDAR_DISPLAY_STORAGE_KEY);
-      let localCalendar: BusinessSettings['calendarDisplay'] | null = null;
-      if (localCalendarRaw) {
+      const cachedUnavailabilities = loadCachedUnavailabilities();
+      const cachedUnavailabilityColors = loadCachedUnavailabilityColors();
+      const cachedUnavailabilityNotifications = loadCachedUnavailabilityNotifications();
+
+      const rawStoredCalendarDisplay = localStorage.getItem(CALENDAR_DISPLAY_STORAGE_KEY);
+      let parsedCalendarDisplay = defaultSettings.calendarDisplay;
+      if (rawStoredCalendarDisplay) {
         try {
-          localCalendar = JSON.parse(localCalendarRaw) as BusinessSettings['calendarDisplay'];
+          parsedCalendarDisplay = {
+            ...defaultSettings.calendarDisplay,
+            ...JSON.parse(rawStoredCalendarDisplay),
+          };
         } catch {
-          localStorage.removeItem(CALENDAR_DISPLAY_STORAGE_KEY);
+          // ignore
         }
       }
 
-      const mappedSettings: BusinessSettings = {
-        businessName: serverSettings.businessName || defaultSettings.businessName,
-        email: serverSettings.businessEmail || defaultSettings.email,
-        phone: serverSettings.businessPhone || defaultSettings.phone,
-        address: serverSettings.businessAddress || defaultSettings.address,
+      setSettings({
+        businessName: serverSettings.businessName || tenant.name || 'BunnyCure',
+        slogan: 'Arte en tus manos ✨',
+        email: serverSettings.businessEmail || tenant.email || 'contacto@bunnycure.cl',
+        phone: serverSettings.businessPhone || tenant.phone || '+56983692046',
+        address: serverSettings.businessAddress || tenant.address || 'Santiago, Chile',
+        customDomain: tenant.customDomain || 'app.bunnycure.cl',
+        slug: tenant.slug || 'bunnycure',
+        logoUrl: tenant.logoUrl || '/images/logo.png',
+        primaryColor: tenant.primaryColor || '#d48b70',
         workingHours: {
           monday: {
-            enabled: serverSettings.mondayEnabled ?? defaultSettings.workingHours.monday.enabled,
-            start: serverSettings.mondayStart || defaultSettings.workingHours.monday.start,
-            end: serverSettings.mondayEnd || defaultSettings.workingHours.monday.end,
+            start: serverSettings.mondayStart || '09:00',
+            end: serverSettings.mondayEnd || '18:00',
+            enabled: serverSettings.mondayEnabled ?? true,
           },
           tuesday: {
-            enabled: serverSettings.tuesdayEnabled ?? defaultSettings.workingHours.tuesday.enabled,
-            start: serverSettings.tuesdayStart || defaultSettings.workingHours.tuesday.start,
-            end: serverSettings.tuesdayEnd || defaultSettings.workingHours.tuesday.end,
+            start: serverSettings.tuesdayStart || '09:00',
+            end: serverSettings.tuesdayEnd || '18:00',
+            enabled: serverSettings.tuesdayEnabled ?? true,
           },
           wednesday: {
-            enabled: serverSettings.wednesdayEnabled ?? defaultSettings.workingHours.wednesday.enabled,
-            start: serverSettings.wednesdayStart || defaultSettings.workingHours.wednesday.start,
-            end: serverSettings.wednesdayEnd || defaultSettings.workingHours.wednesday.end,
+            start: serverSettings.wednesdayStart || '09:00',
+            end: serverSettings.wednesdayEnd || '18:00',
+            enabled: serverSettings.wednesdayEnabled ?? true,
           },
           thursday: {
-            enabled: serverSettings.thursdayEnabled ?? defaultSettings.workingHours.thursday.enabled,
-            start: serverSettings.thursdayStart || defaultSettings.workingHours.thursday.start,
-            end: serverSettings.thursdayEnd || defaultSettings.workingHours.thursday.end,
+            start: serverSettings.thursdayStart || '09:00',
+            end: serverSettings.thursdayEnd || '18:00',
+            enabled: serverSettings.thursdayEnabled ?? true,
           },
           friday: {
-            enabled: serverSettings.fridayEnabled ?? defaultSettings.workingHours.friday.enabled,
-            start: serverSettings.fridayStart || defaultSettings.workingHours.friday.start,
-            end: serverSettings.fridayEnd || defaultSettings.workingHours.friday.end,
+            start: serverSettings.fridayStart || '09:00',
+            end: serverSettings.fridayEnd || '18:00',
+            enabled: serverSettings.fridayEnabled ?? true,
           },
           saturday: {
-            enabled: serverSettings.saturdayEnabled ?? defaultSettings.workingHours.saturday.enabled,
-            start: serverSettings.saturdayStart || defaultSettings.workingHours.saturday.start,
-            end: serverSettings.saturdayEnd || defaultSettings.workingHours.saturday.end,
+            start: serverSettings.saturdayStart || '09:00',
+            end: serverSettings.saturdayEnd || '14:00',
+            enabled: serverSettings.saturdayEnabled ?? true,
           },
           sunday: {
-            enabled: serverSettings.sundayEnabled ?? defaultSettings.workingHours.sunday.enabled,
-            start: serverSettings.sundayStart || defaultSettings.workingHours.sunday.start,
-            end: serverSettings.sundayEnd || defaultSettings.workingHours.sunday.end,
+            start: serverSettings.sundayStart || '10:00',
+            end: serverSettings.sundayEnd || '14:00',
+            enabled: serverSettings.sundayEnabled ?? false,
           },
         },
-        appointmentDuration: serverSettings.appointmentDuration || defaultSettings.appointmentDuration,
-        notificationsEnabled: serverSettings.emailNotificationsEnabled ?? defaultSettings.notificationsEnabled,
-        whatsappEnabled: !!serverSettings.whatsappNumber,
-        whatsappPhone: serverSettings.whatsappNumber || defaultSettings.whatsappPhone,
+        appointmentDuration: serverSettings.appointmentDuration || 60,
+        notificationsEnabled: serverSettings.emailNotificationsEnabled ?? true,
+        whatsappEnabled: true,
+        whatsappPhone: serverSettings.whatsappNumber || '+56983692046',
         reminderStrategy: serverSettings.reminderStrategy || 'TWO_HOURS',
-        whatsappHandoffEnabled: serverSettings.whatsappHandoffEnabled ?? false,
-        whatsappHumanNumber: serverSettings.whatsappHumanNumber || '',
-        whatsappHumanDisplayName: serverSettings.whatsappHumanDisplayName || '',
-        whatsappHandoffClientMessage: serverSettings.whatsappHandoffClientMessage || '',
-        whatsappHandoffAdminPrefill: serverSettings.whatsappHandoffAdminPrefill || '',
-        unavailabilities: serverSettings.unavailabilities && serverSettings.unavailabilities.length > 0 ? serverSettings.unavailabilities : loadCachedUnavailabilities(),
-        unavailabilityColors: serverSettings.unavailabilityColors || loadCachedUnavailabilityColors(),
-        unavailabilityNotifications: serverSettings.unavailabilityNotifications || loadCachedUnavailabilityNotifications(),
-        calendarDisplay: {
-          morning: {
-            start: localCalendar?.morning?.start || serverSettings.calendarMorningStart || defaultSettings.calendarDisplay.morning.start,
-            end: localCalendar?.morning?.end || serverSettings.calendarMorningEnd || defaultSettings.calendarDisplay.morning.end,
-            color: localCalendar?.morning?.color || serverSettings.calendarMorningColor || defaultSettings.calendarDisplay.morning.color,
-          },
-          afternoon: {
-            start: localCalendar?.afternoon?.start || serverSettings.calendarAfternoonStart || defaultSettings.calendarDisplay.afternoon.start,
-            end: localCalendar?.afternoon?.end || serverSettings.calendarAfternoonEnd || defaultSettings.calendarDisplay.afternoon.end,
-            color: localCalendar?.afternoon?.color || serverSettings.calendarAfternoonColor || defaultSettings.calendarDisplay.afternoon.color,
-          },
-          night: {
-            start: localCalendar?.night?.start || serverSettings.calendarNightStart || defaultSettings.calendarDisplay.night.start,
-            end: localCalendar?.night?.end || serverSettings.calendarNightEnd || defaultSettings.calendarDisplay.night.end,
-            color: localCalendar?.night?.color || serverSettings.calendarNightColor || defaultSettings.calendarDisplay.night.color,
-          },
-        },
-      };
-      
-      setSettings(mappedSettings);
+        whatsappHandoffEnabled: serverSettings.whatsappHandoffEnabled ?? true,
+        whatsappHumanNumber: serverSettings.whatsappHumanNumber || '+56983692046',
+        whatsappHumanDisplayName: serverSettings.whatsappHumanDisplayName || 'Atención BunnyCure',
+        whatsappHandoffClientMessage: serverSettings.whatsappHandoffClientMessage || defaultSettings.whatsappHandoffClientMessage,
+        whatsappHandoffAdminPrefill: serverSettings.whatsappHandoffAdminPrefill || defaultSettings.whatsappHandoffAdminPrefill,
+        unavailabilities: serverSettings.unavailabilities || cachedUnavailabilities,
+        unavailabilityColors: serverSettings.unavailabilityColors || cachedUnavailabilityColors,
+        unavailabilityNotifications: serverSettings.unavailabilityNotifications || cachedUnavailabilityNotifications,
+        calendarDisplay: parsedCalendarDisplay,
+      });
+      setHasChanges(false);
     } catch (error) {
-      console.error('Error loading settings from server:', error);
-      toast.error('Error al cargar configuración del servidor');
+      console.error('Error loading settings:', error);
+      toast.error('Error al cargar la configuración');
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [tenant, toast]);
 
   useEffect(() => {
     loadSettings();
@@ -292,7 +327,6 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Convertir de BusinessSettings a SettingsData
       const settingsData: SettingsData = {
         businessName: settings.businessName,
         businessEmail: settings.email,
@@ -344,7 +378,15 @@ export default function SettingsPage() {
       
       await settingsApi.saveAll(settingsData);
       localStorage.setItem(CALENDAR_DISPLAY_STORAGE_KEY, JSON.stringify(settings.calendarDisplay));
-      toast.success('✅ Configuración guardada en servidor');
+      
+      // Actualizar variables de branding si cambió el color primario
+      if (settings.primaryColor) {
+        document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
+        document.documentElement.style.setProperty('--bs-primary', settings.primaryColor);
+      }
+      
+      await refreshTenant();
+      toast.success('✅ Configuración guardada en el servidor');
       setHasChanges(false);
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -352,6 +394,14 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyBookingLink = () => {
+    const fullUrl = `${window.location.origin}/reservar`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedLink(true);
+    toast.success('📋 Enlace de reservas copiado al portapapeles');
+    setTimeout(() => setCopiedLink(false), 3000);
   };
 
   const handleRequestNotificationPermission = async () => {
@@ -369,47 +419,54 @@ export default function SettingsPage() {
 
   const handleSendTestNotification = () => {
     sendTestNotification(
-      '🐰 BunnyCure',
-      'Esta es una notificación de prueba. Las notificaciones están funcionando correctamente!'
+      `🐰 ${settings.businessName}`,
+      '¡Esta es una notificación de prueba! Las notificaciones están funcionando correctamente.'
     );
     toast.success('Notificación de prueba enviada');
   };
 
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page">
-        <div className="d-flex justify-content-between align-items-center mb-4">
+      <Container fluid className="bunny-page pb-5">
+        {/* Encabezado y Barra de Guardado */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
           <div>
-            <h2 className="mb-1">
-              <FiSettings className="me-2" />
-              Configuración
-            </h2>
-            <p className="text-muted mb-0">Ajustes de identidad, portal de reservas y WhatsApp</p>
+            <h1 className="mb-1 d-flex align-items-center gap-2">
+              <FiSettings className="text-primary" />
+              Configuración del Salón
+            </h1>
+            <p className="text-muted mb-0 small">
+              Administra la identidad de tu negocio, horarios de atención, WhatsApp y portal de reservas
+            </p>
           </div>
-          <div className="d-flex gap-2">
+
+          <div className="d-flex gap-2 w-100 w-md-auto flex-wrap">
             <Button
               as="a"
               href="/reservar"
               target="_blank"
               rel="noopener noreferrer"
               variant="outline-secondary"
+              className="d-flex align-items-center gap-2 flex-fill flex-md-grow-0"
             >
-              Ver portal público
+              <FiExternalLink />
+              <span>Ver Portal Público</span>
             </Button>
             <Button
               variant="primary"
               onClick={handleSave}
               disabled={!hasChanges || loading}
+              className="d-flex align-items-center justify-content-center gap-2 flex-fill flex-md-grow-0 shadow-sm"
             >
               {loading ? (
                 <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  Guardando...
+                  <Spinner animation="border" size="sm" />
+                  <span>Guardando...</span>
                 </>
               ) : (
                 <>
-                  <FiSave className="me-2" />
-                  Guardar Configuración
+                  <FiSave />
+                  <span>Guardar Cambios</span>
                 </>
               )}
             </Button>
@@ -417,463 +474,674 @@ export default function SettingsPage() {
         </div>
 
         {hasChanges && (
-          <Alert variant="warning" className="mb-4">
-            <strong>Tienes cambios sin guardar.</strong> No olvides guardar tu configuración.
+          <Alert variant="warning" className="d-flex justify-content-between align-items-center mb-4 shadow-sm border-0">
+            <div>
+              <strong>⚠️ Tienes modificaciones pendientes:</strong> Recuerda pulsar <strong>"Guardar Cambios"</strong> para que surtan efecto en el sistema.
+            </div>
+            <Button size="sm" variant="warning" onClick={handleSave} disabled={loading}>
+              Guardar ahora
+            </Button>
           </Alert>
         )}
 
-        <Row>
-          <Col lg={6} className="mb-4">
-            <Card className="border-primary shadow-sm h-100">
-              <Card.Header className="bg-primary text-white">
-                <h5 className="mb-0 text-white">⭐ Programa de Fidelización</h5>
-              </Card.Header>
-              <Card.Body className="d-flex flex-column">
-                <p>Configura la lista de premios que tus clientes ganarán al completar ciclos de 10 visitas.</p>
-                <div className="mt-auto d-grid">
-                  <Button variant="outline-primary" onClick={() => navigate('/settings/loyalty')}>
-                    Gestionar Premios y Ciclos
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+        {/* Pestañas de Configuración */}
+        <Nav variant="pills" className="mb-4 gap-2 flex-wrap bg-white p-2 rounded-3 shadow-sm border">
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'identity'} 
+              onClick={() => handleTabChange('identity')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FiGlobe />
+              <span>Identidad &amp; Marca</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'hours'} 
+              onClick={() => handleTabChange('hours')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FiClock />
+              <span>Horarios &amp; Agenda</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'blocks'} 
+              onClick={() => handleTabChange('blocks')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FiSlash />
+              <span>Bloqueos &amp; Feriados</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'booking'} 
+              onClick={() => handleTabChange('booking')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FiEye />
+              <span>Portal de Reservas</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'whatsapp'} 
+              onClick={() => handleTabChange('whatsapp')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FaWhatsapp />
+              <span>WhatsApp &amp; Handoff</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'notifications'} 
+              onClick={() => handleTabChange('notifications')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FiBell />
+              <span>Notificaciones</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'loyalty'} 
+              onClick={() => handleTabChange('loyalty')}
+              className="d-flex align-items-center gap-2 py-2 px-3"
+            >
+              <FiAward />
+              <span>Fidelización</span>
+            </Nav.Link>
+          </Nav.Item>
+        </Nav>
 
-          <Col lg={6} className="mb-4">
-              <Card className="h-100">
-              <Card.Header>
-                <h5 className="mb-0">Identidad del Negocio</h5>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Nombre del Negocio</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={settings.businessName}
-                    onChange={(e) => handleChange('businessName', e.target.value)}
-                    placeholder="Ej: BunnyCure"
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    value={settings.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
-                    placeholder="info@bunnycure.com"
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Teléfono</Form.Label>
-                  <Form.Control
-                    type="tel"
-                    value={settings.phone}
-                    onChange={(e) => handleChange('phone', e.target.value)}
-                    placeholder="+56912345678"
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Dirección</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={settings.address}
-                    onChange={(e) => handleChange('address', e.target.value)}
-                    placeholder="Dirección completa"
-                  />
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col lg={6} className="mb-4">
-            <Card>
-              <Card.Header>
-                <h5 className="mb-0">Configuración de Citas</h5>
-              </Card.Header>
-              <Card.Body>
-                <Alert variant="info" className="small">
-                  Esta sección configura el WhatsApp de atención humana y recordatorios de citas.
-                </Alert>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Duración por defecto de citas (minutos)</Form.Label>
-                  <Form.Select
-                    value={settings.appointmentDuration}
-                    onChange={(e) => handleChange('appointmentDuration', parseInt(e.target.value))}
-                  >
-                    <option value={15}>15 minutos</option>
-                    <option value={30}>30 minutos</option>
-                    <option value={45}>45 minutos</option>
-                    <option value={60}>60 minutos</option>
-                    <option value={90}>90 minutos</option>
-                    <option value={120}>120 minutos</option>
-                  </Form.Select>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="notifications-switch"
-                    label="Habilitar notificaciones por email"
-                    checked={settings.notificationsEnabled}
-                    onChange={(e) => handleChange('notificationsEnabled', e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">
-                    Envía recordatorios automáticos a los clientes
-                  </Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Cuándo enviar el recordatorio</Form.Label>
-                  <Form.Select
-                    value={settings.reminderStrategy}
-                    onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
-                  >
-                    <option value="TWO_HOURS">⏰ 2 horas antes de la cita</option>
-                    <option value="MORNING">🌅 Mañana del día (9 AM)</option>
-                    <option value="DAY_BEFORE">📅 Un día antes (6 PM)</option>
-                    <option value="BOTH">🔔 Ambos (día antes + 2 horas)</option>
-                  </Form.Select>
-                  <Form.Text className="text-muted">
-                    Define cuándo enviar recordatorios automáticos
-                  </Form.Text>
-                </Form.Group>
-
-                <hr />
-
-                <h6 className="mb-3">
-                  <FaWhatsapp className="me-2" />
-                  Portal de Reservas y WhatsApp
-                </h6>
-
-                <Form.Group className="mb-3 p-3 rounded border bg-light-subtle">
-                  <Form.Check
-                    type="switch"
-                    id="public-booking-master-switch"
-                    label={
-                      <span className="fw-semibold text-primary">
-                        Habilitar Portal Público de Auto-Agendamiento (/reservar)
-                      </span>
-                    }
-                    checked={publicBookingEnabled}
-                    onChange={(e) => handleTogglePublicBooking(e.target.checked)}
-                  />
-                  <Form.Text className="text-muted d-block mt-1">
-                    Permite que tus clientas agenden citas de forma autónoma desde redes sociales. Si se desactiva, mostrará una pantalla de pausa con botón a tu WhatsApp.
-                  </Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="whatsapp-switch"
-                    label="Habilitar integración WhatsApp"
-                    checked={settings.whatsappEnabled}
-                    onChange={(e) => handleChange('whatsappEnabled', e.target.checked)}
-                  />
-                </Form.Group>
-
-                {settings.whatsappEnabled && (
-                  <>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Número WhatsApp del negocio</Form.Label>
-                      <Form.Control
-                        type="tel"
-                        value={settings.whatsappPhone}
-                        onChange={(e) => handleChange('whatsappPhone', e.target.value)}
-                        placeholder="+56912345678"
-                      />
-                      <Form.Text className="text-muted">
-                        Número con código de país (ej: +56912345678)
-                      </Form.Text>
-                    </Form.Group>
-
-                    <hr />
-
-                    <h6 className="mb-3">🤝 Traspaso a Agente Humano</h6>
-
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        id="handoff-switch"
-                        label="Habilitar traspaso manual"
-                        checked={settings.whatsappHandoffEnabled}
-                        onChange={(e) => handleChange('whatsappHandoffEnabled', e.target.checked)}
-                      />
-                      <Form.Text className="text-muted">
-                        Permite transferir conversaciones del bot a un agente humano
-                      </Form.Text>
-                    </Form.Group>
-
-                    {settings.whatsappHandoffEnabled && (
-                      <>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Número WhatsApp humano</Form.Label>
-                          <Form.Control
-                            type="tel"
-                            value={settings.whatsappHumanNumber}
-                            onChange={(e) => handleChange('whatsappHumanNumber', e.target.value)}
-                            placeholder="+56987654321"
-                          />
-                          <Form.Text className="text-muted">
-                            Número del agente que recibirá las conversaciones
-                          </Form.Text>
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Nombre visible del canal humano</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={settings.whatsappHumanDisplayName}
-                            onChange={(e) => handleChange('whatsappHumanDisplayName', e.target.value)}
-                            placeholder="Equipo BunnyCure"
-                          />
-                          <Form.Text className="text-muted">
-                            Nombre que verá el cliente cuando sea transferido
-                          </Form.Text>
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Mensaje al Cliente</Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={2}
-                            value={settings.whatsappHandoffClientMessage}
-                            onChange={(e) => handleChange('whatsappHandoffClientMessage', e.target.value)}
-                            placeholder="Te estoy conectando con un miembro de nuestro equipo..."
-                          />
-                          <Form.Text className="text-muted">
-                            Mensaje que recibe el cliente antes de ser transferido
-                          </Form.Text>
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Mensaje pre-escrito para admin</Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={settings.whatsappHandoffAdminPrefill}
-                            onChange={(e) => handleChange('whatsappHandoffAdminPrefill', e.target.value)}
-                            placeholder="Hola, el cliente {customer} necesita ayuda con {service}"
-                          />
-                          <Form.Text className="text-muted">
-                            Variables disponibles: {'{customer}'}, {'{service}'}, {'{date}'}, {'{time}'}
-                          </Form.Text>
-                        </Form.Group>
-                      </>
-                    )}
-                  </>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col lg={6} className="mb-4">
-            <Card>
-              <Card.Header>
-                <h5 className="mb-0">
-                  <FaBell className="me-2" />
-                  Notificaciones Push (PWA)
-                </h5>
-              </Card.Header>
-              <Card.Body>
-                {!isSupported && (
-                  <Alert variant="warning">
-                    <strong>⚠️ No soportado</strong><br />
-                    Tu navegador no soporta notificaciones push. Prueba con Chrome o Safari moderno.
-                  </Alert>
-                )}
-
-                {isSupported && (
-                  <>
-                    <div className="mb-3">
-                      <strong>Estado de Permisos:</strong>{' '}
-                      {permission === 'default' && (
-                        <Badge bg="secondary">No solicitados</Badge>
-                      )}
-                      {permission === 'granted' && (
-                        <Badge bg="success">✅ Concedidos</Badge>
-                      )}
-                      {permission === 'denied' && (
-                        <Badge bg="danger">❌ Denegados</Badge>
-                      )}
-                    </div>
-
-                    {permission === 'default' && (
-                      <div className="d-grid gap-2 mb-3">
-                        <Button 
-                          variant="primary" 
-                          onClick={handleRequestNotificationPermission}
-                        >
-                          <FaBell className="me-2" />
-                          Solicitar Permisos de Notificaciones
-                        </Button>
-                      </div>
-                    )}
-
-                    {permission === 'granted' && (
-                      <div className="d-grid gap-2 mb-3">
-                        <Button 
-                          variant="success" 
-                          onClick={handleSendTestNotification}
-                        >
-                          🔔 Enviar Notificación de Prueba
-                        </Button>
-                      </div>
-                    )}
-
-                    {permission === 'denied' && (
-                      <Alert variant="danger">
-                        <strong>Permisos denegados</strong><br />
-                        Debes habilitar las notificaciones manualmente en la configuración de tu navegador.
-                      </Alert>
-                    )}
-
-                    <hr />
-
-                    <div className="small text-muted">
-                      <strong>💡 Sobre las notificaciones PWA:</strong>
-                      <ul className="mt-2 mb-0">
-                        <li>Funciona en Chrome Android, Safari iOS 16.4+</li>
-                        <li>Requiere HTTPS (ya configurado en Vercel)</li>
-                        <li>Las notificaciones aparecen incluso con la app cerrada</li>
-                        <li>Ideal para recordatorios de citas</li>
-                      </ul>
-                    </div>
-                  </>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col lg={12}>
-            <Card>
-              <Card.Header>
-                <h5 className="mb-0">Bloques Horarios</h5>
-              </Card.Header>
-              <Card.Body>
-                {Object.entries(settings.workingHours).map(([day, hours]) => (
-                  <Row key={day} className="mb-3 align-items-center">
-                    <Col md={3}>
-                      <Form.Check
-                        type="switch"
-                        id={`day-${day}`}
-                        label={dayNames[day as keyof typeof dayNames]}
-                        checked={hours.enabled}
-                        onChange={(e) =>
-                          handleWorkingHoursChange(
-                            day as keyof BusinessSettings['workingHours'],
-                            'enabled',
-                            e.target.checked
-                          )
-                        }
-                      />
-                    </Col>
-                    <Col md={4}>
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 1: IDENTIDAD & MARCA
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'identity' && (
+          <Row>
+            <Col lg={7} className="mb-4">
+              <Card className="shadow-sm border-0 h-100">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">🏢 Datos Generales del Salón</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <Row className="g-3">
+                    <Col md={12}>
                       <Form.Group>
-                        <Form.Label className="small text-muted">Desde</Form.Label>
+                        <Form.Label className="fw-semibold">Nombre Comercial del Salón</Form.Label>
                         <Form.Control
-                          type="time"
-                          value={hours.start}
-                          disabled={!hours.enabled}
-                          onChange={(e) =>
-                            handleWorkingHoursChange(
-                              day as keyof BusinessSettings['workingHours'],
-                              'start',
-                              e.target.value
-                            )
-                          }
+                          type="text"
+                          value={settings.businessName}
+                          onChange={(e) => handleChange('businessName', e.target.value)}
+                          placeholder="Ej: BunnyCure Studio"
                         />
                       </Form.Group>
                     </Col>
-                    <Col md={4}>
+
+                    <Col md={6}>
                       <Form.Group>
-                        <Form.Label className="small text-muted">Hasta</Form.Label>
+                        <Form.Label className="fw-semibold">Correo Electrónico Oficial</Form.Label>
                         <Form.Control
-                          type="time"
-                          value={hours.end}
-                          disabled={!hours.enabled}
-                          onChange={(e) =>
-                            handleWorkingHoursChange(
-                              day as keyof BusinessSettings['workingHours'],
-                              'end',
-                              e.target.value
-                            )
-                          }
+                          type="email"
+                          value={settings.email}
+                          onChange={(e) => handleChange('email', e.target.value)}
+                          placeholder="contacto@bunnycure.cl"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold">Teléfono / WhatsApp Oficial</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={settings.phone}
+                          onChange={(e) => handleChange('phone', e.target.value)}
+                          placeholder="+56983692046"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={12}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold">Dirección Física del Salón</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={settings.address}
+                          onChange={(e) => handleChange('address', e.target.value)}
+                          placeholder="Av. Providencia 1234, Oficina 502, Santiago"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold">Dominio Propio (Custom Domain)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={settings.customDomain}
+                          disabled
+                          className="bg-light text-muted"
+                          placeholder="app.bunnycure.cl"
+                        />
+                        <Form.Text className="text-muted">
+                          Configurado en el plan Multi-Tenant SaaS.
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold">Identificador (Slug)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={settings.slug}
+                          disabled
+                          className="bg-light text-muted"
+                          placeholder="bunnycure"
                         />
                       </Form.Group>
                     </Col>
                   </Row>
-                ))}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+                </Card.Body>
+              </Card>
+            </Col>
 
-        <Row>
-          <Col lg={12} className="mb-4">
-            <Card>
-              <Card.Header>
-                <h5 className="mb-0">🎨 Calendario: Franjas Horarias y Colores</h5>
-              </Card.Header>
-              <Card.Body>
-                <p className="text-muted small mb-3">
-                  Estos colores se usan en el calendario general y en el calendario del dashboard.
-                </p>
+            {/* Selector de Color y Vista Previa de Marca */}
+            <Col lg={5} className="mb-4">
+              <Card className="shadow-sm border-0 mb-4">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">🎨 Color y Branding</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Color Primario de Marca</Form.Label>
+                    <div className="d-flex align-items-center gap-3">
+                      <Form.Control
+                        type="color"
+                        value={settings.primaryColor}
+                        onChange={(e) => handleChange('primaryColor', e.target.value)}
+                        style={{ width: '60px', height: '42px', padding: '2px', cursor: 'pointer' }}
+                        title="Seleccionar color"
+                      />
+                      <Form.Control
+                        type="text"
+                        value={settings.primaryColor}
+                        onChange={(e) => handleChange('primaryColor', e.target.value)}
+                        placeholder="#d48b70"
+                        style={{ fontFamily: 'monospace' }}
+                      />
+                    </div>
+                  </Form.Group>
 
-                {(['morning', 'afternoon', 'night'] as const).map((slot) => {
-                  const slotLabel: Record<'morning' | 'afternoon' | 'night', string> = {
-                    morning: 'Mañana',
-                    afternoon: 'Tarde',
-                    night: 'Noche',
-                  };
+                  <div className="p-3 bg-light rounded-3 mt-3 border">
+                    <small className="text-muted d-block fw-bold mb-2">VISTA PREVIA EN VIVO</small>
+                    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+                      <Button style={{ backgroundColor: settings.primaryColor, borderColor: settings.primaryColor, color: '#fff' }}>
+                        Botón Principal
+                      </Button>
+                      <Badge style={{ backgroundColor: settings.primaryColor, color: '#fff' }} className="p-2">
+                        Insignia de Estado
+                      </Badge>
+                    </div>
+                    <small className="text-muted">
+                      Este color se aplicará dinámicamente a todos los botones, títulos y componentes de la PWA.
+                    </small>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
 
-                  return (
-                    <Row key={slot} className="align-items-end g-3 mb-3">
-                      <Col md={3}>
-                        <Form.Label className="fw-semibold">{slotLabel[slot]}</Form.Label>
-                      </Col>
-                      <Col md={3}>
-                        <Form.Label className="small text-muted">Desde</Form.Label>
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 2: HORARIOS & AGENDA
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'hours' && (
+          <Row>
+            <Col lg={8} className="mb-4">
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-light py-3 d-flex justify-content-between align-items-center">
+                  <h5 className="mb-0 fs-6 fw-bold">🕒 Horarios de Atención Semanales</h5>
+                  <Badge bg="secondary">Zona Horaria: Santiago (CLT)</Badge>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <div className="table-responsive">
+                    <table className="table align-middle">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '140px' }}>Día</th>
+                          <th style={{ width: '120px' }}>Estado</th>
+                          <th>Apertura</th>
+                          <th>Cierre</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(Object.keys(settings.workingHours) as Array<keyof BusinessSettings['workingHours']>).map((day) => {
+                          const hours = settings.workingHours[day];
+                          return (
+                            <tr key={day} className={!hours.enabled ? 'text-muted bg-light' : ''}>
+                              <td className="fw-semibold">{dayNames[day]}</td>
+                              <td>
+                                <Form.Check
+                                  type="switch"
+                                  id={`switch-${day}`}
+                                  label={hours.enabled ? 'Abierto' : 'Cerrado'}
+                                  checked={hours.enabled}
+                                  onChange={(e) => handleWorkingHoursChange(day, 'enabled', e.target.checked)}
+                                />
+                              </td>
+                              <td>
+                                <Form.Control
+                                  type="time"
+                                  size="sm"
+                                  value={hours.start}
+                                  disabled={!hours.enabled}
+                                  onChange={(e) => handleWorkingHoursChange(day, 'start', e.target.value)}
+                                  style={{ maxWidth: '130px' }}
+                                />
+                              </td>
+                              <td>
+                                <Form.Control
+                                  type="time"
+                                  size="sm"
+                                  value={hours.end}
+                                  disabled={!hours.enabled}
+                                  onChange={(e) => handleWorkingHoursChange(day, 'end', e.target.value)}
+                                  style={{ maxWidth: '130px' }}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={4} className="mb-4">
+              <Card className="shadow-sm border-0 mb-4">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">⏱️ Duración de Citas</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <Form.Group>
+                    <Form.Label className="fw-semibold">Duración Estándar (Minutos)</Form.Label>
+                    <Form.Select
+                      value={settings.appointmentDuration}
+                      onChange={(e) => handleChange('appointmentDuration', Number(e.target.value))}
+                    >
+                      <option value={30}>30 minutos</option>
+                      <option value={45}>45 minutos</option>
+                      <option value={60}>60 minutos (1 hora)</option>
+                      <option value={75}>75 minutos</option>
+                      <option value={90}>90 minutos (1.5 horas)</option>
+                      <option value={120}>120 minutos (2 horas)</option>
+                    </Form.Select>
+                    <Form.Text className="text-muted">
+                      Se utiliza como bloque predeterminado al agendar nuevas citas.
+                    </Form.Text>
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">🎨 Franjas del Calendario</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <div className="d-flex flex-column gap-3">
+                    <div>
+                      <label className="small fw-semibold text-muted d-block mb-1">MAÑANA</label>
+                      <div className="d-flex align-items-center gap-2">
                         <Form.Control
                           type="time"
-                          value={settings.calendarDisplay[slot].start}
-                          onChange={(e) => handleCalendarDisplayChange(slot, 'start', e.target.value)}
+                          size="sm"
+                          value={settings.calendarDisplay.morning.start}
+                          onChange={(e) => handleCalendarDisplayChange('morning', 'start', e.target.value)}
                         />
-                      </Col>
-                      <Col md={3}>
-                        <Form.Label className="small text-muted">Hasta</Form.Label>
+                        <span>a</span>
                         <Form.Control
                           type="time"
-                          value={settings.calendarDisplay[slot].end}
-                          onChange={(e) => handleCalendarDisplayChange(slot, 'end', e.target.value)}
+                          size="sm"
+                          value={settings.calendarDisplay.morning.end}
+                          onChange={(e) => handleCalendarDisplayChange('morning', 'end', e.target.value)}
                         />
-                      </Col>
-                      <Col md={3}>
-                        <Form.Label className="small text-muted">Color</Form.Label>
                         <Form.Control
                           type="color"
-                          value={settings.calendarDisplay[slot].color}
-                          onChange={(e) => handleCalendarDisplayChange(slot, 'color', e.target.value)}
+                          value={settings.calendarDisplay.morning.color}
+                          onChange={(e) => handleCalendarDisplayChange('morning', 'color', e.target.value)}
+                          style={{ width: '45px', height: '31px', padding: '1px' }}
                         />
-                      </Col>
-                    </Row>
-                  );
-                })}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+                      </div>
+                    </div>
 
-        <NotificationTemplatesSection />
+                    <div>
+                      <label className="small fw-semibold text-muted d-block mb-1">TARDE</label>
+                      <div className="d-flex align-items-center gap-2">
+                        <Form.Control
+                          type="time"
+                          size="sm"
+                          value={settings.calendarDisplay.afternoon.start}
+                          onChange={(e) => handleCalendarDisplayChange('afternoon', 'start', e.target.value)}
+                        />
+                        <span>a</span>
+                        <Form.Control
+                          type="time"
+                          size="sm"
+                          value={settings.calendarDisplay.afternoon.end}
+                          onChange={(e) => handleCalendarDisplayChange('afternoon', 'end', e.target.value)}
+                        />
+                        <Form.Control
+                          type="color"
+                          value={settings.calendarDisplay.afternoon.color}
+                          onChange={(e) => handleCalendarDisplayChange('afternoon', 'color', e.target.value)}
+                          style={{ width: '45px', height: '31px', padding: '1px' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 3: BLOQUEOS & FERIADOS
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'blocks' && (
+          <Row>
+            <Col lg={12}>
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">🚫 Bloqueos de Agenda, Feriados y Excepciones</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <ScheduleUnavailabilitySection
+                    unavailabilities={settings.unavailabilities}
+                    colors={settings.unavailabilityColors}
+                    notifications={settings.unavailabilityNotifications}
+                    onUnavailabilitiesChange={(unavailabilities: ScheduleUnavailability[]) => {
+                      setSettings((prev) => ({ ...prev, unavailabilities }));
+                      setHasChanges(true);
+                    }}
+                    onColorsChange={(unavailabilityColors) => {
+                      setSettings((prev) => ({ ...prev, unavailabilityColors }));
+                      setHasChanges(true);
+                    }}
+                    onNotificationsChange={(unavailabilityNotifications) => {
+                      setSettings((prev) => ({ ...prev, unavailabilityNotifications }));
+                      setHasChanges(true);
+                    }}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 4: PORTAL DE RESERVAS
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'booking' && (
+          <Row>
+            <Col lg={8} className="mb-4">
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">🌐 Portal Público de Agendamiento</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 mb-4 border">
+                    <div>
+                      <h6 className="mb-1 fw-bold">Estado del Portal de Reservas</h6>
+                      <p className="text-muted mb-0 small">
+                        Permite a tus clientas agendar citas directamente desde tu página web oficial.
+                      </p>
+                    </div>
+                    <Form.Check
+                      type="switch"
+                      id="public-booking-switch"
+                      checked={publicBookingEnabled}
+                      onChange={(e) => handleTogglePublicBooking(e.target.checked)}
+                      style={{ fontSize: '1.2rem' }}
+                    />
+                  </div>
+
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-semibold">Enlace Directo de Reservas</Form.Label>
+                    <InputGroup>
+                      <Form.Control
+                        type="text"
+                        value={`${window.location.origin}/reservar`}
+                        readOnly
+                        className="bg-light"
+                      />
+                      <Button 
+                        variant={copiedLink ? "success" : "outline-primary"}
+                        onClick={handleCopyBookingLink}
+                        className="d-flex align-items-center gap-2"
+                      >
+                        {copiedLink ? <FiCheck /> : <FiCopy />}
+                        <span>{copiedLink ? 'Copiado' : 'Copiar'}</span>
+                      </Button>
+                      <Button
+                        as="a"
+                        href="/reservar"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="primary"
+                        className="d-flex align-items-center gap-2"
+                      >
+                        <FiExternalLink />
+                        <span>Abrir</span>
+                      </Button>
+                    </InputGroup>
+                    <Form.Text className="text-muted">
+                      Comparte este link en tu biografía de Instagram, WhatsApp o sitio web.
+                    </Form.Text>
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={4} className="mb-4">
+              <Card className="shadow-sm border-0 bg-primary text-white">
+                <Card.Body className="p-4">
+                  <h5 className="text-white fw-bold mb-3">📱 Experiencia de la Clienta</h5>
+                  <p className="small mb-3 text-white-50">
+                    El portal de reservas está optimizado para teléfonos móviles (PWA). Permite selección de servicios, horarios disponibles, verificación de teléfono y descarga de tarjeta a Google Wallet.
+                  </p>
+                  <Button 
+                    variant="light" 
+                    className="w-100 text-primary fw-bold"
+                    as="a"
+                    href="/reservar"
+                    target="_blank"
+                  >
+                    Probar Flujo de Reserva
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 5: WHATSAPP & HANDOFF
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'whatsapp' && (
+          <Row>
+            <Col lg={8} className="mb-4">
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">💬 Asistente WhatsApp &amp; Derivación Humana</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 mb-4 border">
+                    <div>
+                      <h6 className="mb-1 fw-bold">Habilitar Derivación a Operadora (Handoff)</h6>
+                      <p className="text-muted mb-0 small">
+                        Cuando el cliente solicita hablar con una persona, el bot envía un enlace de contacto directo.
+                      </p>
+                    </div>
+                    <Form.Check
+                      type="switch"
+                      id="whatsapp-handoff-switch"
+                      checked={settings.whatsappHandoffEnabled}
+                      onChange={(e) => handleChange('whatsappHandoffEnabled', e.target.checked)}
+                      style={{ fontSize: '1.2rem' }}
+                    />
+                  </div>
+
+                  <Row className="g-3 mb-3">
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold">Teléfono de Derivación (Operadora)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={settings.whatsappHumanNumber}
+                          onChange={(e) => handleChange('whatsappHumanNumber', e.target.value)}
+                          placeholder="+56983692046"
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold">Nombre Visible de la Operadora</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={settings.whatsappHumanDisplayName}
+                          onChange={(e) => handleChange('whatsappHumanDisplayName', e.target.value)}
+                          placeholder="Atención BunnyCure"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Mensaje de Derivación al Cliente</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={2}
+                      value={settings.whatsappHandoffClientMessage}
+                      onChange={(e) => handleChange('whatsappHandoffClientMessage', e.target.value)}
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Prefijo de Asistencia Pre-rellenado</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={settings.whatsappHandoffAdminPrefill}
+                      onChange={(e) => handleChange('whatsappHandoffAdminPrefill', e.target.value)}
+                    />
+                  </Form.Group>
+
+                  <hr className="my-4" />
+
+                  <h6 className="fw-bold mb-3">⏰ Estrategia de Recordatorios Automáticos</h6>
+                  <Form.Group>
+                    <Form.Select
+                      value={settings.reminderStrategy}
+                      onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
+                    >
+                      <option value="TWO_HOURS">2 Horas antes de la cita (Recomendado)</option>
+                      <option value="MORNING">En la mañana del mismo día (08:30 AM)</option>
+                      <option value="DAY_BEFORE">El día anterior (18:00 PM)</option>
+                      <option value="BOTH">Doble recordatorio (Día anterior + 2 Horas antes)</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 6: NOTIFICACIONES & PLANTILLAS
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'notifications' && (
+          <Row>
+            <Col lg={12} className="mb-4">
+              <Card className="shadow-sm border-0 mb-4">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">🔔 Notificaciones Web Push (Navegador)</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 p-3 bg-light rounded-3 border">
+                    <div>
+                      <h6 className="mb-1 fw-bold">Alertas en Tiempo Real en tu Computador o Móvil</h6>
+                      <p className="text-muted mb-0 small">
+                        Estado actual: <strong>{permission === 'granted' ? '✅ Concedido' : permission === 'denied' ? '❌ Denegado' : '⏳ Pendiente'}</strong>
+                      </p>
+                    </div>
+                    <div className="d-flex gap-2">
+                      <Button
+                        variant="outline-primary"
+                        onClick={handleRequestNotificationPermission}
+                      >
+                        Solicitar Permisos
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        onClick={handleSendTestNotification}
+                        disabled={permission !== 'granted'}
+                      >
+                        Enviar Prueba
+                      </Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-light py-3">
+                  <h5 className="mb-0 fs-6 fw-bold">📝 Plantillas de Mensajes WhatsApp</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <NotificationTemplatesSection />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────────────────
+            TAB 7: PROGRAMA DE FIDELIZACIÓN
+        ───────────────────────────────────────────────────────────────────────────── */}
+        {activeTab === 'loyalty' && (
+          <Row>
+            <Col lg={8} className="mb-4">
+              <Card className="shadow-sm border-0">
+                <Card.Header className="bg-primary text-white py-3">
+                  <h5 className="mb-0 fs-6 fw-bold text-white">⭐ Configuración de Fidelización &amp; Sellos</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <p className="mb-3">
+                    El sistema de fidelización de BunnyCure acumula sellos en las visitas 1 a 10. Al alcanzar 10 sellos, la visita #11 aplica un premio exclusivo configurable.
+                  </p>
+                  <div className="d-flex gap-3">
+                    <Button 
+                      variant="primary" 
+                      onClick={() => navigate('/settings/loyalty')}
+                      className="d-flex align-items-center gap-2"
+                    >
+                      <FiAward />
+                      <span>Gestionar Premios y Ranking de Clientas</span>
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
       </Container>
     </DashboardLayout>
   );
