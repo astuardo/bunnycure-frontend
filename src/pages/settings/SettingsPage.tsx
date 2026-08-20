@@ -846,6 +846,31 @@ export default function SettingsPage() {
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <label className="small fw-semibold text-muted d-block mb-1">NOCHE</label>
+                      <div className="d-flex align-items-center gap-2">
+                        <Form.Control
+                          type="time"
+                          size="sm"
+                          value={settings.calendarDisplay.night.start}
+                          onChange={(e) => handleCalendarDisplayChange('night', 'start', e.target.value)}
+                        />
+                        <span>a</span>
+                        <Form.Control
+                          type="time"
+                          size="sm"
+                          value={settings.calendarDisplay.night.end}
+                          onChange={(e) => handleCalendarDisplayChange('night', 'end', e.target.value)}
+                        />
+                        <Form.Control
+                          type="color"
+                          value={settings.calendarDisplay.night.color}
+                          onChange={(e) => handleCalendarDisplayChange('night', 'color', e.target.value)}
+                          style={{ width: '45px', height: '31px', padding: '1px' }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </Card.Body>
               </Card>
