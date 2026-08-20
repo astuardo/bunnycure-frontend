@@ -193,6 +193,18 @@ export const customersApi = {
   },
 
   /**
+   * Sincronizar y recalcular visitas completadas de TODOS los clientes en base a sus citas reales
+   */
+  syncAllVisits: async (): Promise<{ totalProcessed: number; updatedCount: number }> => {
+    const response = await apiClient.post<ApiResponse<{ totalProcessed: number; updatedCount: number }>>(
+      `/api/customers/sync-all-visits`
+    );
+    const payload = response.data;
+    const result = payload?.data || { totalProcessed: 0, updatedCount: 0 };
+    return result;
+  },
+
+  /**
    * Obtener enlace de Google Wallet para el cliente
    */
   getGoogleWalletLinks: async (id: number): Promise<{ openUrl: string; qrUrl: string }> => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner, Nav } from 'react-bootstrap';
+import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner, Nav, Modal } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
@@ -23,9 +23,18 @@ export default function CustomersPage() {
     const [search, setSearch] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showSyncModal, setShowSyncModal] = useState(false);
+    const [syncingAll, setSyncingAll] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     
-    const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomersStore();
+    const { 
+        customers, 
+        loading, 
+        error, 
+        fetchCustomers, 
+        deleteCustomer,
+        syncAllCustomersVisits 
+    } = useCustomersStore();
     const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
     const { services, isLoading: servicesLoading, fetchServices } = useServicesStore();
     const { isAuthenticated, user } = useAuthStore();
@@ -160,6 +169,16 @@ export default function CustomersPage() {
         );
     };
 
+    const handleConfirmSyncAllVisits = async () => {
+        setSyncingAll(true);
+        try {
+            await syncAllCustomersVisits();
+            setShowSyncModal(false);
+        } finally {
+            setSyncingAll(false);
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="bunny-page">
@@ -173,14 +192,26 @@ export default function CustomersPage() {
                                     Administra la base de datos de clientas y fideliza a las inactivas
                                 </p>
                             </div>
-                            <Button 
-                                variant="primary" 
-                                size="lg" 
-                                onClick={handleNewCustomer}
-                                className="w-100 w-md-auto"
-                            >
-                                ➕ Nuevo Cliente
-                            </Button>
+                            <div className="d-flex gap-2 w-100 w-md-auto flex-wrap">
+                                <Button 
+                                    variant="outline-secondary" 
+                                    size="lg" 
+                                    onClick={() => setShowSyncModal(true)}
+                                    className="flex-fill flex-md-grow-0 d-flex align-items-center justify-content-center gap-2"
+                                    title="Recalcular visitas completadas de todos los clientes según sus citas reales"
+                                >
+                                    🔄 <span className="d-none d-sm-inline">Sincronizar Visitas</span>
+                                    <span className="d-sm-none">Sincronizar</span>
+                                </Button>
+                                <Button 
+                                    variant="primary" 
+                                    size="lg" 
+                                    onClick={handleNewCustomer}
+                                    className="flex-fill flex-md-grow-0"
+                                >
+                                    ➕ Nuevo Cliente
+                                </Button>
+                            </div>
                         </div>
                     </Col>
                 </Row>
@@ -570,6 +601,45 @@ export default function CustomersPage() {
                     onConfirm={confirmDelete}
                     loading={loading}
                 />
+
+                {/* Modal de Sincronización Masiva de Visitas */}
+                <Modal show={showSyncModal} onHide={() => !syncingAll && setShowSyncModal(false)} centered>
+                    <Modal.Header closeButton={!syncingAll}>
+                        <Modal.Title className="fs-5">🔄 Sincronizar Visitas de Clientes</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>
+                            ¿Deseas recalcular las visitas registradas de <strong>todos los clientes ({customers.length})</strong> basándote en sus citas reales en estado <strong>COMPLETADA</strong>?
+                        </p>
+                        <Alert variant="info" className="mb-0 small">
+                            ℹ️ Esta acción ajustará el contador de visitas históricas de cada cliente para que coincida exactamente con las citas completadas reales en la base de datos.
+                        </Alert>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setShowSyncModal(false)} 
+                            disabled={syncingAll}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button 
+                            variant="primary" 
+                            onClick={handleConfirmSyncAllVisits} 
+                            disabled={syncingAll}
+                            className="d-flex align-items-center gap-2"
+                        >
+                            {syncingAll ? (
+                                <>
+                                    <Spinner animation="border" size="sm" />
+                                    Sincronizando...
+                                </>
+                            ) : (
+                                'Confirmar Sincronización'
+                            )}
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             </div>
         </DashboardLayout>
     );

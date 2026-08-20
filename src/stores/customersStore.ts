@@ -17,6 +17,7 @@ interface CustomersState {
     deleteCustomer: (id: number) => Promise<boolean>;
     adjustCustomerLoyalty: (id: number, delta: number) => Promise<Customer | null>;
     syncCustomerVisits: (id: number) => Promise<Customer | null>;
+    syncAllCustomersVisits: () => Promise<boolean>;
     clearCurrentCustomer: () => void;
     clearError: () => void;
 }
@@ -198,6 +199,22 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             set({ error: errorMessage, loading: false });
             toast.error(errorMessage);
             return null;
+        }
+    },
+
+    syncAllCustomersVisits: async () => {
+        set({ loading: true, error: null });
+        try {
+            const result = await customersApi.syncAllVisits();
+            const customers = await customersApi.list();
+            set({ customers, loading: false });
+            toast.success(`Sincronización completada: ${result.totalProcessed} clientes procesados (${result.updatedCount} actualizados).`);
+            return true;
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Error al sincronizar todas las visitas';
+            set({ error: errorMessage, loading: false });
+            toast.error(errorMessage);
+            return false;
         }
     },
 
