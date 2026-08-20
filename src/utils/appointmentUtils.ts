@@ -15,17 +15,29 @@ export function getAppointmentServices(apt: Appointment): ServiceSummary[] {
 
 /**
  * Calcula el total de una cita considerando:
- * 1. Total estimado en notas (si existe)
- * 2. totalPrice del campo
- * 3. Suma de precios de servicios
- * 
- * Duplicado en: AppointmentsPage, DashboardPage, analytics.api
- * Este es el único lugar de verdad.
+ * 1. totalPrice provisto por el backend / request (fuente canónica)
+ * 2. Suma de precios de servicios asociados
+ * 3. Total estimado en notas (fallback)
  */
 export function getAppointmentTotal(apt: Appointment): number {
   if (!apt) return 0;
 
-  // Primero intentar leer desde notas (total estimado final)
+  // 1. Usar totalPrice calculado por el backend (fuente de verdad)
+  if (typeof apt.totalPrice === 'number' && apt.totalPrice > 0) {
+    return apt.totalPrice;
+  }
+
+  // 2. Sumar precios de los servicios
+  const services = apt.services && apt.services.length > 0
+    ? apt.services
+    : (apt.service ? [apt.service] : []);
+
+  const servicesTotal = services.reduce((sum, s) => sum + (s?.price || 0), 0);
+  if (servicesTotal > 0) {
+    return servicesTotal;
+  }
+
+  // 3. Fallback de contingencia: leer total estimado en notas si existe
   if (apt.notes) {
     const match = apt.notes.match(/Total final estimado:\s*\$?\s*([\d.]+)/i);
     if (match && match[1]) {
@@ -34,12 +46,7 @@ export function getAppointmentTotal(apt: Appointment): number {
     }
   }
 
-  // Luego intentar desde totalPrice
-  if (typeof apt.totalPrice === 'number' && apt.totalPrice > 0) return apt.totalPrice;
-
-  // Finalmente sumar precios de servicios
-  const services = apt.services || (apt.service ? [apt.service] : []);
-  return services.reduce((sum, service) => sum + (service?.price || 0), 0);
+  return 0;
 }
 
 /**

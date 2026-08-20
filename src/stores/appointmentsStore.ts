@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import { appointmentsApi } from '../api/appointments.api';
+import { invalidateAnalyticsCache } from '../api/analytics.api';
 import { Appointment, AppointmentCreateRequest, AppointmentUpdateRequest, AppointmentStatus } from '../types/appointment.types';
 
 interface AppointmentsState {
@@ -77,6 +78,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const newAppointment = await appointmentsApi.create(data);
+      invalidateAnalyticsCache();
       set((state) => ({
         appointments: [...state.appointments, newAppointment],
         isLoading: false,
@@ -96,6 +98,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const updatedAppointment = await appointmentsApi.update(id, data);
+      invalidateAnalyticsCache();
       set((state) => ({
         appointments: state.appointments.map((apt) =>
           apt.id === id ? updatedAppointment : apt
@@ -118,6 +121,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const updatedAppointment = await appointmentsApi.updateStatus(id, status, options);
+      invalidateAnalyticsCache();
       set((state) => ({
         appointments: state.appointments.map((apt) =>
           apt.id === id ? updatedAppointment : apt
@@ -139,6 +143,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await appointmentsApi.delete(id);
+      invalidateAnalyticsCache();
       set((state) => ({
         appointments: state.appointments.filter((apt) => apt.id !== id),
         selectedAppointment: state.selectedAppointment?.id === id ? null : state.selectedAppointment,

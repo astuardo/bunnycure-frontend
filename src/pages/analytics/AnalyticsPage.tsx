@@ -365,7 +365,7 @@ export default function AnalyticsPage() {
 
         {/* Tarjetas de Métricas Principales */}
         <Row className="g-3">
-          <Col xs={12} sm={6} lg={4} xl={2}>
+          <Col xs={12} sm={6} md={4} xl={2}>
             <MetricCard
               label="Citas Totales"
               value={metrics.totalAppointments}
@@ -374,16 +374,16 @@ export default function AnalyticsPage() {
               color="#5a8f7b"
             />
           </Col>
-          <Col xs={12} sm={6} lg={4} xl={2}>
+          <Col xs={12} sm={6} md={4} xl={2}>
             <MetricCard
               label="Completadas"
               value={metrics.totalCompleted}
-              subtext="Atendidas efectivamente"
+              subtext={`${metrics.completionRate}% de efectividad`}
               icon={CheckCircle2}
               color="#28a745"
             />
           </Col>
-          <Col xs={12} sm={6} lg={4} xl={2}>
+          <Col xs={12} sm={6} md={4} xl={2}>
             <MetricCard
               label="Tasa Cancelación"
               value={`${metrics.cancelledRate}%`}
@@ -392,21 +392,30 @@ export default function AnalyticsPage() {
               color="#dc3545"
             />
           </Col>
-          <Col xs={12} sm={6} lg={4} xl={3}>
+          <Col xs={12} sm={6} md={4} xl={2}>
             <MetricCard
-              label="Ingresos Realizados"
+              label="Ingreso Proyectado"
+              value={formatCurrency(metrics.totalRevenue)}
+              subtext="Demanda activa total"
+              icon={TrendingUp}
+              color="#1976d2"
+            />
+          </Col>
+          <Col xs={12} sm={6} md={4} xl={2}>
+            <MetricCard
+              label="Ingresos Cobrados"
               value={formatCurrency(metrics.completedRevenue)}
-              subtext="Solo de citas completadas"
+              subtext="Solo citas completadas"
               icon={DollarSign}
               color="#2e7d32"
             />
           </Col>
-          <Col xs={12} sm={6} lg={4} xl={3}>
+          <Col xs={12} sm={6} md={4} xl={2}>
             <MetricCard
               label="Ticket Promedio"
               value={formatCurrency(metrics.averageTicket)}
-              subtext="Gasto medio por cita realizada"
-              icon={TrendingUp}
+              subtext="Gasto medio por cita activa"
+              icon={Sparkles}
               color="#c9897a"
             />
           </Col>
@@ -414,10 +423,9 @@ export default function AnalyticsPage() {
 
         {/* Banner de Proyecciones & Insights Predictivos de Demanda */}
         {(() => {
-          const peakWeekday = [...appointmentsByWeekday].sort((a, b) => b.completedCount - a.completedCount)[0];
-          const peakSlot = [...appointmentsByHourSlot].sort((a, b) => b.completedCount - a.completedCount)[0];
-          const totalAtendidas = metrics.totalCompleted;
-          const effectiveness = metrics.totalAppointments > 0 ? Math.round((totalAtendidas / metrics.totalAppointments) * 100) : 0;
+          const peakWeekday = [...appointmentsByWeekday].sort((a, b) => (b.count - a.count) || (b.completedCount - a.completedCount))[0];
+          const peakSlot = [...appointmentsByHourSlot].sort((a, b) => (b.count - a.count) || (b.completedCount - a.completedCount))[0];
+          const effectiveness = metrics.completionRate;
 
           return (
             <div
@@ -441,10 +449,10 @@ export default function AnalyticsPage() {
               <Row className="g-2 small">
                 <Col md={4}>
                   <div className="p-2 rounded bg-white border border-peach">
-                    <strong>📅 Día Pico de Atención:</strong>{' '}
+                    <strong>📅 Día Pico de Demanda:</strong>{' '}
                     <span className="text-primary fw-semibold">
-                      {peakWeekday && peakWeekday.completedCount > 0
-                        ? `${peakWeekday.dayName} (${peakWeekday.completedCount} citas - ${peakWeekday.percentage}%)`
+                      {peakWeekday && peakWeekday.count > 0
+                        ? `${peakWeekday.dayName} (${peakWeekday.count} citas • ${peakWeekday.completedCount} completadas)`
                         : 'Sin datos suficientes'}
                     </span>
                   </div>
@@ -453,8 +461,8 @@ export default function AnalyticsPage() {
                   <div className="p-2 rounded bg-white border border-peach">
                     <strong>⏰ Franja Horaria de Mayor Flujo:</strong>{' '}
                     <span className="text-success fw-semibold">
-                      {peakSlot && peakSlot.completedCount > 0
-                        ? `${peakSlot.slotName} ${peakSlot.timeRange} (${peakSlot.percentage}%)`
+                      {peakSlot && peakSlot.count > 0
+                        ? `${peakSlot.slotName} ${peakSlot.timeRange} (${peakSlot.count} citas)`
                         : 'Sin datos suficientes'}
                     </span>
                   </div>
@@ -463,9 +471,9 @@ export default function AnalyticsPage() {
                   <div className="p-2 rounded bg-white border border-peach">
                     <strong>🎯 Optimización de Turnos:</strong>{' '}
                     <span className="text-dark">
-                      {peakWeekday && peakWeekday.completedCount > 0
+                      {peakWeekday && peakWeekday.count > 0
                         ? `Reforzar disponibilidad los días ${peakWeekday.dayName} durante la franja de la ${peakSlot?.slotName?.toLowerCase() || 'tarde'}.`
-                        : 'Continúa registrando citas completadas para obtener sugerencias automáticas.'}
+                        : 'Continúa registrando citas para obtener sugerencias automáticas.'}
                     </span>
                   </div>
                 </Col>
@@ -548,7 +556,7 @@ export default function AnalyticsPage() {
                 </h5>
               </div>
               <small style={{ color: TEXT_MID, display: 'block', marginBottom: '12px' }}>
-                Citas completadas distribuidas por día para identificar días pico y lentos
+                Distribución de citas por día para identificar días pico y de alta demanda
               </small>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={appointmentsByWeekday}>
@@ -615,15 +623,15 @@ export default function AnalyticsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <Sparkles size={18} style={{ color: '#c9897a' }} />
                 <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Top 5 Servicios (Citas Completadas)
+                  Top 5 Servicios Más Demandados
                 </h5>
               </div>
               <small style={{ color: TEXT_MID, display: 'block', marginBottom: '16px' }}>
-                Servicios realizados y cobrados con éxito
+                Servicios más solicitados en el período (demanda activa)
               </small>
               {topServices.length === 0 ? (
                 <Alert variant="info" style={{ fontSize: '12px' }}>
-                  No hay citas completadas en este período
+                  No hay citas registradas en este período
                 </Alert>
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
@@ -632,7 +640,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="serviceName" stroke={TEXT_MID} fontSize={11} angle={-25} textAnchor="end" height={60} />
                     <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
                     <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
-                    <Bar dataKey="appointmentCount" fill="#5a8f7b" name="Citas Completadas" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="appointmentCount" fill="#5a8f7b" name="Citas Activas" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -645,15 +653,15 @@ export default function AnalyticsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <DollarSign size={18} style={{ color: '#2e7d32' }} />
                 <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Ingresos por Servicio Realizado
+                  Ingresos por Servicio
                 </h5>
               </div>
               <small style={{ color: TEXT_MID, display: 'block', marginBottom: '16px' }}>
-                Facturación generada por servicios completados
+                Facturación generada y proyectada por servicios
               </small>
               {topServices.length === 0 ? (
                 <Alert variant="info" style={{ fontSize: '12px' }}>
-                  No hay datos de ingresos completados en este período
+                  No hay datos de ingresos en este período
                 </Alert>
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
@@ -681,13 +689,13 @@ export default function AnalyticsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
                   <Users size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#5a8f7b' }} />
-                  Top 5 Clientas (Citas Atendidas)
+                  Top 5 Clientas Más Activas
                 </h5>
-                <Badge bg="success" style={{ fontSize: '11px', fontWeight: 600 }}>Completadas</Badge>
+                <Badge bg="primary" style={{ fontSize: '11px', fontWeight: 600 }}>Demanda Activa</Badge>
               </div>
               {topClients.length === 0 ? (
                 <Alert variant="info" style={{ fontSize: '12px', marginBottom: 0 }}>
-                  No hay clientas con citas completadas en este período
+                  No hay clientas con citas en este período
                 </Alert>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
