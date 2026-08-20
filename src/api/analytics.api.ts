@@ -1,5 +1,10 @@
 /**
  * API de Analíticas - procesa datos de citas para métricas de negocio
+ *
+ * AUDITORÍA 2026-08-20: Corregida lógica de filtrado.
+ * - Métricas proyectadas (revenue, demanda) incluyen PENDING + CONFIRMED + COMPLETED.
+ * - Métricas efectivas (completedRevenue) solo COMPLETED.
+ * - Eliminado triple API call con caché por rango de fechas.
  */
 
 import apiClient from './client';
@@ -18,37 +23,81 @@ import {
 import { format, parseISO, eachDayOfInterval, getDay } from 'date-fns';
 import { getAppointmentTotal, extractCancellationReason } from '../utils/appointmentUtils';
 
+// ═══════════════════════════════════════════════════════════════
+// Caché de citas para evitar triple API call por carga de analíticas
+// ═══════════════════════════════════════════════════════════════
+let cachedAppointments: { key: string; data: Appointment[] } | null = null;
+
+async function fetchAppointmentsCached(startDate: string, endDate: string): Promise<Appointment[]> {
+  const key = `${startDate}_${endDate}`;
+  if (cachedAppointments?.key === key) return cachedAppointments.data;
+
+  const data = await apiClient
+    .get<ApiResponse<Appointment[]>>('/api/appointments', {
+      params: { startDate, endDate },
+    })
+    .then((res) => res.data.data || []);
+
+  cachedAppointments = { key, data };
+  return data;
+}
+
+/**
+ * Invalida la caché. Llamar tras crear/editar/eliminar citas para que
+ * la siguiente consulta de analíticas obtenga datos frescos.
+ */
+export function invalidateAnalyticsCache() {
+  cachedAppointments = null;
+}
+
 export const analyticsApi = {
   /**
-   * Obtener datos de analíticas procesando appointments del backend
+   * Obtener datos de analíticas procesando appointments del backend.
+   *
+   * Lógica de métricas:
+   *  - "activa" = PENDING | CONFIRMED | COMPLETED  (todo menos CANCELLED)
+   *  - projectedRevenue / totalRevenue = suma de todas las citas activas
+   *  - completedRevenue = solo COMPLETED (dinero efectivamente cobrado)
    */
   getAnalytics: async (startDate: string, endDate: string): Promise<AnalyticsData> => {
-    // Obtener todas las citas en el rango
-    const appointments = await apiClient
-      .get<ApiResponse<Appointment[]>>('/api/appointments', {
-        params: { startDate, endDate },
-      })
-      .then((res) => res.data.data || []);
+    // Obtener todas las citas en el rango (usa caché)
+    const appointments = await fetchAppointmentsCached(startDate, endDate);
+
+    // Citas activas = toda la demanda real (excluye canceladas)
+    const activeAppointments = appointments.filter((a) => a.status !== 'CANCELLED');
 
     const totalCompleted = appointments.filter((a) => a.status === 'COMPLETED').length;
     const completedRevenue = appointments
       .filter((a) => a.status === 'COMPLETED')
       .reduce((sum, apt) => sum + (getAppointmentTotal(apt) || 0), 0);
 
+    // Ingreso proyectado: toda la demanda activa (PENDING + CONFIRMED + COMPLETED)
+    const projectedRevenue = activeAppointments.reduce(
+      (sum, apt) => sum + (getAppointmentTotal(apt) || 0),
+      0
+    );
+
     // Calcular métricas principales
+    const totalCancelled = appointments.filter((a) => a.status === 'CANCELLED').length;
     const metrics: AnalyticsMetrics = {
       totalAppointments: appointments.length,
-      totalCancelled: appointments.filter((a) => a.status === 'CANCELLED').length,
+      totalCancelled,
       totalCompleted,
       totalPending: appointments.filter((a) => a.status === 'PENDING').length,
       totalConfirmed: appointments.filter((a) => a.status === 'CONFIRMED').length,
       cancelledRate:
         appointments.length > 0
-          ? Math.round((appointments.filter((a) => a.status === 'CANCELLED').length / appointments.length) * 100)
+          ? Math.round((totalCancelled / appointments.length) * 100)
           : 0,
-      totalRevenue: completedRevenue, // Enfoque en ingresos reales por citas atendidas
-      completedRevenue,
-      averageTicket: totalCompleted > 0 ? Math.round(completedRevenue / totalCompleted) : 0,
+      totalRevenue: projectedRevenue, // Ingreso proyectado (demanda real)
+      completedRevenue,               // Ingreso efectivamente cobrado
+      projectedRevenue,               // Alias explícito para claridad en UI
+      averageTicket: activeAppointments.length > 0
+        ? Math.round(projectedRevenue / activeAppointments.length)
+        : 0,
+      completionRate: activeAppointments.length > 0
+        ? Math.round((totalCompleted / activeAppointments.length) * 100)
+        : 0,
     };
 
     // 1. Citas por día (Línea de tiempo)
@@ -79,12 +128,12 @@ export const analyticsApi = {
       };
 
       dayData.count += 1;
-      if (apt.status === 'COMPLETED') {
-        dayData.completed += 1;
-        dayData.revenue += getAppointmentTotal(apt) || 0;
-      }
+      if (apt.status === 'COMPLETED') dayData.completed += 1;
       if (apt.status === 'CANCELLED') {
         dayData.cancelled += 1;
+      } else {
+        // Revenue proyectado: toda cita activa (PENDING + CONFIRMED + COMPLETED)
+        dayData.revenue += getAppointmentTotal(apt) || 0;
       }
 
       dayMap.set(dateStr, dayData);
@@ -113,8 +162,9 @@ export const analyticsApi = {
       const entry = weekdayMap.get(jsDay);
       if (entry) {
         entry.count += 1;
-        if (apt.status === 'COMPLETED') {
-          entry.completedCount += 1;
+        if (apt.status === 'COMPLETED') entry.completedCount += 1;
+        // Revenue proyectado: toda cita activa
+        if (apt.status !== 'CANCELLED') {
           entry.revenue += getAppointmentTotal(apt) || 0;
         }
       }
@@ -157,8 +207,9 @@ export const analyticsApi = {
       const matchingSlot = hourSlotDefs.find((s) => hour >= s.minHour && hour <= s.maxHour) || hourSlotDefs[2];
       const entry = hourSlotMap.get(matchingSlot.slotKey)!;
       entry.count += 1;
-      if (apt.status === 'COMPLETED') {
-        entry.completedCount += 1;
+      if (apt.status === 'COMPLETED') entry.completedCount += 1;
+      // Revenue proyectado: toda cita activa
+      if (apt.status !== 'CANCELLED') {
         entry.revenue += getAppointmentTotal(apt) || 0;
       }
     });
@@ -176,10 +227,10 @@ export const analyticsApi = {
       };
     });
 
-    // 4. Top Servicios (ESTRICTAMENTE CITAS COMPLETADAS)
+    // 4. Top Servicios — incluye toda la demanda activa (no solo COMPLETED)
     const serviceMap = new Map<number, AppointmentByService>();
     appointments
-      .filter((a) => a.status === 'COMPLETED')
+      .filter((a) => a.status !== 'CANCELLED')
       .forEach((apt) => {
         const services = apt.services && apt.services.length > 0 ? apt.services : (apt.service ? [apt.service] : []);
         services.forEach((service) => {
@@ -203,7 +254,7 @@ export const analyticsApi = {
       .sort((a, b) => b.appointmentCount - a.appointmentCount || b.totalRevenue - a.totalRevenue)
       .slice(0, 5);
 
-    // 5. Top Clientes (ESTRICTAMENTE CITAS COMPLETADAS)
+    // 5. Top Clientes — incluye clientes con citas activas (no solo completed)
     const clientMap = new Map<number, AppointmentByClient>();
     appointments.forEach((apt) => {
       const existing = clientMap.get(apt.customer.id) || {
@@ -231,9 +282,9 @@ export const analyticsApi = {
       clientMap.set(apt.customer.id, existing);
     });
 
-    // Clasificar Top Clientes por citas completadas y luego por gasto
+    // Clasificar Top Clientes: prioriza completadas, pero incluye clientes con citas activas
     const topClients = Array.from(clientMap.values())
-      .filter((c) => c.completedCount > 0)
+      .filter((c) => c.completedCount > 0 || c.appointmentCount - c.cancelledCount > 0)
       .sort((a, b) => b.completedCount - a.completedCount || b.totalSpent - a.totalSpent)
       .slice(0, 5);
 
@@ -254,7 +305,6 @@ export const analyticsApi = {
         }
       });
 
-    const totalCancelled = appointments.filter((a) => a.status === 'CANCELLED').length;
     const cancellationReasons: CancellationReason[] = Array.from(reasonMap.entries())
       .map(([reason, count]) => ({
         reason,
@@ -280,11 +330,7 @@ export const analyticsApi = {
    * Obtener tabla detallada de todas las citas canceladas
    */
   getCancelledAppointmentsDetail: async (startDate: string, endDate: string) => {
-    const appointments = await apiClient
-      .get<ApiResponse<Appointment[]>>('/api/appointments', {
-        params: { startDate, endDate },
-      })
-      .then((res) => res.data.data || []);
+    const appointments = await fetchAppointmentsCached(startDate, endDate);
 
     return appointments
       .filter((apt) => apt.status === 'CANCELLED')
@@ -305,11 +351,7 @@ export const analyticsApi = {
    * Obtener tabla extendida de clientes con todas sus métricas ordenadas por fidelidad efectiva
    */
   getAllClientsMetrics: async (startDate: string, endDate: string) => {
-    const appointments = await apiClient
-      .get<ApiResponse<Appointment[]>>('/api/appointments', {
-        params: { startDate, endDate },
-      })
-      .then((res) => res.data.data || []);
+    const appointments = await fetchAppointmentsCached(startDate, endDate);
 
     const clientMap = new Map<
       number,

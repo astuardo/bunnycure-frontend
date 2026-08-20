@@ -8,10 +8,12 @@ export interface AnalyticsMetrics {
   totalCompleted: number;
   totalPending: number;
   totalConfirmed: number;
-  cancelledRate: number; // Porcentaje
-  totalRevenue: number;
-  completedRevenue: number;
-  averageTicket: number;
+  cancelledRate: number;        // Porcentaje de cancelación
+  totalRevenue: number;         // Ingreso proyectado (demanda activa: PENDING + CONFIRMED + COMPLETED)
+  completedRevenue: number;     // Ingreso efectivamente cobrado (solo COMPLETED)
+  projectedRevenue: number;     // Alias explícito de totalRevenue para claridad en UI
+  averageTicket: number;        // Ticket promedio sobre citas activas
+  completionRate: number;       // % de citas activas que ya fueron completadas
 }
 
 export interface AppointmentByClient {
