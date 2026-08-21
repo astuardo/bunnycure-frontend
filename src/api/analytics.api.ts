@@ -227,6 +227,39 @@ export const analyticsApi = {
       };
     });
 
+    // 3.1 Tasa de Ocupación por Franja Horaria (Capacidad Instalada)
+    const totalDays = Math.max(daysInRange.length, 1);
+    const concurrentWorkstations = 2; // Puestos operativos concurrentes estándar
+    const slotHourCapacities: Record<string, number> = {
+      morning: 4,
+      midday: 3,
+      afternoon: 4,
+      evening: 3,
+    };
+
+    const occupancyByHourSlot: OccupancyByHourSlot[] = hourSlotDefs.map((slot) => {
+      const entry = hourSlotMap.get(slot.slotKey)!;
+      const hoursInSlot = slotHourCapacities[slot.slotKey] || 3;
+      const capacitySlots = totalDays * concurrentWorkstations * hoursInSlot;
+      const bookedSlots = entry.count;
+      const occupancyRate = capacitySlots > 0 ? Math.min(Math.round((bookedSlots / capacitySlots) * 100), 100) : 0;
+
+      let status: OccupancyByHourSlot['status'] = 'LOW';
+      if (occupancyRate >= 90) status = 'OVERCAPACITY';
+      else if (occupancyRate >= 70) status = 'OPTIMAL';
+      else if (occupancyRate >= 40) status = 'MODERATE';
+
+      return {
+        slotKey: slot.slotKey,
+        slotName: slot.slotName,
+        timeRange: slot.timeRange,
+        bookedSlots,
+        capacitySlots,
+        occupancyRate,
+        status,
+      };
+    });
+
     // 4. Top Servicios — incluye toda la demanda activa (no solo COMPLETED)
     const serviceMap = new Map<number, AppointmentByService>();
     appointments
@@ -282,6 +315,32 @@ export const analyticsApi = {
       clientMap.set(apt.customer.id, existing);
     });
 
+    // 5.1 Alertas Inteligentes de Cancelación y Clientes en Riesgo
+    const cancellationAlerts: CancellationAlert[] = Array.from(clientMap.values())
+      .filter((c) => c.cancelledCount >= 2)
+      .map((c) => {
+        const rate = c.appointmentCount > 0 ? Math.round((c.cancelledCount / c.appointmentCount) * 100) : 0;
+        const lostRevenue = appointments
+          .filter((apt) => apt.customer.id === c.clientId && apt.status === 'CANCELLED')
+          .reduce((sum, apt) => sum + (getAppointmentTotal(apt) || 0), 0);
+
+        const isCritical = c.cancelledCount >= 3 && rate >= 50;
+        return {
+          clientId: c.clientId,
+          clientName: c.clientName,
+          clientPhone: c.clientPhone,
+          cancelledCount: c.cancelledCount,
+          totalAppointments: c.appointmentCount,
+          cancellationRate: rate,
+          lostRevenue,
+          severity: isCritical ? ('CRITICAL' as const) : ('WARNING' as const),
+          reason: isCritical
+            ? `Tasa crítica de cancelación (${rate}%) en ${c.appointmentCount} citas agendadas`
+            : `${c.cancelledCount} cancelaciones en el período ($${lostRevenue.toLocaleString('es-CL')} en ingresos no percibidos)`,
+        };
+      })
+      .sort((a, b) => b.cancelledCount - a.cancelledCount || b.cancellationRate - a.cancellationRate);
+
     // Clasificar Top Clientes: prioriza completadas, pero incluye clientes con citas activas
     const topClients = Array.from(clientMap.values())
       .filter((c) => c.completedCount > 0 || c.appointmentCount - c.cancelledCount > 0)
@@ -319,6 +378,8 @@ export const analyticsApi = {
       appointmentsByDay,
       appointmentsByWeekday,
       appointmentsByHourSlot,
+      occupancyByHourSlot,
+      cancellationAlerts,
       topServices,
       topClients,
       cancelledClients,

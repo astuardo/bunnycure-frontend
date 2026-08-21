@@ -69,6 +69,28 @@ export interface CancellationReason {
   percentage: number;
 }
 
+export interface OccupancyByHourSlot {
+  slotKey: string;
+  slotName: string;
+  timeRange: string;
+  bookedSlots: number;
+  capacitySlots: number;
+  occupancyRate: number; // Porcentaje de ocupación respecto a la capacidad
+  status: 'OPTIMAL' | 'MODERATE' | 'OVERCAPACITY' | 'LOW';
+}
+
+export interface CancellationAlert {
+  clientId: number;
+  clientName: string;
+  clientPhone: string;
+  cancelledCount: number;
+  totalAppointments: number;
+  cancellationRate: number;
+  lostRevenue: number;
+  severity: 'WARNING' | 'CRITICAL';
+  reason: string;
+}
+
 export interface AnalyticsData {
   dateRange: {
     startDate: string;
@@ -78,6 +100,8 @@ export interface AnalyticsData {
   appointmentsByDay: AppointmentByDay[];
   appointmentsByWeekday: AppointmentsByWeekday[];
   appointmentsByHourSlot: AppointmentsByHourSlot[];
+  occupancyByHourSlot: OccupancyByHourSlot[];
+  cancellationAlerts: CancellationAlert[];
   topServices: AppointmentByService[];
   topClients: AppointmentByClient[];
   cancelledClients: AppointmentByClient[];

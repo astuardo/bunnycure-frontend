@@ -24,3 +24,31 @@ export interface DashboardStats {
   topServices: ServiceStat[];
   topCustomer: CustomerStat | null;
 }
+
+export interface TodayOperationalStats {
+  date: string;
+  totalAppointments: number;
+  completedCount: number;
+  pendingCount: number;
+  confirmedCount: number;
+  cancelledCount: number;
+  inProgressOrUpcoming2HoursCount: number;
+  potentialNoShowCount: number;
+  collectedRevenue: number;
+  projectedRevenue: number;
+  completionRate: number;
+  nextAppointmentTime?: string;
+  nextCustomerName?: string;
+  nextServiceName?: string;
+  nextSpecialistName?: string;
+}
+
+export interface SpecialistStat {
+  specialistId?: number;
+  specialistName: string;
+  totalCount: number;
+  completedCount: number;
+  cancelledCount: number;
+  revenue: number;
+  completionRate: number;
+}

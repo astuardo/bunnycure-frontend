@@ -22,7 +22,7 @@ import { useCustomersStore } from '@/stores/customersStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { ServiceSummary } from '@/types/service.types';
 import { statsApi } from '../../api/stats.api';
-import { DashboardStats } from '@/types/stats.types';
+import { DashboardStats, TodayOperationalStats } from '@/types/stats.types';
 import { 
     settingsApi, 
     loadCachedUnavailabilities, 
@@ -118,49 +118,46 @@ const variantStyles: Record<ActionVariant, { bg: string; hover: string; text: st
 function ActionButton({ icon, label, to, onClick, variant }: {
     icon: React.ReactNode; label: string; to?: string; onClick?: () => void; variant: ActionVariant;
 }) {
-    const s = variantStyles[variant];
-    const content = (
-        <div
+    const navigate = useNavigate();
+    const st = variantStyles[variant];
+    const [hover, setHover] = useState(false);
+
+    const inner = (
+        <button
+            onClick={onClick ? onClick : to ? () => navigate(to) : undefined}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
             style={{
-                background: s.bg,
-                borderRadius: '12px',
-                padding: '12px 10px',
+                width: '100%',
+                background: hover ? st.hover : st.bg,
+                border: 'none',
+                borderRadius: '14px',
+                padding: '12px 8px',
+                cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                cursor: 'pointer',
-                transition: 'background 0.15s',
-                minHeight: '72px',
-                textAlign: 'center',
-                width: '100%',
-            }}
-            onClick={onClick}
-            onMouseEnter={e => (e.currentTarget.style.background = s.hover)}
-            onMouseLeave={e => (e.currentTarget.style.background = s.bg)}
-        >
-            <span style={{ color: s.icon, display: 'flex' }}>{icon}</span>
-            <span style={{
-                color: s.text,
-                fontSize: '12px',
+                color: st.text,
                 fontWeight: 600,
+                fontSize: '12px',
                 lineHeight: 1.2,
-                wordBreak: 'break-word',
-            }}>
-                {label}
+                textAlign: 'center',
+                transition: 'background 0.15s, transform 0.1s',
+                transform: hover ? 'translateY(-1px)' : 'none',
+                boxShadow: hover ? '0 3px 8px rgba(180,120,100,0.15)' : 'none',
+                minHeight: '72px',
+            }}
+        >
+            <span style={{ color: st.icon, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {icon}
             </span>
-        </div>
+            <span style={{ wordBreak: 'break-word', maxWidth: '100%' }}>{label}</span>
+        </button>
     );
 
-    if (to) {
-        return (
-            <Link to={to} style={{ display: 'block', textDecoration: 'none' }}>
-                {content}
-            </Link>
-        );
-    }
-    return content;
+    return inner;
 }
 
 function Spinner() {
@@ -184,6 +181,7 @@ export default function DashboardPage() {
     const { customers, fetchCustomers } = useCustomersStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+    const [todayStats, setTodayStats] = useState<TodayOperationalStats | null>(null);
     const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>(loadCachedUnavailabilities);
     const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(loadCachedUnavailabilityColors);
     const [calendarMonth] = useState(new Date());
@@ -198,13 +196,15 @@ export default function DashboardPage() {
         const load = async () => {
             setStatsLoading(true);
             try {
-                const [stats, settingsData] = await Promise.all([
+                const [stats, operationalToday, settingsData] = await Promise.all([
                     statsApi.getDashboardStats(),
+                    statsApi.getTodayOperationalStats().catch(() => null),
                     settingsApi.getAll().catch(() => null),
                     fetchAppointments(), 
                     fetchCustomers()
                 ]);
                 setDashboardStats(stats);
+                if (operationalToday) setTodayStats(operationalToday);
                 if (settingsData?.unavailabilities) setUnavailabilities(settingsData.unavailabilities);
                 if (settingsData?.unavailabilityColors) setUnavailabilityColors(settingsData.unavailabilityColors);
             } catch (error) {
@@ -372,6 +372,66 @@ export default function DashboardPage() {
                             </Link>
                         </div>
                     </div>
+
+                    {/* Resumen Operacional en Tiempo Real del Día */}
+                    {todayStats && todayStats.totalAppointments > 0 && (
+                        <div style={{ padding: '0 20px 12px' }}>
+                            <div style={{
+                                background: 'linear-gradient(135deg, #fffcfb 0%, #fdf5f2 100%)',
+                                border: '1px solid #f2cfc2',
+                                borderRadius: '12px',
+                                padding: '10px 14px',
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '10px',
+                                fontSize: '12px',
+                            }}>
+                                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <span style={{ color: '#0d5c4a', fontWeight: 600, background: '#c8e6e0', padding: '3px 8px', borderRadius: '6px' }}>
+                                        ✅ {todayStats.completedCount} Completadas ({todayStats.completionRate}%)
+                                    </span>
+                                    <span style={{ color: '#7c4a00', fontWeight: 600, background: '#fde8cc', padding: '3px 8px', borderRadius: '6px' }}>
+                                        ⏳ {todayStats.pendingCount + todayStats.confirmedCount} Por Atender
+                                    </span>
+                                    {todayStats.collectedRevenue > 0 && (
+                                        <span style={{ color: '#2e7d32', fontWeight: 700 }}>
+                                            Cobrado: {formatCurrency(todayStats.collectedRevenue)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {todayStats.nextAppointmentTime && todayStats.nextCustomerName && (
+                                    <div style={{ color: '#5c3d2e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <strong>⏰ Próxima:</strong>
+                                        <span>{todayStats.nextAppointmentTime.slice(0, 5)} - {todayStats.nextCustomerName} ({todayStats.nextServiceName || 'Servicio'})</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Alerta de citas con posible atraso o no-show */}
+                            {todayStats.potentialNoShowCount > 0 && (
+                                <div style={{
+                                    marginTop: '8px',
+                                    padding: '8px 12px',
+                                    borderRadius: '8px',
+                                    background: '#fff3cd',
+                                    border: '1px solid #ffeeba',
+                                    color: '#856404',
+                                    fontSize: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                }}>
+                                    <span>⚠️</span>
+                                    <span>
+                                        Tienes <strong>{todayStats.potentialNoShowCount} cita(s) de hoy</strong> con horario ya cumplido aún pendientes de registrar atención o cancelación.
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Banner de Bloqueos para el día de Hoy */}
                     {todayUnavailabilities.length > 0 && (

@@ -44,9 +44,11 @@ import {
   startOfYear,
   endOfYear,
 } from 'date-fns';
-import { exportToCSV } from '@/utils/exportUtils';
+import { exportToCSV, exportFullAnalyticsReport } from '@/utils/exportUtils';
 import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
+import { statsApi } from '../../api/stats.api';
+import { SpecialistStat } from '../../types/stats.types';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
@@ -55,13 +57,14 @@ type PresetKey = 'today' | 'last7' | 'thisMonth' | 'lastMonth' | 'last90' | 'thi
 export default function AnalyticsPage() {
   const toast = useToast();
   const { appointments, fetchAppointments } = useAppointmentsStore();
-  const [loading, setLoading] = useState(false);
-  const [showCashClosing, setShowCashClosing] = useState(false);
+  const [startDate, setStartDate] = useState<string>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState<string>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [cancelledDetail, setCancelledDetail] = useState<any[]>([]);
   const [clientsMetrics, setClientsMetrics] = useState<any[]>([]);
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [specialistsStats, setSpecialistsStats] = useState<SpecialistStat[]>([]);
+  const [showCashClosing, setShowCashClosing] = useState<boolean>(false);
   const [activePreset, setActivePreset] = useState<PresetKey>('thisMonth');
 
   useEffect(() => {
@@ -69,29 +72,28 @@ export default function AnalyticsPage() {
   }, [fetchAppointments]);
 
   const specialistPerformance = useMemo(() => {
-    const map = new Map<string, {
-      specialistName: string;
-      totalCount: number;
-      completedCount: number;
-      cancelledCount: number;
-      revenue: number;
-    }>();
+    if (specialistsStats && specialistsStats.length > 0) {
+      return specialistsStats;
+    }
 
+    // Fallback de resiliencia: calcular localmente desde las citas
+    const map = new Map<string, SpecialistStat>();
     appointments.forEach((apt) => {
       if (!apt.appointmentDate || apt.appointmentDate < startDate || apt.appointmentDate > endDate) return;
-      const name = apt.specialistName || 'Sin asignar / General';
+      const name = apt.specialistName || apt.specialist?.fullName || 'Sin asignar / General';
       const current = map.get(name) || {
         specialistName: name,
         totalCount: 0,
         completedCount: 0,
         cancelledCount: 0,
         revenue: 0,
+        completionRate: 0,
       };
 
       current.totalCount++;
       if (apt.status === 'COMPLETED') {
         current.completedCount++;
-        current.revenue += (apt.service?.price || 0);
+        current.revenue += getAppointmentTotal(apt);
       } else if (apt.status === 'CANCELLED') {
         current.cancelledCount++;
       }
@@ -99,8 +101,14 @@ export default function AnalyticsPage() {
       map.set(name, current);
     });
 
-    return Array.from(map.values()).sort((a, b) => b.completedCount - a.completedCount);
-  }, [appointments, startDate, endDate]);
+    return Array.from(map.values())
+      .map((item) => {
+        const active = item.totalCount - item.cancelledCount;
+        item.completionRate = active > 0 ? Math.round((item.completedCount / active) * 100) : 0;
+        return item;
+      })
+      .sort((a, b) => b.completedCount - a.completedCount || b.revenue - a.revenue);
+  }, [specialistsStats, appointments, startDate, endDate]);
 
   const loadAnalytics = async (overrideStart?: string, overrideEnd?: string) => {
     const sDate = overrideStart || startDate;
@@ -108,14 +116,17 @@ export default function AnalyticsPage() {
 
     setLoading(true);
     try {
-      const result = await analyticsApi.getAnalytics(sDate, eDate);
-      setData(result);
+      const [result, cancelled, clients, specialists] = await Promise.all([
+        analyticsApi.getAnalytics(sDate, eDate),
+        analyticsApi.getCancelledAppointmentsDetail(sDate, eDate),
+        analyticsApi.getAllClientsMetrics(sDate, eDate),
+        statsApi.getSpecialistStats(sDate, eDate).catch(() => []),
+      ]);
 
-      // Cargar datos complementarios
-      const cancelled = await analyticsApi.getCancelledAppointmentsDetail(sDate, eDate);
-      const clients = await analyticsApi.getAllClientsMetrics(sDate, eDate);
+      setData(result);
       setCancelledDetail(cancelled);
       setClientsMetrics(clients);
+      setSpecialistsStats(specialists);
     } catch (error) {
       toast.error('Error al cargar analíticas');
       console.error(error);
@@ -273,6 +284,28 @@ export default function AnalyticsPage() {
 
             {/* Acciones y Selector de Rango Personalizado */}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => {
+                  exportFullAnalyticsReport(data, specialistPerformance, `informe-ejecutivo-${startDate}-${endDate}`);
+                  toast.success('Informe ejecutivo descargado exitosamente');
+                }}
+                style={{
+                  borderRadius: '10px',
+                  borderColor: '#d4a89a',
+                  color: TEXT_DARK,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
+                }}
+              >
+                <Download size={16} /> 📄 Informe Ejecutivo
+              </Button>
+
               <Button
                 variant="outline-primary"
                 size="sm"
@@ -482,6 +515,56 @@ export default function AnalyticsPage() {
           );
         })()}
 
+        {/* 🚨 Alertas Inteligentes de Cancelación & Clientes en Riesgo (Fase 2.3) */}
+        {data.cancellationAlerts && data.cancellationAlerts.length > 0 && (
+          <div
+            style={{
+              background: '#fff8f7',
+              border: '1px solid #fecaca',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              boxShadow: '0 2px 8px rgba(220, 53, 69, 0.08)',
+            }}
+          >
+            <div className="d-flex align-items-center gap-2 mb-3">
+              <AlertCircle size={20} style={{ color: '#dc3545' }} />
+              <span className="fw-bold" style={{ color: '#991b1b', fontSize: '15px' }}>
+                🚨 Alertas de Retención: Clientas con Alto Patrón de Cancelación
+              </span>
+              <Badge bg="danger" className="ms-auto" style={{ fontSize: '11px' }}>
+                {data.cancellationAlerts.length} en seguimiento
+              </Badge>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+              {data.cancellationAlerts.slice(0, 4).map((alert) => (
+                <div
+                  key={alert.clientId}
+                  style={{
+                    background: '#ffffff',
+                    border: alert.severity === 'CRITICAL' ? '1px solid #f87171' : '1px solid #fed7aa',
+                    borderRadius: '12px',
+                    padding: '10px 14px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <strong style={{ color: TEXT_DARK, fontSize: '13px' }}>{alert.clientName}</strong>
+                    <Badge bg={alert.severity === 'CRITICAL' ? 'danger' : 'warning'} text={alert.severity === 'CRITICAL' ? 'white' : 'dark'}>
+                      {alert.severity === 'CRITICAL' ? 'Alto Riesgo' : 'Atención'}
+                    </Badge>
+                  </div>
+                  <div style={{ color: TEXT_MID, fontSize: '11px', marginBottom: '4px' }}>
+                    Tel: {alert.clientPhone || 'No registrado'}
+                  </div>
+                  <div style={{ color: '#7f1d1d', fontWeight: 600 }}>
+                    {alert.reason}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Fila 1 de Gráficos: Línea de tiempo & Distribución de Estados */}
         <Row className="g-3">
           {/* Citas por Día */}
@@ -580,19 +663,39 @@ export default function AnalyticsPage() {
             </div>
           </Col>
 
-          {/* Horarios Pico de Atención */}
+          {/* Horarios Pico & Tasa de Ocupación por Franja (Fase 2.2) */}
           <Col xs={12} lg={6}>
             <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Clock size={18} style={{ color: '#c9897a' }} />
-                <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Franjas Horarias Pico
-                </h5>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={18} style={{ color: '#c9897a' }} />
+                  <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                    Franjas Horarias &amp; Ocupación
+                  </h5>
+                </div>
               </div>
               <small style={{ color: TEXT_MID, display: 'block', marginBottom: '12px' }}>
-                Concentración de clientas por bloques horarios de atención
+                Capacidad instalada y porcentaje de ocupación estimada
               </small>
-              <ResponsiveContainer width="100%" height={260}>
+
+              {/* Indicadores rápidos de ocupación */}
+              {data.occupancyByHourSlot && data.occupancyByHourSlot.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '14px' }}>
+                  {data.occupancyByHourSlot.map((occ) => {
+                    const badgeVariant = occ.status === 'OVERCAPACITY' ? 'danger' : occ.status === 'OPTIMAL' ? 'success' : occ.status === 'MODERATE' ? 'warning' : 'secondary';
+                    const badgeText = occ.status === 'OVERCAPACITY' ? 'Alta' : occ.status === 'OPTIMAL' ? 'Óptima' : occ.status === 'MODERATE' ? 'Media' : 'Baja';
+                    return (
+                      <div key={occ.slotKey} style={{ background: '#fdf8f6', border: '1px solid #f2e4de', borderRadius: '8px', padding: '6px 8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: TEXT_DARK }}>{occ.slotName}</div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#5a8f7b' }}>{occ.occupancyRate}%</div>
+                        <Badge bg={badgeVariant} style={{ fontSize: '9px', padding: '2px 4px' }}>{badgeText}</Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <ResponsiveContainer width="100%" height={210}>
                 <BarChart data={appointmentsByHourSlot}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
                   <XAxis dataKey="slotName" stroke={TEXT_MID} fontSize={12} />
@@ -981,6 +1084,9 @@ export default function AnalyticsPage() {
                     <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#dc3545' }}>
                       Canceladas
                     </th>
+                    <th style={{ textAlign: 'center', padding: '10px', fontWeight: 700, color: '#1976d2' }}>
+                      % Efectividad
+                    </th>
                     <th style={{ textAlign: 'right', padding: '10px', fontWeight: 700, color: '#5a8f7b' }}>
                       Recaudación Generada
                     </th>
@@ -1000,6 +1106,9 @@ export default function AnalyticsPage() {
                       </td>
                       <td style={{ padding: '10px', textAlign: 'center', color: spec.cancelledCount > 0 ? '#dc3545' : TEXT_MID }}>
                         {spec.cancelledCount}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#1976d2', fontWeight: 600 }}>
+                        {spec.completionRate}%
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right', color: '#5a8f7b', fontWeight: 700 }}>
                         ${spec.revenue.toLocaleString('es-CL')}
