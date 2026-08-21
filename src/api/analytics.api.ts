@@ -16,6 +16,8 @@ import {
   AppointmentByDay,
   AppointmentsByWeekday,
   AppointmentsByHourSlot,
+  OccupancyByHourSlot,
+  CancellationAlert,
   AppointmentByService,
   AppointmentByClient,
   CancellationReason,

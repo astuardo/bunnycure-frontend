@@ -45,6 +45,7 @@ import {
   endOfYear,
 } from 'date-fns';
 import { exportToCSV, exportFullAnalyticsReport } from '@/utils/exportUtils';
+import { getAppointmentTotal } from '@/utils/appointmentUtils';
 import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { statsApi } from '../../api/stats.api';
@@ -80,7 +81,7 @@ export default function AnalyticsPage() {
     const map = new Map<string, SpecialistStat>();
     appointments.forEach((apt) => {
       if (!apt.appointmentDate || apt.appointmentDate < startDate || apt.appointmentDate > endDate) return;
-      const name = apt.specialistName || apt.specialist?.fullName || 'Sin asignar / General';
+      const name = apt.specialistName || 'Sin asignar / General';
       const current = map.get(name) || {
         specialistName: name,
         totalCount: 0,
