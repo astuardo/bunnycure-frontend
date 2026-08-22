@@ -1,0 +1,199 @@
+/* Modal de Mensaje de Amor para Cami */
+
+.cami-love-modal .modal-content {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 182, 193, 0.6);
+  background: linear-gradient(135deg, #fff9fa 0%, #fff0f3 50%, #ffe5ec 100%);
+  box-shadow: 0 20px 45px rgba(255, 105, 180, 0.25), 0 5px 15px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+.cami-love-modal-backdrop {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Corazones flotantes animados en el fondo */
+.floating-hearts-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.floating-heart {
+  position: absolute;
+  bottom: -20px;
+  color: rgba(255, 105, 180, 0.35);
+  animation: floatHeart 6s infinite ease-in;
+}
+
+.floating-heart:nth-child(1) { left: 10%; font-size: 16px; animation-duration: 5s; animation-delay: 0s; }
+.floating-heart:nth-child(2) { left: 25%; font-size: 24px; animation-duration: 7s; animation-delay: 1.5s; }
+.floating-heart:nth-child(3) { left: 50%; font-size: 18px; animation-duration: 6s; animation-delay: 0.5s; }
+.floating-heart:nth-child(4) { left: 75%; font-size: 26px; animation-duration: 8s; animation-delay: 2s; }
+.floating-heart:nth-child(5) { left: 88%; font-size: 14px; animation-duration: 5.5s; animation-delay: 1s; }
+
+@keyframes floatHeart {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-350px) rotate(45deg) scale(1.3);
+    opacity: 0;
+  }
+}
+
+/* Encabezado romántico */
+.cami-love-header {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.cami-avatar-heart {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 12px;
+  background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 32px;
+  box-shadow: 0 8px 20px rgba(255, 117, 140, 0.4);
+  animation: heartPulse 2s infinite ease-in-out;
+}
+
+@keyframes heartPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(255, 117, 140, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 12px 28px rgba(255, 117, 140, 0.6);
+  }
+}
+
+.cami-love-title {
+  color: #a83258;
+  font-weight: 800;
+  font-size: 1.45rem;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.cami-love-subtitle {
+  color: #c95d7e;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* Tarjeta con el mensaje */
+.cami-love-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 192, 203, 0.7);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(255, 182, 193, 0.2);
+  margin: 16px 0;
+  transition: all 0.3s ease;
+}
+
+.cami-love-quote {
+  font-size: 1.08rem;
+  line-height: 1.6;
+  color: #4a2835;
+  font-style: italic;
+  text-align: center;
+  font-family: inherit;
+}
+
+.cami-love-author {
+  text-align: right;
+  color: #b3395b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+/* Botones románticos */
+.cami-love-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-cami-love {
+  background: linear-gradient(135deg, #ff6584 0%, #f35588 100%);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(243, 85, 136, 0.35);
+  transition: all 0.25s ease;
+}
+
+.btn-cami-love:hover, .btn-cami-love:focus {
+  background: linear-gradient(135deg, #ff4d73 0%, #e03a72 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(243, 85, 136, 0.45);
+  color: #fff;
+}
+
+.btn-cami-another {
+  background: transparent;
+  border: 1px solid rgba(243, 85, 136, 0.3);
+  color: #b3395b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.btn-cami-another:hover {
+  background: rgba(255, 192, 203, 0.25);
+  color: #8b1e3f;
+}
+
+/* Botón flotante discreto en el sidebar para Cami */
+.cami-secret-heart-btn {
+  background: transparent;
+  border: none;
+  color: #ff6584;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cami-secret-heart-btn:hover {
+  transform: scale(1.25);
+}

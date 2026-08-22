@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SpotlightSearchModal } from './SpotlightSearchModal';
 import { CashClosingModal } from '../finances/CashClosingModal';
+import { CamiLoveModal } from './CamiLoveModal';
 import './DashboardLayout.css';
 
 interface DashboardLayoutProps {
@@ -14,6 +15,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [showSidebar, setShowSidebar] = useState(false);
     const [showSpotlight, setShowSpotlight] = useState(false);
     const [showCashClosing, setShowCashClosing] = useState(false);
+    const [showCamiLove, setShowCamiLove] = useState(false);
 
     const handleCloseSidebar = () => setShowSidebar(false);
     const handleShowSidebar  = () => setShowSidebar(true);
@@ -33,7 +35,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <div className="dashboard-layout">
-            <Navbar onOpenSpotlight={() => setShowSpotlight(true)} />
+            <Navbar 
+                onOpenSpotlight={() => setShowSpotlight(true)} 
+                onOpenCamiLoveModal={() => setShowCamiLove(true)}
+            />
 
             {/* ── Botón hamburguesa móvil — estilo BunnyCure ── */}
             <div
@@ -112,6 +117,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <CashClosingModal
                 show={showCashClosing}
                 onHide={() => setShowCashClosing(false)}
+            />
+
+            {/* Modal de Amor para Cami (Aparece 1 vez al día o al hacer clic en su corazón) */}
+            <CamiLoveModal
+                forceOpen={showCamiLove}
+                onCloseManual={() => setShowCamiLove(false)}
             />
         </div>
     );
