@@ -514,4 +514,75 @@ export const settingsApi = {
       } catch {}
     }
   },
+
+  /**
+   * Obtiene el estado completo de Meta WhatsApp (salud del número, plantillas y perfil)
+   */
+  getWhatsAppMetaStatus: async (): Promise<WhatsAppMetaStatusResponse> => {
+    const response = await apiClient.get<WhatsAppMetaStatusResponse>('/api/settings/whatsapp/meta-status');
+    return response.data;
+  },
+
+  /**
+   * Actualiza el perfil comercial en Meta WhatsApp
+   */
+  updateWhatsAppBusinessProfile: async (
+    data: Partial<WhatsAppBusinessProfile>
+  ): Promise<{ status: string; message: string }> => {
+    const response = await apiClient.put<{ status: string; message: string }>(
+      '/api/settings/whatsapp/business-profile',
+      data
+    );
+    return response.data;
+  },
 };
+
+export interface WhatsAppMetaHealth {
+  id?: string;
+  verified_name?: string;
+  display_phone_number?: string;
+  quality_rating?: string;
+  messaging_limit_tier?: string;
+  code_verification_status?: string;
+}
+
+export interface WhatsAppBusinessProfile {
+  about?: string;
+  address?: string;
+  description?: string;
+  email?: string;
+  websites?: string[];
+  vertical?: string;
+  profile_picture_url?: string;
+}
+
+export interface WhatsAppMetaTemplate {
+  name: string;
+  status: string;
+  category: string;
+  language: string;
+  components?: Array<{
+    type: string;
+    text?: string;
+    format?: string;
+    buttons?: Array<{
+      type: string;
+      text: string;
+      url?: string;
+    }>;
+  }>;
+}
+
+export interface WhatsAppMetaStatusResponse {
+  configured: boolean;
+  phoneId: string;
+  businessAccountId: string;
+  apiVersion: string;
+  health?: WhatsAppMetaHealth;
+  businessProfile?: {
+    data?: WhatsAppBusinessProfile[];
+  };
+  templates?: {
+    data?: WhatsAppMetaTemplate[];
+  };
+}

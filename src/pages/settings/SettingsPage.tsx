@@ -33,6 +33,7 @@ import {
 import { useNotificationPermission } from '../../hooks/useNotificationPermission';
 import { NotificationTemplatesSection } from '../../components/settings/NotificationTemplatesSection';
 import { ScheduleUnavailabilitySection } from '../../components/settings/ScheduleUnavailabilitySection';
+import { WhatsAppMetaSection } from '../../components/settings/WhatsAppMetaSection';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
@@ -1002,12 +1003,16 @@ export default function SettingsPage() {
             TAB 5: WHATSAPP & HANDOFF
         ───────────────────────────────────────────────────────────────────────────── */}
         {activeTab === 'whatsapp' && (
-          <Row>
-            <Col lg={8} className="mb-4">
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">💬 Asistente WhatsApp &amp; Derivación Humana</h5>
-                </Card.Header>
+          <div>
+            {/* Sección Visual Meta WhatsApp (Salud, Perfil y Plantillas) */}
+            <WhatsAppMetaSection />
+
+            <Row>
+              <Col lg={8} className="mb-4">
+                <Card className="shadow-sm border-0">
+                  <Card.Header className="bg-light py-3">
+                    <h5 className="mb-0 fs-6 fw-bold">💬 Asistente WhatsApp &amp; Derivación Humana</h5>
+                  </Card.Header>
                 <Card.Body className="p-4">
                   <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 mb-4 border">
                     <div>
@@ -1087,6 +1092,7 @@ export default function SettingsPage() {
               </Card>
             </Col>
           </Row>
+        </div>
         )}
 
         {/* ─────────────────────────────────────────────────────────────────────────────
