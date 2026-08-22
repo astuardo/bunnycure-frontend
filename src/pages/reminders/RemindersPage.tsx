@@ -22,6 +22,7 @@ const statusColors: Record<AppointmentStatus, string> = {
   PENDING: 'warning',
   COMPLETED: 'success',
   CANCELLED: 'danger',
+  RESCHEDULE_REQUESTED: 'warning',
 };
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -29,6 +30,7 @@ const statusLabels: Record<AppointmentStatus, string> = {
   PENDING: 'Pendiente',
   COMPLETED: 'Completada',
   CANCELLED: 'Cancelada',
+  RESCHEDULE_REQUESTED: 'Reprogramar',
 };
 
 const getAppointmentServiceLabel = (apt: Appointment) => {

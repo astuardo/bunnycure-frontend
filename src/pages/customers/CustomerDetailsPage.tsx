@@ -153,12 +153,14 @@ export default function CustomerDetailsPage() {
       CONFIRMED: 'info',
       COMPLETED: 'success',
       CANCELLED: 'danger',
+      RESCHEDULE_REQUESTED: 'warning',
     };
     const labels: Record<AppointmentStatus, string> = {
       PENDING: 'Pendiente',
       CONFIRMED: 'Confirmada',
       COMPLETED: 'Completada',
       CANCELLED: 'Cancelada',
+      RESCHEDULE_REQUESTED: 'Reprogramar',
     };
     return <Badge bg={variants[status]}>{labels[status]}</Badge>;
   };

@@ -58,6 +58,7 @@ function statusLabel(status: AppointmentStatus): string {
         CONFIRMED: 'Confirmada',
         COMPLETED: 'Completada',
         CANCELLED: 'Cancelada',
+        RESCHEDULE_REQUESTED: 'Reprogramar',
     };
     return map[status] ?? status;
 }
@@ -72,6 +73,8 @@ function statusPillStyle(status: AppointmentStatus): React.CSSProperties {
             return { background: '#c8e6e0', color: '#0d5c4a' };
         case AppointmentStatus.CANCELLED:
             return { background: '#fce4e4', color: '#7c1c1c' };
+        case AppointmentStatus.RESCHEDULE_REQUESTED:
+            return { background: '#ffe8cc', color: '#d9480f' };
         default:
             return { background: '#e9ecef', color: '#495057' };
     }

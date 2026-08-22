@@ -68,6 +68,7 @@ const statusColors: Record<AppointmentStatus, string> = {
   PENDING: '#ffc107',
   COMPLETED: '#198754',
   CANCELLED: '#dc3545',
+  RESCHEDULE_REQUESTED: '#fd7e14',
 };
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -75,6 +76,7 @@ const statusLabels: Record<AppointmentStatus, string> = {
   PENDING: 'Pendiente',
   COMPLETED: 'Completada',
   CANCELLED: 'Cancelada',
+  RESCHEDULE_REQUESTED: 'Reprogramar',
 };
 
 const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];

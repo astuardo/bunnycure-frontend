@@ -296,6 +296,11 @@
   color: #7c1c1c;
 }
 
+.status-badge.RESCHEDULE_REQUESTED {
+  background: #ffe8cc;
+  color: #d9480f;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .month-grid {

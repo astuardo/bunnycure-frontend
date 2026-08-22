@@ -267,7 +267,11 @@ export default function AppointmentsPage() {
     return appointments.filter((apt) => {
       // 1. Filtrar por Estado
       if (statusFilter === 'ACTIVE') {
-        if (apt.status !== AppointmentStatus.PENDING && apt.status !== AppointmentStatus.CONFIRMED) {
+        if (
+          apt.status !== AppointmentStatus.PENDING &&
+          apt.status !== AppointmentStatus.CONFIRMED &&
+          apt.status !== AppointmentStatus.RESCHEDULE_REQUESTED
+        ) {
           return false;
         }
       } else if (statusFilter !== 'ALL') {
@@ -831,12 +835,14 @@ export default function AppointmentsPage() {
       CONFIRMED: 'primary',
       COMPLETED: 'success',
       CANCELLED: 'secondary',
+      RESCHEDULE_REQUESTED: 'warning',
     };
     const labels: Record<AppointmentStatus, string> = {
       PENDING: 'Pendiente',
       CONFIRMED: 'Confirmada',
       COMPLETED: 'Completada',
       CANCELLED: 'Cancelada',
+      RESCHEDULE_REQUESTED: '🔄 Reprogramar',
     };
     return <Badge bg={variants[status]}>{labels[status]}</Badge>;
   };
@@ -950,10 +956,11 @@ export default function AppointmentsPage() {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as AppointmentStatusFilter)}
                 >
-                  <option value="ACTIVE">⚡ Pendientes y confirmadas</option>
+                  <option value="ACTIVE">⚡ Pendientes, confirmadas y reprogramar</option>
                   <option value="ALL">📋 Todas las citas</option>
                   <option value={AppointmentStatus.PENDING}>⏳ Pendiente</option>
                   <option value={AppointmentStatus.CONFIRMED}>✅ Confirmada</option>
+                  <option value={AppointmentStatus.RESCHEDULE_REQUESTED}>🔄 Reprogramar</option>
                   <option value={AppointmentStatus.COMPLETED}>🎉 Completada</option>
                   <option value={AppointmentStatus.CANCELLED}>❌ Cancelada</option>
                 </Form.Select>
@@ -1059,11 +1066,24 @@ export default function AppointmentsPage() {
                                   Completar
                                 </Button>
                               )}
+                              {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
+                                <Button
+                                  size="sm"
+                                  variant="outline-success"
+                                  href={`https://wa.me/${apt.customer.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.customer.fullName}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita del ${format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}.`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Contactar por WhatsApp"
+                                >
+                                  <FaWhatsapp className="me-1" /> Contactar
+                                </Button>
+                              )}
                               {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
                                 <Button
                                   size="sm"
                                   variant="warning"
                                   onClick={() => handleCancelAppointment(apt.id)}
+                                  title="Cancelar cita solicitando motivo"
                                 >
                                   Cancelar
                                 </Button>
@@ -1151,6 +1171,21 @@ export default function AppointmentsPage() {
                           <Button size="sm" variant="outline-secondary" className="flex-fill" onClick={() => openEditModal(apt)}>Editar</Button>
                           {apt.status === AppointmentStatus.PENDING && (<Button size="sm" variant="success" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}>Confirmar</Button>)}
                           {apt.status === AppointmentStatus.CONFIRMED && (<Button size="sm" variant="primary" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}>Completar</Button>)}
+                          {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
+                            <Button
+                              size="sm"
+                              variant="outline-success"
+                              className="flex-fill"
+                              href={`https://wa.me/${apt.customer.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.customer.fullName}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita del ${format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}.`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <FaWhatsapp className="me-1" /> Contactar
+                            </Button>
+                          )}
+                          {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
+                            <Button size="sm" variant="warning" onClick={() => handleCancelAppointment(apt.id)}>Cancelar</Button>
+                          )}
                           <Button size="sm" variant="outline-danger" onClick={() => handleDeleteAppointment(apt.id)}>Eliminar</Button>
                         </div>
                       </Card.Body>
@@ -1621,6 +1656,7 @@ export default function AppointmentsPage() {
                     >
                       <option value={AppointmentStatus.PENDING}>Pendiente</option>
                       <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
+                      <option value={AppointmentStatus.RESCHEDULE_REQUESTED}>Reprogramar</option>
                       <option value={AppointmentStatus.COMPLETED}>Completada</option>
                       <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
                     </Form.Select>
