@@ -14,13 +14,13 @@ const CAMI_LOVE_STORAGE_KEY = 'bunnycure_cami_last_love_note_date_v1';
 const TARGET_USERNAME = 'camireyes';
 
 /**
- * Colección curada de mensajes románticos, poemas y dedicatorias en español
+ * Colección de mensajes románticos
  */
 export const CURATED_LOVE_NOTES: LoveNote[] = [
   {
     id: 1,
     message: "Buenos días, mi amor hermoso. Eres la luz de mis días, mi mayor orgullo y la mujer más talentosa y maravillosa del mundo. Que hoy tengas un día increíble en BunnyCure. ✨💖",
-    author: "Para mi Cami con todo mi amor",
+    author: "Para mi mi amor con todo corazón",
     tag: "Amor & Motivación",
   },
   {
@@ -79,7 +79,7 @@ export const CURATED_LOVE_NOTES: LoveNote[] = [
   },
   {
     id: 11,
-    message: "Me encanta verte soñar, crear y triunfar. Cada logro tuyo lo celebro como mío porque tu felicidad es la mía. Te amo profundamente, Cami.",
+    message: "Me encanta verte soñar, crear y triunfar. Cada logro tuyo lo celebro como mío porque tu felicidad es la mía. Te amo profundamente, Mi amor.",
     author: "Siempre juntos 💍❤️",
     tag: "Amor",
   },
@@ -103,7 +103,7 @@ export const CURATED_LOVE_NOTES: LoveNote[] = [
   },
   {
     id: 15,
-    message: "No importa cuán ocupado sea el día, siempre hay un momento en mi mente reservado solo para pensarte y sonreír. Te amo mucho, Cami. ❤️",
+    message: "No importa cuán ocupado sea el día, siempre hay un momento en mi mente reservado solo para pensarte y sonreír. Te amo mucho, Mi amor. ❤️",
     author: "Para la dueña de mi corazón",
     tag: "Amor",
   },
