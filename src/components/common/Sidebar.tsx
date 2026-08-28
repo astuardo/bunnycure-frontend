@@ -54,6 +54,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']
         },
         { 
+            path: '/invoices', 
+            icon: '🧾', 
+            label: 'Boletas SII',
+            description: 'Trazabilidad BHE',
+            allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']
+        },
+        { 
             path: '/customers', 
             icon: '👥', 
             label: isSpecialist(userRole) ? 'Mis Clientas' : 'Clientes',
