@@ -56,6 +56,47 @@ export const invoicesApi = {
   },
 
   /**
+   * Emisión masiva en lote al SII para varias citas seleccionadas
+   */
+  batchEmit: async (appointmentIds: number[]): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      '/api/invoices/appointments/batch-emit',
+      { appointmentIds }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Marcar una cita como emitida manualmente a mano (0 créditos SII)
+   */
+  markManual: async (
+    appointmentId: number,
+    data?: { invoiceNumber?: string; notes?: string }
+  ): Promise<InvoiceIssuedItem> => {
+    const response = await apiClient.post<ApiResponse<InvoiceIssuedItem>>(
+      `/api/invoices/appointments/${appointmentId}/mark-manual`,
+      data || {}
+    );
+    if (!response.data.data) throw new Error('Error al registrar boleta manual');
+    return response.data.data;
+  },
+
+  /**
+   * Marcar un lote de citas como emitidas manualmente a mano (0 créditos SII)
+   */
+  batchMarkManual: async (data: {
+    appointmentIds: number[];
+    initialFolio?: string;
+    notes?: string;
+  }): Promise<InvoiceIssuedItem[]> => {
+    const response = await apiClient.post<ApiResponse<InvoiceIssuedItem[]>>(
+      '/api/invoices/appointments/batch-mark-manual',
+      data
+    );
+    return response.data.data || [];
+  },
+
+  /**
    * Contraste y conciliación bajo demanda contra el SII (con caché inteligente)
    */
   contrastWithSii: async (periodo?: string, forceRefresh = false): Promise<InvoiceContrastResult> => {

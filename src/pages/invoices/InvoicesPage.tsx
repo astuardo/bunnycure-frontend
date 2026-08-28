@@ -3,6 +3,7 @@ import {
   Alert,
   Badge,
   Button,
+  ButtonGroup,
   Card,
   Col,
   Form,
@@ -18,7 +19,9 @@ import {
   FiCheckCircle,
   FiClock,
   FiDownload,
+  FiEdit3,
   FiFileText,
+  FiLayers,
   FiMail,
   FiPlusCircle,
   FiRefreshCw,
@@ -26,6 +29,7 @@ import {
   FiSend,
   FiShield,
   FiTrash2,
+  FiX,
   FiXCircle,
 } from 'react-icons/fi';
 import DashboardLayout from '@/components/common/DashboardLayout';
@@ -63,6 +67,9 @@ export default function InvoicesPage() {
   const [issuedList, setIssuedList] = useState<InvoiceIssuedItem[]>([]);
   const [contrastResult, setContrastResult] = useState<InvoiceContrastResult | null>(null);
 
+  // Multi-selection state for pending appointments
+  const [selectedAppointmentIds, setSelectedAppointmentIds] = useState<number[]>([]);
+
   // Loading states
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingPending, setLoadingPending] = useState(false);
@@ -80,10 +87,26 @@ export default function InvoicesPage() {
   const [editRut, setEditRut] = useState('');
   const [editEmail, setEditEmail] = useState('');
 
+  // Single Manual Mark Modal
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [manualPendingItem, setManualPendingItem] = useState<InvoicePendingAppointment | null>(null);
+  const [manualFolio, setManualFolio] = useState('');
+  const [manualNotes, setManualNotes] = useState('');
+
+  // Batch Manual Mark Modal
+  const [batchManualModalOpen, setBatchManualModalOpen] = useState(false);
+  const [batchInitialFolio, setBatchInitialFolio] = useState('');
+  const [batchManualNotes, setBatchManualNotes] = useState('Boletas emitidas a mano en plataforma SII');
+
+  // Batch Emit Modal
+  const [batchEmitModalOpen, setBatchEmitModalOpen] = useState(false);
+
+  // Resend Email Modal
   const [resendModalOpen, setResendModalOpen] = useState(false);
   const [selectedIssued, setSelectedIssued] = useState<InvoiceIssuedItem | null>(null);
   const [resendEmailTarget, setResendEmailTarget] = useState('');
 
+  // Cancel Modal
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelFolio, setCancelFolio] = useState<string | null>(null);
   const [cancelCause, setCancelCause] = useState('3');
@@ -107,6 +130,7 @@ export default function InvoicesPage() {
     try {
       const data = await invoicesApi.getPending();
       setPendingList(data);
+      setSelectedAppointmentIds([]);
     } catch {
       toast.error('Error al cargar citas con boletas pendientes');
     } finally {
@@ -194,7 +218,37 @@ export default function InvoicesPage() {
     });
   }, [issuedList, searchTerm]);
 
-  // ─── Handlers ──────────────────────────────────────────────────────────────
+  // Selected items calculation
+  const selectedItemsData = useMemo(() => {
+    return pendingList.filter((item) => selectedAppointmentIds.includes(item.appointmentId));
+  }, [pendingList, selectedAppointmentIds]);
+
+  const selectedTotalAmount = useMemo(() => {
+    return selectedItemsData.reduce((acc, item) => acc + (item.totalAmount || 0), 0);
+  }, [selectedItemsData]);
+
+  const selectedValidRutsCount = useMemo(() => {
+    return selectedItemsData.filter((item) => item.rutStatus === 'VALID').length;
+  }, [selectedItemsData]);
+
+  // ─── Selection Handlers ───────────────────────────────────────────────────
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allFilteredIds = filteredPending.map((item) => item.appointmentId);
+      setSelectedAppointmentIds(allFilteredIds);
+    } else {
+      setSelectedAppointmentIds([]);
+    }
+  };
+
+  const handleToggleSelectOne = (id: number) => {
+    setSelectedAppointmentIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  // ─── Individual Handlers ───────────────────────────────────────────────────
 
   const handleOpenEmitModal = (item: InvoicePendingAppointment) => {
     setSelectedPending(item);
@@ -232,9 +286,101 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleOpenManualModal = (item: InvoicePendingAppointment) => {
+    setManualPendingItem(item);
+    setManualFolio('');
+    setManualNotes('Boleta emitida a mano en plataforma SII');
+    setManualModalOpen(true);
+  };
+
+  const handleConfirmManual = async () => {
+    if (!manualPendingItem) return;
+
+    setActionLoading(true);
+    try {
+      await invoicesApi.markManual(manualPendingItem.appointmentId, {
+        invoiceNumber: manualFolio.trim() || undefined,
+        notes: manualNotes.trim() || undefined,
+      });
+      toast.success(`Cita #${manualPendingItem.appointmentId} registrada como emitida a mano (0 créditos)`);
+      setManualModalOpen(false);
+      loadSummary();
+      loadPending();
+      if (activeTab === 'issued') loadIssued();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al registrar boleta manual');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ─── Batch Handlers ───────────────────────────────────────────────────────
+
+  const handleOpenBatchManualModal = () => {
+    if (selectedAppointmentIds.length === 0) return;
+    setBatchInitialFolio('');
+    setBatchManualNotes('Boletas emitidas a mano en plataforma SII');
+    setBatchManualModalOpen(true);
+  };
+
+  const handleConfirmBatchManual = async () => {
+    if (selectedAppointmentIds.length === 0) return;
+
+    setActionLoading(true);
+    try {
+      const results = await invoicesApi.batchMarkManual({
+        appointmentIds: selectedAppointmentIds,
+        initialFolio: batchInitialFolio.trim() || undefined,
+        notes: batchManualNotes.trim() || undefined,
+      });
+      toast.success(`${results.length} citas marcadas exitosamente como emitidas manualmente (0 créditos)`);
+      setBatchManualModalOpen(false);
+      setSelectedAppointmentIds([]);
+      loadSummary();
+      loadPending();
+      if (activeTab === 'issued') loadIssued();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al marcar citas en lote');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenBatchEmitModal = () => {
+    if (selectedAppointmentIds.length === 0) return;
+    setBatchEmitModalOpen(true);
+  };
+
+  const handleConfirmBatchEmit = async () => {
+    if (selectedAppointmentIds.length === 0) return;
+
+    setActionLoading(true);
+    try {
+      const response = await invoicesApi.batchEmit(selectedAppointmentIds);
+      if (response.failedCount > 0) {
+        toast.warning(
+          `Emisión completada: ${response.successCount} exitosas, ${response.failedCount} con error.`
+        );
+      } else {
+        toast.success(`¡Todas las ${response.successCount} boletas fueron emitidas exitosamente en el SII!`);
+      }
+      setBatchEmitModalOpen(false);
+      setSelectedAppointmentIds([]);
+      loadSummary();
+      loadPending();
+      if (activeTab === 'issued') loadIssued();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error en emisión masiva');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ─── Issued Actions ────────────────────────────────────────────────────────
+
   const handleDownloadPdf = async (codigo?: string, folio?: string) => {
-    if (!codigo) {
-      toast.warning('Esta boleta no tiene un código SII registrado para descargar');
+    if (!codigo || codigo === 'MANUAL') {
+      toast.warning('Esta boleta fue registrada manualmente y no tiene archivo PDF en el gateway del SII.');
       return;
     }
     setActionLoading(true);
@@ -255,7 +401,10 @@ export default function InvoicesPage() {
   };
 
   const handleConfirmResend = async () => {
-    if (!selectedIssued || !selectedIssued.siiCode) return;
+    if (!selectedIssued || !selectedIssued.siiCode || selectedIssued.siiCode === 'MANUAL') {
+      toast.warning('No se puede reenviar correo SII para boletas marcadas a mano.');
+      return;
+    }
     setActionLoading(true);
     try {
       await invoicesApi.resendEmail(selectedIssued.siiCode, resendEmailTarget.trim() || undefined);
@@ -303,6 +452,10 @@ export default function InvoicesPage() {
     return `${months[monthIndex] || ''} ${year}`;
   };
 
+  const isAllFilteredSelected =
+    filteredPending.length > 0 &&
+    filteredPending.every((item) => selectedAppointmentIds.includes(item.appointmentId));
+
   return (
     <DashboardLayout>
       <div className="container-fluid py-3 px-md-4">
@@ -313,7 +466,7 @@ export default function InvoicesPage() {
               <span style={{ fontSize: '1.4rem' }}>🧾</span> Boletas SII (BHE)
             </h1>
             <p className="text-muted small mb-0">
-              Trazabilidad de boletas por emitir, emisión manual y contraste oficial con el SII.
+              Trazabilidad de boletas por emitir, selección múltiple, emisión manual y contraste oficial con el SII.
             </p>
           </div>
 
@@ -391,7 +544,7 @@ export default function InvoicesPage() {
             >
               <Card.Body className="p-3">
                 <div className="d-flex justify-content-between align-items-start mb-2">
-                  <span className="text-muted small fw-bold text-uppercase">Por Emitir / Fallidas</span>
+                  <span className="text-muted small fw-bold text-uppercase">Por Emitir / Faltantes</span>
                   <div
                     className={`p-2 rounded-2 ${
                       summary && summary.pendingInvoicesCount > 0
@@ -423,14 +576,16 @@ export default function InvoicesPage() {
               <Card.Body className="p-3">
                 <div className="d-flex justify-content-between align-items-start mb-2">
                   <span className="text-muted small fw-bold text-uppercase">Envío Automático Email</span>
-                  <div className="p-2 rounded-2 bg-info bg-opacity-10 text-info">
+                  <div className="p-2 rounded-2 bg-secondary bg-opacity-10 text-secondary">
                     <FiMail size={18} />
                   </div>
                 </div>
-                <h3 className="h4 fw-bold mb-1 text-dark">
-                  {summary?.sendEmailEnabled ? 'Habilitado' : 'Manual'}
+                <h3 className="h5 fw-bold mb-1 text-dark">
+                  {summary?.sendEmailEnabled ? 'Habilitado' : 'Desactivado (Manual)'}
                 </h3>
-                <small className="text-muted">Despacho oficial PDF/XML vía SII</small>
+                <small className="text-muted">
+                  {summary?.sendEmailEnabled ? 'Despacho automático' : 'Emisión sin correo automático'}
+                </small>
               </Card.Body>
             </Card>
           </Col>
@@ -519,6 +674,55 @@ export default function InvoicesPage() {
             ───────────────────────────────────────────────────────────────── */}
             {activeTab === 'pending' && (
               <div>
+                {/* Floating/Sticky Batch Action Banner */}
+                {selectedAppointmentIds.length > 0 && (
+                  <div className="p-3 bg-dark text-white rounded-3 mb-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 shadow">
+                    <div className="d-flex align-items-center gap-2">
+                      <Badge bg="warning" text="dark" pill className="fs-6 px-3 py-2">
+                        {selectedAppointmentIds.length} seleccionadas
+                      </Badge>
+                      <span className="small text-light">
+                        Monto total: <strong>{formatCurrencyCLP(selectedTotalAmount)}</strong> | RUTs válidos:{' '}
+                        <strong>
+                          {selectedValidRutsCount}/{selectedAppointmentIds.length}
+                        </strong>
+                      </span>
+                    </div>
+
+                    <div className="d-flex flex-wrap align-items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="success"
+                        className="d-flex align-items-center gap-1 shadow-sm"
+                        onClick={handleOpenBatchManualModal}
+                      >
+                        <FiEdit3 />
+                        <span>Marcar como Emitidas a Mano ({selectedAppointmentIds.length})</span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
+                        className="d-flex align-items-center gap-1 shadow-sm"
+                        onClick={handleOpenBatchEmitModal}
+                      >
+                        <FiSend />
+                        <span>Emitir al SII ({selectedAppointmentIds.length})</span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline-light"
+                        onClick={() => setSelectedAppointmentIds([])}
+                        title="Deseleccionar todo"
+                      >
+                        <FiX />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Filters and search */}
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                   <div className="d-flex flex-wrap gap-2 align-items-center">
@@ -581,6 +785,14 @@ export default function InvoicesPage() {
                     <Table hover className="align-middle mb-0 border-top">
                       <thead className="table-light small text-muted text-uppercase">
                         <tr>
+                          <th style={{ width: '40px' }} className="text-center">
+                            <Form.Check
+                              type="checkbox"
+                              checked={isAllFilteredSelected}
+                              onChange={(e) => handleSelectAll(e.target.checked)}
+                              title="Seleccionar todas las visibles"
+                            />
+                          </th>
                           <th>Cita #</th>
                           <th>Fecha / Hora</th>
                           <th>Cliente</th>
@@ -588,79 +800,100 @@ export default function InvoicesPage() {
                           <th>Servicios</th>
                           <th>Monto</th>
                           <th>Diagnóstico / Estado</th>
-                          <th className="text-end">Acción</th>
+                          <th className="text-end">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredPending.map((item) => (
-                          <tr key={item.appointmentId}>
-                            <td className="fw-bold text-dark">#{item.appointmentId}</td>
-                            <td>
-                              <div>{item.appointmentDate}</div>
-                              <small className="text-muted">{item.appointmentTime?.substring(0, 5)}</small>
-                            </td>
-                            <td>
-                              <div className="fw-semibold text-dark">{item.customerName}</div>
-                              <small className="text-muted">{item.customerEmail || 'Sin correo'}</small>
-                            </td>
-                            <td>
-                              {item.customerRut ? (
-                                <Badge
-                                  bg={item.rutStatus === 'VALID' ? 'success' : 'danger'}
-                                  className="font-monospace"
-                                >
-                                  {formatRutWithDots(item.customerRut)}
-                                </Badge>
-                              ) : (
-                                <Badge bg="warning" text="dark">
-                                  Falta RUT
-                                </Badge>
-                              )}
-                            </td>
-                            <td>
-                              <small className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
-                                {item.servicesSummary}
-                              </small>
-                            </td>
-                            <td className="fw-bold text-dark">{formatCurrencyCLP(item.totalAmount)}</td>
-                            <td>
-                              {item.invoiceStatus === 'FAILED' ? (
-                                <div className="text-danger small">
-                                  <Badge bg="danger" className="mb-1">
-                                    <FiXCircle /> Error al emitir
-                                  </Badge>
-                                  <div
-                                    className="text-truncate"
-                                    style={{ maxWidth: '220px', fontSize: '11px' }}
-                                    title={item.errorMessage || ''}
+                        {filteredPending.map((item) => {
+                          const isSelected = selectedAppointmentIds.includes(item.appointmentId);
+                          return (
+                            <tr key={item.appointmentId} className={isSelected ? 'table-active' : ''}>
+                              <td className="text-center">
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleSelectOne(item.appointmentId)}
+                                />
+                              </td>
+                              <td className="fw-bold text-dark">#{item.appointmentId}</td>
+                              <td>
+                                <div>{item.appointmentDate}</div>
+                                <small className="text-muted">{item.appointmentTime?.substring(0, 5)}</small>
+                              </td>
+                              <td>
+                                <div className="fw-semibold text-dark">{item.customerName}</div>
+                                <small className="text-muted">{item.customerEmail || 'Sin correo'}</small>
+                              </td>
+                              <td>
+                                {item.customerRut ? (
+                                  <Badge
+                                    bg={item.rutStatus === 'VALID' ? 'success' : 'danger'}
+                                    className="font-monospace"
                                   >
-                                    {item.errorMessage || 'Error en comunicación con SII'}
+                                    {formatRutWithDots(item.customerRut)}
+                                  </Badge>
+                                ) : (
+                                  <Badge bg="warning" text="dark">
+                                    Falta RUT
+                                  </Badge>
+                                )}
+                              </td>
+                              <td>
+                                <small className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
+                                  {item.servicesSummary}
+                                </small>
+                              </td>
+                              <td className="fw-bold text-dark">{formatCurrencyCLP(item.totalAmount)}</td>
+                              <td>
+                                {item.invoiceStatus === 'FAILED' ? (
+                                  <div className="text-danger small">
+                                    <Badge bg="danger" className="mb-1">
+                                      <FiXCircle /> Error al emitir
+                                    </Badge>
+                                    <div
+                                      className="text-truncate"
+                                      style={{ maxWidth: '220px', fontSize: '11px' }}
+                                      title={item.errorMessage || ''}
+                                    >
+                                      {item.errorMessage || 'Error en comunicación con SII'}
+                                    </div>
                                   </div>
-                                </div>
-                              ) : item.rutStatus !== 'VALID' ? (
-                                <Badge bg="warning" text="dark">
-                                  Requiere RUT válido
-                                </Badge>
-                              ) : (
-                                <Badge bg="secondary">
-                                  <FiClock /> Sin emitir
-                                </Badge>
-                              )}
-                            </td>
-                            <td className="text-end">
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-                                className="d-inline-flex align-items-center gap-1 shadow-xs"
-                                onClick={() => handleOpenEmitModal(item)}
-                              >
-                                <FiSend size={13} />
-                                <span>Emitir Boleta</span>
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
+                                ) : item.rutStatus !== 'VALID' ? (
+                                  <Badge bg="warning" text="dark">
+                                    Requiere RUT válido
+                                  </Badge>
+                                ) : (
+                                  <Badge bg="secondary">
+                                    <FiClock /> Sin emitir
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="text-end">
+                                <ButtonGroup size="sm">
+                                  <Button
+                                    variant="primary"
+                                    style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
+                                    className="d-inline-flex align-items-center gap-1 shadow-xs"
+                                    onClick={() => handleOpenEmitModal(item)}
+                                    title="Emitir boleta en el SII"
+                                  >
+                                    <FiSend size={12} />
+                                    <span>Emitir</span>
+                                  </Button>
+
+                                  <Button
+                                    variant="outline-secondary"
+                                    onClick={() => handleOpenManualModal(item)}
+                                    title="Marcar como emitida a mano (sin enviar al SII, 0 créditos)"
+                                  >
+                                    <FiEdit3 size={12} />
+                                    <span className="d-none d-lg-inline ms-1">A Mano</span>
+                                  </Button>
+                                </ButtonGroup>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </Table>
                   </div>
@@ -719,7 +952,7 @@ export default function InvoicesPage() {
                           <th>Cliente</th>
                           <th>RUT</th>
                           <th>Monto</th>
-                          <th>Correo SII</th>
+                          <th>Origen / Correo SII</th>
                           <th className="text-end">Acciones</th>
                         </tr>
                       </thead>
@@ -727,10 +960,13 @@ export default function InvoicesPage() {
                         {filteredIssued.map((item) => (
                           <tr key={item.id}>
                             <td>
-                              <Badge bg="dark" className="font-monospace px-2 py-1">
+                              <Badge
+                                bg={item.siiCode === 'MANUAL' ? 'secondary' : 'dark'}
+                                className="font-monospace px-2 py-1"
+                              >
                                 Folio #{item.invoiceNumber}
                               </Badge>
-                              {item.siiCode && (
+                              {item.siiCode && item.siiCode !== 'MANUAL' && (
                                 <div className="text-muted" style={{ fontSize: '10px' }}>
                                   {item.siiCode}
                                 </div>
@@ -757,37 +993,45 @@ export default function InvoicesPage() {
                             </td>
                             <td className="fw-bold text-dark">{formatCurrencyCLP(item.amountInClp)}</td>
                             <td>
-                              {item.emailSent ? (
+                              {item.siiCode === 'MANUAL' ? (
+                                <Badge bg="light" text="dark" className="border">
+                                  <FiEdit3 /> Emitida a Mano
+                                </Badge>
+                              ) : item.emailSent ? (
                                 <Badge bg="success" className="d-inline-flex align-items-center gap-1">
                                   <FiCheckCircle /> Enviado
                                 </Badge>
                               ) : (
                                 <Badge bg="light" text="dark" className="border">
-                                  No enviado
+                                  SII (Sin email)
                                 </Badge>
                               )}
                             </td>
                             <td className="text-end">
                               <div className="d-flex justify-content-end gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="outline-secondary"
-                                  title="Descargar PDF oficial SII"
-                                  onClick={() => handleDownloadPdf(item.siiCode, item.invoiceNumber)}
-                                  disabled={actionLoading || !item.siiCode}
-                                >
-                                  <FiDownload />
-                                </Button>
+                                {item.siiCode !== 'MANUAL' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-secondary"
+                                      title="Descargar PDF oficial SII"
+                                      onClick={() => handleDownloadPdf(item.siiCode, item.invoiceNumber)}
+                                      disabled={actionLoading || !item.siiCode}
+                                    >
+                                      <FiDownload />
+                                    </Button>
 
-                                <Button
-                                  size="sm"
-                                  variant="outline-info"
-                                  title="Reenviar correo oficial SII"
-                                  onClick={() => handleOpenResendModal(item)}
-                                  disabled={actionLoading || !item.siiCode}
-                                >
-                                  <FiMail />
-                                </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-info"
+                                      title="Reenviar correo oficial SII"
+                                      onClick={() => handleOpenResendModal(item)}
+                                      disabled={actionLoading || !item.siiCode}
+                                    >
+                                      <FiMail />
+                                    </Button>
+                                  </>
+                                )}
 
                                 <Button
                                   size="sm"
@@ -883,7 +1127,8 @@ export default function InvoicesPage() {
                     <span style={{ fontSize: '2.5rem' }}>🔍</span>
                     <h5 className="mt-2 fw-bold text-dark">Consulta de Contraste no realizada</h5>
                     <p className="text-muted small mb-3">
-                      Presiona el botón superior para contrastar las boletas de BunnyCure contra el SII en {formatPeriodDisplay(selectedPeriod)}.
+                      Presiona el botón superior para contrastar las boletas de BunnyCure contra el SII en{' '}
+                      {formatPeriodDisplay(selectedPeriod)}.
                     </p>
                   </div>
                 ) : (
@@ -1021,14 +1266,16 @@ export default function InvoicesPage() {
                                   </Badge>
                                 </td>
                                 <td className="text-end">
-                                  <Button
-                                    size="sm"
-                                    variant="outline-secondary"
-                                    onClick={() => handleDownloadPdf(inv.siiCode, inv.invoiceNumber)}
-                                    disabled={!inv.siiCode}
-                                  >
-                                    <FiDownload /> PDF
-                                  </Button>
+                                  {inv.siiCode !== 'MANUAL' && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline-secondary"
+                                      onClick={() => handleDownloadPdf(inv.siiCode, inv.invoiceNumber)}
+                                      disabled={!inv.siiCode}
+                                    >
+                                      <FiDownload /> PDF
+                                    </Button>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -1045,13 +1292,13 @@ export default function InvoicesPage() {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────
-          MODAL: EMITIR BOLETA PARA CITA
+          MODAL: EMITIR BOLETA INDIVIDUAL AL SII
       ───────────────────────────────────────────────────────────────── */}
       <Modal show={emitModalOpen} onHide={() => setEmitModalOpen(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
             <FiPlusCircle style={{ color: '#c9897a' }} />
-            Emitir Boleta de Honorarios
+            Emitir Boleta de Honorarios en SII
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -1115,9 +1362,6 @@ export default function InvoicesPage() {
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                 />
-                <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
-                  El SII enviará el PDF y XML oficial directamente a esta dirección si está configurado.
-                </Form.Text>
               </Form.Group>
             </div>
           )}
@@ -1138,6 +1382,199 @@ export default function InvoicesPage() {
               </>
             ) : (
               'Confirmar y Emitir BHE'
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          MODAL: MARCAR INDIVIDUAL COMO EMITIDA A MANO (0 Créditos)
+      ───────────────────────────────────────────────────────────────── */}
+      <Modal show={manualModalOpen} onHide={() => setManualModalOpen(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
+            <FiEdit3 style={{ color: '#c9897a' }} />
+            Marcar Boleta como Emitida a Mano
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {manualPendingItem && (
+            <div>
+              <Alert variant="info" className="small mb-3">
+                <strong>Sin llamada al SII (0 créditos):</strong> Esta opción marca la cita como facturada en el
+                sistema registrando el folio que emitiste a mano directamente en el portal del SII.
+              </Alert>
+
+              <div className="p-3 bg-light rounded-3 mb-3 border">
+                <div className="d-flex justify-content-between mb-1">
+                  <span className="text-muted small">Cita:</span>
+                  <span className="fw-bold text-dark">#{manualPendingItem.appointmentId}</span>
+                </div>
+                <div className="d-flex justify-content-between mb-1">
+                  <span className="text-muted small">Cliente:</span>
+                  <span className="text-dark fw-semibold">{manualPendingItem.customerName}</span>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted small">Monto Total:</span>
+                  <span className="text-dark fw-bold">{formatCurrencyCLP(manualPendingItem.totalAmount)}</span>
+                </div>
+              </div>
+
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-bold text-dark">Número de Folio Manual (Opcional)</Form.Label>
+                <Form.Control
+                  placeholder="Ej: 1420 (Si lo dejas vacío, se guardará como MANUAL-ID)"
+                  value={manualFolio}
+                  onChange={(e) => setManualFolio(e.target.value)}
+                />
+                <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
+                  Ingresa el número de folio oficial generado a mano en sii.cl.
+                </Form.Text>
+              </Form.Group>
+
+              <Form.Group className="mb-2">
+                <Form.Label className="small fw-bold text-dark">Observación / Nota</Form.Label>
+                <Form.Control
+                  value={manualNotes}
+                  onChange={(e) => setManualNotes(e.target.value)}
+                  placeholder="Nota interna de la emisión manual..."
+                />
+              </Form.Group>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setManualModalOpen(false)} disabled={actionLoading}>
+            Cancelar
+          </Button>
+          <Button variant="success" onClick={handleConfirmManual} disabled={actionLoading}>
+            {actionLoading ? <Spinner size="sm" animation="border" /> : 'Confirmar Registro Manual'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          MODAL: MARCAR LOTE COMO EMITIDAS A MANO (Batch 0 Créditos)
+      ───────────────────────────────────────────────────────────────── */}
+      <Modal show={batchManualModalOpen} onHide={() => setBatchManualModalOpen(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
+            <FiLayers style={{ color: '#28a745' }} />
+            Marcar {selectedAppointmentIds.length} Citas como Emitidas a Mano
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="success" className="small mb-3">
+            <strong>Registro Masivo Local (0 créditos):</strong> Se registrarán las{' '}
+            <strong>{selectedAppointmentIds.length} citas</strong> seleccionadas como emitidas con éxito en la base de
+            datos de BunnyCure.
+          </Alert>
+
+          <div className="p-3 bg-light rounded-3 mb-3 border">
+            <div className="d-flex justify-content-between mb-1">
+              <span className="text-muted small">Citas seleccionadas:</span>
+              <span className="fw-bold text-dark">{selectedAppointmentIds.length} citas</span>
+            </div>
+            <div className="d-flex justify-content-between">
+              <span className="text-muted small">Monto acumulado total:</span>
+              <span className="fw-bold text-success fs-5">{formatCurrencyCLP(selectedTotalAmount)}</span>
+            </div>
+          </div>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="small fw-bold text-dark">
+              Folio Inicial Consecutivo (Opcional)
+            </Form.Label>
+            <Form.Control
+              placeholder="Ej: 1400 (Asignará 1400, 1401, 1402... correlativamente)"
+              value={batchInitialFolio}
+              onChange={(e) => setBatchInitialFolio(e.target.value)}
+            />
+            <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
+              Si dejas este campo vacío, cada cita se guardará con identificador MANUAL-ID.
+            </Form.Text>
+          </Form.Group>
+
+          <Form.Group className="mb-2">
+            <Form.Label className="small fw-bold text-dark">Nota General del Lote</Form.Label>
+            <Form.Control
+              value={batchManualNotes}
+              onChange={(e) => setBatchManualNotes(e.target.value)}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setBatchManualModalOpen(false)} disabled={actionLoading}>
+            Cancelar
+          </Button>
+          <Button variant="success" onClick={handleConfirmBatchManual} disabled={actionLoading}>
+            {actionLoading ? (
+              <>
+                <Spinner size="sm" animation="border" className="me-1" /> Procesando {selectedAppointmentIds.length} citas...
+              </>
+            ) : (
+              `Confirmar Marcado de ${selectedAppointmentIds.length} Boletas`
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          MODAL: EMISIÓN MASIVA AL SII (Batch Emit)
+      ───────────────────────────────────────────────────────────────── */}
+      <Modal show={batchEmitModalOpen} onHide={() => setBatchEmitModalOpen(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
+            <FiSend style={{ color: '#c9897a' }} />
+            Emitir {selectedAppointmentIds.length} Boletas en el SII
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="warning" className="small mb-3">
+            <strong>Atención:</strong> Esta acción enviará secuencialmente cada una de las{' '}
+            <strong>{selectedAppointmentIds.length} citas seleccionadas</strong> al servicio de emisión de BHE del SII.
+          </Alert>
+
+          <div className="p-3 bg-light rounded-3 mb-3 border">
+            <div className="d-flex justify-content-between mb-1">
+              <span className="text-muted small">Total Citas a Emitir:</span>
+              <span className="fw-bold text-dark">{selectedAppointmentIds.length}</span>
+            </div>
+            <div className="d-flex justify-content-between mb-1">
+              <span className="text-muted small">Citas con RUT Válido:</span>
+              <span className="fw-bold text-success">
+                {selectedValidRutsCount} de {selectedAppointmentIds.length}
+              </span>
+            </div>
+            <div className="d-flex justify-content-between border-top pt-2 mt-2">
+              <span className="fw-bold text-dark">Monto Total a Facturar:</span>
+              <span className="fw-bold text-dark fs-5">{formatCurrencyCLP(selectedTotalAmount)}</span>
+            </div>
+          </div>
+
+          {selectedValidRutsCount < selectedAppointmentIds.length && (
+            <Alert variant="danger" className="small py-2 mb-0">
+              <strong>Advertencia:</strong> Hay {selectedAppointmentIds.length - selectedValidRutsCount} citas sin RUT
+              válido. Esas citas no podrán emitirse en el SII y reportarán error. Te recomendamos editarlas individualmente o deseleccionarlas antes de emitir en lote.
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setBatchEmitModalOpen(false)} disabled={actionLoading}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
+            onClick={handleConfirmBatchEmit}
+            disabled={actionLoading || selectedAppointmentIds.length === 0}
+          >
+            {actionLoading ? (
+              <>
+                <Spinner size="sm" animation="border" className="me-1" /> Emitiendo en SII...
+              </>
+            ) : (
+              `Comenzar Emisión en SII (${selectedAppointmentIds.length})`
             )}
           </Button>
         </Modal.Footer>

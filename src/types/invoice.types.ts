@@ -69,8 +69,28 @@ export interface EmitInvoiceRequest {
   customerEmail?: string;
 }
 
+export interface MarkManualRequest {
+  invoiceNumber?: string;
+  notes?: string;
+}
+
+export interface BatchMarkManualRequest {
+  appointmentIds: number[];
+  initialFolio?: string;
+  notes?: string;
+}
+
+export interface BatchEmitResponse {
+  total: number;
+  successCount: number;
+  failedCount: number;
+  results: InvoiceIssuedItem[];
+  errors: Array<{ appointmentId: number; error: string }>;
+}
+
 export const SII_CANCEL_CAUSES = [
   { value: '3', label: '3 - Error de digitación (Recomendada)' },
   { value: '2', label: '2 - No prestación del servicio' },
   { value: '1', label: '1 - No pago de honorarios' },
 ];
+
