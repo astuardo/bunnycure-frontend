@@ -7,9 +7,9 @@ import { appointmentsApi } from '@/api/appointments.api';
 import { AppointmentSuppliesPreview } from '@/types/inventory.types';
 import { Appointment } from '@/types/appointment.types';
 import { useToast } from '@/hooks/useToast';
-import { useCustomersStore } from '@/stores/customersStore';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { buildGoogleReviewWhatsAppUrl } from '@/utils/appointmentUtils';
+import { formatRutWithDots } from '@/utils/rutUtils';
 
 interface Props {
   show: boolean;
@@ -100,54 +100,30 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
       await inventoryApi.completeAppointmentWithSupplies({
         appointmentId,
         generateInvoice,
-        deductSupplies: shouldDeduct && deductSupplies,
+        deductSupplies: shouldDeduct,
         supplies: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
         })),
       });
 
-      toast.success(
-        shouldDeduct && items.length > 0
-          ? '✅ Cita completada y stock descontado correctamente'
-          : '✅ Cita marcada como completada'
-      );
-
-      // Sincronización y Notificación de Fidelización
-      if (appointmentData?.customer) {
-        const nextStamps = (appointmentData.customer.loyaltyStamps || 0) + 1;
-        if (nextStamps > 0 && nextStamps % 5 === 0) {
-          toast.success(
-            `🎉 ¡${appointmentData.customer.fullName} ha completado ${nextStamps} visitas y tiene un beneficio de fidelización disponible!`,
-            { autoClose: 6000 }
-          );
-        }
-        // Refrescar lista de clientes en segundo plano
-        useCustomersStore.getState().fetchCustomers().catch(() => {});
-      }
-
-      // Disparo de Google Reviews (Plantilla oficial 'valoracion_servicio_google')
+      // Si el usuario eligió solicitar reseña por WhatsApp, abrir WhatsApp Web
       if (sendGoogleReview && appointmentData?.customer) {
         const phone = appointmentData.customer.phone;
+        const customerName = appointmentData.customer.fullName;
         const serviceName = preview?.serviceNames.join(' + ') || appointmentData.service?.name;
-
-        try {
-          // Intento de envío automático por backend vía Cloud API (Plantilla valoracion_servicio_google)
-          await appointmentsApi.sendWhatsAppReviewRequest(appointmentId);
-          toast.success(`⭐ Solicitud de reseña enviada por WhatsApp a ${appointmentData.customer.fullName}`);
-        } catch {
-          // Contingencia: apertura de WhatsApp con texto preconfigurado
-          const url = buildGoogleReviewWhatsAppUrl(phone, appointmentData.customer.fullName, serviceName);
-          window.open(url, '_blank', 'noopener,noreferrer');
-          toast.info(`Abriendo WhatsApp para solicitar reseña a ${appointmentData.customer.fullName}`);
+        const reviewUrl = buildGoogleReviewWhatsAppUrl(phone, customerName, serviceName);
+        if (reviewUrl) {
+          window.open(reviewUrl, '_blank', 'noopener,noreferrer');
         }
       }
 
+      toast.success('Cita completada exitosamente');
       onCompleted();
       onHide();
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      toast.error(error.message || 'Error al completar la cita');
+    } catch (err: any) {
+      console.error('Error completing appointment with supplies:', err);
+      toast.error(err.response?.data?.message || 'Error al completar la cita');
     } finally {
       setSubmitting(false);
     }
@@ -189,6 +165,15 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
                 <Col sm={6}>
                   <div className="text-muted small">Cliente</div>
                   <div className="fw-bold text-dark">{preview?.customerName}</div>
+                  {appointmentData?.customer?.rut ? (
+                    <div className="text-muted small font-monospace mt-1">
+                      🆔 {formatRutWithDots(appointmentData.customer.rut)}
+                    </div>
+                  ) : (
+                    <div className="small text-warning fw-semibold mt-1">
+                      ⚠️ Sin RUT registrado
+                    </div>
+                  )}
                 </Col>
                 <Col sm={6}>
                   <div className="text-muted small">Servicios Realizados</div>

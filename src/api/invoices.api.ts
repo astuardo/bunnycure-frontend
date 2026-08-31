@@ -122,10 +122,27 @@ export const invoicesApi = {
    * Descargar PDF oficial generado por el SII
    */
   downloadPdf: async (codigo: string, folio = 'boleta'): Promise<void> => {
-    const response = await apiClient.get(`/api/invoices/${codigo}/pdf`, {
+    const response = await apiClient.get(`/api/invoices/${encodeURIComponent(codigo)}/pdf`, {
       responseType: 'blob',
     });
-    const blob = new Blob([response.data], { type: 'application/pdf' });
+
+    const dataBlob = response.data as Blob;
+    // Validar si el blob recibido es un archivo PDF legítimo o si es un error JSON/HTML
+    if (dataBlob.type && !dataBlob.type.includes('pdf')) {
+      const text = await dataBlob.text();
+      let errorMsg = 'El archivo recibido desde el SII no es un PDF válido.';
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.message) errorMsg = parsed.message;
+      } catch {
+        if (text.includes('No existe la boleta')) {
+          errorMsg = 'El SII indicó que no existe la boleta con el código proporcionado.';
+        }
+      }
+      throw new Error(errorMsg);
+    }
+
+    const blob = new Blob([dataBlob], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

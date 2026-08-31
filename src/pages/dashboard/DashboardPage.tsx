@@ -42,6 +42,7 @@ import { getDayDotColors } from '@/utils/calendarDisplay';
 import { useToast } from '@/hooks/useToast';
 import { trackAppointmentCancelled } from '@/utils/analytics';
 import { getAppointmentTotal } from '@/utils/appointmentUtils';
+import { formatRutWithDots } from '@/utils/rutUtils';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -512,8 +513,39 @@ export default function DashboardPage() {
                                             <td style={{ padding: '12px', color: TEXT_DARK, whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: '12px' }}>
                                                 {apt.appointmentTime ? apt.appointmentTime.slice(0, 5) : '-'}
                                             </td>
-                                            <td style={{ padding: '12px', color: TEXT_DARK, fontWeight: 500 }}>
-                                                {apt.customer.fullName}
+                                            <td style={{ padding: '12px', color: TEXT_DARK }}>
+                                                <div style={{ fontWeight: 600, color: TEXT_DARK }}>
+                                                    {apt.customer.fullName}
+                                                </div>
+                                                {apt.customer.rut && apt.customer.rut.trim() ? (
+                                                    <div style={{ fontSize: '11px', color: '#7a5c50', marginTop: '2px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <span style={{ color: '#a07d6c', fontWeight: 600 }}>RUT:</span>
+                                                        <span>{formatRutWithDots(apt.customer.rut)}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ marginTop: '3px' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => navigate(`/appointments?edit=${apt.id}&returnTo=/dashboard`)}
+                                                            title="Clienta sin RUT registrado. Clic para editar cita/cliente"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '3px',
+                                                                background: '#fff3cd',
+                                                                color: '#856404',
+                                                                border: '1px solid #ffeeba',
+                                                                borderRadius: '4px',
+                                                                padding: '1px 6px',
+                                                                fontSize: '10.5px',
+                                                                fontWeight: 700,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            ⚠️ Sin RUT (Corregir)
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td style={{ padding: '12px', color: '#7a5c50' }}>
                                                 {getAppointmentServices(apt).map((s: ServiceSummary) => s.name).join(' + ') || '-'}
