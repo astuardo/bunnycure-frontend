@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Table, Form, Alert, Spinner, Row, Col, Badge } from 'react-bootstrap';
 import { FiCheckCircle, FiAlertTriangle, FiPackage, FiFileText } from 'react-icons/fi';
-import { FaStar, FaWhatsapp } from 'react-icons/fa';
 import { inventoryApi } from '@/api/inventory.api';
 import { appointmentsApi } from '@/api/appointments.api';
 import { AppointmentSuppliesPreview } from '@/types/inventory.types';
 import { Appointment } from '@/types/appointment.types';
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
-import { buildGoogleReviewWhatsAppUrl } from '@/utils/appointmentUtils';
 import { formatRutWithDots } from '@/utils/rutUtils';
 
 interface Props {
@@ -40,7 +38,6 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
   const [appointmentData, setAppointmentData] = useState<Appointment | null>(null);
   const [items, setItems] = useState<EditableItem[]>([]);
   const [generateInvoice, setGenerateInvoice] = useState(true);
-  const [sendGoogleReview, setSendGoogleReview] = useState(true);
   const [deductSupplies, setDeductSupplies] = useState(true);
   const [invoiceQuotaInfo, setInvoiceQuotaInfo] = useState<string | null>(null);
 
@@ -106,17 +103,6 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
           quantity: i.quantity,
         })),
       });
-
-      // Si el usuario eligió solicitar reseña por WhatsApp, abrir WhatsApp Web
-      if (sendGoogleReview && appointmentData?.customer) {
-        const phone = appointmentData.customer.phone;
-        const customerName = appointmentData.customer.fullName;
-        const serviceName = preview?.serviceNames.join(' + ') || appointmentData.service?.name;
-        const reviewUrl = buildGoogleReviewWhatsAppUrl(phone, customerName, serviceName);
-        if (reviewUrl) {
-          window.open(reviewUrl, '_blank', 'noopener,noreferrer');
-        }
-      }
 
       toast.success('Cita completada exitosamente');
       onCompleted();
@@ -315,33 +301,6 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
               {invoiceQuotaInfo && (
                 <small className="text-muted d-block mt-1 ps-4">{invoiceQuotaInfo}</small>
               )}
-            </div>
-
-            {/* Opción de Solicitud Google Reviews */}
-            <div
-              style={{
-                background: '#fffdfb',
-                border: '1px solid #fed7aa',
-                borderRadius: '8px',
-                padding: '10px 14px',
-              }}
-            >
-              <Form.Check
-                type="checkbox"
-                id="send-google-review-checkbox"
-                label={
-                  <span className="d-flex align-items-center gap-2 small fw-semibold text-dark">
-                    <FaStar className="text-warning" />
-                    <FaWhatsapp className="text-success" />
-                    Enviar solicitud de valoración en Google Reviews vía WhatsApp
-                  </span>
-                }
-                checked={sendGoogleReview}
-                onChange={(e) => setSendGoogleReview(e.target.checked)}
-              />
-              <small className="text-muted d-block mt-1 ps-4">
-                Abre WhatsApp automáticamente con la plantilla oficial y el enlace a Google Reviews (<code>https://g.page/r/CfcuMpxkvLJ3EBM/review</code>).
-              </small>
             </div>
           </>
         )}
