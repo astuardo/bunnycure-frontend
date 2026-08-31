@@ -1015,8 +1015,8 @@ export default function InvoicesPage() {
                                       size="sm"
                                       variant="outline-secondary"
                                       title="Descargar PDF oficial SII"
-                                      onClick={() => handleDownloadPdf(item.siiCode, item.invoiceNumber)}
-                                      disabled={actionLoading || !item.siiCode}
+                                      onClick={() => handleDownloadPdf(item.siiCode || item.invoiceNumber, item.invoiceNumber)}
+                                      disabled={actionLoading || (!item.siiCode && !item.invoiceNumber)}
                                     >
                                       <FiDownload />
                                     </Button>
@@ -1026,7 +1026,7 @@ export default function InvoicesPage() {
                                       variant="outline-info"
                                       title="Reenviar correo oficial SII"
                                       onClick={() => handleOpenResendModal(item)}
-                                      disabled={actionLoading || !item.siiCode}
+                                      disabled={actionLoading || (!item.siiCode && !item.invoiceNumber)}
                                     >
                                       <FiMail />
                                     </Button>
