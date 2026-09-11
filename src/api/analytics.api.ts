@@ -23,7 +23,7 @@ import {
   CancellationReason,
 } from '../types/analytics.types';
 import { format, parseISO, eachDayOfInterval, getDay } from 'date-fns';
-import { getAppointmentTotal, extractCancellationReason } from '../utils/appointmentUtils';
+import { getAppointmentTotal, extractCancellationReason, extractCancellationInitiator } from '../utils/appointmentUtils';
 
 // ═══════════════════════════════════════════════════════════════
 // Caché de citas para evitar triple API call por carga de analíticas
@@ -304,7 +304,11 @@ export const analyticsApi = {
       };
 
       existing.appointmentCount += 1;
-      if (apt.status === 'CANCELLED') existing.cancelledCount += 1;
+      if (apt.status === 'CANCELLED') {
+        if (extractCancellationInitiator(apt) !== 'MANICURIST') {
+          existing.cancelledCount += 1;
+        }
+      }
       if (apt.status === 'COMPLETED') {
         existing.completedCount += 1;
         existing.totalSpent += getAppointmentTotal(apt) || 0;
@@ -405,6 +409,7 @@ export const analyticsApi = {
         appointmentDate: apt.appointmentDate,
         total: getAppointmentTotal(apt),
         cancellationReason: extractCancellationReason(apt),
+        cancellationInitiator: extractCancellationInitiator(apt),
         notes: apt.notes || '',
       }))
       .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
@@ -447,7 +452,11 @@ export const analyticsApi = {
       };
 
       existing.appointmentCount += 1;
-      if (apt.status === 'CANCELLED') existing.cancelledCount += 1;
+      if (apt.status === 'CANCELLED') {
+        if (extractCancellationInitiator(apt) !== 'MANICURIST') {
+          existing.cancelledCount += 1;
+        }
+      }
       if (apt.status === 'COMPLETED') {
         existing.completedCount += 1;
         existing.totalSpent += getAppointmentTotal(apt) || 0;

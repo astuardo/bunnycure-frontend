@@ -127,12 +127,14 @@ export const trackAppointmentUpdated = (
 export const trackAppointmentCancelled = (
   appointmentId: number,
   customerId: number,
-  cancellationReason?: string
+  cancellationReason?: string,
+  cancelledBy?: string
 ) => {
   trackEvent('appointment_cancelled', {
     appointment_id: appointmentId,
     customer_id: customerId,
     cancellation_reason: cancellationReason || 'not_specified',
+    cancelled_by: cancelledBy || 'customer',
   });
 };
 

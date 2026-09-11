@@ -951,13 +951,14 @@ export default function AnalyticsPage() {
               onClick={() => {
                 exportToCSV({
                   filename: `reporte-cancelaciones-${startDate}-${endDate}`,
-                  headers: ['Cliente', 'Teléfono', 'Servicio', 'Fecha', 'Monto', 'Motivo'],
+                  headers: ['Cliente', 'Teléfono', 'Servicio', 'Fecha', 'Monto', 'Origen', 'Motivo'],
                   data: cancelledDetail.map((item) => ({
                     'Cliente': item.customerName,
                     'Teléfono': item.customerPhone,
                     'Servicio': item.serviceName,
                     'Fecha': format(new Date(item.appointmentDate), 'dd/MM/yyyy'),
                     'Monto': `$${item.total.toLocaleString('es-CL')}`,
+                    'Origen': item.cancellationInitiator === 'MANICURIST' ? 'Manicurista / Salón' : item.cancellationInitiator === 'CUSTOMER' ? 'Clienta' : 'Sin especificar',
                     'Motivo': item.cancellationReason,
                   })),
                 });
@@ -994,6 +995,9 @@ export default function AnalyticsPage() {
                       Monto
                     </th>
                     <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
+                      Origen
+                    </th>
+                    <th style={{ textAlign: 'left', padding: '10px', fontWeight: 700, color: TEXT_DARK }}>
                       Motivo
                     </th>
                   </tr>
@@ -1013,6 +1017,45 @@ export default function AnalyticsPage() {
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right', color: '#dc3545', fontWeight: 600 }}>
                         ${item.total.toLocaleString('es-CL')}
+                      </td>
+                      <td style={{ padding: '10px', whiteSpace: 'nowrap' }}>
+                        {item.cancellationInitiator === 'MANICURIST' ? (
+                          <span
+                            style={{
+                              background: '#ffedd5',
+                              color: '#9a3412',
+                              border: '1px solid #fed7aa',
+                              borderRadius: '999px',
+                              padding: '2px 8px',
+                              fontSize: '10.5px',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                            }}
+                          >
+                            💅 Manicurista
+                          </span>
+                        ) : item.cancellationInitiator === 'CUSTOMER' ? (
+                          <span
+                            style={{
+                              background: '#f1f5f9',
+                              color: '#475569',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '999px',
+                              padding: '2px 8px',
+                              fontSize: '10.5px',
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                            }}
+                          >
+                            👤 Clienta
+                          </span>
+                        ) : (
+                          <span style={{ color: TEXT_MID, fontSize: '11px' }}>-</span>
+                        )}
                       </td>
                       <td style={{ padding: '10px', color: TEXT_MID, fontSize: '11px' }}>
                         {item.cancellationReason}

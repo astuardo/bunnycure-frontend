@@ -14,7 +14,7 @@ import {
     DollarSign,
 } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
-import { CancelAppointmentDialog } from '@/components/appointments/CancelAppointmentDialog';
+import { CancelAppointmentDialog, CancelledByOption } from '@/components/appointments/CancelAppointmentDialog';
 import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
 import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
@@ -225,7 +225,10 @@ export default function DashboardPage() {
         setShowCancelModal(true);
     };
 
-    const handleConfirmCancelAppointment = async (reason: string) => {
+    const handleConfirmCancelAppointment = async (
+        reason: string,
+        cancelledBy: CancelledByOption = 'CUSTOMER'
+    ) => {
         if (!cancelingAppointmentId) return;
 
         setIsCancelLoading(true);
@@ -233,17 +236,20 @@ export default function DashboardPage() {
             const appointment = appointments.find((apt) => apt.id === cancelingAppointmentId);
             if (!appointment) throw new Error('Cita no encontrada');
 
+            const initiatorLabel = cancelledBy === 'MANICURIST' ? 'Manicurista' : 'Cliente';
+            const cancellationBlock = `--- CANCELACIÓN ---\nCancelado por: ${initiatorLabel}\nMotivo: ${reason}`;
+
             const updatedNotes = appointment.notes
-                ? `${appointment.notes}\n\n--- CANCELACIÓN ---\nMotivo: ${reason}`
-                : `--- CANCELACIÓN ---\nMotivo: ${reason}`;
+                ? `${appointment.notes}\n\n${cancellationBlock}`
+                : cancellationBlock;
 
             await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
             await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
 
             // 🔍 Track cancellation en GA4
-            trackAppointmentCancelled(cancelingAppointmentId, appointment.customer.id, reason);
+            trackAppointmentCancelled(cancelingAppointmentId, appointment.customer.id, reason, cancelledBy.toLowerCase());
 
-            toast.success('Cita cancelada correctamente');
+            toast.success(cancelledBy === 'MANICURIST' ? 'Cita cancelada (por manicurista)' : 'Cita cancelada correctamente');
             setShowCancelModal(false);
             setCancelingAppointmentId(null);
             await fetchAppointments();

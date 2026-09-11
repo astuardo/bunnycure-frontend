@@ -50,6 +50,11 @@ export function getAppointmentTotal(apt: Appointment): number {
 }
 
 /**
+ * Origen de la cancelación de la cita
+ */
+export type CancellationInitiator = 'CUSTOMER' | 'MANICURIST' | 'UNKNOWN';
+
+/**
  * Extrae el motivo de cancelación desde las notas de la cita
  */
 export function extractCancellationReason(apt: Appointment): string {
@@ -60,6 +65,17 @@ export function extractCancellationReason(apt: Appointment): string {
     }
   }
   return 'Sin especificar';
+}
+
+/**
+ * Extrae el originador de la cancelación (Manicurista / Salón vs Cliente) desde las notas
+ */
+export function extractCancellationInitiator(apt: Appointment): CancellationInitiator {
+  if (apt?.notes) {
+    if (/Cancelado por:\s*Manicurista/i.test(apt.notes)) return 'MANICURIST';
+    if (/Cancelado por:\s*(Cliente|Clienta)/i.test(apt.notes)) return 'CUSTOMER';
+  }
+  return 'UNKNOWN';
 }
 
 /**
