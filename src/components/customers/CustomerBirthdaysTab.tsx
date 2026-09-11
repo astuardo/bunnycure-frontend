@@ -117,6 +117,48 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
 
   return (
     <div className="customer-birthdays-tab">
+      {/* Banner de Campaña Masiva Meta WhatsApp para Cumpleaños */}
+      <Card
+        className="border-0 shadow-sm mb-4"
+        style={{
+          borderRadius: '14px',
+          background: 'linear-gradient(135deg, #fff7ed 0%, #fff 100%)',
+          borderLeft: '5px solid #ea580c',
+        }}
+      >
+        <Card.Body className="p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div>
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <Badge bg="warning" text="dark" style={{ fontSize: '11px', fontWeight: 700 }}>
+                🎂 CAMPAÑA OFICIAL WHATSAPP
+              </Badge>
+              <span className="fw-bold" style={{ color: '#422314', fontSize: '15px' }}>
+                ¿Quieres saludar a todas las cumpleañeras del mes en 1 solo clic?
+              </span>
+            </div>
+            <p className="text-muted small mb-0">
+              Usa la plantilla oficial de Meta con botón de reserva para enviar un saludo con descuento a todas las clientas que cumplen este mes.
+            </p>
+          </div>
+          <Button
+            variant="warning"
+            onClick={() => navigate('/marketing?template=saludo_cumpleanos_bunnycure&audience=BIRTHDAYS_THIS_MONTH')}
+            style={{
+              background: '#ea580c',
+              borderColor: '#ea580c',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: '13px',
+              padding: '8px 18px',
+              borderRadius: '10px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            📣 Ver Campaña de Cumpleaños &rarr;
+          </Button>
+        </Card.Body>
+      </Card>
+
       {/* ══ 1. Tarjetas KPI Resumen de Cumpleaños ══════════════════════════ */}
       <Row className="g-3 mb-4">
         <Col xs={6} md={3}>
