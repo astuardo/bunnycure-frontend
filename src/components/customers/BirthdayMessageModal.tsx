@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Badge, ButtonGroup } from 'react-bootstrap';
+import { Modal, Button, Form, Badge, ButtonGroup, Spinner } from 'react-bootstrap';
 import { FaWhatsapp, FaCopy, FaCheck } from 'react-icons/fa';
 import { FiGift, FiSmile, FiPercent } from 'react-icons/fi';
 import { BirthdayCustomer, BirthdayTone } from '../../types/birthday.types';
@@ -10,6 +10,7 @@ import {
   BUNNYCURE_OFFICIAL_PHONE,
 } from '../../utils/birthdayUtils';
 import { useToast } from '../../hooks/useToast';
+import { marketingApi } from '../../api/marketing.api';
 
 interface BirthdayMessageModalProps {
   show: boolean;
@@ -28,6 +29,7 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
   const [tone, setTone] = useState<BirthdayTone>('DISCOUNT');
   const [customMessage, setCustomMessage] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
+  const [sendingMeta, setSendingMeta] = useState(false);
 
   // Inicializar o actualizar el mensaje cuando cambia la clienta o el tono
   React.useEffect(() => {
@@ -51,6 +53,44 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
       setTimeout(() => setIsCopied(false), 2500);
     } catch {
       toast.error('No se pudo copiar el texto');
+    }
+  };
+
+  const handleSendMetaOfficial = async () => {
+    if (!customerPhone) {
+      toast.error('La clienta no tiene un teléfono registrado');
+      return;
+    }
+
+    setSendingMeta(true);
+    try {
+      const benefitText =
+        tone === 'DISCOUNT'
+          ? 'un 15% de descuento exclusivo en tu próxima cita'
+          : tone === 'GIFT'
+          ? 'un Nail Art de regalo en tu cita'
+          : 'nuestros mejores deseos y un regaloneo especial';
+
+      const res = await marketingApi.dispatchCampaign({
+        templateName: 'saludo_cumpleanos_bunnycure',
+        audienceType: 'ALL',
+        testPhoneNumber: customerPhone,
+        customBenefit: benefitText,
+      });
+
+      if (res.sentCount > 0) {
+        recordBirthdayGreeting(birthdayCustomer.customer.id);
+        toast.success(`🎂 Saludo oficial de cumpleaños enviado a ${customerName} por Meta WhatsApp`);
+        onGreetingSent?.();
+        onHide();
+      } else {
+        const err = res.errorMessages?.join(', ') || 'No se pudo entregar el mensaje';
+        toast.error(`Error: ${err}`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al enviar plantilla oficial por Meta API');
+    } finally {
+      setSendingMeta(false);
     }
   };
 
@@ -178,25 +218,51 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
         </div>
       </Modal.Body>
 
-      <Modal.Footer style={{ background: '#fdf4f2', borderTop: '1px solid #eed0c5' }}>
-        <Button variant="secondary" size="sm" onClick={onHide} style={{ borderRadius: '8px' }}>
-          Cancelar
+      <Modal.Footer className="d-flex justify-content-between align-items-center" style={{ background: '#fdf4f2', borderTop: '1px solid #eed0c5' }}>
+        <Button variant="outline-secondary" size="sm" onClick={onHide} style={{ borderRadius: '8px' }}>
+          Cerrar
         </Button>
-        <Button
-          variant="success"
-          size="sm"
-          onClick={handleSendWhatsApp}
-          disabled={!customerPhone}
-          style={{
-            background: '#25D366',
-            borderColor: '#25D366',
-            borderRadius: '8px',
-            fontWeight: 700,
-            padding: '7px 18px',
-          }}
-        >
-          <FaWhatsapp className="me-1" style={{ fontSize: '16px' }} /> Enviar Saludo por WhatsApp
-        </Button>
+        <div className="d-flex gap-2">
+          <Button
+            variant="outline-success"
+            size="sm"
+            onClick={handleSendWhatsApp}
+            disabled={!customerPhone}
+            title="Abre WhatsApp Web con el texto libre editado arriba"
+            style={{
+              borderRadius: '8px',
+              fontWeight: 600,
+              padding: '7px 14px',
+            }}
+          >
+            <FaWhatsapp className="me-1" /> Abrir WhatsApp Web (Texto Libre)
+          </Button>
+
+          <Button
+            variant="success"
+            size="sm"
+            onClick={handleSendMetaOfficial}
+            disabled={sendingMeta || !customerPhone}
+            title="Envía la plantilla oficial con botón interactivo por Meta API"
+            style={{
+              background: '#8c2a3e',
+              borderColor: '#8c2a3e',
+              borderRadius: '8px',
+              fontWeight: 700,
+              padding: '7px 16px',
+            }}
+          >
+            {sendingMeta ? (
+              <>
+                <Spinner size="sm" animation="border" className="me-1" /> Enviando...
+              </>
+            ) : (
+              <>
+                <FaWhatsapp className="me-1" style={{ fontSize: '15px' }} /> Enviar Oficial Meta (1 Clic)
+              </>
+            )}
+          </Button>
+        </div>
       </Modal.Footer>
     </Modal>
   );

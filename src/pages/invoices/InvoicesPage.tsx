@@ -45,6 +45,18 @@ import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { formatRutWithDots, isValidRutDv, isValidRutFormat } from '@/utils/rutUtils';
 
+// Format period for display (e.g. 202609 -> Septiembre 2026)
+const formatPeriodDisplay = (periodStr: string) => {
+  if (!periodStr || periodStr.length !== 6) return periodStr;
+  const year = periodStr.substring(0, 4);
+  const monthIndex = parseInt(periodStr.substring(4, 6), 10) - 1;
+  const months = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  ];
+  return `${months[monthIndex] || ''} ${year}`;
+};
+
 export default function InvoicesPage() {
   const toast = useToast();
 
@@ -60,6 +72,29 @@ export default function InvoicesPage() {
   }, []);
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>(currentPeriod);
+
+  // Dynamic available periods (current month and past 18 months)
+  const availablePeriods = useMemo(() => {
+    const periods: Array<{ value: string; label: string }> = [];
+    const now = new Date();
+    for (let i = 0; i < 18; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const val = `${year}${month}`;
+      periods.push({
+        value: val,
+        label: formatPeriodDisplay(val),
+      });
+    }
+    if (selectedPeriod && !periods.some((p) => p.value === selectedPeriod)) {
+      periods.unshift({
+        value: selectedPeriod,
+        label: formatPeriodDisplay(selectedPeriod),
+      });
+    }
+    return periods;
+  }, [selectedPeriod]);
 
   // Data states
   const [summary, setSummary] = useState<InvoiceSummary | null>(null);
@@ -177,6 +212,11 @@ export default function InvoicesPage() {
       loadIssued();
     }
   }, [activeTab, selectedPeriod]);
+
+  // Reset contrast data when changing period to avoid showing stale data from previous period
+  useEffect(() => {
+    setContrastResult(null);
+  }, [selectedPeriod]);
 
   const handleRefreshAll = () => {
     loadSummary();
@@ -440,17 +480,7 @@ export default function InvoicesPage() {
     }
   };
 
-  // Format period for display (e.g. 202608 -> Agosto 2026)
-  const formatPeriodDisplay = (periodStr: string) => {
-    if (!periodStr || periodStr.length !== 6) return periodStr;
-    const year = periodStr.substring(0, 4);
-    const monthIndex = parseInt(periodStr.substring(4, 6), 10) - 1;
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-    ];
-    return `${months[monthIndex] || ''} ${year}`;
-  };
+
 
   const isAllFilteredSelected =
     filteredPending.length > 0 &&
@@ -477,18 +507,15 @@ export default function InvoicesPage() {
               <Form.Select
                 size="sm"
                 className="border-0 bg-transparent fw-semibold shadow-none text-dark"
-                style={{ width: '150px', cursor: 'pointer' }}
+                style={{ width: '165px', cursor: 'pointer' }}
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
               >
-                <option value="202608">Agosto 2026</option>
-                <option value="202607">Julio 2026</option>
-                <option value="202606">Junio 2026</option>
-                <option value="202605">Mayo 2026</option>
-                <option value="202604">Abril 2026</option>
-                <option value="202603">Marzo 2026</option>
-                <option value="202602">Febrero 2026</option>
-                <option value="202601">Enero 2026</option>
+                {availablePeriods.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
               </Form.Select>
             </div>
 

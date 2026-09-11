@@ -195,6 +195,47 @@ export default function CustomerReactivationTab({
 
   return (
     <div className="reactivation-module">
+      {/* Banner de Campaña Masiva Meta WhatsApp */}
+      <Card
+        className="border-0 shadow-sm mb-3"
+        style={{
+          borderRadius: '14px',
+          background: 'linear-gradient(135deg, #fff5f5 0%, #fff 100%)',
+          borderLeft: '5px solid #8c2a3e',
+        }}
+      >
+        <Card.Body className="p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div>
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <Badge bg="danger" style={{ fontSize: '11px', background: '#8c2a3e' }}>
+                🚀 CAMPAÑA MASIVA WHATSAPP
+              </Badge>
+              <span className="fw-bold" style={{ color: '#422314', fontSize: '15px' }}>
+                ¿Quieres reactivar a todas tus clientas inactivas en 1 clic?
+              </span>
+            </div>
+            <p className="text-muted small mb-0">
+              Usa la plantilla oficial de WhatsApp aprobada por Meta para llegar a todo tu segmento inactivo de forma automática con botones interactivos de reserva.
+            </p>
+          </div>
+          <Button
+            variant="danger"
+            onClick={() => navigate('/marketing?template=bunnycure_reactivacion_clienta&audience=INACTIVE_30_DAYS')}
+            style={{
+              background: '#8c2a3e',
+              borderColor: '#8c2a3e',
+              fontWeight: 600,
+              fontSize: '13px',
+              padding: '8px 18px',
+              borderRadius: '10px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            📣 Lanzar Campaña en 1 Clic &rarr;
+          </Button>
+        </Card.Body>
+      </Card>
+
       {/* KPI Stats Cards */}
       <Row className="g-3 mb-3">
         <Col xs={6} md={3} lg={2}>

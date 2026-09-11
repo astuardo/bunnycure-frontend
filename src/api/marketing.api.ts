@@ -1,7 +1,14 @@
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
 
-export type AudienceType = 'ALL' | 'INACTIVE_60_DAYS' | 'ACTIVE_RECENT' | 'FREQUENT_VIP';
+export type AudienceType =
+  | 'ALL'
+  | 'INACTIVE_30_DAYS'
+  | 'INACTIVE_60_DAYS'
+  | 'ACTIVE_RECENT'
+  | 'FREQUENT_VIP'
+  | 'BIRTHDAYS_TODAY'
+  | 'BIRTHDAYS_THIS_MONTH';
 
 export interface MarketingTemplate {
   name: string;
@@ -39,6 +46,16 @@ export interface CampaignDispatchRequest {
   templateName: string;
   audienceType: AudienceType;
   testPhoneNumber?: string;
+  customBenefit?: string;
+  customParameters?: string[];
+}
+
+export interface TemplateUpdateRequest {
+  headerText?: string;
+  bodyText: string;
+  footerText?: string;
+  buttonText?: string;
+  buttonUrl?: string;
 }
 
 export interface CampaignDispatchResult {
@@ -90,6 +107,14 @@ export const marketingApi = {
     );
     if (!response.data.data) {
       throw new Error('Error al despachar la campaña');
+    }
+    return response.data.data;
+  },
+
+  updateTemplate: async (name: string, request: TemplateUpdateRequest): Promise<MarketingTemplate> => {
+    const response = await apiClient.put<ApiResponse<MarketingTemplate>>(`/api/marketing/templates/${name}`, request);
+    if (!response.data.data) {
+      throw new Error('Error al actualizar la plantilla en Meta');
     }
     return response.data.data;
   },

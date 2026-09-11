@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -22,6 +23,8 @@ import {
   FaUserClock,
   FaCrown,
   FaMobileAlt,
+  FaBirthdayCake,
+  FaEdit,
 } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import {
@@ -36,11 +39,15 @@ import './MarketingCampaignsPage.css';
 
 export default function MarketingCampaignsPage() {
   const toast = useToast();
+  const [searchParams] = useSearchParams();
 
   const [templates, setTemplates] = useState<MarketingTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<MarketingTemplate | null>(null);
   const [selectedAudience, setSelectedAudience] = useState<AudienceType>('ALL');
   const [audiencePreview, setAudiencePreview] = useState<AudiencePreview | null>(null);
+
+  // Parámetro dinámico para {{2}} (Beneficio / Servicio / Oferta)
+  const [customBenefit, setCustomBenefit] = useState('');
 
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -56,19 +63,58 @@ export default function MarketingCampaignsPage() {
   const [testPhone, setTestPhone] = useState('+569');
   const [isSendingTest, setIsSendingTest] = useState(false);
 
-  // Cargar plantillas
+  // Modal de Edición de Plantilla en Meta
+  const [showEditMetaModal, setShowEditMetaModal] = useState(false);
+  const [editHeaderText, setEditHeaderText] = useState('');
+  const [editBodyText, setEditBodyText] = useState('');
+  const [editFooterText, setEditFooterText] = useState('');
+  const [editButtonText, setEditButtonText] = useState('');
+  const [editButtonUrl, setEditButtonUrl] = useState('');
+  const [isSavingMeta, setIsSavingMeta] = useState(false);
+
+  // Inicializar parámetro dinámico según la plantilla
+  const initBenefit = (tpl: MarketingTemplate) => {
+    if (tpl.name === 'saludo_cumpleanos_bunnycure') {
+      setCustomBenefit('un 15% de descuento exclusivo en tu próxima cita');
+    } else if (tpl.name === 'bunnycure_reactivacion_clienta') {
+      setCustomBenefit('Manicura Rusa / Permanente');
+    } else {
+      setCustomBenefit('');
+    }
+  };
+
+  const handleSelectTemplate = (tpl: MarketingTemplate) => {
+    setSelectedTemplate(tpl);
+    initBenefit(tpl);
+  };
+
+  // Cargar plantillas y leer query params
   const loadTemplates = useCallback(async () => {
     setLoadingTemplates(true);
     try {
       const data = await marketingApi.getTemplates();
       setTemplates(data);
-      if (data.length > 0 && !selectedTemplate) {
-        // Seleccionar Fiestas Patrias o Primavera por defecto si estamos en Septiembre
-        const defaultTpl =
-          data.find((t) => t.name === 'promo_fiestas_patrias') ||
-          data.find((t) => t.name === 'promo_bienvenida_primavera') ||
-          data[0];
-        setSelectedTemplate(defaultTpl);
+
+      const tplParam = searchParams.get('template');
+      const audParam = searchParams.get('audience') as AudienceType | null;
+
+      if (data.length > 0) {
+        let chosen = data[0];
+        if (tplParam) {
+          const match = data.find((t) => t.name.toLowerCase() === tplParam.toLowerCase());
+          if (match) chosen = match;
+        } else {
+          chosen =
+            data.find((t) => t.name === 'promo_fiestas_patrias') ||
+            data.find((t) => t.name === 'promo_bienvenida_primavera') ||
+            data[0];
+        }
+        setSelectedTemplate(chosen);
+        initBenefit(chosen);
+      }
+
+      if (audParam) {
+        setSelectedAudience(audParam);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al cargar plantillas';
@@ -76,7 +122,7 @@ export default function MarketingCampaignsPage() {
     } finally {
       setLoadingTemplates(false);
     }
-  }, [selectedTemplate, toast]);
+  }, [searchParams, toast]);
 
   // Cargar preview de audiencia al cambiar el tipo
   const loadAudiencePreview = useCallback(
@@ -132,6 +178,7 @@ export default function MarketingCampaignsPage() {
         templateName: selectedTemplate.name,
         audienceType: 'ALL',
         testPhoneNumber: testPhone.trim(),
+        customBenefit: customBenefit.trim() || undefined,
       });
 
       if (res.sentCount > 0) {
@@ -158,6 +205,7 @@ export default function MarketingCampaignsPage() {
       const res = await marketingApi.dispatchCampaign({
         templateName: selectedTemplate.name,
         audienceType: selectedAudience,
+        customBenefit: customBenefit.trim() || undefined,
       });
 
       setDispatchResult(res);
@@ -170,13 +218,59 @@ export default function MarketingCampaignsPage() {
     }
   };
 
-  // Texto simulado con variable Camila
+  // Abrir editor de plantilla en Meta
+  const handleOpenEditMeta = () => {
+    if (!selectedTemplate) return;
+    setEditHeaderText(selectedTemplate.headerText || '');
+    setEditBodyText(selectedTemplate.bodyText || '');
+    setEditFooterText(selectedTemplate.footerText || '');
+    setEditButtonText(selectedTemplate.buttonText || '');
+    setEditButtonUrl(selectedTemplate.buttonUrl || '');
+    setShowEditMetaModal(true);
+  };
+
+  // Guardar edición de plantilla en Meta
+  const handleSaveMetaTemplate = async () => {
+    if (!selectedTemplate) return;
+    if (!editBodyText.trim()) {
+      toast.error('El cuerpo de la plantilla no puede estar vacío');
+      return;
+    }
+
+    setIsSavingMeta(true);
+    try {
+      const updated = await marketingApi.updateTemplate(selectedTemplate.name, {
+        headerText: editHeaderText.trim() || undefined,
+        bodyText: editBodyText.trim(),
+        footerText: editFooterText.trim() || undefined,
+        buttonText: editButtonText.trim() || undefined,
+        buttonUrl: editButtonUrl.trim() || undefined,
+      });
+      toast.success(`Plantilla '${selectedTemplate.displayName}' actualizada en Meta. Pasó a revisión automática.`);
+      setShowEditMetaModal(false);
+      await loadTemplates();
+      setSelectedTemplate(updated);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al actualizar plantilla en Meta';
+      toast.error(msg);
+    } finally {
+      setIsSavingMeta(false);
+    }
+  };
+
+  // Texto simulado con variable Camila y parámetro personalizado
   const simulatedBodyText = useMemo(() => {
     if (!selectedTemplate) return '';
+    const benefit =
+      customBenefit.trim() ||
+      (selectedTemplate.name === 'saludo_cumpleanos_bunnycure'
+        ? 'un 15% de descuento exclusivo en tu próxima cita'
+        : 'Esmaltado Permanente');
+
     return selectedTemplate.bodyText
       .replace(/\{\{1\}\}/g, 'Camila')
-      .replace(/\{\{2\}\}/g, 'Esmaltado Permanente');
-  }, [selectedTemplate]);
+      .replace(/\{\{2\}\}/g, benefit);
+  }, [selectedTemplate, customBenefit]);
 
   return (
     <DashboardLayout>
@@ -195,8 +289,8 @@ export default function MarketingCampaignsPage() {
               </div>
               <h2 className="mb-2">Campañas de Marketing & Difusión</h2>
               <p className="mb-0 text-white-50">
-                Activa el agendamiento en fechas festivas y temporadas de alta demanda en Chile (Fiestas Patrias,
-                Primavera, Día de la Madre, Navidad y Año Nuevo).
+                Activa el agendamiento en fechas festivas chilenas (Fiestas Patrias, Primavera, Día de la Madre, Navidad,
+                Año Nuevo), cumpleaños de clientas y reactivación de clientas inactivas.
               </p>
             </Col>
             <Col xs={12} lg={4} className="text-lg-end mt-3 mt-lg-0">
@@ -220,22 +314,25 @@ export default function MarketingCampaignsPage() {
         {loadingTemplates ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
-            <p className="mt-2 text-muted">Cargando catálogo de campañas...</p>
+            <p className="mt-3 text-muted">Cargando catálogo y sincronizando estado con Meta Graph API...</p>
           </div>
         ) : (
-          <Row>
-            {/* Columna Izquierda: Configuración de Campaña */}
+          <Row className="g-4">
+            {/* Columna Izquierda: Selección de Plantilla y Audiencia */}
             <Col xs={12} lg={7} xl={8}>
-              {/* Paso 1: Selección de Plantilla */}
+              {/* Paso 1: Catálogo de Campañas */}
               <Card className="border-0 shadow-sm rounded-4 mb-4">
                 <Card.Body className="p-3 p-md-4">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                      <h5 className="fw-bold mb-1">1. Selecciona la Ocasión / Festividad</h5>
+                      <h5 className="fw-bold mb-1">1. Selecciona la Campaña o Festividad</h5>
                       <span className="text-muted small">
-                        Elige la plantilla temática con el copy adaptado a la fecha clave
+                        Plantillas optimizadas para conversión con botones de llamado a la acción
                       </span>
                     </div>
+                    <Badge bg="light" text="dark" className="border">
+                      {templates.length} Plantillas
+                    </Badge>
                   </div>
 
                   <div className="template-grid">
@@ -247,7 +344,7 @@ export default function MarketingCampaignsPage() {
                         <div
                           key={tpl.name}
                           className={`template-card-select ${isSelected ? 'selected' : ''}`}
-                          onClick={() => setSelectedTemplate(tpl)}
+                          onClick={() => handleSelectTemplate(tpl)}
                         >
                           <div className="template-card-body">
                             <div className="d-flex justify-content-between align-items-start">
@@ -288,13 +385,13 @@ export default function MarketingCampaignsPage() {
                     <div>
                       <h5 className="fw-bold mb-1">2. Segmenta tus Destinatarias</h5>
                       <span className="text-muted small">
-                        Filtra las clientas registradas que tienen teléfono y aceptan WhatsApp
+                        Filtra las clientas registradas que tienen teléfono válido y aceptan WhatsApp
                       </span>
                     </div>
                     {loadingPreview && <Spinner animation="border" size="sm" variant="primary" />}
                   </div>
 
-                  <Row>
+                  <Row className="g-2 mb-3">
                     <Col xs={12} sm={6}>
                       <div
                         className={`audience-option-card ${selectedAudience === 'ALL' ? 'selected' : ''}`}
@@ -311,15 +408,60 @@ export default function MarketingCampaignsPage() {
                     <Col xs={12} sm={6}>
                       <div
                         className={`audience-option-card ${
+                          selectedAudience === 'INACTIVE_30_DAYS' ? 'selected' : ''
+                        }`}
+                        onClick={() => setSelectedAudience('INACTIVE_30_DAYS')}
+                      >
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <FaUserClock className="text-warning" />
+                          <span className="fw-bold small">Clientas Inactivas (+30 días)</span>
+                        </div>
+                        <p className="text-muted small mb-0">Sin citas en 30+ días. Reactivación oportuna.</p>
+                      </div>
+                    </Col>
+
+                    <Col xs={12} sm={6}>
+                      <div
+                        className={`audience-option-card ${
                           selectedAudience === 'INACTIVE_60_DAYS' ? 'selected' : ''
                         }`}
                         onClick={() => setSelectedAudience('INACTIVE_60_DAYS')}
                       >
                         <div className="d-flex align-items-center gap-2 mb-1">
-                          <FaUserClock className="text-warning" />
+                          <FaUserClock className="text-danger" />
                           <span className="fw-bold small">Clientas Inactivas (+60 días)</span>
                         </div>
-                        <p className="text-muted small mb-0">Sin citas en 60+ días. Ideal para reactivación.</p>
+                        <p className="text-muted small mb-0">Sin citas en 60+ días. Alto riesgo de pérdida.</p>
+                      </div>
+                    </Col>
+
+                    <Col xs={12} sm={6}>
+                      <div
+                        className={`audience-option-card ${
+                          selectedAudience === 'BIRTHDAYS_THIS_MONTH' ? 'selected' : ''
+                        }`}
+                        onClick={() => setSelectedAudience('BIRTHDAYS_THIS_MONTH')}
+                      >
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <FaBirthdayCake className="text-warning" />
+                          <span className="fw-bold small">Cumpleañeras de Este Mes 🎂</span>
+                        </div>
+                        <p className="text-muted small mb-0">Clientas con cumpleaños en el mes actual.</p>
+                      </div>
+                    </Col>
+
+                    <Col xs={12} sm={6}>
+                      <div
+                        className={`audience-option-card ${
+                          selectedAudience === 'BIRTHDAYS_TODAY' ? 'selected' : ''
+                        }`}
+                        onClick={() => setSelectedAudience('BIRTHDAYS_TODAY')}
+                      >
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <FaBirthdayCake className="text-danger" />
+                          <span className="fw-bold small">¡Cumplen Años Hoy! 🎉</span>
+                        </div>
+                        <p className="text-muted small mb-0">Clientas que cumplen años exactamente hoy.</p>
                       </div>
                     </Col>
 
@@ -391,6 +533,38 @@ export default function MarketingCampaignsPage() {
                 </Card.Body>
               </Card>
 
+              {/* Personalización de Parámetros Dinámicos ({{2}}) */}
+              {selectedTemplate && selectedTemplate.bodyText.includes('{{2}}') && (
+                <Card className="border-0 shadow-sm rounded-4 mb-4" style={{ background: '#fff9f8', border: '1px solid #eed0c5' }}>
+                  <Card.Body className="p-3 p-md-4">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="fw-bold mb-0" style={{ color: '#422314' }}>
+                        ✏️ Beneficio o Parámetro Personalizado ({'{{2}}'})
+                      </h6>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="p-0 text-decoration-none"
+                        style={{ color: '#8c2a3e', fontSize: '12px' }}
+                        onClick={() => initBenefit(selectedTemplate)}
+                      >
+                        Restablecer por defecto
+                      </Button>
+                    </div>
+                    <p className="text-muted small mb-2">
+                      Puedes cambiar el beneficio, oferta o servicio que se enviará en la plantilla sin requerir re-aprobación de Meta.
+                    </p>
+                    <Form.Control
+                      type="text"
+                      value={customBenefit}
+                      onChange={(e) => setCustomBenefit(e.target.value)}
+                      placeholder="Ej: un 20% de descuento exclusivo en tu próxima cita"
+                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
+                    />
+                  </Card.Body>
+                </Card>
+              )}
+
               {/* Paso 3: Acciones de Envío */}
               <Card className="border-0 shadow-sm rounded-4 mb-4">
                 <Card.Body className="p-3 p-md-4">
@@ -423,6 +597,23 @@ export default function MarketingCampaignsPage() {
             {/* Columna Derecha: Simulador Visual de WhatsApp */}
             <Col xs={12} lg={5} xl={4}>
               <div className="phone-simulator-wrapper">
+                {/* Cabecera con botón de edición en Meta */}
+                {selectedTemplate && (
+                  <div className="d-flex justify-content-between align-items-center mb-2 px-1">
+                    <span className="small fw-semibold text-muted">Vista Previa en Smartphone:</span>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={handleOpenEditMeta}
+                      className="d-inline-flex align-items-center gap-1"
+                      style={{ borderRadius: '8px', fontSize: '11px', padding: '3px 8px' }}
+                      title="Editar el texto base oficial registrado en Meta Graph API"
+                    >
+                      <FaEdit /> Editar Texto en Meta
+                    </Button>
+                  </div>
+                )}
+
                 <div className="phone-mockup">
                   <div className="phone-inner-screen">
                     {/* Header WhatsApp */}
@@ -472,10 +663,11 @@ export default function MarketingCampaignsPage() {
               {/* Tarjeta Informativa de Meta */}
               <div className="wa-meta-policy-card mt-3 p-3 text-muted">
                 <div className="fw-semibold text-dark mb-1">ℹ️ Políticas de Meta WhatsApp</div>
-                <ul className="mb-0 ps-3">
-                  <li>Las conversaciones de marketing se aprueban automáticamente por Meta.</li>
+                <ul className="mb-0 ps-3 small">
+                  <li>Las variables dinámicas (como nombres o beneficios) no requieren aprobación previa.</li>
+                  <li>Si editas el texto base de la plantilla en Meta, pasará a revisión automática (pocos minutos).</li>
                   <li>Costo por conversación en Chile: ~$0.035 a $0.05 USD.</li>
-                  <li>Solo se contacta a clientas con consentimiento de notificaciones.</li>
+                  <li>Solo se contacta a clientas con consentimiento de notificaciones activo.</li>
                 </ul>
               </div>
             </Col>
@@ -501,6 +693,11 @@ export default function MarketingCampaignsPage() {
                 placeholder="+56912345678"
               />
             </Form.Group>
+            {customBenefit && (
+              <Alert variant="info" className="py-2 px-3 small mb-0">
+                <strong>Parámetro personalizado ({'{{2}}'}):</strong> {customBenefit}
+              </Alert>
+            )}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="outline-secondary" onClick={() => setShowTestModal(false)} disabled={isSendingTest}>
@@ -554,6 +751,12 @@ export default function MarketingCampaignsPage() {
                       <span className="text-muted">Total destinatarias:</span>{' '}
                       <Badge bg="success">{audiencePreview?.totalCount || 0} personas</Badge>
                     </div>
+                    {customBenefit && (
+                      <div className="col-12 mt-2 pt-2 border-top">
+                        <span className="text-muted">Beneficio ({'{{2}}'}):</span>{' '}
+                        <strong className="text-primary">{customBenefit}</strong>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -627,6 +830,95 @@ export default function MarketingCampaignsPage() {
                 Entendido
               </Button>
             )}
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal para Editar Plantilla Oficial en Meta */}
+        <Modal show={showEditMetaModal} onHide={() => !isSavingMeta && setShowEditMetaModal(false)} centered size="lg">
+          <Modal.Header closeButton={!isSavingMeta}>
+            <Modal.Title className="fs-6 fw-bold">
+              ✏️ Editar Plantilla Oficial en Meta Graph API &bull; {selectedTemplate?.displayName}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Alert variant="warning" className="small py-2 px-3 mb-3">
+              <strong>Nota sobre aprobación de Meta:</strong> Al actualizar el texto base oficial, Meta evaluará
+              automáticamente los cambios. La plantilla pasará temporalmente a estado <strong>En revisión (PENDING)</strong>{' '}
+              durante algunos minutos hasta su re-aprobación.
+            </Alert>
+
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-semibold">Encabezado (Texto plano, sin emojis según reglas de Meta):</Form.Label>
+              <Form.Control
+                type="text"
+                value={editHeaderText}
+                onChange={(e) => setEditHeaderText(e.target.value)}
+                placeholder="Ej: Celebra con BunnyCure"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-semibold">Cuerpo del Mensaje (Soporta emojis, *negrita* y variables {'{{1}}'}, {'{{2}}'}):</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={6}
+                value={editBodyText}
+                onChange={(e) => setEditBodyText(e.target.value)}
+                style={{ fontSize: '13.5px' }}
+              />
+              <Form.Text className="text-muted small">
+                Mantén las variables numéricas como <code>{`{{1}}`}</code> (nombre de la clienta) para que la personalización funcione.
+              </Form.Text>
+            </Form.Group>
+
+            <Row className="g-2 mb-3">
+              <Col sm={6}>
+                <Form.Group>
+                  <Form.Label className="small fw-semibold">Texto de Pie (Footer):</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={editFooterText}
+                    onChange={(e) => setEditFooterText(e.target.value)}
+                    placeholder="BunnyCure Studio"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6}>
+                <Form.Group>
+                  <Form.Label className="small fw-semibold">Texto del Botón CTA (Sin emojis):</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={editButtonText}
+                    onChange={(e) => setEditButtonText(e.target.value)}
+                    placeholder="Reservar mi hora"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-2">
+              <Form.Label className="small fw-semibold">URL de Destino del Botón:</Form.Label>
+              <Form.Control
+                type="text"
+                value={editButtonUrl}
+                onChange={(e) => setEditButtonUrl(e.target.value)}
+                placeholder="https://reservar.bunnycure.cl"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={() => setShowEditMetaModal(false)} disabled={isSavingMeta}>
+              Cancelar
+            </Button>
+            <Button variant="primary" onClick={handleSaveMetaTemplate} disabled={isSavingMeta}>
+              {isSavingMeta ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" /> Guardando en Meta...
+                </>
+              ) : (
+                'Guardar y Enviar a Revisión en Meta'
+              )}
+            </Button>
           </Modal.Footer>
         </Modal>
       </Container>
