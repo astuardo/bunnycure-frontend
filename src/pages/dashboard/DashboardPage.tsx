@@ -243,7 +243,7 @@ export default function DashboardPage() {
                 ? `${appointment.notes}\n\n${cancellationBlock}`
                 : cancellationBlock;
 
-            await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
+            await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED, { notes: updatedNotes });
             await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
 
             // 🔍 Track cancellation en GA4

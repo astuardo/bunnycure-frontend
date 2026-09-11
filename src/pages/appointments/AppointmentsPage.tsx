@@ -716,7 +716,7 @@ export default function AppointmentsPage() {
         ? `${appointment.notes}\n\n${cancellationBlock}`
         : cancellationBlock;
 
-      await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED);
+      await updateAppointmentStatus(cancelingAppointmentId, AppointmentStatus.CANCELLED, { notes: updatedNotes });
       // Actualizar las notas con el motivo
       await updateAppointment(cancelingAppointmentId, { notes: updatedNotes });
 

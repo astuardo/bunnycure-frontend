@@ -58,12 +58,18 @@ export const appointmentsApi = {
   updateStatus: async (
     id: number,
     status: AppointmentStatus,
-    options?: { generateInvoice?: boolean }
+    options?: { generateInvoice?: boolean; notes?: string }
   ): Promise<Appointment> => {
     const response = await apiClient.patch<ApiResponse<Appointment>>(
       `/api/appointments/${id}/status`,
       null,
-      { params: { status, generateInvoice: options?.generateInvoice ?? true } }
+      {
+        params: {
+          status,
+          generateInvoice: options?.generateInvoice ?? true,
+          notes: options?.notes,
+        },
+      }
     );
     if (!response.data.data) throw new Error('Error al actualizar estado');
     return response.data.data;

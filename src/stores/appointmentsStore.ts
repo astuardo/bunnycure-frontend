@@ -29,7 +29,7 @@ interface AppointmentsState {
   updateAppointmentStatus: (
     id: number,
     status: AppointmentStatus,
-    options?: { generateInvoice?: boolean }
+    options?: { generateInvoice?: boolean; notes?: string }
   ) => Promise<void>;
   deleteAppointment: (id: number) => Promise<void>;
   setFilters: (filters: Partial<AppointmentsState['filters']>) => void;
