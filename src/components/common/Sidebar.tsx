@@ -47,6 +47,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']
         },
         { 
+            path: '/marketing', 
+            icon: '📣', 
+            label: 'Campañas',
+            description: 'Difusión WhatsApp',
+            allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']
+        },
+        { 
             path: '/analytics', 
             icon: '📈', 
             label: 'Analíticas',
