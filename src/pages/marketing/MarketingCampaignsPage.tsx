@@ -25,6 +25,8 @@ import {
   FaMobileAlt,
   FaBirthdayCake,
   FaEdit,
+  FaSearch,
+  FaTimes,
 } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import {
@@ -34,6 +36,8 @@ import {
   AudiencePreview,
   CampaignDispatchResult,
 } from '../../api/marketing.api';
+import { customersApi } from '../../api/customers.api';
+import { Customer } from '../../types/customer.types';
 import { useToast } from '../../hooks/useToast';
 import './MarketingCampaignsPage.css';
 
@@ -45,6 +49,12 @@ export default function MarketingCampaignsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<MarketingTemplate | null>(null);
   const [selectedAudience, setSelectedAudience] = useState<AudienceType>('ALL');
   const [audiencePreview, setAudiencePreview] = useState<AudiencePreview | null>(null);
+
+  // Selección manual de clientas específicas
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
 
   // Parámetro dinámico para {{2}} (Beneficio / Servicio / Oferta)
   const [customBenefit, setCustomBenefit] = useState('');
@@ -124,12 +134,31 @@ export default function MarketingCampaignsPage() {
     }
   }, [searchParams, toast]);
 
-  // Cargar preview de audiencia al cambiar el tipo
+  // Cargar lista completa de clientas para el selector manual
+  useEffect(() => {
+    if (selectedAudience === 'SPECIFIC_CUSTOMERS' && allCustomers.length === 0 && !loadingCustomers) {
+      setLoadingCustomers(true);
+      customersApi
+        .list()
+        .then((data) => {
+          setAllCustomers(data);
+        })
+        .catch((err) => {
+          console.error('Error al cargar clientes:', err);
+          toast.error('Error al cargar la lista de clientas');
+        })
+        .finally(() => {
+          setLoadingCustomers(false);
+        });
+    }
+  }, [selectedAudience, allCustomers.length, loadingCustomers, toast]);
+
+  // Cargar preview de audiencia al cambiar el tipo o clientes seleccionados
   const loadAudiencePreview = useCallback(
-    async (type: AudienceType) => {
+    async (type: AudienceType, customerIds?: number[]) => {
       setLoadingPreview(true);
       try {
-        const preview = await marketingApi.previewAudience(type);
+        const preview = await marketingApi.previewAudience(type, customerIds);
         setAudiencePreview(preview);
       } catch (err: unknown) {
         console.error('Error al cargar audiencia:', err);
@@ -145,8 +174,53 @@ export default function MarketingCampaignsPage() {
   }, [loadTemplates]);
 
   useEffect(() => {
-    loadAudiencePreview(selectedAudience);
-  }, [selectedAudience, loadAudiencePreview]);
+    if (selectedAudience === 'SPECIFIC_CUSTOMERS') {
+      loadAudiencePreview('SPECIFIC_CUSTOMERS', selectedCustomerIds);
+    } else {
+      loadAudiencePreview(selectedAudience);
+    }
+  }, [selectedAudience, selectedCustomerIds, loadAudiencePreview]);
+
+  // Clientas filtradas por el buscador
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return allCustomers;
+    const q = customerSearch.toLowerCase().trim();
+    return allCustomers.filter(
+      (c) =>
+        c.fullName.toLowerCase().includes(q) ||
+        (c.phone && c.phone.includes(q)) ||
+        String(c.id).includes(q)
+    );
+  }, [allCustomers, customerSearch]);
+
+  // Detalles de clientas seleccionadas
+  const selectedCustomersDetails = useMemo(() => {
+    const map = new Map(allCustomers.map((c) => [c.id, c]));
+    return selectedCustomerIds
+      .map((id) => map.get(id))
+      .filter((c): c is Customer => Boolean(c));
+  }, [allCustomers, selectedCustomerIds]);
+
+  const toggleCustomerSelection = (customerId: number) => {
+    setSelectedCustomerIds((prev) =>
+      prev.includes(customerId) ? prev.filter((id) => id !== customerId) : [...prev, customerId]
+    );
+  };
+
+  const handleSelectAllFiltered = () => {
+    const eligibleFilteredIds = filteredCustomers
+      .filter((c) => c.phone && c.phone.trim().length > 0)
+      .map((c) => c.id);
+    setSelectedCustomerIds((prev) => Array.from(new Set([...prev, ...eligibleFilteredIds])));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedCustomerIds([]);
+  };
+
+  const handleRemoveCustomerChip = (customerId: number) => {
+    setSelectedCustomerIds((prev) => prev.filter((id) => id !== customerId));
+  };
 
   // Sincronizar / registrar en Meta
   const handleSyncMeta = async () => {
@@ -195,9 +269,14 @@ export default function MarketingCampaignsPage() {
     }
   };
 
-  // Ejecutar campaña masiva
+  // Ejecutar campaña masiva o a clientas específicas
   const handleConfirmDispatch = async () => {
     if (!selectedTemplate) return;
+
+    if (selectedAudience === 'SPECIFIC_CUSTOMERS' && selectedCustomerIds.length === 0) {
+      toast.error('Debes seleccionar al menos una clienta para realizar el envío');
+      return;
+    }
 
     setIsDispatching(true);
     setDispatchResult(null);
@@ -206,6 +285,7 @@ export default function MarketingCampaignsPage() {
         templateName: selectedTemplate.name,
         audienceType: selectedAudience,
         customBenefit: customBenefit.trim() || undefined,
+        customerIds: selectedAudience === 'SPECIFIC_CUSTOMERS' ? selectedCustomerIds : undefined,
       });
 
       setDispatchResult(res);
@@ -494,7 +574,193 @@ export default function MarketingCampaignsPage() {
                         <p className="text-muted small mb-0">Con 3 o más atenciones completadas en salón.</p>
                       </div>
                     </Col>
+
+                    <Col xs={12} sm={6}>
+                      <div
+                        className={`audience-option-card ${
+                          selectedAudience === 'SPECIFIC_CUSTOMERS' ? 'selected' : ''
+                        }`}
+                        onClick={() => setSelectedAudience('SPECIFIC_CUSTOMERS')}
+                      >
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <FaUserCheck className="text-info" />
+                          <span className="fw-bold small">Clientas Específicas 🎯</span>
+                        </div>
+                        <p className="text-muted small mb-0">Selección manual de una o varias clientas puntuales.</p>
+                      </div>
+                    </Col>
                   </Row>
+
+                  {/* Panel Interactivo de Selección de Clientas Específicas */}
+                  {selectedAudience === 'SPECIFIC_CUSTOMERS' && (
+                    <div className="specific-customers-panel p-3 mb-3 rounded-3 border bg-white shadow-sm">
+                      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                          <h6 className="fw-bold mb-1 d-flex align-items-center gap-2 text-dark">
+                            <FaUsers className="text-primary" /> Seleccionar Clientas ({selectedCustomerIds.length} seleccionada{selectedCustomerIds.length === 1 ? '' : 's'})
+                          </h6>
+                          <span className="text-muted small">
+                            Busca por nombre o teléfono y marca las clientas que recibirán este WhatsApp.
+                          </span>
+                        </div>
+                        <div className="d-flex gap-2">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={handleSelectAllFiltered}
+                            disabled={loadingCustomers || filteredCustomers.length === 0}
+                          >
+                            Seleccionar todas ({filteredCustomers.filter((c) => c.phone && c.phone.trim().length >= 8).length})
+                          </Button>
+                          <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={handleDeselectAll}
+                            disabled={selectedCustomerIds.length === 0}
+                          >
+                            Limpiar
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Buscador de Clientas */}
+                      <div className="position-relative mb-3">
+                        <Form.Control
+                          type="text"
+                          placeholder="Buscar clienta por nombre o teléfono..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="ps-5"
+                          style={{ borderRadius: '10px' }}
+                        />
+                        <FaSearch
+                          className="position-absolute text-muted"
+                          style={{ top: '50%', left: '16px', transform: 'translateY(-50%)' }}
+                        />
+                        {customerSearch && (
+                          <Button
+                            variant="link"
+                            className="position-absolute text-muted p-0"
+                            style={{ top: '50%', right: '14px', transform: 'translateY(-50%)' }}
+                            onClick={() => setCustomerSearch('')}
+                          >
+                            <FaTimes />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Chips de Seleccionadas */}
+                      {selectedCustomerIds.length > 0 && (
+                        <div className="mb-3 p-2 rounded-2 bg-light border">
+                          <div className="d-flex align-items-center justify-content-between mb-1">
+                            <span className="small fw-semibold text-secondary">
+                              Clientas seleccionadas ({selectedCustomerIds.length}):
+                            </span>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 text-danger text-decoration-none small"
+                              style={{ fontSize: '11px' }}
+                              onClick={handleDeselectAll}
+                            >
+                              Quitar todas
+                            </Button>
+                          </div>
+                          <div className="d-flex flex-wrap gap-1" style={{ maxHeight: '90px', overflowY: 'auto' }}>
+                            {selectedCustomersDetails.map((c) => (
+                              <Badge
+                                key={c.id}
+                                bg="white"
+                                text="dark"
+                                className="border d-inline-flex align-items-center gap-1 py-1 px-2 fw-normal"
+                              >
+                                <span>{c.fullName}</span>
+                                <span className="text-muted" style={{ fontSize: '10px' }}>
+                                  ({c.phone || 'S/T'})
+                                </span>
+                                <span
+                                  style={{ cursor: 'pointer', marginLeft: '3px' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveCustomerChip(c.id);
+                                  }}
+                                  title="Quitar"
+                                >
+                                  ×
+                                </span>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Lista de Clientas con Casillas */}
+                      {loadingCustomers ? (
+                        <div className="text-center py-4">
+                          <Spinner animation="border" size="sm" variant="primary" />
+                          <span className="ms-2 text-muted small">Cargando base de clientas...</span>
+                        </div>
+                      ) : (
+                        <div
+                          className="customer-selection-list border rounded-2"
+                          style={{ maxHeight: '260px', overflowY: 'auto' }}
+                        >
+                          {filteredCustomers.length === 0 ? (
+                            <div className="text-center py-4 text-muted small">
+                              No se encontraron clientas con el criterio "{customerSearch}".
+                            </div>
+                          ) : (
+                            filteredCustomers.map((c) => {
+                              const isSelected = selectedCustomerIds.includes(c.id);
+                              const hasPhone = Boolean(c.phone && c.phone.trim().length >= 8);
+
+                              return (
+                                <div
+                                  key={c.id}
+                                  className={`customer-select-item p-2 px-3 d-flex align-items-center justify-content-between border-bottom ${
+                                    isSelected ? 'bg-light-success' : ''
+                                  } ${!hasPhone ? 'opacity-50' : ''}`}
+                                  style={{
+                                    cursor: hasPhone ? 'pointer' : 'not-allowed',
+                                    transition: 'background 0.15s',
+                                  }}
+                                  onClick={() => {
+                                    if (hasPhone) toggleCustomerSelection(c.id);
+                                  }}
+                                >
+                                  <div className="d-flex align-items-center gap-3">
+                                    <Form.Check
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      disabled={!hasPhone}
+                                      onChange={() => {}}
+                                      className="m-0 pointer"
+                                    />
+                                    <div>
+                                      <div className="fw-semibold small text-dark">{c.fullName}</div>
+                                      <div className="text-muted" style={{ fontSize: '12px' }}>
+                                        {hasPhone ? (
+                                          <span>📱 {c.phone}</span>
+                                        ) : (
+                                          <span className="text-danger">⚠️ Sin número de WhatsApp válido</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-end">
+                                    <Badge bg="light" text="dark" className="border fw-normal small">
+                                      {c.totalCompletedVisits || 0} visitas
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Resumen de la audiencia */}
                   {audiencePreview && (
@@ -584,10 +850,17 @@ export default function MarketingCampaignsPage() {
                       variant="success"
                       onClick={() => setShowConfirmModal(true)}
                       className="d-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm"
-                      disabled={!selectedTemplate || !audiencePreview || audiencePreview.totalCount === 0}
+                      disabled={
+                        !selectedTemplate ||
+                        !audiencePreview ||
+                        audiencePreview.totalCount === 0 ||
+                        (selectedAudience === 'SPECIFIC_CUSTOMERS' && selectedCustomerIds.length === 0)
+                      }
                     >
                       <FaPaperPlane />
-                      Despachar Campaña a {audiencePreview?.totalCount || 0} Clientas
+                      {selectedAudience === 'SPECIFIC_CUSTOMERS'
+                        ? `Enviar a ${selectedCustomerIds.length} Clienta${selectedCustomerIds.length === 1 ? '' : 's'} Seleccionada${selectedCustomerIds.length === 1 ? '' : 's'}`
+                        : `Despachar Campaña a ${audiencePreview?.totalCount || 0} Clientas`}
                     </Button>
                   </div>
                 </Card.Body>
@@ -751,6 +1024,18 @@ export default function MarketingCampaignsPage() {
                       <span className="text-muted">Total destinatarias:</span>{' '}
                       <Badge bg="success">{audiencePreview?.totalCount || 0} personas</Badge>
                     </div>
+                    {selectedAudience === 'SPECIFIC_CUSTOMERS' && selectedCustomersDetails.length > 0 && (
+                      <div className="col-12 mt-2 pt-2 border-top">
+                        <span className="text-muted small">Destinatarias seleccionadas ({selectedCustomersDetails.length}):</span>
+                        <div className="d-flex flex-wrap gap-1 mt-1" style={{ maxHeight: '80px', overflowY: 'auto' }}>
+                          {selectedCustomersDetails.map((c) => (
+                            <Badge key={c.id} bg="white" text="dark" className="border py-1 px-2 fw-normal small">
+                              👤 {c.fullName} ({c.phone || 'S/T'})
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {customBenefit && (
                       <div className="col-12 mt-2 pt-2 border-top">
                         <span className="text-muted">Beneficio ({'{{2}}'}):</span>{' '}

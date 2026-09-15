@@ -278,3 +278,30 @@
   border: 1px solid #e2e8f0;
   font-size: 0.8rem;
 }
+
+/* Specific Customers Selection Panel */
+.specific-customers-panel {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.customer-selection-list {
+  background: #ffffff;
+}
+
+.customer-select-item {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.customer-select-item:hover:not(.opacity-50) {
+  background-color: #f8fafc;
+}
+
+.customer-select-item.bg-light-success {
+  background-color: #f0fdf4 !important;
+}
+
+.customer-select-item.bg-light-success:hover {
+  background-color: #dcfce7 !important;
+}

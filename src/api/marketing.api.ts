@@ -8,7 +8,8 @@ export type AudienceType =
   | 'ACTIVE_RECENT'
   | 'FREQUENT_VIP'
   | 'BIRTHDAYS_TODAY'
-  | 'BIRTHDAYS_THIS_MONTH';
+  | 'BIRTHDAYS_THIS_MONTH'
+  | 'SPECIFIC_CUSTOMERS';
 
 export interface MarketingTemplate {
   name: string;
@@ -48,6 +49,7 @@ export interface CampaignDispatchRequest {
   testPhoneNumber?: string;
   customBenefit?: string;
   customParameters?: string[];
+  customerIds?: number[];
 }
 
 export interface TemplateUpdateRequest {
@@ -86,9 +88,13 @@ export const marketingApi = {
     return response.data.data || { created: [], alreadyExisted: [], failed: [], totalCatalog: 0 };
   },
 
-  previewAudience: async (audienceType: AudienceType = 'ALL'): Promise<AudiencePreview> => {
+  previewAudience: async (audienceType: AudienceType = 'ALL', customerIds?: number[]): Promise<AudiencePreview> => {
+    const params: Record<string, unknown> = { audienceType };
+    if (customerIds && customerIds.length > 0) {
+      params.customerIds = customerIds.join(',');
+    }
     const response = await apiClient.get<ApiResponse<AudiencePreview>>('/api/marketing/audience-preview', {
-      params: { audienceType },
+      params,
     });
     return (
       response.data.data || {
