@@ -27,6 +27,7 @@ import {
   FaEdit,
   FaSearch,
   FaTimes,
+  FaMagic,
 } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import {
@@ -55,6 +56,13 @@ export default function MarketingCampaignsPage() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+  // Modal y generación con Agente IA
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiAutoRegister, setAiAutoRegister] = useState(true);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [generatedAiResult, setGeneratedAiResult] = useState<MarketingTemplate | null>(null);
 
   // Parámetro dinámico para {{2}} (Beneficio / Servicio / Oferta)
   const [customBenefit, setCustomBenefit] = useState('');
@@ -338,6 +346,27 @@ export default function MarketingCampaignsPage() {
     }
   };
 
+  // Generar plantilla con Agente IA
+  const handleGenerateAiTemplate = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error('Por favor escribe una descripción para la plantilla que deseas crear');
+      return;
+    }
+    setIsGeneratingAi(true);
+    try {
+      const result = await marketingApi.generateAiTemplate(aiPrompt.trim(), aiAutoRegister);
+      setGeneratedAiResult(result);
+      toast.success(`¡Plantilla "${result.displayName}" creada con éxito!`);
+      await loadTemplates();
+      setSelectedTemplate(result);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al generar la plantilla con el Agente IA';
+      toast.error(msg);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
   // Texto simulado con variable Camila y parámetro personalizado
   const simulatedBodyText = useMemo(() => {
     if (!selectedTemplate) return '';
@@ -373,7 +402,19 @@ export default function MarketingCampaignsPage() {
                 Año Nuevo), cumpleaños de clientas y reactivación de clientas inactivas.
               </p>
             </Col>
-            <Col xs={12} lg={4} className="text-lg-end mt-3 mt-lg-0">
+            <Col xs={12} lg={4} className="text-lg-end mt-3 mt-lg-0 d-flex flex-wrap gap-2 justify-content-lg-end">
+              <Button
+                variant="light"
+                onClick={() => {
+                  setGeneratedAiResult(null);
+                  setShowAiModal(true);
+                }}
+                className="d-inline-flex align-items-center gap-2 shadow-sm fw-semibold"
+                style={{ color: '#6f42c1' }}
+              >
+                <FaMagic />
+                Crear con Agente IA
+              </Button>
               <Button
                 variant="outline-light"
                 onClick={handleSyncMeta}
@@ -410,9 +451,22 @@ export default function MarketingCampaignsPage() {
                         Plantillas optimizadas para conversión con botones de llamado a la acción
                       </span>
                     </div>
-                    <Badge bg="light" text="dark" className="border">
-                      {templates.length} Plantillas
-                    </Badge>
+                    <div className="d-flex align-items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline-primary"
+                        className="d-inline-flex align-items-center gap-1 rounded-pill px-3"
+                        onClick={() => {
+                          setGeneratedAiResult(null);
+                          setShowAiModal(true);
+                        }}
+                      >
+                        <FaMagic /> Nueva con IA
+                      </Button>
+                      <Badge bg="light" text="dark" className="border">
+                        {templates.length} Plantillas
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="template-grid">
@@ -1202,6 +1256,121 @@ export default function MarketingCampaignsPage() {
                 </>
               ) : (
                 'Guardar y Enviar a Revisión en Meta'
+              )}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal: Crear Plantilla con Agente IA */}
+        <Modal
+          show={showAiModal}
+          onHide={() => !isGeneratingAi && setShowAiModal(false)}
+          centered
+          size="lg"
+          backdrop="static"
+        >
+          <Modal.Header closeButton={!isGeneratingAi} className="bg-light">
+            <Modal.Title className="fs-6 fw-bold d-flex align-items-center gap-2 text-primary">
+              <FaMagic /> Agente Creador de Plantillas Marketing Meta (IA)
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p className="text-muted small mb-3">
+              Describe en lenguaje natural la campaña, promoción o festividad que deseas comunicar. El Agente IA redactará el mensaje aplicando las normas oficiales de Meta (variables <code>{`{{1}}`}</code>, botones CTA, formato chileno BunnyCure) y la registrará en Meta Graph API si lo deseas.
+            </p>
+
+            <div className="mb-3">
+              <label className="form-label small fw-semibold text-secondary">Ideas rápidas / Sugerencias:</label>
+              <div className="d-flex flex-wrap gap-1">
+                {[
+                  'Promoción Cyber Day: 25% dcto en Esmaltado Permanente y Manicura Rusa',
+                  'Especial Verano: Prepara tus uñas para la playa con descuento dúo Manicura + Pedicura',
+                  'Especial Black Friday: Reserva tu hora anticipada de fin de año con 20% off',
+                  'Especial Graduaciones y Fiestas de Gala: Luce tus uñas perfectas este fin de semana',
+                ].map((sug, idx) => (
+                  <Badge
+                    key={idx}
+                    bg="light"
+                    text="dark"
+                    className="border p-2 cursor-pointer text-wrap text-start hover-shadow"
+                    style={{ cursor: 'pointer', fontSize: '11.5px' }}
+                    onClick={() => setAiPrompt(sug)}
+                  >
+                    ✨ {sug}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-semibold">
+                ¿Qué campaña o mensaje deseas crear?
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Ej: Crea una promoción para Navidad con 20% de descuento en extensiones de uñas acrílicas y diseño festivo..."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                disabled={isGeneratingAi}
+              />
+            </Form.Group>
+
+            <Form.Check
+              type="checkbox"
+              id="ai-auto-register"
+              className="small mb-3"
+              label={
+                <span>
+                  <strong>Registrar automáticamente en Meta WhatsApp Cloud API</strong> (se enviará para aprobación inmediata de Meta)
+                </span>
+              }
+              checked={aiAutoRegister}
+              onChange={(e) => setAiAutoRegister(e.target.checked)}
+              disabled={isGeneratingAi}
+            />
+
+            {generatedAiResult && (
+              <div className="border rounded-3 p-3 bg-light mt-3">
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <span className="badge bg-success">Plantilla Generada</span>
+                  <span className="text-muted small font-monospace">{generatedAiResult.name}</span>
+                </div>
+                <h6 className="fw-bold mb-1">{generatedAiResult.displayName}</h6>
+                <div className="p-2 bg-white rounded border small mb-2 text-pre-wrap" style={{ whiteSpace: 'pre-wrap' }}>
+                  {generatedAiResult.bodyText}
+                </div>
+                <div className="d-flex justify-content-between align-items-center text-muted small">
+                  <span>Botón: <strong>{generatedAiResult.buttonText || 'Reservar Cita'}</strong></span>
+                  <span>Estado Meta: <Badge bg="warning" text="dark">{generatedAiResult.metaStatus || 'PENDING'}</Badge></span>
+                </div>
+              </div>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowAiModal(false)}
+              disabled={isGeneratingAi}
+            >
+              Cerrar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleGenerateAiTemplate}
+              disabled={isGeneratingAi || !aiPrompt.trim()}
+              className="d-flex align-items-center gap-2"
+            >
+              {isGeneratingAi ? (
+                <>
+                  <Spinner animation="border" size="sm" />
+                  <span>El Agente está creando y registrando en Meta...</span>
+                </>
+              ) : (
+                <>
+                  <FaMagic />
+                  <span>Generar Plantilla con IA</span>
+                </>
               )}
             </Button>
           </Modal.Footer>

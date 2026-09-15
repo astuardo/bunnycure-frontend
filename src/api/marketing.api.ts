@@ -124,4 +124,15 @@ export const marketingApi = {
     }
     return response.data.data;
   },
+
+  generateAiTemplate: async (prompt: string, autoRegisterInMeta: boolean = true): Promise<MarketingTemplate> => {
+    const response = await apiClient.post<ApiResponse<MarketingTemplate>>('/api/marketing/templates/ai-generate', {
+      prompt,
+      autoRegisterInMeta,
+    });
+    if (!response.data.data) {
+      throw new Error('Error al generar plantilla con el Agente IA');
+    }
+    return response.data.data;
+  },
 };
