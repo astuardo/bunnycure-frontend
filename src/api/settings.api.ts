@@ -56,6 +56,7 @@ export interface SettingsData {
 
   // Reminder Settings
   reminderStrategy?: 'TWO_HOURS' | 'MORNING' | 'DAY_BEFORE' | 'BOTH';
+  reminderHoursAhead?: number;
 
   // WhatsApp Handoff
   whatsappHandoffEnabled?: boolean;
@@ -337,6 +338,7 @@ export const settingsApi = {
         emailNotificationsEnabled: typeof notificationTemplates.emailEnabled === 'boolean' ? notificationTemplates.emailEnabled : undefined,
         whatsappNumber: typeof whatsapp.number === 'string' ? whatsapp.number : undefined,
         reminderStrategy: typeof reminders.strategy === 'string' ? parseReminderStrategy(reminders.strategy) : undefined,
+        reminderHoursAhead: typeof reminders.hoursAhead === 'number' ? reminders.hoursAhead : 12,
         whatsappHandoffEnabled: typeof whatsapp.handoffEnabled === 'boolean' ? whatsapp.handoffEnabled : undefined,
         whatsappHumanNumber: typeof whatsapp.humanNumber === 'string' ? whatsapp.humanNumber : undefined,
         whatsappHumanDisplayName: typeof whatsapp.humanDisplayName === 'string' ? whatsapp.humanDisplayName : undefined,
@@ -389,6 +391,7 @@ export const settingsApi = {
 
       // Reminder Settings
       reminderStrategy: parseReminderStrategy(flatSettings['reminder.strategy']),
+      reminderHoursAhead: flatSettings['reminder.hours-ahead'] ? parseInt(flatSettings['reminder.hours-ahead'], 10) : 12,
 
       // WhatsApp Handoff
       whatsappHandoffEnabled: readBoolean(flatSettings['whatsapp.handoff.enabled']),
@@ -452,6 +455,9 @@ export const settingsApi = {
     if (settings.reminderStrategy !== undefined) {
       const s = serializeReminderStrategy(settings.reminderStrategy);
       if (s) flatSettings['reminder.strategy'] = s;
+    }
+    if (settings.reminderHoursAhead !== undefined) {
+      flatSettings['reminder.hours-ahead'] = String(settings.reminderHoursAhead);
     }
 
     // WhatsApp Handoff

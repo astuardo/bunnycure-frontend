@@ -72,6 +72,7 @@ interface BusinessSettings {
   whatsappEnabled: boolean;
   whatsappPhone: string;
   reminderStrategy: 'TWO_HOURS' | 'MORNING' | 'DAY_BEFORE' | 'BOTH';
+  reminderHoursAhead: number;
   whatsappHandoffEnabled: boolean;
   whatsappHumanNumber: string;
   whatsappHumanDisplayName: string;
@@ -111,6 +112,7 @@ const defaultSettings: BusinessSettings = {
   whatsappEnabled: true,
   whatsappPhone: '+56983692046',
   reminderStrategy: 'TWO_HOURS',
+  reminderHoursAhead: 12,
   whatsappHandoffEnabled: true,
   whatsappHumanNumber: '+56983692046',
   whatsappHumanDisplayName: 'Atención BunnyCure',
@@ -258,6 +260,7 @@ export default function SettingsPage() {
         whatsappEnabled: true,
         whatsappPhone: serverSettings.whatsappNumber || '+56983692046',
         reminderStrategy: serverSettings.reminderStrategy || 'TWO_HOURS',
+        reminderHoursAhead: serverSettings.reminderHoursAhead ?? 12,
         whatsappHandoffEnabled: serverSettings.whatsappHandoffEnabled ?? true,
         whatsappHumanNumber: serverSettings.whatsappHumanNumber || '+56983692046',
         whatsappHumanDisplayName: serverSettings.whatsappHumanDisplayName || 'Atención BunnyCure',
@@ -367,6 +370,7 @@ export default function SettingsPage() {
         whatsappNumber: settings.whatsappPhone,
         
         reminderStrategy: settings.reminderStrategy,
+        reminderHoursAhead: settings.reminderHoursAhead,
         whatsappHandoffEnabled: settings.whatsappHandoffEnabled,
         whatsappHumanNumber: settings.whatsappHumanNumber,
         whatsappHumanDisplayName: settings.whatsappHumanDisplayName,
@@ -1077,17 +1081,56 @@ export default function SettingsPage() {
                   <hr className="my-4" />
 
                   <h6 className="fw-bold mb-3">⏰ Estrategia de Recordatorios Automáticos</h6>
-                  <Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small text-muted mb-1">Momento del recordatorio</Form.Label>
                     <Form.Select
                       value={settings.reminderStrategy}
                       onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
                     >
-                      <option value="TWO_HOURS">2 Horas antes de la cita (Recomendado)</option>
+                      <option value="TWO_HOURS">Horas antes de la cita (Configurable)</option>
                       <option value="MORNING">En la mañana del mismo día (08:30 AM)</option>
                       <option value="DAY_BEFORE">El día anterior (18:00 PM)</option>
-                      <option value="BOTH">Doble recordatorio (Día anterior + 2 Horas antes)</option>
+                      <option value="BOTH">Doble recordatorio (Día anterior + Horas antes)</option>
                     </Form.Select>
                   </Form.Group>
+
+                  {(settings.reminderStrategy === 'TWO_HOURS' || settings.reminderStrategy === 'BOTH') && (
+                    <Form.Group className="p-3 bg-light rounded-3 border mb-3">
+                      <Form.Label className="fw-semibold small d-block mb-2">
+                        ⏰ Horas de anticipación del recordatorio previo:
+                      </Form.Label>
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                        <Form.Control
+                          type="number"
+                          min={1}
+                          max={72}
+                          style={{ maxWidth: '120px' }}
+                          value={settings.reminderHoursAhead ?? 12}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            handleChange('reminderHoursAhead', isNaN(val) ? 12 : Math.max(1, Math.min(72, val)));
+                          }}
+                        />
+                        <span className="fw-semibold text-secondary">horas antes de la cita</span>
+                      </div>
+                      <div className="d-flex flex-wrap gap-2 mb-2">
+                        {[1, 2, 6, 12, 24].map((hours) => (
+                          <Button
+                            key={hours}
+                            size="sm"
+                            variant={settings.reminderHoursAhead === hours ? "primary" : "outline-secondary"}
+                            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+                            onClick={() => handleChange('reminderHoursAhead', hours)}
+                          >
+                            {hours}h
+                          </Button>
+                        ))}
+                      </div>
+                      <Form.Text className="text-muted small d-block">
+                        El recordatorio automático se enviará cuando falten aproximadamente <strong>{settings.reminderHoursAhead ?? 12} horas</strong> para la cita.
+                      </Form.Text>
+                    </Form.Group>
+                  )}
                 </Card.Body>
               </Card>
             </Col>
