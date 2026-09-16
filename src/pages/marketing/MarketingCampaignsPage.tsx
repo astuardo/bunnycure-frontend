@@ -28,6 +28,7 @@ import {
   FaSearch,
   FaTimes,
   FaMagic,
+  FaTrash,
 } from 'react-icons/fa';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import {
@@ -89,6 +90,11 @@ export default function MarketingCampaignsPage() {
   const [editButtonText, setEditButtonText] = useState('');
   const [editButtonUrl, setEditButtonUrl] = useState('');
   const [isSavingMeta, setIsSavingMeta] = useState(false);
+
+  // Modal de Eliminación de Plantilla
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<MarketingTemplate | null>(null);
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState(false);
 
   // Inicializar parámetro dinámico según la plantilla
   const initBenefit = (tpl: MarketingTemplate) => {
@@ -243,6 +249,35 @@ export default function MarketingCampaignsPage() {
       toast.error(msg);
     } finally {
       setSyncingMeta(false);
+    }
+  };
+
+  // Eliminar plantilla en Meta y Catálogo
+  const handleDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+    setIsDeletingTemplate(true);
+    try {
+      await marketingApi.deleteTemplate(templateToDelete.name);
+      toast.success(`Plantilla "${templateToDelete.displayName}" eliminada de Meta y del catálogo.`);
+      setShowDeleteModal(false);
+      const deletedName = templateToDelete.name;
+      setTemplateToDelete(null);
+
+      const data = await marketingApi.getTemplates();
+      setTemplates(data);
+      if (selectedTemplate?.name === deletedName) {
+        if (data.length > 0) {
+          setSelectedTemplate(data[0]);
+          initBenefit(data[0]);
+        } else {
+          setSelectedTemplate(null);
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al eliminar la plantilla';
+      toast.error(msg);
+    } finally {
+      setIsDeletingTemplate(false);
     }
   };
 
@@ -483,23 +518,38 @@ export default function MarketingCampaignsPage() {
                           <div className="template-card-body">
                             <div className="d-flex justify-content-between align-items-start">
                               <span className="template-emoji-badge">{tpl.emoji}</span>
-                              <Badge
-                                bg={
-                                  isApproved
-                                    ? 'success'
+                              <div className="d-flex align-items-center gap-1">
+                                <Badge
+                                  bg={
+                                    isApproved
+                                      ? 'success'
+                                      : tpl.metaStatus === 'PENDING'
+                                      ? 'warning'
+                                      : 'secondary'
+                                  }
+                                  text={tpl.metaStatus === 'PENDING' ? 'dark' : 'white'}
+                                  className="small"
+                                >
+                                  {isApproved
+                                    ? 'Aprobada en Meta'
                                     : tpl.metaStatus === 'PENDING'
-                                    ? 'warning'
-                                    : 'secondary'
-                                }
-                                text={tpl.metaStatus === 'PENDING' ? 'dark' : 'white'}
-                                className="small"
-                              >
-                                {isApproved
-                                  ? 'Aprobada en Meta'
-                                  : tpl.metaStatus === 'PENDING'
-                                  ? 'En revisión'
-                                  : 'No registrada'}
-                              </Badge>
+                                    ? 'En revisión'
+                                    : 'No registrada'}
+                                </Badge>
+                                <Button
+                                  variant="link"
+                                  className="p-0 text-danger text-decoration-none ms-1 opacity-50 hover-opacity-100"
+                                  style={{ lineHeight: 1 }}
+                                  title="Eliminar plantilla de Meta y catálogo"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setTemplateToDelete(tpl);
+                                    setShowDeleteModal(true);
+                                  }}
+                                >
+                                  <FaTrash size={12} />
+                                </Button>
+                              </div>
                             </div>
                             <div className="template-card-title">{tpl.displayName}</div>
                             <div className="template-occasion-badge">{tpl.occasion}</div>
@@ -924,20 +974,35 @@ export default function MarketingCampaignsPage() {
             {/* Columna Derecha: Simulador Visual de WhatsApp */}
             <Col xs={12} lg={5} xl={4}>
               <div className="phone-simulator-wrapper">
-                {/* Cabecera con botón de edición en Meta */}
+                {/* Cabecera con botón de edición y eliminación en Meta */}
                 {selectedTemplate && (
                   <div className="d-flex justify-content-between align-items-center mb-2 px-1">
-                    <span className="small fw-semibold text-muted">Vista Previa en Smartphone:</span>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={handleOpenEditMeta}
-                      className="d-inline-flex align-items-center gap-1"
-                      style={{ borderRadius: '8px', fontSize: '11px', padding: '3px 8px' }}
-                      title="Editar el texto base oficial registrado en Meta Graph API"
-                    >
-                      <FaEdit /> Editar Texto en Meta
-                    </Button>
+                    <span className="small fw-semibold text-muted">Vista Previa:</span>
+                    <div className="d-flex gap-2">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={handleOpenEditMeta}
+                        className="d-inline-flex align-items-center gap-1"
+                        style={{ borderRadius: '8px', fontSize: '11px', padding: '3px 8px' }}
+                        title="Editar el texto base oficial registrado en Meta Graph API"
+                      >
+                        <FaEdit /> Editar en Meta
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => {
+                          setTemplateToDelete(selectedTemplate);
+                          setShowDeleteModal(true);
+                        }}
+                        className="d-inline-flex align-items-center gap-1"
+                        style={{ borderRadius: '8px', fontSize: '11px', padding: '3px 8px' }}
+                        title="Eliminar plantilla del catálogo y de Meta Cloud API"
+                      >
+                        <FaTrash /> Eliminar
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -1372,6 +1437,48 @@ export default function MarketingCampaignsPage() {
                   <span>Generar Plantilla con IA</span>
                 </>
               )}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal de Confirmación de Eliminación en Meta */}
+        <Modal show={showDeleteModal} onHide={() => !isDeletingTemplate && setShowDeleteModal(false)} centered>
+          <Modal.Header closeButton={!isDeletingTemplate} className="border-bottom-0 pb-0">
+            <Modal.Title className="fs-6 fw-bold text-danger d-flex align-items-center gap-2">
+              <FaTrash /> Eliminar Plantilla de Meta y Catálogo
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="py-3">
+            <p className="mb-2">
+              ¿Estás seguro de que deseas eliminar permanentemente la plantilla{' '}
+              <strong>"{templateToDelete?.displayName}"</strong>?
+            </p>
+            <div className="bg-light p-2 rounded small text-muted font-monospace mb-3">
+              Identificador Meta: {templateToDelete?.name}
+            </div>
+            <Alert variant="warning" className="small mb-0">
+              <FaExclamationTriangle className="me-2" />
+              <strong>Atención:</strong> Esta acción enviará una solicitud a Meta Cloud API para eliminar el mensaje de plantilla de tu cuenta oficial de WhatsApp Business (WABA) y la quitará de BunnyCure.
+            </Alert>
+          </Modal.Body>
+          <Modal.Footer className="border-top-0 pt-0">
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeletingTemplate}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDeleteTemplate}
+              disabled={isDeletingTemplate}
+              className="d-flex align-items-center gap-2"
+            >
+              {isDeletingTemplate && <Spinner animation="border" size="sm" />}
+              {isDeletingTemplate ? 'Eliminando en Meta...' : 'Sí, Eliminar de Meta'}
             </Button>
           </Modal.Footer>
         </Modal>

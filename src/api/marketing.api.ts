@@ -125,6 +125,14 @@ export const marketingApi = {
     return response.data.data;
   },
 
+  deleteTemplate: async (name: string): Promise<{ name: string; deleted: boolean; message: string }> => {
+    const response = await apiClient.delete<ApiResponse<{ name: string; deleted: boolean; message: string }>>(`/api/marketing/templates/${name}`);
+    if (!response.data.data) {
+      throw new Error('Error al eliminar la plantilla en Meta');
+    }
+    return response.data.data;
+  },
+
   generateAiTemplate: async (prompt: string, autoRegisterInMeta: boolean = true): Promise<MarketingTemplate> => {
     const response = await apiClient.post<ApiResponse<MarketingTemplate>>('/api/marketing/templates/ai-generate', {
       prompt,
