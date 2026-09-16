@@ -60,10 +60,22 @@ export default function MarketingCampaignsPage() {
 
   // Modal y generación con Agente IA
   const [showAiModal, setShowAiModal] = useState(false);
+  const [aiStep, setAiStep] = useState<'PROMPT' | 'REVIEW'>('PROMPT');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiAutoRegister, setAiAutoRegister] = useState(true);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-  const [generatedAiResult, setGeneratedAiResult] = useState<MarketingTemplate | null>(null);
+  const [isSavingApproved, setIsSavingApproved] = useState(false);
+
+  // Estados del borrador de IA para revisión y visto bueno
+  const [draftName, setDraftName] = useState('');
+  const [draftDisplayName, setDraftDisplayName] = useState('');
+  const [draftOccasion, setDraftOccasion] = useState('');
+  const [draftEmoji, setDraftEmoji] = useState('💅');
+  const [draftHeaderText, setDraftHeaderText] = useState('');
+  const [draftBodyText, setDraftBodyText] = useState('');
+  const [draftFooterText, setDraftFooterText] = useState('BunnyCure Studio');
+  const [draftButtonText, setDraftButtonText] = useState('Reservar mi cita');
+  const [draftButtonUrl, setDraftButtonUrl] = useState('https://reservar.bunnycure.cl');
 
   // Parámetro dinámico para {{2}} (Beneficio / Servicio / Oferta)
   const [customBenefit, setCustomBenefit] = useState('');
@@ -381,24 +393,81 @@ export default function MarketingCampaignsPage() {
     }
   };
 
-  // Generar plantilla con Agente IA
-  const handleGenerateAiTemplate = async () => {
-    if (!aiPrompt.trim()) {
-      toast.error('Por favor escribe una descripción para la plantilla que deseas crear');
+  // Abrir modal de Agente IA en paso 1
+  const handleOpenAiModal = () => {
+    setAiStep('PROMPT');
+    setAiPrompt('');
+    setIsGeneratingAi(false);
+    setIsSavingApproved(false);
+    setShowAiModal(true);
+  };
+
+  // Generar borrador / propuesta con Agente IA para revisión previa
+  const handleGenerateAiDraft = async (promptOverride?: string) => {
+    const promptToUse = (promptOverride || aiPrompt).trim();
+    if (!promptToUse) {
+      toast.error('Por favor escribe una descripción o selecciona una idea sugerida');
       return;
     }
     setIsGeneratingAi(true);
     try {
-      const result = await marketingApi.generateAiTemplate(aiPrompt.trim(), aiAutoRegister);
-      setGeneratedAiResult(result);
-      toast.success(`¡Plantilla "${result.displayName}" creada con éxito!`);
-      await loadTemplates();
-      setSelectedTemplate(result);
+      const draft = await marketingApi.generateAiDraft(promptToUse);
+      setDraftName(draft.name);
+      setDraftDisplayName(draft.displayName);
+      setDraftOccasion(draft.occasion || 'Promoción Especial');
+      setDraftEmoji(draft.emoji || '💅');
+      setDraftHeaderText(draft.headerText || '');
+      setDraftBodyText(draft.bodyText);
+      setDraftFooterText(draft.footerText || 'BunnyCure Studio');
+      setDraftButtonText(draft.buttonText || 'Reservar mi cita');
+      setDraftButtonUrl(draft.buttonUrl || 'https://reservar.bunnycure.cl');
+      setAiStep('REVIEW');
+      toast.info('✨ Propuesta generada por IA. Revisa, edita o ajusta el mensaje antes de dar tu visto bueno.');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al generar la plantilla con el Agente IA';
+      const msg = err instanceof Error ? err.message : 'Error al generar propuesta con el Agente IA';
       toast.error(msg);
     } finally {
       setIsGeneratingAi(false);
+    }
+  };
+
+  // Guardar plantilla aprobada con visto bueno del usuario
+  const handleSaveApproved = async () => {
+    if (!draftDisplayName.trim()) {
+      toast.error('Por favor ingresa un nombre para la campaña');
+      return;
+    }
+    if (!draftBodyText.trim()) {
+      toast.error('El cuerpo del mensaje no puede estar vacío');
+      return;
+    }
+    setIsSavingApproved(true);
+    try {
+      const saved = await marketingApi.saveApprovedTemplate({
+        name: draftName.trim(),
+        displayName: draftDisplayName.trim(),
+        occasion: draftOccasion.trim(),
+        emoji: draftEmoji.trim(),
+        headerText: draftHeaderText.trim(),
+        bodyText: draftBodyText.trim(),
+        footerText: draftFooterText.trim(),
+        buttonText: draftButtonText.trim(),
+        buttonUrl: draftButtonUrl.trim(),
+        sampleVariables: ['Camila'],
+        autoRegisterInMeta: aiAutoRegister,
+      });
+
+      toast.success(`¡Plantilla "${saved.displayName}" aprobada y guardada con éxito!`);
+      await loadTemplates();
+      setSelectedTemplate(saved);
+      setShowAiModal(false);
+      setAiStep('PROMPT');
+      setAiPrompt('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar la plantilla aprobada';
+      toast.error(msg);
+    } finally {
+      setIsSavingApproved(false);
     }
   };
 
@@ -440,10 +509,7 @@ export default function MarketingCampaignsPage() {
             <Col xs={12} lg={4} className="text-lg-end mt-3 mt-lg-0 d-flex flex-wrap gap-2 justify-content-lg-end">
               <Button
                 variant="light"
-                onClick={() => {
-                  setGeneratedAiResult(null);
-                  setShowAiModal(true);
-                }}
+                onClick={handleOpenAiModal}
                 className="d-inline-flex align-items-center gap-2 shadow-sm fw-semibold"
                 style={{ color: '#6f42c1' }}
               >
@@ -491,10 +557,7 @@ export default function MarketingCampaignsPage() {
                         size="sm"
                         variant="outline-primary"
                         className="d-inline-flex align-items-center gap-1 rounded-pill px-3"
-                        onClick={() => {
-                          setGeneratedAiResult(null);
-                          setShowAiModal(true);
-                        }}
+                        onClick={handleOpenAiModal}
                       >
                         <FaMagic /> Nueva con IA
                       </Button>
@@ -1326,118 +1389,342 @@ export default function MarketingCampaignsPage() {
           </Modal.Footer>
         </Modal>
 
-        {/* Modal: Crear Plantilla con Agente IA */}
+        {/* Modal: Crear Plantilla con Agente IA (Flujo de 2 pasos: Propuesta y Visto Bueno) */}
         <Modal
           show={showAiModal}
-          onHide={() => !isGeneratingAi && setShowAiModal(false)}
+          onHide={() => !isGeneratingAi && !isSavingApproved && setShowAiModal(false)}
           centered
-          size="lg"
+          size={aiStep === 'REVIEW' ? 'xl' : 'lg'}
           backdrop="static"
         >
-          <Modal.Header closeButton={!isGeneratingAi} className="bg-light">
+          <Modal.Header closeButton={!isGeneratingAi && !isSavingApproved} className="bg-light">
             <Modal.Title className="fs-6 fw-bold d-flex align-items-center gap-2 text-primary">
               <FaMagic /> Agente Creador de Plantillas Marketing Meta (IA)
+              <Badge bg={aiStep === 'PROMPT' ? 'secondary' : 'success'} className="ms-2 fw-normal">
+                {aiStep === 'PROMPT' ? '1. Definir Idea' : '2. Revisión y Visto Bueno'}
+              </Badge>
             </Modal.Title>
           </Modal.Header>
-          <Modal.Body>
-            <p className="text-muted small mb-3">
-              Describe en lenguaje natural la campaña, promoción o festividad que deseas comunicar. El Agente IA redactará el mensaje aplicando las normas oficiales de Meta (variables <code>{`{{1}}`}</code>, botones CTA, formato chileno BunnyCure) y la registrará en Meta Graph API si lo deseas.
-            </p>
+          <Modal.Body className="p-3 p-md-4">
+            {aiStep === 'PROMPT' ? (
+              <>
+                <p className="text-muted small mb-3">
+                  Describe en lenguaje natural la campaña, promoción o festividad que deseas comunicar. El Agente IA propondrá una redacción profesional optimizada para Meta para que <strong>puedas revisarla, editarla y dar tu visto bueno</strong> antes de guardarla o registrarla.
+                </p>
 
-            <div className="mb-3">
-              <label className="form-label small fw-semibold text-secondary">Ideas rápidas / Sugerencias:</label>
-              <div className="d-flex flex-wrap gap-1">
-                {[
-                  'Promoción Cyber Day: 25% dcto en Esmaltado Permanente y Manicura Rusa',
-                  'Especial Verano: Prepara tus uñas para la playa con descuento dúo Manicura + Pedicura',
-                  'Especial Black Friday: Reserva tu hora anticipada de fin de año con 20% off',
-                  'Especial Graduaciones y Fiestas de Gala: Luce tus uñas perfectas este fin de semana',
-                ].map((sug, idx) => (
-                  <Badge
-                    key={idx}
-                    bg="light"
-                    text="dark"
-                    className="border p-2 cursor-pointer text-wrap text-start hover-shadow"
-                    style={{ cursor: 'pointer', fontSize: '11.5px' }}
-                    onClick={() => setAiPrompt(sug)}
-                  >
-                    ✨ {sug}
+                <div className="mb-3">
+                  <label className="form-label small fw-semibold text-secondary">Ideas rápidas / Sugerencias:</label>
+                  <div className="d-flex flex-wrap gap-1">
+                    {[
+                      'Promoción Cyber Day: 25% dcto en Esmaltado Permanente y Manicura Rusa',
+                      'Especial Verano: Prepara tus uñas para la playa con descuento dúo Manicura + Pedicura',
+                      'Especial Black Friday: Reserva tu hora anticipada de fin de año con 20% off',
+                      'Especial Graduaciones y Fiestas de Gala: Luce tus uñas perfectas este fin de semana',
+                    ].map((sug, idx) => (
+                      <Badge
+                        key={idx}
+                        bg="light"
+                        text="dark"
+                        className="border p-2 cursor-pointer text-wrap text-start hover-shadow"
+                        style={{ cursor: 'pointer', fontSize: '11.5px' }}
+                        onClick={() => setAiPrompt(sug)}
+                      >
+                        ✨ {sug}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <Form.Group className="mb-3">
+                  <Form.Label className="small fw-semibold">
+                    ¿Qué campaña o mensaje deseas crear?
+                  </Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    placeholder="Ej: Crea una promoción para Navidad con 20% de descuento en extensiones de uñas acrílicas y diseño festivo..."
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    disabled={isGeneratingAi}
+                  />
+                </Form.Group>
+
+                <Form.Check
+                  type="checkbox"
+                  id="ai-auto-register"
+                  className="small mb-3"
+                  label={
+                    <span>
+                      <strong>Registrar automáticamente en Meta WhatsApp Cloud API</strong> (se enviará para aprobación inmediata de Meta al dar el visto bueno)
+                    </span>
+                  }
+                  checked={aiAutoRegister}
+                  onChange={(e) => setAiAutoRegister(e.target.checked)}
+                  disabled={isGeneratingAi}
+                />
+              </>
+            ) : (
+              <div>
+                <Alert variant="info" className="d-flex align-items-center justify-content-between p-3 mb-3 border-0 shadow-sm rounded-3">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="fs-4">💡</span>
+                    <div>
+                      <strong className="d-block text-dark">Propuesta generada por el Agente IA</strong>
+                      <span className="small text-muted">
+                        Revisa el mensaje, edita cualquier campo para ajustarlo a tus preferencias y presiona <strong>"Dar Visto Bueno"</strong> cuando esté listo.
+                      </span>
+                    </div>
+                  </div>
+                  <Badge bg="primary" pill className="px-3 py-2">
+                    Modo Edición y Aprobación
                   </Badge>
-                ))}
-              </div>
-            </div>
+                </Alert>
 
-            <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold">
-                ¿Qué campaña o mensaje deseas crear?
-              </Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Ej: Crea una promoción para Navidad con 20% de descuento en extensiones de uñas acrílicas y diseño festivo..."
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                disabled={isGeneratingAi}
-              />
-            </Form.Group>
+                <Row className="g-3">
+                  {/* Columna Izquierda: Formulario de Ajustes */}
+                  <Col xs={12} lg={7}>
+                    <div className="p-3 bg-light rounded-3 border">
+                      <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                        <FaEdit className="text-primary" /> Ajustar Contenido de la Plantilla
+                      </h6>
 
-            <Form.Check
-              type="checkbox"
-              id="ai-auto-register"
-              className="small mb-3"
-              label={
-                <span>
-                  <strong>Registrar automáticamente en Meta WhatsApp Cloud API</strong> (se enviará para aprobación inmediata de Meta)
-                </span>
-              }
-              checked={aiAutoRegister}
-              onChange={(e) => setAiAutoRegister(e.target.checked)}
-              disabled={isGeneratingAi}
-            />
+                      <Row className="g-2 mb-2">
+                        <Col xs={12} sm={8}>
+                          <Form.Group>
+                            <Form.Label className="small fw-semibold mb-1">Nombre de la Campaña</Form.Label>
+                            <Form.Control
+                              size="sm"
+                              value={draftDisplayName}
+                              onChange={(e) => setDraftDisplayName(e.target.value)}
+                              placeholder="Ej: Cyber Day Especial ✨"
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col xs={6} sm={4}>
+                          <Form.Group>
+                            <Form.Label className="small fw-semibold mb-1">Emoji / Icono</Form.Label>
+                            <Form.Control
+                              size="sm"
+                              value={draftEmoji}
+                              onChange={(e) => setDraftEmoji(e.target.value)}
+                              placeholder="💅"
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
 
-            {generatedAiResult && (
-              <div className="border rounded-3 p-3 bg-light mt-3">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="badge bg-success">Plantilla Generada</span>
-                  <span className="text-muted small font-monospace">{generatedAiResult.name}</span>
-                </div>
-                <h6 className="fw-bold mb-1">{generatedAiResult.displayName}</h6>
-                <div className="p-2 bg-white rounded border small mb-2 text-pre-wrap" style={{ whiteSpace: 'pre-wrap' }}>
-                  {generatedAiResult.bodyText}
-                </div>
-                <div className="d-flex justify-content-between align-items-center text-muted small">
-                  <span>Botón: <strong>{generatedAiResult.buttonText || 'Reservar Cita'}</strong></span>
-                  <span>Estado Meta: <Badge bg="warning" text="dark">{generatedAiResult.metaStatus || 'PENDING'}</Badge></span>
-                </div>
+                      <Form.Group className="mb-2">
+                        <Form.Label className="small fw-semibold mb-1 d-flex justify-content-between">
+                          <span>Encabezado en WhatsApp (Opcional)</span>
+                          <span className="text-muted" style={{ fontSize: '11px' }}>{draftHeaderText.length}/60 car.</span>
+                        </Form.Label>
+                        <Form.Control
+                          size="sm"
+                          value={draftHeaderText}
+                          onChange={(e) => setDraftHeaderText(e.target.value)}
+                          placeholder="Ej: Especial Verano en BunnyCure"
+                          maxLength={60}
+                        />
+                        <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
+                          Regla de Meta: No debe incluir emojis ni formato en la cabecera.
+                        </Form.Text>
+                      </Form.Group>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label className="small fw-semibold mb-1 d-flex justify-content-between align-items-center">
+                          <span>
+                            Cuerpo del Mensaje <span className="text-danger">*</span>
+                          </span>
+                          <span className={`small ${draftBodyText.length > 1000 ? 'text-danger fw-bold' : 'text-muted'}`} style={{ fontSize: '11px' }}>
+                            {draftBodyText.length} / 1024 caracteres
+                          </span>
+                        </Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={6}
+                          value={draftBodyText}
+                          onChange={(e) => setDraftBodyText(e.target.value)}
+                          style={{ fontSize: '13px', lineHeight: '1.4' }}
+                          placeholder="Escribe el mensaje..."
+                        />
+                        <Form.Text className="text-muted d-block" style={{ fontSize: '11px' }}>
+                          ℹ️ La variable <code>{`{{1}}`}</code> representa el nombre de cada clienta (ej: Camila).
+                        </Form.Text>
+                      </Form.Group>
+
+                      <Row className="g-2 mb-2">
+                        <Col xs={12} sm={6}>
+                          <Form.Group>
+                            <Form.Label className="small fw-semibold mb-1">Pie de Página (Footer)</Form.Label>
+                            <Form.Control
+                              size="sm"
+                              value={draftFooterText}
+                              onChange={(e) => setDraftFooterText(e.target.value)}
+                              placeholder="BunnyCure Studio"
+                              maxLength={60}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col xs={12} sm={6}>
+                          <Form.Group>
+                            <Form.Label className="small fw-semibold mb-1">Botón de Acción (CTA)</Form.Label>
+                            <Form.Control
+                              size="sm"
+                              value={draftButtonText}
+                              onChange={(e) => setDraftButtonText(e.target.value)}
+                              placeholder="Reservar mi cita"
+                              maxLength={25}
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label className="small fw-semibold mb-1">Enlace del Botón</Form.Label>
+                        <Form.Control
+                          size="sm"
+                          value={draftButtonUrl}
+                          onChange={(e) => setDraftButtonUrl(e.target.value)}
+                          placeholder="https://reservar.bunnycure.cl"
+                        />
+                      </Form.Group>
+
+                      <Form.Check
+                        type="checkbox"
+                        id="ai-auto-register-review"
+                        className="small"
+                        label={
+                          <span>
+                            <strong>Registrar automáticamente en Meta WhatsApp Cloud API</strong> (enviar a aprobación oficial inmediata)
+                          </span>
+                        }
+                        checked={aiAutoRegister}
+                        onChange={(e) => setAiAutoRegister(e.target.checked)}
+                      />
+                    </div>
+                  </Col>
+
+                  {/* Columna Derecha: Previsualización en Vivo de WhatsApp */}
+                  <Col xs={12} lg={5}>
+                    <div className="border rounded-3 p-3 bg-white h-100 d-flex flex-column shadow-sm">
+                      <div className="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                        <span className="small fw-bold text-secondary d-flex align-items-center gap-1">
+                          <FaMobileAlt className="text-success" /> Previsualización en WhatsApp
+                        </span>
+                        <Badge bg="success" style={{ fontSize: '10px' }}>En Vivo</Badge>
+                      </div>
+
+                      {/* Mockup de Chat WhatsApp */}
+                      <div
+                        className="rounded-3 p-3 flex-grow-1 d-flex flex-column justify-content-start"
+                        style={{
+                          background: '#efeae2',
+                          minHeight: '320px',
+                        }}
+                      >
+                        <div className="wa-bubble shadow-sm w-100">
+                          {draftHeaderText.trim() && (
+                            <div className="wa-bubble-header">
+                              {draftHeaderText.trim()}
+                            </div>
+                          )}
+                          <div className="wa-bubble-text" style={{ whiteSpace: 'pre-wrap' }}>
+                            {draftBodyText.replace(/\{\{1\}\}/g, 'Camila') || 'El mensaje aparecerá aquí...'}
+                          </div>
+                          <div className="wa-bubble-footer">
+                            <span>{draftFooterText || 'BunnyCure Studio'}</span>
+                            <span className="wa-bubble-time">
+                              11:45 AM <FaCheckCircle style={{ fontSize: '9px', color: '#53bdeb' }} />
+                            </span>
+                          </div>
+                          {draftButtonText.trim() && (
+                            <div className="wa-bubble-button mt-2">
+                              <FaExternalLinkAlt style={{ fontSize: '11px' }} />
+                              <span>{draftButtonText.trim()}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="text-center mt-auto pt-3">
+                          <span className="text-muted" style={{ fontSize: '11px' }}>
+                            Simulación con destinataria: <strong>Camila</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
               </div>
             )}
           </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="outline-secondary"
-              onClick={() => setShowAiModal(false)}
-              disabled={isGeneratingAi}
-            >
-              Cerrar
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleGenerateAiTemplate}
-              disabled={isGeneratingAi || !aiPrompt.trim()}
-              className="d-flex align-items-center gap-2"
-            >
-              {isGeneratingAi ? (
-                <>
-                  <Spinner animation="border" size="sm" />
-                  <span>El Agente está creando y registrando en Meta...</span>
-                </>
-              ) : (
-                <>
-                  <FaMagic />
-                  <span>Generar Plantilla con IA</span>
-                </>
-              )}
-            </Button>
+          <Modal.Footer className="d-flex justify-content-between">
+            {aiStep === 'PROMPT' ? (
+              <>
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => setShowAiModal(false)}
+                  disabled={isGeneratingAi}
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => handleGenerateAiDraft()}
+                  disabled={isGeneratingAi || !aiPrompt.trim()}
+                  className="d-flex align-items-center gap-2"
+                >
+                  {isGeneratingAi ? (
+                    <>
+                      <Spinner animation="border" size="sm" />
+                      <span>Generando propuesta con IA...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaMagic />
+                      <span>Generar Propuesta con IA</span>
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => setAiStep('PROMPT')}
+                  disabled={isSavingApproved}
+                  className="d-flex align-items-center gap-1"
+                >
+                  ← Volver / Probar otra idea
+                </Button>
+                <div className="d-flex align-items-center gap-2">
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => setShowAiModal(false)}
+                    disabled={isSavingApproved}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="success"
+                    onClick={handleSaveApproved}
+                    disabled={isSavingApproved || !draftBodyText.trim()}
+                    className="d-flex align-items-center gap-2 fw-semibold px-3 shadow-sm"
+                  >
+                    {isSavingApproved ? (
+                      <>
+                        <Spinner animation="border" size="sm" />
+                        <span>Guardando y enviando a Meta...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaCheckCircle />
+                        <span>Dar Visto Bueno y {aiAutoRegister ? 'Registrar en Meta' : 'Guardar'}</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
           </Modal.Footer>
         </Modal>
 

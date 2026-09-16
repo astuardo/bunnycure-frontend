@@ -77,6 +77,20 @@ export interface SyncTemplatesResult {
   totalCatalog: number;
 }
 
+export interface SaveApprovedTemplateRequest {
+  name?: string;
+  displayName: string;
+  occasion?: string;
+  emoji?: string;
+  headerText?: string;
+  bodyText: string;
+  footerText?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  sampleVariables?: string[];
+  autoRegisterInMeta?: boolean;
+}
+
 export const marketingApi = {
   getTemplates: async (): Promise<MarketingTemplate[]> => {
     const response = await apiClient.get<ApiResponse<MarketingTemplate[]>>('/api/marketing/templates');
@@ -129,6 +143,24 @@ export const marketingApi = {
     const response = await apiClient.delete<ApiResponse<{ name: string; deleted: boolean; message: string }>>(`/api/marketing/templates/${name}`);
     if (!response.data.data) {
       throw new Error('Error al eliminar la plantilla en Meta');
+    }
+    return response.data.data;
+  },
+
+  generateAiDraft: async (prompt: string): Promise<MarketingTemplate> => {
+    const response = await apiClient.post<ApiResponse<MarketingTemplate>>('/api/marketing/templates/ai-draft', {
+      prompt,
+    });
+    if (!response.data.data) {
+      throw new Error('Error al generar la propuesta de plantilla con el Agente IA');
+    }
+    return response.data.data;
+  },
+
+  saveApprovedTemplate: async (request: SaveApprovedTemplateRequest): Promise<MarketingTemplate> => {
+    const response = await apiClient.post<ApiResponse<MarketingTemplate>>('/api/marketing/templates/save-approved', request);
+    if (!response.data.data) {
+      throw new Error('Error al guardar y registrar la plantilla en Meta');
     }
     return response.data.data;
   },
