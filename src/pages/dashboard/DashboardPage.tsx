@@ -15,9 +15,13 @@ import {
     Check,
     CheckCheck,
     RefreshCw,
+    AlertTriangle,
+    Trash2,
+    Inbox,
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { whatsappMessagesApi, IncomingWhatsAppMessageDto } from '@/api/whatsappMessages.api';
+import { whatsappOutboxApi, WhatsAppOutboxMessageDto } from '@/api/whatsappOutbox.api';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { CancelAppointmentDialog, CancelledByOption } from '@/components/appointments/CancelAppointmentDialog';
 import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
@@ -230,6 +234,13 @@ export default function DashboardPage() {
     const [unreadWaCount, setUnreadWaCount] = useState<number>(0);
     const [waLoading, setWaLoading] = useState<boolean>(false);
     const [waFilterUnreadOnly, setWaFilterUnreadOnly] = useState<boolean>(false);
+    const [waActiveTab, setWaActiveTab] = useState<'INBOX' | 'OUTBOX'>('INBOX');
+    const [outboxMessages, setOutboxMessages] = useState<WhatsAppOutboxMessageDto[]>([]);
+    const [pendingOutboxCount, setPendingOutboxCount] = useState<number>(0);
+    const [outboxLoading, setOutboxLoading] = useState<boolean>(false);
+    const [retryingId, setRetryingId] = useState<number | null>(null);
+    const [retryingAll, setRetryingAll] = useState<boolean>(false);
+    const [discardingId, setDiscardingId] = useState<number | null>(null);
 
     const loadWhatsAppMessages = async (unreadOnly = waFilterUnreadOnly) => {
         setWaLoading(true);
@@ -247,6 +258,81 @@ export default function DashboardPage() {
         }
     };
 
+    const loadOutboxMessages = async () => {
+        setOutboxLoading(true);
+        try {
+            const [resp, count] = await Promise.all([
+                whatsappOutboxApi.getMessages(0, 20, true),
+                whatsappOutboxApi.getPendingCount(),
+            ]);
+            setOutboxMessages(resp.content || []);
+            setPendingOutboxCount(count);
+        } catch (error) {
+            console.error("Error cargando mensajes outbox de WhatsApp:", error);
+        } finally {
+            setOutboxLoading(false);
+        }
+    };
+
+    const handleRetryOne = async (id: number) => {
+        setRetryingId(id);
+        try {
+            const res = await whatsappOutboxApi.retryMessage(id);
+            if (res.success) {
+                toast.success(res.message || 'Mensaje reintentado y enviado exitosamente');
+                await loadOutboxMessages();
+            } else {
+                toast.error(res.error || res.message || 'Falló el reintento');
+                await loadOutboxMessages();
+            }
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'Error al reintentar el mensaje');
+        } finally {
+            setRetryingId(null);
+        }
+    };
+
+    const handleRetryAll = async () => {
+        setRetryingAll(true);
+        try {
+            const res = await whatsappOutboxApi.retryAll();
+            toast.info(`Reintento completado: ${res.succeeded} exitosos, ${res.failed} fallidos de ${res.total}`);
+            await loadOutboxMessages();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'Error al reintentar mensajes');
+        } finally {
+            setRetryingAll(false);
+        }
+    };
+
+    const handleDiscardOne = async (id: number) => {
+        setDiscardingId(id);
+        try {
+            await whatsappOutboxApi.discardMessage(id);
+            toast.success('Mensaje descartado de la cola');
+            setOutboxMessages((prev) => prev.filter((m) => m.id !== id));
+            setPendingOutboxCount((prev) => Math.max(0, prev - 1));
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'Error al descartar el mensaje');
+        } finally {
+            setDiscardingId(null);
+        }
+    };
+
+    const handleDiscardAll = async () => {
+        if (!window.confirm('¿Estás segura/o de descartar todos los mensajes fallidos? Ya no se podrán reintentar.')) {
+            return;
+        }
+        try {
+            const count = await whatsappOutboxApi.discardAll();
+            toast.success(`${count} mensaje(s) descartado(s) correctamente`);
+            setOutboxMessages([]);
+            setPendingOutboxCount(0);
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'Error al descartar los mensajes');
+        }
+    };
+
     useEffect(() => {
         const load = async () => {
             setStatsLoading(true);
@@ -257,7 +343,8 @@ export default function DashboardPage() {
                     settingsApi.getAll().catch(() => null),
                     fetchAppointments(), 
                     fetchCustomers(),
-                    loadWhatsAppMessages()
+                    loadWhatsAppMessages(),
+                    loadOutboxMessages()
                 ]);
                 setDashboardStats(stats);
                 if (operationalToday) setTodayStats(operationalToday);
@@ -507,13 +594,9 @@ export default function DashboardPage() {
                     </DashCard>
                 )}
 
-                {/* ══ Bandeja de Mensajes WhatsApp ═════════════════════════ */}
-                <DashCard style={{
-                    padding: '16px 20px',
-                    borderLeft: unreadWaCount > 0 ? '5px solid #25D366' : undefined,
-                    background: unreadWaCount > 0 ? '#fcfffd' : '#fff'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                {/* ══ 2. Bandeja de Mensajes WhatsApp + Outbox ══════════════════════════════ */}
+                <DashCard style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
                                 width: '36px',
@@ -530,248 +613,558 @@ export default function DashboardPage() {
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontWeight: 700, fontSize: '15px', color: TEXT_DARK }}>
-                                        Bandeja de Mensajes WhatsApp
+                                        Gestión de WhatsApp
                                     </span>
-                                    {unreadWaCount > 0 && (
-                                        <span style={{
-                                            background: '#25D366',
-                                            color: '#fff',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            padding: '2px 8px',
-                                            borderRadius: '999px',
-                                            boxShadow: '0 2px 5px rgba(37, 211, 102, 0.35)',
-                                        }}>
-                                            {unreadWaCount} nuevo{unreadWaCount > 1 ? 's' : ''}
-                                        </span>
-                                    )}
                                 </div>
                                 <div style={{ fontSize: '12px', color: TEXT_MID }}>
-                                    Mensajes enviados por clientas a tu línea oficial. Responde o coordina en 1 clic.
+                                    Mensajes recibidos de clientas y cola de reintentos de notificaciones automáticas.
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'inline-flex', background: '#f0f2f5', padding: '3px', borderRadius: '8px' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => handleToggleWaFilter(false)}
-                                    style={{
-                                        border: 'none',
-                                        background: !waFilterUnreadOnly ? '#fff' : 'transparent',
-                                        color: !waFilterUnreadOnly ? TEXT_DARK : TEXT_MID,
-                                        fontWeight: !waFilterUnreadOnly ? 700 : 500,
-                                        fontSize: '11.5px',
-                                        padding: '4px 10px',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        boxShadow: !waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                                    }}
-                                >
-                                    Todos
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleToggleWaFilter(true)}
-                                    style={{
-                                        border: 'none',
-                                        background: waFilterUnreadOnly ? '#fff' : 'transparent',
-                                        color: waFilterUnreadOnly ? '#128C7E' : TEXT_MID,
-                                        fontWeight: waFilterUnreadOnly ? 700 : 500,
-                                        fontSize: '11.5px',
-                                        padding: '4px 10px',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        boxShadow: waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                                    }}
-                                >
-                                    Solo no leídos {unreadWaCount > 0 ? `(${unreadWaCount})` : ''}
-                                </button>
-                            </div>
-
-                            {unreadWaCount > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={handleMarkAllWaAsRead}
-                                    title="Marcar todos como leídos"
-                                    style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        background: '#f8f9fa',
-                                        color: TEXT_MID,
-                                        border: `1px solid ${DIVIDER}`,
-                                        borderRadius: '8px',
-                                        padding: '5px 10px',
-                                        fontSize: '11.5px',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <CheckCheck size={14} style={{ color: '#128C7E' }} />
-                                    <span>Marcar todo leído</span>
-                                </button>
-                            )}
-
+                        {/* Pestañas principales: Bandeja Entrada vs No Entregados / Reintentos */}
+                        <div style={{ display: 'inline-flex', background: '#f0f2f5', padding: '3px', borderRadius: '10px', gap: '4px' }}>
                             <button
                                 type="button"
-                                onClick={() => loadWhatsAppMessages()}
-                                title="Actualizar mensajes"
+                                onClick={() => setWaActiveTab('INBOX')}
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '30px',
-                                    height: '30px',
-                                    borderRadius: '8px',
-                                    border: `1px solid ${DIVIDER}`,
-                                    background: '#fff',
-                                    color: TEXT_MID,
+                                    gap: '6px',
+                                    border: 'none',
+                                    background: waActiveTab === 'INBOX' ? '#fff' : 'transparent',
+                                    color: waActiveTab === 'INBOX' ? '#128C7E' : TEXT_MID,
+                                    fontWeight: waActiveTab === 'INBOX' ? 700 : 500,
+                                    fontSize: '12px',
+                                    padding: '5px 12px',
+                                    borderRadius: '7px',
                                     cursor: 'pointer',
+                                    boxShadow: waActiveTab === 'INBOX' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                 }}
                             >
-                                <RefreshCw size={14} style={{ animation: waLoading ? 'spin 1s linear infinite' : 'none' }} />
+                                <Inbox size={13} />
+                                <span>Recibidos</span>
+                                {unreadWaCount > 0 && (
+                                    <span style={{
+                                        background: '#25D366',
+                                        color: '#fff',
+                                        fontSize: '10px',
+                                        fontWeight: 700,
+                                        padding: '1px 6px',
+                                        borderRadius: '999px',
+                                    }}>
+                                        {unreadWaCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setWaActiveTab('OUTBOX');
+                                    loadOutboxMessages();
+                                }}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    border: 'none',
+                                    background: waActiveTab === 'OUTBOX' ? '#fff' : 'transparent',
+                                    color: waActiveTab === 'OUTBOX' ? '#d93829' : TEXT_MID,
+                                    fontWeight: waActiveTab === 'OUTBOX' ? 700 : 500,
+                                    fontSize: '12px',
+                                    padding: '5px 12px',
+                                    borderRadius: '7px',
+                                    cursor: 'pointer',
+                                    boxShadow: waActiveTab === 'OUTBOX' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                }}
+                            >
+                                <AlertTriangle size={13} style={{ color: pendingOutboxCount > 0 ? '#d93829' : TEXT_MID }} />
+                                <span>No Entregados / Reintentos</span>
+                                {pendingOutboxCount > 0 && (
+                                    <span style={{
+                                        background: '#d93829',
+                                        color: '#fff',
+                                        fontSize: '10px',
+                                        fontWeight: 700,
+                                        padding: '1px 6px',
+                                        borderRadius: '999px',
+                                    }}>
+                                        {pendingOutboxCount}
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </div>
 
-                    {waLoading && whatsappMessages.length === 0 ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
-                            <Spinner />
-                        </div>
-                    ) : whatsappMessages.length === 0 ? (
-                        <div style={{
-                            textAlign: 'center',
-                            padding: '24px 16px',
-                            background: '#fafafa',
-                            borderRadius: '10px',
-                            border: `1px dashed ${DIVIDER}`,
-                            color: TEXT_MID,
-                            fontSize: '13px',
-                        }}>
-                            <div style={{ fontSize: '20px', marginBottom: '6px' }}>💬</div>
-                            {waFilterUnreadOnly ? (
-                                <div>No tienes mensajes sin leer pendientes. ¡Estás al día!</div>
+                    {/* VISTA 1: BANDEJA DE ENTRADA (Mensajes de clientas) */}
+                    {waActiveTab === 'INBOX' && (
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                                <div style={{ display: 'inline-flex', background: '#f8f9fa', padding: '3px', borderRadius: '8px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleWaFilter(false)}
+                                        style={{
+                                            border: 'none',
+                                            background: !waFilterUnreadOnly ? '#fff' : 'transparent',
+                                            color: !waFilterUnreadOnly ? TEXT_DARK : TEXT_MID,
+                                            fontWeight: !waFilterUnreadOnly ? 700 : 500,
+                                            fontSize: '11.5px',
+                                            padding: '4px 10px',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            boxShadow: !waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                                        }}
+                                    >
+                                        Todos
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleWaFilter(true)}
+                                        style={{
+                                            border: 'none',
+                                            background: waFilterUnreadOnly ? '#fff' : 'transparent',
+                                            color: waFilterUnreadOnly ? '#128C7E' : TEXT_MID,
+                                            fontWeight: waFilterUnreadOnly ? 700 : 500,
+                                            fontSize: '11.5px',
+                                            padding: '4px 10px',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            boxShadow: waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                                        }}
+                                    >
+                                        Solo no leídos {unreadWaCount > 0 ? `(${unreadWaCount})` : ''}
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    {unreadWaCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleMarkAllWaAsRead}
+                                            title="Marcar todos como leídos"
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                background: '#f8f9fa',
+                                                color: TEXT_MID,
+                                                border: `1px solid ${DIVIDER}`,
+                                                borderRadius: '8px',
+                                                padding: '5px 10px',
+                                                fontSize: '11.5px',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <CheckCheck size={14} style={{ color: '#128C7E' }} />
+                                            <span>Marcar todo leído</span>
+                                        </button>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => loadWhatsAppMessages()}
+                                        title="Actualizar mensajes"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '30px',
+                                            height: '30px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${DIVIDER}`,
+                                            background: '#fff',
+                                            color: TEXT_MID,
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <RefreshCw size={14} style={{ animation: waLoading ? 'spin 1s linear infinite' : 'none' }} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {waLoading && whatsappMessages.length === 0 ? (
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+                                    <Spinner />
+                                </div>
+                            ) : whatsappMessages.length === 0 ? (
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '24px 16px',
+                                    background: '#fafafa',
+                                    borderRadius: '10px',
+                                    border: `1px dashed ${DIVIDER}`,
+                                    color: TEXT_MID,
+                                    fontSize: '13px',
+                                }}>
+                                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>💬</div>
+                                    {waFilterUnreadOnly ? (
+                                        <div>No tienes mensajes sin leer pendientes. ¡Estás al día!</div>
+                                    ) : (
+                                        <div>Aún no hay mensajes entrantes registrados. Cuando tus clientas te escriban por WhatsApp, aparecerán aquí.</div>
+                                    )}
+                                </div>
                             ) : (
-                                <div>Aún no hay mensajes entrantes registrados. Cuando tus clientas te escriban por WhatsApp, aparecerán aquí.</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {whatsappMessages.map((msg) => (
+                                        <div
+                                            key={msg.id}
+                                            style={{
+                                                border: !msg.isRead ? '1px solid #b7ebd1' : `1px solid ${DIVIDER}`,
+                                                background: !msg.isRead ? '#f5fbf7' : '#ffffff',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                transition: 'box-shadow 0.15s ease',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '13.5px', color: TEXT_DARK }}>
+                                                        {msg.senderName || msg.fromPhone}
+                                                    </span>
+                                                    {msg.customerName && (
+                                                        <span style={{
+                                                            fontSize: '10.5px',
+                                                            fontWeight: 700,
+                                                            background: '#e8f7ee',
+                                                            color: '#128C7E',
+                                                            padding: '1px 6px',
+                                                            borderRadius: '4px',
+                                                        }}>
+                                                            Clienta
+                                                        </span>
+                                                    )}
+                                                    {!msg.isRead && (
+                                                        <span style={{
+                                                            fontSize: '10px',
+                                                            fontWeight: 700,
+                                                            background: '#d1f2e1',
+                                                            color: '#0d683c',
+                                                            padding: '1px 6px',
+                                                            borderRadius: '4px',
+                                                        }}>
+                                                            NUEVO
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span style={{ fontSize: '11px', color: '#888' }}>
+                                                    {formatMessageTime(msg.createdAt)}
+                                                </span>
+                                            </div>
+
+                                            <div style={{
+                                                background: !msg.isRead ? '#ffffff' : '#f8f9fa',
+                                                border: `1px solid ${!msg.isRead ? '#d1f2e1' : '#eaeaea'}`,
+                                                borderRadius: '8px',
+                                                padding: '9px 12px',
+                                                fontSize: '13px',
+                                                color: '#2a2a2a',
+                                                lineHeight: 1.4,
+                                                wordBreak: 'break-word',
+                                                whiteSpace: 'pre-wrap',
+                                                marginBottom: '10px',
+                                            }}>
+                                                «{msg.content}»
+                                            </div>
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                <span style={{ fontSize: '11.5px', color: TEXT_MID, fontFamily: 'monospace' }}>
+                                                    +{msg.fromPhone}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    {!msg.isRead && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleMarkWaAsRead(msg.id)}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: '#edf2f7',
+                                                                color: '#4a5568',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                padding: '4px 9px',
+                                                                fontSize: '11.5px',
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            <Check size={13} />
+                                                            <span>Marcar leído</span>
+                                                        </button>
+                                                    )}
+                                                    <a
+                                                        href={msg.replyUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '5px',
+                                                            background: '#25D366',
+                                                            color: '#ffffff',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            padding: '5px 12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 700,
+                                                            textDecoration: 'none',
+                                                            boxShadow: '0 2px 4px rgba(37, 211, 102, 0.25)',
+                                                        }}
+                                                    >
+                                                        <FaWhatsapp size={14} />
+                                                        <span>💬 Responder en WhatsApp</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {whatsappMessages.map((msg) => (
-                                <div
-                                    key={msg.id}
-                                    style={{
-                                        border: !msg.isRead ? '1px solid #b7ebd1' : `1px solid ${DIVIDER}`,
-                                        background: !msg.isRead ? '#f5fbf7' : '#ffffff',
-                                        borderRadius: '12px',
-                                        padding: '12px 14px',
-                                        transition: 'box-shadow 0.15s ease',
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '13.5px', color: TEXT_DARK }}>
-                                                {msg.senderName || msg.fromPhone}
-                                            </span>
-                                            {msg.customerName && (
-                                                <span style={{
-                                                    fontSize: '10.5px',
-                                                    fontWeight: 700,
-                                                    background: '#e8f7ee',
-                                                    color: '#128C7E',
-                                                    padding: '1px 6px',
-                                                    borderRadius: '4px',
-                                                }}>
-                                                    Clienta
-                                                </span>
-                                            )}
-                                            {!msg.isRead && (
-                                                <span style={{
-                                                    width: '8px',
-                                                    height: '8px',
-                                                    borderRadius: '50%',
-                                                    background: '#25D366',
-                                                    display: 'inline-block',
-                                                }} />
-                                            )}
-                                        </div>
-                                        <span style={{ fontSize: '11px', color: '#888' }}>
-                                            {formatMessageTime(msg.createdAt)}
-                                        </span>
-                                    </div>
+                    )}
 
-                                    {/* Burbuja del mensaje de la clienta */}
-                                    <div style={{
-                                        background: !msg.isRead ? '#ffffff' : '#f8f9fa',
-                                        border: `1px solid ${!msg.isRead ? '#d1f2e1' : '#eaeaea'}`,
-                                        borderRadius: '8px',
-                                        padding: '9px 12px',
-                                        fontSize: '13px',
-                                        color: '#2a2a2a',
-                                        lineHeight: 1.4,
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        marginBottom: '10px',
-                                    }}>
-                                        «{msg.content}»
-                                    </div>
+                    {/* VISTA 2: NO ENTREGADOS / REINTENTOS (Outbox) */}
+                    {waActiveTab === 'OUTBOX' && (
+                        <div>
+                            {/* Barra de acciones superior para Outbox */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                                <div style={{ fontSize: '12.5px', color: TEXT_MID }}>
+                                    {pendingOutboxCount === 0 ? (
+                                        <span>No hay notificaciones pendientes ni errores registrados.</span>
+                                    ) : (
+                                        <span>Hay <strong>{pendingOutboxCount}</strong> mensaje(s) que no pudieron ser entregados por Meta.</span>
+                                    )}
+                                </div>
 
-                                    {/* Fila de acciones */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                        <span style={{ fontSize: '11.5px', color: TEXT_MID, fontFamily: 'monospace' }}>
-                                            +{msg.fromPhone}
-                                        </span>
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            {!msg.isRead && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleMarkWaAsRead(msg.id)}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        background: '#edf2f7',
-                                                        color: '#4a5568',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        padding: '4px 9px',
-                                                        fontSize: '11.5px',
-                                                        fontWeight: 600,
-                                                        cursor: 'pointer',
-                                                    }}
-                                                >
-                                                    <Check size={13} />
-                                                    <span>Marcar leído</span>
-                                                </button>
-                                            )}
-                                            <a
-                                                href={msg.replyUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {pendingOutboxCount > 0 && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handleRetryAll}
+                                                disabled={retryingAll}
                                                 style={{
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
                                                     gap: '5px',
-                                                    background: '#25D366',
-                                                    color: '#ffffff',
+                                                    background: '#128C7E',
+                                                    color: '#fff',
                                                     border: 'none',
-                                                    borderRadius: '6px',
+                                                    borderRadius: '8px',
                                                     padding: '5px 12px',
-                                                    fontSize: '12px',
+                                                    fontSize: '11.5px',
                                                     fontWeight: 700,
-                                                    textDecoration: 'none',
-                                                    boxShadow: '0 2px 4px rgba(37, 211, 102, 0.25)',
+                                                    cursor: retryingAll ? 'not-allowed' : 'pointer',
+                                                    boxShadow: '0 1px 3px rgba(18,140,126,0.3)',
                                                 }}
                                             >
-                                                <FaWhatsapp size={14} />
-                                                <span>💬 Responder en WhatsApp</span>
-                                            </a>
-                                        </div>
+                                                <RefreshCw size={13} style={{ animation: retryingAll ? 'spin 1s linear infinite' : 'none' }} />
+                                                <span>{retryingAll ? 'Reintentando...' : `Reintentar todos (${pendingOutboxCount})`}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={handleDiscardAll}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px',
+                                                    background: '#fff',
+                                                    color: '#e05244',
+                                                    border: `1px solid #fed7d7`,
+                                                    borderRadius: '8px',
+                                                    padding: '5px 10px',
+                                                    fontSize: '11.5px',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                <Trash2 size={13} />
+                                                <span>Descartar todos</span>
+                                            </button>
+                                        </>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={loadOutboxMessages}
+                                        title="Actualizar cola"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '30px',
+                                            height: '30px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${DIVIDER}`,
+                                            background: '#fff',
+                                            color: TEXT_MID,
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <RefreshCw size={14} style={{ animation: outboxLoading ? 'spin 1s linear infinite' : 'none' }} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {outboxLoading && outboxMessages.length === 0 ? (
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+                                    <Spinner />
+                                </div>
+                            ) : outboxMessages.length === 0 ? (
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '24px 16px',
+                                    background: '#f8faf9',
+                                    borderRadius: '10px',
+                                    border: `1px dashed #c6e7d6`,
+                                    color: '#2d6a4f',
+                                    fontSize: '13px',
+                                }}>
+                                    <div style={{ fontSize: '22px', marginBottom: '6px' }}>🎉</div>
+                                    <div style={{ fontWeight: 600 }}>¡Excelente! No hay mensajes fallidos.</div>
+                                    <div style={{ fontSize: '12px', color: TEXT_MID, marginTop: '3px' }}>
+                                        Todas las confirmaciones y recordatorios salientes han sido procesados sin errores.
                                     </div>
                                 </div>
-                            ))}
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {outboxMessages.map((msg) => (
+                                        <div
+                                            key={msg.id}
+                                            style={{
+                                                border: '1px solid #fecaca',
+                                                background: '#fffbfb',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                transition: 'box-shadow 0.15s ease',
+                                            }}
+                                        >
+                                            {/* Cabecera del mensaje fallido */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '13.5px', color: TEXT_DARK }}>
+                                                        {msg.customerName || msg.recipientPhone}
+                                                    </span>
+                                                    <span style={{
+                                                        fontSize: '10.5px',
+                                                        fontWeight: 700,
+                                                        background: '#fee2e2',
+                                                        color: '#b91c1c',
+                                                        padding: '1px 7px',
+                                                        borderRadius: '4px',
+                                                        fontFamily: 'monospace',
+                                                    }}>
+                                                        {msg.templateName ? `Plantilla: ${msg.templateName}` : 'Texto plano'}
+                                                    </span>
+                                                    <span style={{
+                                                        fontSize: '10.5px',
+                                                        fontWeight: 600,
+                                                        background: '#fef3c7',
+                                                        color: '#92400e',
+                                                        padding: '1px 6px',
+                                                        borderRadius: '4px',
+                                                    }}>
+                                                        Intento #{msg.attemptCount}
+                                                    </span>
+                                                </div>
+
+                                                <span style={{ fontSize: '11px', color: '#888' }}>
+                                                    {msg.formattedLastAttemptAt || msg.formattedCreatedAt || msg.createdAt}
+                                                </span>
+                                            </div>
+
+                                            {/* Resumen del contenido */}
+                                            {msg.summaryContent && (
+                                                <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '8px' }}>
+                                                    {msg.summaryContent}
+                                                </div>
+                                            )}
+
+                                            {/* Motivo del error reportado por Meta */}
+                                            {msg.lastError && (
+                                                <div style={{
+                                                    background: '#fff1f2',
+                                                    border: '1px solid #ffe4e6',
+                                                    borderRadius: '6px',
+                                                    padding: '7px 10px',
+                                                    fontSize: '11.5px',
+                                                    color: '#9f1239',
+                                                    lineHeight: 1.4,
+                                                    marginBottom: '10px',
+                                                    wordBreak: 'break-word',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '6px',
+                                                }}>
+                                                    <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: '2px', color: '#e11d48' }} />
+                                                    <div>
+                                                        <strong>Error de Meta:</strong> {msg.lastError}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Barra de acciones por mensaje */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                <span style={{ fontSize: '11.5px', color: TEXT_MID, fontFamily: 'monospace' }}>
+                                                    +{msg.recipientPhone}
+                                                </span>
+
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDiscardOne(msg.id)}
+                                                        disabled={discardingId === msg.id}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            background: '#edf2f7',
+                                                            color: '#4a5568',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            padding: '5px 10px',
+                                                            fontSize: '11.5px',
+                                                            fontWeight: 600,
+                                                            cursor: discardingId === msg.id ? 'not-allowed' : 'pointer',
+                                                        }}
+                                                    >
+                                                        <Trash2 size={13} />
+                                                        <span>Descartar</span>
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRetryOne(msg.id)}
+                                                        disabled={retryingId === msg.id}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '5px',
+                                                            background: '#128C7E',
+                                                            color: '#ffffff',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            padding: '5px 12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 700,
+                                                            cursor: retryingId === msg.id ? 'not-allowed' : 'pointer',
+                                                            boxShadow: '0 2px 4px rgba(18, 140, 126, 0.25)',
+                                                        }}
+                                                    >
+                                                        <RefreshCw size={13} style={{ animation: retryingId === msg.id ? 'spin 1s linear infinite' : 'none' }} />
+                                                        <span>{retryingId === msg.id ? 'Reintentando...' : 'Reintentar'}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </DashCard>
