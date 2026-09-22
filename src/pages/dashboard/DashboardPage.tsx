@@ -12,8 +12,12 @@ import {
     TrendingUp,
     Users,
     DollarSign,
+    Check,
+    CheckCheck,
+    RefreshCw,
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
+import { whatsappMessagesApi, IncomingWhatsAppMessageDto } from '@/api/whatsappMessages.api';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { CancelAppointmentDialog, CancelledByOption } from '@/components/appointments/CancelAppointmentDialog';
 import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
@@ -93,6 +97,19 @@ function getWhatsAppUrlForReschedule(apt: Appointment): string {
     const dateText = dateFormatted ? ` del ${dateFormatted}${timeFormatted ? ` a las ${timeFormatted} hrs` : ''}` : '';
     const message = `Hola ${apt.customer?.fullName || 'Clienta'}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita${dateText}. ¿Qué día y horario te acomodaría?`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
+function formatMessageTime(dateStr: string): string {
+    if (!dateStr) return '';
+    try {
+        const d = parseISO(dateStr);
+        if (isToday(d)) {
+            return `Hoy a las ${format(d, 'HH:mm')}`;
+        }
+        return format(d, 'dd/MM/yyyy HH:mm', { locale: es });
+    } catch {
+        return dateStr;
+    }
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -209,6 +226,26 @@ export default function DashboardPage() {
     const [showCashClosingModal, setShowCashClosingModal] = useState(false);
     const [cancelingAppointmentId, setCancelingAppointmentId] = useState<number | null>(null);
     const [isCancelLoading, setIsCancelLoading] = useState(false);
+    const [whatsappMessages, setWhatsappMessages] = useState<IncomingWhatsAppMessageDto[]>([]);
+    const [unreadWaCount, setUnreadWaCount] = useState<number>(0);
+    const [waLoading, setWaLoading] = useState<boolean>(false);
+    const [waFilterUnreadOnly, setWaFilterUnreadOnly] = useState<boolean>(false);
+
+    const loadWhatsAppMessages = async (unreadOnly = waFilterUnreadOnly) => {
+        setWaLoading(true);
+        try {
+            const [resp, count] = await Promise.all([
+                whatsappMessagesApi.getMessages(0, 10, unreadOnly),
+                whatsappMessagesApi.getUnreadCount(),
+            ]);
+            setWhatsappMessages(resp.content || []);
+            setUnreadWaCount(count);
+        } catch (error) {
+            console.error("Error cargando mensajes de WhatsApp:", error);
+        } finally {
+            setWaLoading(false);
+        }
+    };
 
     useEffect(() => {
         const load = async () => {
@@ -219,7 +256,8 @@ export default function DashboardPage() {
                     statsApi.getTodayOperationalStats().catch(() => null),
                     settingsApi.getAll().catch(() => null),
                     fetchAppointments(), 
-                    fetchCustomers()
+                    fetchCustomers(),
+                    loadWhatsAppMessages()
                 ]);
                 setDashboardStats(stats);
                 if (operationalToday) setTodayStats(operationalToday);
@@ -233,6 +271,33 @@ export default function DashboardPage() {
         };
         load();
     }, [fetchAppointments, fetchCustomers]);
+
+    const handleMarkWaAsRead = async (id: number) => {
+        try {
+            await whatsappMessagesApi.markAsRead(id);
+            setWhatsappMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isRead: true } : m)));
+            setUnreadWaCount((prev) => Math.max(0, prev - 1));
+            toast.success('Mensaje marcado como leído');
+        } catch {
+            toast.error('No se pudo marcar como leído');
+        }
+    };
+
+    const handleMarkAllWaAsRead = async () => {
+        try {
+            await whatsappMessagesApi.markAllAsRead();
+            setWhatsappMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
+            setUnreadWaCount(0);
+            toast.success('Todos los mensajes marcados como leídos');
+        } catch {
+            toast.error('No se pudieron marcar todos como leídos');
+        }
+    };
+
+    const handleToggleWaFilter = (unreadOnly: boolean) => {
+        setWaFilterUnreadOnly(unreadOnly);
+        loadWhatsAppMessages(unreadOnly);
+    };
 
     const handleCancelAppointment = (id: number) => {
         setCancelingAppointmentId(id);
@@ -441,6 +506,275 @@ export default function DashboardPage() {
                         </div>
                     </DashCard>
                 )}
+
+                {/* ══ Bandeja de Mensajes WhatsApp ═════════════════════════ */}
+                <DashCard style={{
+                    padding: '16px 20px',
+                    borderLeft: unreadWaCount > 0 ? '5px solid #25D366' : undefined,
+                    background: unreadWaCount > 0 ? '#fcfffd' : '#fff'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                background: '#e8f7ee',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#25D366'
+                            }}>
+                                <FaWhatsapp size={22} />
+                            </div>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontWeight: 700, fontSize: '15px', color: TEXT_DARK }}>
+                                        Bandeja de Mensajes WhatsApp
+                                    </span>
+                                    {unreadWaCount > 0 && (
+                                        <span style={{
+                                            background: '#25D366',
+                                            color: '#fff',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            padding: '2px 8px',
+                                            borderRadius: '999px',
+                                            boxShadow: '0 2px 5px rgba(37, 211, 102, 0.35)',
+                                        }}>
+                                            {unreadWaCount} nuevo{unreadWaCount > 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{ fontSize: '12px', color: TEXT_MID }}>
+                                    Mensajes enviados por clientas a tu línea oficial. Responde o coordina en 1 clic.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'inline-flex', background: '#f0f2f5', padding: '3px', borderRadius: '8px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleToggleWaFilter(false)}
+                                    style={{
+                                        border: 'none',
+                                        background: !waFilterUnreadOnly ? '#fff' : 'transparent',
+                                        color: !waFilterUnreadOnly ? TEXT_DARK : TEXT_MID,
+                                        fontWeight: !waFilterUnreadOnly ? 700 : 500,
+                                        fontSize: '11.5px',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        boxShadow: !waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                                    }}
+                                >
+                                    Todos
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleToggleWaFilter(true)}
+                                    style={{
+                                        border: 'none',
+                                        background: waFilterUnreadOnly ? '#fff' : 'transparent',
+                                        color: waFilterUnreadOnly ? '#128C7E' : TEXT_MID,
+                                        fontWeight: waFilterUnreadOnly ? 700 : 500,
+                                        fontSize: '11.5px',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        boxShadow: waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                                    }}
+                                >
+                                    Solo no leídos {unreadWaCount > 0 ? `(${unreadWaCount})` : ''}
+                                </button>
+                            </div>
+
+                            {unreadWaCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleMarkAllWaAsRead}
+                                    title="Marcar todos como leídos"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        background: '#f8f9fa',
+                                        color: TEXT_MID,
+                                        border: `1px solid ${DIVIDER}`,
+                                        borderRadius: '8px',
+                                        padding: '5px 10px',
+                                        fontSize: '11.5px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <CheckCheck size={14} style={{ color: '#128C7E' }} />
+                                    <span>Marcar todo leído</span>
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => loadWhatsAppMessages()}
+                                title="Actualizar mensajes"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '30px',
+                                    height: '30px',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${DIVIDER}`,
+                                    background: '#fff',
+                                    color: TEXT_MID,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <RefreshCw size={14} style={{ animation: waLoading ? 'spin 1s linear infinite' : 'none' }} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {waLoading && whatsappMessages.length === 0 ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+                            <Spinner />
+                        </div>
+                    ) : whatsappMessages.length === 0 ? (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '24px 16px',
+                            background: '#fafafa',
+                            borderRadius: '10px',
+                            border: `1px dashed ${DIVIDER}`,
+                            color: TEXT_MID,
+                            fontSize: '13px',
+                        }}>
+                            <div style={{ fontSize: '20px', marginBottom: '6px' }}>💬</div>
+                            {waFilterUnreadOnly ? (
+                                <div>No tienes mensajes sin leer pendientes. ¡Estás al día!</div>
+                            ) : (
+                                <div>Aún no hay mensajes entrantes registrados. Cuando tus clientas te escriban por WhatsApp, aparecerán aquí.</div>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {whatsappMessages.map((msg) => (
+                                <div
+                                    key={msg.id}
+                                    style={{
+                                        border: !msg.isRead ? '1px solid #b7ebd1' : `1px solid ${DIVIDER}`,
+                                        background: !msg.isRead ? '#f5fbf7' : '#ffffff',
+                                        borderRadius: '12px',
+                                        padding: '12px 14px',
+                                        transition: 'box-shadow 0.15s ease',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontWeight: 700, fontSize: '13.5px', color: TEXT_DARK }}>
+                                                {msg.senderName || msg.fromPhone}
+                                            </span>
+                                            {msg.customerName && (
+                                                <span style={{
+                                                    fontSize: '10.5px',
+                                                    fontWeight: 700,
+                                                    background: '#e8f7ee',
+                                                    color: '#128C7E',
+                                                    padding: '1px 6px',
+                                                    borderRadius: '4px',
+                                                }}>
+                                                    Clienta
+                                                </span>
+                                            )}
+                                            {!msg.isRead && (
+                                                <span style={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '50%',
+                                                    background: '#25D366',
+                                                    display: 'inline-block',
+                                                }} />
+                                            )}
+                                        </div>
+                                        <span style={{ fontSize: '11px', color: '#888' }}>
+                                            {formatMessageTime(msg.createdAt)}
+                                        </span>
+                                    </div>
+
+                                    {/* Burbuja del mensaje de la clienta */}
+                                    <div style={{
+                                        background: !msg.isRead ? '#ffffff' : '#f8f9fa',
+                                        border: `1px solid ${!msg.isRead ? '#d1f2e1' : '#eaeaea'}`,
+                                        borderRadius: '8px',
+                                        padding: '9px 12px',
+                                        fontSize: '13px',
+                                        color: '#2a2a2a',
+                                        lineHeight: 1.4,
+                                        wordBreak: 'break-word',
+                                        whiteSpace: 'pre-wrap',
+                                        marginBottom: '10px',
+                                    }}>
+                                        «{msg.content}»
+                                    </div>
+
+                                    {/* Fila de acciones */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ fontSize: '11.5px', color: TEXT_MID, fontFamily: 'monospace' }}>
+                                            +{msg.fromPhone}
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            {!msg.isRead && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleMarkWaAsRead(msg.id)}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        background: '#edf2f7',
+                                                        color: '#4a5568',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 9px',
+                                                        fontSize: '11.5px',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    <Check size={13} />
+                                                    <span>Marcar leído</span>
+                                                </button>
+                                            )}
+                                            <a
+                                                href={msg.replyUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px',
+                                                    background: '#25D366',
+                                                    color: '#ffffff',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    padding: '5px 12px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 700,
+                                                    textDecoration: 'none',
+                                                    boxShadow: '0 2px 4px rgba(37, 211, 102, 0.25)',
+                                                }}
+                                            >
+                                                <FaWhatsapp size={14} />
+                                                <span>💬 Responder en WhatsApp</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </DashCard>
 
                 {/* ══ 3. Citas de Hoy ══════════════════════════════════════ */}
                 <DashCard>
