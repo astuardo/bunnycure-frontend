@@ -13,6 +13,7 @@ import {
     Users,
     DollarSign,
 } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { CancelAppointmentDialog, CancelledByOption } from '@/components/appointments/CancelAppointmentDialog';
 import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
@@ -79,6 +80,19 @@ function statusPillStyle(status: AppointmentStatus): React.CSSProperties {
         default:
             return { background: '#e9ecef', color: '#495057' };
     }
+}
+
+function getWhatsAppUrlForReschedule(apt: Appointment): string {
+    const rawPhone = apt.customer?.phone?.replace(/\D/g, '') || '';
+    if (!rawPhone) return '#';
+    const phone = rawPhone.startsWith('56') ? rawPhone : (rawPhone.length === 9 ? `56${rawPhone}` : `56${rawPhone}`);
+    const dateFormatted = apt.appointmentDate
+        ? format(parseISO(apt.appointmentDate.split('T')[0]), 'dd/MM/yyyy', { locale: es })
+        : '';
+    const timeFormatted = apt.appointmentTime ? apt.appointmentTime.slice(0, 5) : '';
+    const dateText = dateFormatted ? ` del ${dateFormatted}${timeFormatted ? ` a las ${timeFormatted} hrs` : ''}` : '';
+    const message = `Hola ${apt.customer?.fullName || 'Clienta'}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita${dateText}. ¿Qué día y horario te acomodaría?`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -278,10 +292,15 @@ export default function DashboardPage() {
         });
     }, [appointments]);
 
+    const rescheduleRequestedAppointments = useMemo(() => {
+        return appointments.filter((apt: Appointment) => apt.status === AppointmentStatus.RESCHEDULE_REQUESTED);
+    }, [appointments]);
+
     const weekStats = useMemo(() => [
         { label: 'Confirmadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CONFIRMED).length, bg: '#d4edda', color: '#155724' },
         { label: 'Completadas', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.COMPLETED).length, bg: '#c8e6e0', color: '#0d5c4a' },
         { label: 'Pendientes',  count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.PENDING).length,   bg: '#fde8cc', color: '#7c4a00' },
+        { label: 'Reprogramar', count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.RESCHEDULE_REQUESTED).length, bg: '#ffe8cc', color: '#d9480f' },
         { label: 'Canceladas',  count: thisWeekAppointments.filter((a: Appointment) => a.status === AppointmentStatus.CANCELLED).length,  bg: '#fce4e4', color: '#7c1c1c' },
     ], [thisWeekAppointments]);
 
@@ -363,6 +382,65 @@ export default function DashboardPage() {
                         <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky"  />
                     </div>
                 </DashCard>
+
+                {/* ══ Banner: Citas con Solicitud de Reprogramación ═════════ */}
+                {rescheduleRequestedAppointments.length > 0 && (
+                    <DashCard style={{ padding: '14px 20px', borderLeft: '5px solid #d9480f', background: '#fffaf5' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '22px' }}>🔄</span>
+                                <div>
+                                    <strong style={{ color: '#d9480f', fontSize: '14px' }}>
+                                        {rescheduleRequestedAppointments.length} cita(s) solicitan reprogramación
+                                    </strong>
+                                    <div style={{ fontSize: '12px', color: TEXT_MID }}>
+                                        Clientas que respondieron para reagendar. Contáctalas por WhatsApp para coordinar su nueva hora.
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {rescheduleRequestedAppointments.slice(0, 3).map((apt) => (
+                                    <a
+                                        key={apt.id}
+                                        href={getWhatsAppUrlForReschedule(apt)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={`Contactar a ${apt.customer.fullName} por WhatsApp`}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            background: '#e8f7ee',
+                                            color: '#128C7E',
+                                            border: '1px solid #25D366',
+                                            borderRadius: '999px',
+                                            padding: '4px 12px',
+                                            fontSize: '12px',
+                                            fontWeight: 700,
+                                            textDecoration: 'none',
+                                            boxShadow: '0 1px 3px rgba(37, 211, 102, 0.2)',
+                                        }}
+                                    >
+                                        <FaWhatsapp size={14} style={{ color: '#25D366' }} />
+                                        <span>{apt.customer.fullName?.split(' ')[0]}: WhatsApp</span>
+                                    </a>
+                                ))}
+                                <Link
+                                    to="/appointments?status=RESCHEDULE_REQUESTED"
+                                    style={{
+                                        fontSize: '12px',
+                                        color: '#d9480f',
+                                        fontWeight: 600,
+                                        textDecoration: 'underline',
+                                        marginLeft: '4px',
+                                    }}
+                                >
+                                    Ver todas ({rescheduleRequestedAppointments.length}) &rarr;
+                                </Link>
+                            </div>
+                        </div>
+                    </DashCard>
+                )}
 
                 {/* ══ 3. Citas de Hoy ══════════════════════════════════════ */}
                 <DashCard>
@@ -573,6 +651,32 @@ export default function DashboardPage() {
                                             </td>
                                             <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
                                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                    {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
+                                                        <a
+                                                            href={getWhatsAppUrlForReschedule(apt)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title="Contactar por WhatsApp para coordinar nueva hora"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '5px',
+                                                                border: '1px solid #25D366',
+                                                                background: '#e8f7ee',
+                                                                color: '#128C7E',
+                                                                borderRadius: '999px',
+                                                                padding: '4px 11px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 700,
+                                                                textDecoration: 'none',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 1px 4px rgba(37, 211, 102, 0.25)',
+                                                            }}
+                                                        >
+                                                            <FaWhatsapp size={13} style={{ color: '#25D366' }} />
+                                                            <span>WhatsApp</span>
+                                                        </a>
+                                                    )}
                                                     <button
                                                         type="button"
                                                         onClick={() => navigate(`/appointments?edit=${apt.id}&returnTo=/dashboard`)}
