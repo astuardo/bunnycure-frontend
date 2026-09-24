@@ -37,6 +37,7 @@ import { AnalyticsData } from '@/types/analytics.types';
 import { useToast } from '@/hooks/useToast';
 import {
   format,
+  parseISO,
   subDays,
   subMonths,
   startOfMonth,
@@ -956,7 +957,7 @@ export default function AnalyticsPage() {
                     'Cliente': item.customerName,
                     'Teléfono': item.customerPhone,
                     'Servicio': item.serviceName,
-                    'Fecha': format(new Date(item.appointmentDate), 'dd/MM/yyyy'),
+                    'Fecha': format(parseISO(item.appointmentDate), 'dd/MM/yyyy'),
                     'Monto': `$${item.total.toLocaleString('es-CL')}`,
                     'Origen': item.cancellationInitiator === 'MANICURIST' ? 'Manicurista / Salón' : item.cancellationInitiator === 'CUSTOMER' ? 'Clienta' : 'Sin especificar',
                     'Motivo': item.cancellationReason,
@@ -1013,7 +1014,7 @@ export default function AnalyticsPage() {
                       </td>
                       <td style={{ padding: '10px', color: TEXT_DARK }}>{item.serviceName}</td>
                       <td style={{ padding: '10px', textAlign: 'center', color: TEXT_DARK, fontSize: '11px' }}>
-                        {format(new Date(item.appointmentDate), 'dd/MM/yyyy')}
+                        {format(parseISO(item.appointmentDate), 'dd/MM/yyyy')}
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right', color: '#dc3545', fontWeight: 600 }}>
                         ${item.total.toLocaleString('es-CL')}

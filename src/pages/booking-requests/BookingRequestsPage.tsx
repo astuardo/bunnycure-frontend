@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Table, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useBookingRequestsStore } from '../../stores/bookingRequestsStore';
@@ -298,7 +298,7 @@ const BookingRequestsPage: React.FC = () => {
                           </td>
                           <td>
                             {request.preferredDate 
-                              ? format(new Date(request.preferredDate), 'dd/MM/yyyy', { locale: es })
+                              ? format(parseISO(request.preferredDate), 'dd/MM/yyyy', { locale: es })
                               : '-'}
                           </td>
                           <td>{request.preferredBlock || '-'}</td>

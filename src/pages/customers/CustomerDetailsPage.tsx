@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner, Nav } from 'react-bootstrap';
-import { format, isValid } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import StampCard from '../../components/customers/StampCard';
@@ -46,8 +46,18 @@ export default function CustomerDetailsPage() {
 
   const parseDateSafe = (value: unknown): Date | null => {
     if (!value) return null;
-    const date = new Date(value as string | number | Date);
-    return isValid(date) ? date : null;
+    if (value instanceof Date) return isValid(value) ? value : null;
+    if (typeof value === 'string') {
+      const parsed = parseISO(value);
+      if (isValid(parsed)) return parsed;
+      const direct = new Date(value);
+      return isValid(direct) ? direct : null;
+    }
+    if (typeof value === 'number') {
+      const direct = new Date(value);
+      return isValid(direct) ? direct : null;
+    }
+    return null;
   };
 
   const formatDateSafe = (value: unknown, pattern: string = 'dd/MM/yyyy'): string => {
