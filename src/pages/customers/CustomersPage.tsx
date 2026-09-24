@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner, Nav, Modal } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -70,6 +70,22 @@ export default function CustomersPage() {
     const { metrics: birthdayMetrics } = useMemo(() => {
         return computeBirthdayCustomers(customers);
     }, [customers]);
+
+    const isFirstSearchRender = useRef(true);
+
+    // Búsqueda en tiempo real a medida que se escribe (debounce de 300ms)
+    useEffect(() => {
+        if (isFirstSearchRender.current) {
+            isFirstSearchRender.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            fetchCustomers(search.trim() || undefined);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search, fetchCustomers]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -295,8 +311,17 @@ export default function CustomersPage() {
                                                     value={search}
                                                     onChange={(e) => setSearch(e.target.value)}
                                                 />
-                                                <Button type="submit" variant="primary" className="text-nowrap">
-                                                    🔍 <span className="d-none d-sm-inline">Buscar</span>
+                                                <Button type="submit" variant="primary" className="text-nowrap" disabled={loading}>
+                                                    {loading ? (
+                                                        <>
+                                                            <Spinner animation="border" size="sm" className="me-1" />
+                                                            <span className="d-none d-sm-inline">Buscando...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            🔍 <span className="d-none d-sm-inline">Buscar</span>
+                                                        </>
+                                                    )}
                                                 </Button>
                                                 {search && (
                                                     <Button 
@@ -331,17 +356,20 @@ export default function CustomersPage() {
                                 <Card>
                                     <Card.Header className="d-flex justify-content-between align-items-center">
                                         <h5 className="mb-0">Lista de Clientes</h5>
-                                        <Badge bg="secondary">{customers.length} clientes</Badge>
+                                        <div className="d-flex align-items-center gap-2">
+                                            {loading && <Spinner animation="border" size="sm" variant="secondary" />}
+                                            <Badge bg="secondary">{customers.length} clientes</Badge>
+                                        </div>
                                     </Card.Header>
                                     <Card.Body className="p-0">
-                                        {loading ? (
+                                        {loading && customers.length === 0 ? (
                                             <div className="text-center py-5">
                                                 <Spinner animation="border" role="status">
                                                     <span className="visually-hidden">Cargando...</span>
                                                 </Spinner>
                                                 <p className="mt-2 text-muted">Cargando clientes...</p>
                                             </div>
-                                        ) : customers.length === 0 ? (
+                                        ) : !loading && customers.length === 0 ? (
                                             <div className="text-center py-5">
                                                 <p className="text-muted mb-0">
                                                     {search 
@@ -351,7 +379,7 @@ export default function CustomersPage() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <>
+                                            <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
                                                 {/* Vista Desktop: Tabla */}
                                                 <div className="d-none d-md-block">
                                                     <Table responsive hover className="align-middle mb-0">
@@ -559,7 +587,7 @@ export default function CustomersPage() {
                                                         );
                                                     })}
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </Card.Body>
                                 </Card>
