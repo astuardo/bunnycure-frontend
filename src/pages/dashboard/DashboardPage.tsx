@@ -233,7 +233,7 @@ export default function DashboardPage() {
     const [whatsappMessages, setWhatsappMessages] = useState<IncomingWhatsAppMessageDto[]>([]);
     const [unreadWaCount, setUnreadWaCount] = useState<number>(0);
     const [waLoading, setWaLoading] = useState<boolean>(false);
-    const [waFilterUnreadOnly, setWaFilterUnreadOnly] = useState<boolean>(false);
+    const [waInboxView, setWaInboxView] = useState<'UNREAD' | 'READ' | 'ALL'>('UNREAD');
     const [waActiveTab, setWaActiveTab] = useState<'INBOX' | 'OUTBOX'>('INBOX');
     const [outboxMessages, setOutboxMessages] = useState<WhatsAppOutboxMessageDto[]>([]);
     const [pendingOutboxCount, setPendingOutboxCount] = useState<number>(0);
@@ -242,11 +242,74 @@ export default function DashboardPage() {
     const [retryingAll, setRetryingAll] = useState<boolean>(false);
     const [discardingId, setDiscardingId] = useState<number | null>(null);
 
-    const loadWhatsAppMessages = async (unreadOnly = waFilterUnreadOnly) => {
+    interface ClientWhatsAppGroup {
+        clientKey: string;
+        senderName: string;
+        customerName?: string | null;
+        customerId?: number | null;
+        fromPhone: string;
+        unreadCount: number;
+        totalCount: number;
+        latestCreatedAt: string;
+        messages: IncomingWhatsAppMessageDto[];
+        replyUrl: string;
+    }
+
+    const groupedWaMessages = useMemo<ClientWhatsAppGroup[]>(() => {
+        const map = new Map<string, ClientWhatsAppGroup>();
+
+        for (const msg of whatsappMessages) {
+            const cleanPhone = (msg.fromPhone || '').replace(/\D/g, '');
+            const key = msg.customerId ? `c_${msg.customerId}` : `p_${cleanPhone || msg.senderName || msg.id}`;
+
+            if (!map.has(key)) {
+                map.set(key, {
+                    clientKey: key,
+                    senderName: msg.senderName || msg.customerName || (msg.fromPhone ? `+${msg.fromPhone}` : 'Clienta'),
+                    customerName: msg.customerName,
+                    customerId: msg.customerId,
+                    fromPhone: msg.fromPhone,
+                    unreadCount: 0,
+                    totalCount: 0,
+                    latestCreatedAt: msg.createdAt,
+                    messages: [],
+                    replyUrl: msg.replyUrl,
+                });
+            }
+
+            const group = map.get(key)!;
+            group.messages.push(msg);
+            group.totalCount += 1;
+            if (!msg.isRead) {
+                group.unreadCount += 1;
+            }
+
+            if (new Date(msg.createdAt).getTime() > new Date(group.latestCreatedAt).getTime()) {
+                group.latestCreatedAt = msg.createdAt;
+                group.replyUrl = msg.replyUrl;
+                if (msg.senderName) group.senderName = msg.senderName;
+                if (msg.customerName) group.customerName = msg.customerName;
+            }
+        }
+
+        // Ordenar mensajes cronológicamente (más antiguo a más nuevo) para lectura natural
+        for (const group of map.values()) {
+            group.messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        }
+
+        // Ordenar clientes por su mensaje más reciente (más reciente arriba)
+        return Array.from(map.values()).sort(
+            (a, b) => new Date(b.latestCreatedAt).getTime() - new Date(a.latestCreatedAt).getTime()
+        );
+    }, [whatsappMessages]);
+
+    const loadWhatsAppMessages = async (view: 'UNREAD' | 'READ' | 'ALL' = waInboxView) => {
         setWaLoading(true);
         try {
+            const isUnread = view === 'UNREAD';
+            const isRead = view === 'READ';
             const [resp, count] = await Promise.all([
-                whatsappMessagesApi.getMessages(0, 10, unreadOnly),
+                whatsappMessagesApi.getMessages(0, 50, isUnread, isRead),
                 whatsappMessagesApi.getUnreadCount(),
             ]);
             setWhatsappMessages(resp.content || []);
@@ -343,7 +406,7 @@ export default function DashboardPage() {
                     settingsApi.getAll().catch(() => null),
                     fetchAppointments(), 
                     fetchCustomers(),
-                    loadWhatsAppMessages(),
+                    loadWhatsAppMessages('UNREAD'),
                     loadOutboxMessages()
                 ]);
                 setDashboardStats(stats);
@@ -362,7 +425,12 @@ export default function DashboardPage() {
     const handleMarkWaAsRead = async (id: number) => {
         try {
             await whatsappMessagesApi.markAsRead(id);
-            setWhatsappMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isRead: true } : m)));
+            setWhatsappMessages((prev) => {
+                if (waInboxView === 'UNREAD') {
+                    return prev.filter((m) => m.id !== id);
+                }
+                return prev.map((m) => (m.id === id ? { ...m, isRead: true } : m));
+            });
             setUnreadWaCount((prev) => Math.max(0, prev - 1));
             toast.success('Mensaje marcado como leído');
         } catch {
@@ -370,10 +438,37 @@ export default function DashboardPage() {
         }
     };
 
+    const handleMarkClientAsRead = async (group: ClientWhatsAppGroup) => {
+        try {
+            if (group.fromPhone) {
+                await whatsappMessagesApi.markByPhoneAsRead(group.fromPhone);
+            } else {
+                await Promise.all(
+                    group.messages.filter((m) => !m.isRead).map((m) => whatsappMessagesApi.markAsRead(m.id))
+                );
+            }
+            setWhatsappMessages((prev) => {
+                const groupMsgIds = new Set(group.messages.map((m) => m.id));
+                if (waInboxView === 'UNREAD') {
+                    return prev.filter((m) => !groupMsgIds.has(m.id));
+                }
+                return prev.map((m) => (groupMsgIds.has(m.id) ? { ...m, isRead: true } : m));
+            });
+            setUnreadWaCount((prev) => Math.max(0, prev - group.unreadCount));
+            toast.success(`Mensajes de ${group.senderName} marcados como leídos`);
+        } catch {
+            toast.error('No se pudieron marcar los mensajes como leídos');
+        }
+    };
+
     const handleMarkAllWaAsRead = async () => {
         try {
             await whatsappMessagesApi.markAllAsRead();
-            setWhatsappMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
+            if (waInboxView === 'UNREAD') {
+                setWhatsappMessages([]);
+            } else {
+                setWhatsappMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
+            }
             setUnreadWaCount(0);
             toast.success('Todos los mensajes marcados como leídos');
         } catch {
@@ -381,9 +476,9 @@ export default function DashboardPage() {
         }
     };
 
-    const handleToggleWaFilter = (unreadOnly: boolean) => {
-        setWaFilterUnreadOnly(unreadOnly);
-        loadWhatsAppMessages(unreadOnly);
+    const handleSwitchWaInboxView = (newView: 'UNREAD' | 'READ' | 'ALL') => {
+        setWaInboxView(newView);
+        loadWhatsAppMessages(newView);
     };
 
     const handleCancelAppointment = (id: number) => {
@@ -700,62 +795,107 @@ export default function DashboardPage() {
                     {/* VISTA 1: BANDEJA DE ENTRADA (Mensajes de clientas) */}
                     {waActiveTab === 'INBOX' && (
                         <div>
+                            {/* Selector de sub-vistas: No leídos (default) | Leídos | Todos */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                                <div style={{ display: 'inline-flex', background: '#f8f9fa', padding: '3px', borderRadius: '8px' }}>
+                                <div style={{ display: 'inline-flex', background: '#f0f2f5', padding: '3px', borderRadius: '9px', gap: '3px' }}>
                                     <button
                                         type="button"
-                                        onClick={() => handleToggleWaFilter(false)}
+                                        onClick={() => handleSwitchWaInboxView('UNREAD')}
                                         style={{
                                             border: 'none',
-                                            background: !waFilterUnreadOnly ? '#fff' : 'transparent',
-                                            color: !waFilterUnreadOnly ? TEXT_DARK : TEXT_MID,
-                                            fontWeight: !waFilterUnreadOnly ? 700 : 500,
-                                            fontSize: '11.5px',
-                                            padding: '4px 10px',
-                                            borderRadius: '6px',
+                                            background: waInboxView === 'UNREAD' ? '#fff' : 'transparent',
+                                            color: waInboxView === 'UNREAD' ? '#128C7E' : TEXT_MID,
+                                            fontWeight: waInboxView === 'UNREAD' ? 700 : 500,
+                                            fontSize: '12px',
+                                            padding: '5px 12px',
+                                            borderRadius: '7px',
                                             cursor: 'pointer',
-                                            boxShadow: !waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            boxShadow: waInboxView === 'UNREAD' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                            transition: 'all 0.15s ease',
                                         }}
                                     >
-                                        Todos
+                                        <span>No leídos</span>
+                                        {unreadWaCount > 0 && (
+                                            <span style={{
+                                                background: '#25D366',
+                                                color: '#fff',
+                                                fontSize: '10px',
+                                                fontWeight: 700,
+                                                padding: '1px 6px',
+                                                borderRadius: '999px',
+                                            }}>
+                                                {unreadWaCount}
+                                            </span>
+                                        )}
                                     </button>
+
                                     <button
                                         type="button"
-                                        onClick={() => handleToggleWaFilter(true)}
+                                        onClick={() => handleSwitchWaInboxView('READ')}
                                         style={{
                                             border: 'none',
-                                            background: waFilterUnreadOnly ? '#fff' : 'transparent',
-                                            color: waFilterUnreadOnly ? '#128C7E' : TEXT_MID,
-                                            fontWeight: waFilterUnreadOnly ? 700 : 500,
-                                            fontSize: '11.5px',
-                                            padding: '4px 10px',
-                                            borderRadius: '6px',
+                                            background: waInboxView === 'READ' ? '#fff' : 'transparent',
+                                            color: waInboxView === 'READ' ? '#128C7E' : TEXT_MID,
+                                            fontWeight: waInboxView === 'READ' ? 700 : 500,
+                                            fontSize: '12px',
+                                            padding: '5px 12px',
+                                            borderRadius: '7px',
                                             cursor: 'pointer',
-                                            boxShadow: waFilterUnreadOnly ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            boxShadow: waInboxView === 'READ' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                            transition: 'all 0.15s ease',
                                         }}
                                     >
-                                        Solo no leídos {unreadWaCount > 0 ? `(${unreadWaCount})` : ''}
+                                        <span>Leídos</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSwitchWaInboxView('ALL')}
+                                        style={{
+                                            border: 'none',
+                                            background: waInboxView === 'ALL' ? '#fff' : 'transparent',
+                                            color: waInboxView === 'ALL' ? TEXT_DARK : TEXT_MID,
+                                            fontWeight: waInboxView === 'ALL' ? 700 : 500,
+                                            fontSize: '12px',
+                                            padding: '5px 12px',
+                                            borderRadius: '7px',
+                                            cursor: 'pointer',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            boxShadow: waInboxView === 'ALL' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                            transition: 'all 0.15s ease',
+                                        }}
+                                    >
+                                        <span>Todos</span>
                                     </button>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                    {unreadWaCount > 0 && (
+                                    {unreadWaCount > 0 && waInboxView === 'UNREAD' && (
                                         <button
                                             type="button"
                                             onClick={handleMarkAllWaAsRead}
-                                            title="Marcar todos como leídos"
+                                            title="Marcar todos los mensajes como leídos"
                                             style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
-                                                gap: '4px',
+                                                gap: '5px',
                                                 background: '#f8f9fa',
                                                 color: TEXT_MID,
                                                 border: `1px solid ${DIVIDER}`,
                                                 borderRadius: '8px',
-                                                padding: '5px 10px',
+                                                padding: '5px 11px',
                                                 fontSize: '11.5px',
                                                 fontWeight: 600,
                                                 cursor: 'pointer',
+                                                transition: 'background 0.15s',
                                             }}
                                         >
                                             <CheckCheck size={14} style={{ color: '#128C7E' }} />
@@ -771,8 +911,8 @@ export default function DashboardPage() {
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            width: '30px',
-                                            height: '30px',
+                                            width: '32px',
+                                            height: '32px',
                                             borderRadius: '8px',
                                             border: `1px solid ${DIVIDER}`,
                                             background: '#fff',
@@ -785,143 +925,312 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
+                            {/* Estado de carga */}
                             {waLoading && whatsappMessages.length === 0 ? (
-                                <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '28px' }}>
                                     <Spinner />
                                 </div>
-                            ) : whatsappMessages.length === 0 ? (
+                            ) : groupedWaMessages.length === 0 ? (
+                                /* Estados vacíos según la vista */
                                 <div style={{
                                     textAlign: 'center',
-                                    padding: '24px 16px',
+                                    padding: '28px 16px',
                                     background: '#fafafa',
-                                    borderRadius: '10px',
-                                    border: `1px dashed ${DIVIDER}`,
+                                    borderRadius: '12px',
+                                    border: `1px dashed #dcdcdc`,
                                     color: TEXT_MID,
                                     fontSize: '13px',
                                 }}>
-                                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>💬</div>
-                                    {waFilterUnreadOnly ? (
-                                        <div>No tienes mensajes sin leer pendientes. ¡Estás al día!</div>
+                                    {waInboxView === 'UNREAD' ? (
+                                        <>
+                                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>✨</div>
+                                            <div style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK, marginBottom: '4px' }}>
+                                                ¡Estás al día!
+                                            </div>
+                                            <div>No tienes mensajes sin leer pendientes de clientas.</div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSwitchWaInboxView('READ')}
+                                                style={{
+                                                    marginTop: '12px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px',
+                                                    border: 'none',
+                                                    background: '#e8f7ee',
+                                                    color: '#128C7E',
+                                                    fontWeight: 600,
+                                                    fontSize: '12px',
+                                                    padding: '5px 12px',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                Ver mensajes leídos &rarr;
+                                            </button>
+                                        </>
+                                    ) : waInboxView === 'READ' ? (
+                                        <>
+                                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📬</div>
+                                            <div style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK, marginBottom: '4px' }}>
+                                                Sin mensajes en el historial
+                                            </div>
+                                            <div>Aún no hay mensajes marcados como leídos.</div>
+                                        </>
                                     ) : (
-                                        <div>Aún no hay mensajes entrantes registrados. Cuando tus clientas te escriban por WhatsApp, aparecerán aquí.</div>
+                                        <>
+                                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
+                                            <div style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK, marginBottom: '4px' }}>
+                                                Sin mensajes registrados
+                                            </div>
+                                            <div>Cuando tus clientas te escriban por WhatsApp, aparecerán aquí agrupadas por contacto.</div>
+                                        </>
                                     )}
                                 </div>
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {whatsappMessages.map((msg) => (
-                                        <div
-                                            key={msg.id}
-                                            style={{
-                                                border: !msg.isRead ? '1px solid #b7ebd1' : `1px solid ${DIVIDER}`,
-                                                background: !msg.isRead ? '#f5fbf7' : '#ffffff',
-                                                borderRadius: '12px',
-                                                padding: '12px 14px',
-                                                transition: 'box-shadow 0.15s ease',
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ fontWeight: 700, fontSize: '13.5px', color: TEXT_DARK }}>
-                                                        {msg.senderName || msg.fromPhone}
-                                                    </span>
-                                                    {msg.customerName && (
-                                                        <span style={{
-                                                            fontSize: '10.5px',
-                                                            fontWeight: 700,
-                                                            background: '#e8f7ee',
-                                                            color: '#128C7E',
-                                                            padding: '1px 6px',
-                                                            borderRadius: '4px',
-                                                        }}>
-                                                            Clienta
-                                                        </span>
-                                                    )}
-                                                    {!msg.isRead && (
-                                                        <span style={{
-                                                            fontSize: '10px',
-                                                            fontWeight: 700,
-                                                            background: '#d1f2e1',
-                                                            color: '#0d683c',
-                                                            padding: '1px 6px',
-                                                            borderRadius: '4px',
-                                                        }}>
-                                                            NUEVO
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span style={{ fontSize: '11px', color: '#888' }}>
-                                                    {formatMessageTime(msg.createdAt)}
-                                                </span>
-                                            </div>
+                                /* Listado agrupado por clienta */
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {groupedWaMessages.map((group) => {
+                                        const isGroupUnread = group.unreadCount > 0;
+                                        const hasMultipleMessages = group.messages.length > 1;
 
-                                            <div style={{
-                                                background: !msg.isRead ? '#ffffff' : '#f8f9fa',
-                                                border: `1px solid ${!msg.isRead ? '#d1f2e1' : '#eaeaea'}`,
-                                                borderRadius: '8px',
-                                                padding: '9px 12px',
-                                                fontSize: '13px',
-                                                color: '#2a2a2a',
-                                                lineHeight: 1.4,
-                                                wordBreak: 'break-word',
-                                                whiteSpace: 'pre-wrap',
-                                                marginBottom: '10px',
-                                            }}>
-                                                «{msg.content}»
-                                            </div>
+                                        return (
+                                            <div
+                                                key={group.clientKey}
+                                                style={{
+                                                    border: isGroupUnread ? '1.5px solid #a7e3c4' : `1px solid ${DIVIDER}`,
+                                                    background: isGroupUnread ? '#f8fcf9' : '#ffffff',
+                                                    borderRadius: '14px',
+                                                    padding: '14px 16px',
+                                                    boxShadow: isGroupUnread ? '0 2px 8px rgba(18, 140, 126, 0.07)' : '0 1px 3px rgba(0,0,0,0.03)',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                            >
+                                                {/* Header del grupo (Clienta, Badges y Acciones) */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    flexWrap: 'wrap',
+                                                    gap: '10px',
+                                                    marginBottom: '10px'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <div style={{
+                                                            width: '36px',
+                                                            height: '36px',
+                                                            borderRadius: '50%',
+                                                            background: isGroupUnread ? '#dcf8e6' : '#edf2f7',
+                                                            color: isGroupUnread ? '#0d683c' : '#718096',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontWeight: 700,
+                                                            fontSize: '14px',
+                                                            flexShrink: 0,
+                                                        }}>
+                                                            {group.senderName ? group.senderName.charAt(0).toUpperCase() : '💬'}
+                                                        </div>
 
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                                <span style={{ fontSize: '11.5px', color: TEXT_MID, fontFamily: 'monospace' }}>
-                                                    +{msg.fromPhone}
-                                                </span>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                    {!msg.isRead && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleMarkWaAsRead(msg.id)}
+                                                        <div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                                <span style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK }}>
+                                                                    {group.senderName}
+                                                                </span>
+
+                                                                {group.customerName && (
+                                                                    <span style={{
+                                                                        fontSize: '10.5px',
+                                                                        fontWeight: 700,
+                                                                        background: '#e8f7ee',
+                                                                        color: '#128C7E',
+                                                                        padding: '1.5px 7px',
+                                                                        borderRadius: '5px',
+                                                                    }}>
+                                                                        Clienta
+                                                                    </span>
+                                                                )}
+
+                                                                {isGroupUnread ? (
+                                                                    <span style={{
+                                                                        fontSize: '10.5px',
+                                                                        fontWeight: 700,
+                                                                        background: '#25D366',
+                                                                        color: '#ffffff',
+                                                                        padding: '2px 8px',
+                                                                        borderRadius: '999px',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '4px',
+                                                                        boxShadow: '0 1px 3px rgba(37, 211, 102, 0.35)',
+                                                                    }}>
+                                                                        {group.unreadCount === 1 ? '1 no leído' : `${group.unreadCount} no leídos`}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span style={{
+                                                                        fontSize: '10.5px',
+                                                                        fontWeight: 600,
+                                                                        background: '#f1f3f5',
+                                                                        color: '#6c757d',
+                                                                        padding: '1.5px 7px',
+                                                                        borderRadius: '5px',
+                                                                    }}>
+                                                                        Leído
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', fontSize: '11.5px', color: TEXT_MID }}>
+                                                                <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>
+                                                                    +{group.fromPhone}
+                                                                </span>
+                                                                <span>&bull;</span>
+                                                                <span>
+                                                                    {formatMessageTime(group.latestCreatedAt)}
+                                                                </span>
+                                                                {hasMultipleMessages && (
+                                                                    <>
+                                                                        <span>&bull;</span>
+                                                                        <span style={{ fontWeight: 600, color: isGroupUnread ? '#128C7E' : TEXT_MID }}>
+                                                                            {group.messages.length} mensajes agrupados
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                        {isGroupUnread && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleMarkClientAsRead(group)}
+                                                                title={hasMultipleMessages ? 'Marcar todos los mensajes de esta clienta como leídos' : 'Marcar como leído'}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '5px',
+                                                                    background: '#edf2f7',
+                                                                    color: '#334155',
+                                                                    border: '1px solid #cbd5e1',
+                                                                    borderRadius: '7px',
+                                                                    padding: '5px 10px',
+                                                                    fontSize: '11.5px',
+                                                                    fontWeight: 600,
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            >
+                                                                <CheckCheck size={14} style={{ color: '#0d683c' }} />
+                                                                <span>{hasMultipleMessages ? 'Marcar leídos' : 'Marcar leído'}</span>
+                                                            </button>
+                                                        )}
+
+                                                        <a
+                                                            href={group.replyUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: '#edf2f7',
-                                                                color: '#4a5568',
+                                                                gap: '5px',
+                                                                background: '#25D366',
+                                                                color: '#ffffff',
                                                                 border: 'none',
-                                                                borderRadius: '6px',
-                                                                padding: '4px 9px',
-                                                                fontSize: '11.5px',
-                                                                fontWeight: 600,
-                                                                cursor: 'pointer',
+                                                                borderRadius: '7px',
+                                                                padding: '5px 12px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 700,
+                                                                textDecoration: 'none',
+                                                                boxShadow: '0 2px 5px rgba(37, 211, 102, 0.28)',
                                                             }}
                                                         >
-                                                            <Check size={13} />
-                                                            <span>Marcar leído</span>
-                                                        </button>
-                                                    )}
-                                                    <a
-                                                        href={msg.replyUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '5px',
-                                                            background: '#25D366',
-                                                            color: '#ffffff',
-                                                            border: 'none',
-                                                            borderRadius: '6px',
-                                                            padding: '5px 12px',
-                                                            fontSize: '12px',
-                                                            fontWeight: 700,
-                                                            textDecoration: 'none',
-                                                            boxShadow: '0 2px 4px rgba(37, 211, 102, 0.25)',
-                                                        }}
-                                                    >
-                                                        <FaWhatsapp size={14} />
-                                                        <span>💬 Responder en WhatsApp</span>
-                                                    </a>
+                                                            <FaWhatsapp size={14} />
+                                                            <span>💬 Responder en WhatsApp</span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mensajes agrupados de esta clienta */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '6px',
+                                                    background: isGroupUnread ? 'rgba(255, 255, 255, 0.9)' : '#f8f9fa',
+                                                    border: `1px solid ${isGroupUnread ? '#d8f0e3' : '#ebebeb'}`,
+                                                    borderRadius: '10px',
+                                                    padding: '8px 10px',
+                                                }}>
+                                                    {group.messages.map((msg, idx) => (
+                                                        <div
+                                                            key={msg.id}
+                                                            style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                gap: '10px',
+                                                                padding: '7px 10px',
+                                                                borderRadius: '7px',
+                                                                background: !msg.isRead ? '#ffffff' : 'transparent',
+                                                                border: !msg.isRead ? '1px solid #bfead4' : '1px solid transparent',
+                                                            }}
+                                                        >
+                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flex: 1, minWidth: 0 }}>
+                                                                {hasMultipleMessages && (
+                                                                    <span style={{
+                                                                        fontSize: '10.5px',
+                                                                        fontWeight: 700,
+                                                                        color: !msg.isRead ? '#128C7E' : '#94a3b8',
+                                                                        minWidth: '18px',
+                                                                    }}>
+                                                                        #{idx + 1}
+                                                                    </span>
+                                                                )}
+                                                                <div style={{
+                                                                    fontSize: '13px',
+                                                                    color: '#1f2937',
+                                                                    lineHeight: 1.4,
+                                                                    wordBreak: 'break-word',
+                                                                    whiteSpace: 'pre-wrap',
+                                                                }}>
+                                                                    «{msg.content}»
+                                                                </div>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                                                <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                                                                    {formatMessageTime(msg.createdAt)}
+                                                                </span>
+
+                                                                {!msg.isRead && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleMarkWaAsRead(msg.id)}
+                                                                        title="Marcar este mensaje individual como leído"
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '3px',
+                                                                            background: '#edf2f7',
+                                                                            color: '#475569',
+                                                                            border: '1px solid #e2e8f0',
+                                                                            borderRadius: '5px',
+                                                                            padding: '2px 7px',
+                                                                            fontSize: '11px',
+                                                                            fontWeight: 600,
+                                                                            cursor: 'pointer',
+                                                                        }}
+                                                                    >
+                                                                        <Check size={12} style={{ color: '#0d683c' }} />
+                                                                        <span>Leído</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

@@ -21,12 +21,13 @@ export const whatsappMessagesApi = {
   getMessages: async (
     page = 0,
     size = 20,
-    unreadOnly = false
+    unreadOnly = false,
+    readOnly = false
   ): Promise<PagedResponse<IncomingWhatsAppMessageDto>> => {
     const response = await apiClient.get<ApiResponse<PagedResponse<IncomingWhatsAppMessageDto>>>(
       '/api/whatsapp/messages',
       {
-        params: { page, size, unreadOnly },
+        params: { page, size, unreadOnly, readOnly },
       }
     );
     return response.data?.data || {
@@ -75,6 +76,20 @@ export const whatsappMessagesApi = {
     try {
       const response = await apiClient.patch<ApiResponse<{ markedCount: number }>>(
         '/api/whatsapp/messages/read-all'
+      );
+      return response.data?.data?.markedCount ?? 0;
+    } catch {
+      return 0;
+    }
+  },
+
+  /**
+   * Marcar todos los mensajes de un número/remitente como leídos
+   */
+  markByPhoneAsRead: async (phone: string): Promise<number> => {
+    try {
+      const response = await apiClient.patch<ApiResponse<{ markedCount: number }>>(
+        `/api/whatsapp/messages/by-phone/${encodeURIComponent(phone)}/read`
       );
       return response.data?.data?.markedCount ?? 0;
     } catch {
