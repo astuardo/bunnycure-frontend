@@ -5,11 +5,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
-import { FaWhatsapp, FaBell, FaEnvelope, FaSearch, FaTimes, FaCalendarAlt, FaSyncAlt, FaCalendarDay } from 'react-icons/fa';
+import { FaWhatsapp, FaBell, FaEnvelope, FaSearch, FaTimes, FaCalendarAlt, FaSyncAlt, FaCalendarDay, FaHistory } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { CancelAppointmentDialog, CancelledByOption } from '../../components/appointments/CancelAppointmentDialog';
 import { CompleteAppointmentWithSuppliesModal } from '../../components/appointments/CompleteAppointmentWithSuppliesModal';
+import { AppointmentNotificationsModal } from '../../components/appointments/AppointmentNotificationsModal';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
@@ -783,6 +784,8 @@ export default function AppointmentsPage() {
     }
   };
 
+  const [selectedNotificationsApt, setSelectedNotificationsApt] = useState<Appointment | null>(null);
+
   const resetForm = () => {
     setFormData({
       customerId: 0,
@@ -1113,6 +1116,11 @@ export default function AppointmentsPage() {
                                     Recordatorio WhatsApp
                                   </Dropdown.Item>
                                   <Dropdown.Divider />
+                                  <Dropdown.Item onClick={() => setSelectedNotificationsApt(apt)}>
+                                    <FaHistory className="me-2 text-info" />
+                                    Historial de Mensajes
+                                  </Dropdown.Item>
+                                  <Dropdown.Divider />
                                   <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
                                     <FaWhatsapp className="me-2 text-success" />
                                     Traspaso a Humano
@@ -1192,6 +1200,9 @@ export default function AppointmentsPage() {
                           {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
                             <Button size="sm" variant="warning" onClick={() => handleCancelAppointment(apt.id)}>Cancelar</Button>
                           )}
+                          <Button size="sm" variant="outline-info" onClick={() => setSelectedNotificationsApt(apt)} title="Historial de Mensajes">
+                            <FaHistory />
+                          </Button>
                           <Button size="sm" variant="outline-danger" onClick={() => handleDeleteAppointment(apt.id)}>Eliminar</Button>
                         </div>
                       </Card.Body>
@@ -1877,6 +1888,14 @@ export default function AppointmentsPage() {
         onCompleted={() => {
           fetchAppointments();
         }}
+      />
+      {/* Modal de Historial de Mensajes / Entregas */}
+      <AppointmentNotificationsModal
+        show={selectedNotificationsApt !== null}
+        appointmentId={selectedNotificationsApt?.id ?? null}
+        customerName={selectedNotificationsApt?.customer?.fullName}
+        customerPhone={selectedNotificationsApt?.customer?.phone}
+        onClose={() => setSelectedNotificationsApt(null)}
       />
       </div>
     </DashboardLayout>

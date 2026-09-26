@@ -10,6 +10,7 @@ import {
   AppointmentUpdateRequest,
   AppointmentStatus,
   InvoiceQuotaInfo,
+  NotificationLogDto,
 } from '../types/appointment.types';
 
 export const appointmentsApi = {
@@ -115,6 +116,14 @@ export const appointmentsApi = {
    */
   sendWhatsAppReminder: async (id: number): Promise<void> => {
     await apiClient.post(`/api/appointments/${id}/whatsapp/reminder`);
+  },
+
+  /**
+   * Obtener historial de notificaciones enviadas para una cita
+   */
+  getAppointmentNotifications: async (id: number): Promise<NotificationLogDto[]> => {
+    const response = await apiClient.get<ApiResponse<NotificationLogDto[]>>(`/api/appointments/${id}/notifications`);
+    return response.data.data || [];
   },
 
   /**

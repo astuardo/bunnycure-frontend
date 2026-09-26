@@ -59,3 +59,18 @@ export interface InvoiceQuotaInfo {
   remainingThisMonth: number;
   generateByDefault: boolean;
 }
+
+export interface NotificationLogDto {
+  id: number;
+  appointmentId?: number;
+  customerId?: number;
+  customerName?: string;
+  channel: 'WHATSAPP' | 'EMAIL' | string;
+  recipient: string;
+  subject?: string;
+  content?: string;
+  wamid?: string;
+  status: 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | string;
+  createdAt: string;
+}
+

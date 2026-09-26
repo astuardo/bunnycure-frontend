@@ -21,13 +21,14 @@ import {
   endOfWeek
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { FaChevronLeft, FaChevronRight, FaWhatsapp, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaWhatsapp, FaBell, FaEnvelope, FaHistory } from 'react-icons/fa';
 import { FiCalendar, FiSlash } from 'react-icons/fi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
+import { AppointmentNotificationsModal } from '../../components/appointments/AppointmentNotificationsModal';
 import { useToast } from '../../hooks/useToast';
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
@@ -187,6 +188,8 @@ export default function CalendarPage() {
       toast.error(error.message || 'Error al enviar recordatorio');
     }
   };
+
+  const [selectedNotificationsApt, setSelectedNotificationsApt] = useState<Appointment | null>(null);
 
   // Generar celdas del calendario
   const calendarCells = useMemo((): CalendarDayCell[] => {
@@ -581,6 +584,11 @@ export default function CalendarPage() {
                                   Recordatorio WhatsApp
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => setSelectedNotificationsApt(apt)}>
+                                  <FaHistory className="me-2 text-info" />
+                                  Historial de Mensajes
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
                                 <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
                                   <FaWhatsapp className="me-2 text-success" />
                                   Traspaso a Humano
@@ -674,6 +682,15 @@ export default function CalendarPage() {
             />
           </Modal.Body>
         </Modal>
+
+        {/* Modal de Historial de Mensajes / Entregas */}
+        <AppointmentNotificationsModal
+          show={selectedNotificationsApt !== null}
+          appointmentId={selectedNotificationsApt?.id ?? null}
+          customerName={selectedNotificationsApt?.customer?.fullName}
+          customerPhone={selectedNotificationsApt?.customer?.phone}
+          onClose={() => setSelectedNotificationsApt(null)}
+        />
       </Container>
     </DashboardLayout>
   );
