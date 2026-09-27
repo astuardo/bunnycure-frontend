@@ -97,6 +97,8 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
         return <Badge bg="info" text="dark" className="px-2 py-1"><FaCheckCircle className="me-1" /> Entregado en el teléfono</Badge>;
       case 'FAILED':
         return <Badge bg="danger" className="px-2 py-1"><FaExclamationCircle className="me-1" /> Falló al entregar</Badge>;
+      case 'RECEIVED':
+        return <Badge bg="warning" text="dark" className="px-2 py-1"><FaCheckCircle className="me-1" /> Respuesta recibida de clienta</Badge>;
       case 'SENT':
       default:
         return <Badge bg="primary" className="px-2 py-1"><FaPaperPlane className="me-1" /> Enviado a Meta Cloud API</Badge>;
