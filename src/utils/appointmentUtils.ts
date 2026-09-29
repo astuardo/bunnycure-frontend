@@ -121,3 +121,22 @@ export function buildGoogleReviewWhatsAppUrl(phone?: string, customerName?: stri
   return `https://wa.me/${waPhone}?text=${encoded}`;
 }
 
+export interface AppointmentGiftCardPaymentInfo {
+  code: string;
+  servicesText?: string;
+}
+
+/**
+ * Detecta y extrae información de pago con GiftCard desde las notas de la cita
+ */
+export function extractAppointmentGiftCardInfo(notes?: string | null): AppointmentGiftCardPaymentInfo | null {
+  if (!notes) return null;
+  const match = notes.match(/\[Pago con GiftCard\s+([A-Za-z0-9_-]+)(?::\s*([^\]]+))?\]/i);
+  if (match && match[1]) {
+    return {
+      code: match[1].trim(),
+      servicesText: match[2]?.trim(),
+    };
+  }
+  return null;
+}

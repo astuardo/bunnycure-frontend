@@ -9,13 +9,14 @@ import { AlertCircle } from 'lucide-react';
 
 export type CancelledByOption = 'CUSTOMER' | 'MANICURIST';
 
-interface CancelAppointmentDialogProps {
+export interface CancelAppointmentDialogProps {
   show: boolean;
   appointmentId?: number;
   customerName?: string;
   appointmentDate?: string;
   appointmentTime?: string;
-  onConfirm: (reason: string, cancelledBy: CancelledByOption) => Promise<void>;
+  giftCardInfo?: { code: string; servicesText?: string } | null;
+  onConfirm: (reason: string, cancelledBy: CancelledByOption, revertGiftCard?: boolean) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -39,11 +40,13 @@ export function CancelAppointmentDialog({
   customerName = 'Sin nombre',
   appointmentDate = '',
   appointmentTime = '',
+  giftCardInfo,
   onConfirm,
   onCancel,
   isLoading = false,
 }: CancelAppointmentDialogProps) {
   const [isManicurist, setIsManicurist] = useState(false);
+  const [revertGiftCard, setRevertGiftCard] = useState(true);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
 
@@ -55,9 +58,10 @@ export function CancelAppointmentDialog({
 
     try {
       setError('');
-      await onConfirm(reason.trim(), isManicurist ? 'MANICURIST' : 'CUSTOMER');
+      await onConfirm(reason.trim(), isManicurist ? 'MANICURIST' : 'CUSTOMER', Boolean(giftCardInfo && revertGiftCard));
       setReason('');
       setIsManicurist(false);
+      setRevertGiftCard(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cancelar la cita');
     }
@@ -66,6 +70,7 @@ export function CancelAppointmentDialog({
   const handleClose = () => {
     setReason('');
     setIsManicurist(false);
+    setRevertGiftCard(true);
     setError('');
     onCancel();
   };
@@ -99,6 +104,47 @@ export function CancelAppointmentDialog({
             {appointmentDate} a las {appointmentTime}
           </div>
         </div>
+
+        {/* Sección de restitución de GiftCard si la cita fue pagada con GiftCard */}
+        {giftCardInfo && (
+          <div
+            style={{
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '8px',
+              padding: '12px 14px',
+              marginBottom: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{ fontSize: '18px' }}>🎁</span>
+              <strong style={{ fontSize: '13.5px', color: '#166534' }}>
+                Pago con GiftCard detectado ({giftCardInfo.code})
+              </strong>
+            </div>
+            <div style={{ fontSize: '12.5px', color: '#15803d', marginBottom: '8px' }}>
+              Esta cita utilizó saldo de la GiftCard <strong>{giftCardInfo.code}</strong>
+              {giftCardInfo.servicesText ? ` (${giftCardInfo.servicesText})` : ''}.
+            </div>
+            <Form.Check
+              type="checkbox"
+              id="revert-giftcard-checkbox"
+              label={
+                <span style={{ fontWeight: 600, fontSize: '13px', color: '#14532d', cursor: 'pointer' }}>
+                  Restituir saldo a la GiftCard automáticamente
+                </span>
+              }
+              checked={revertGiftCard}
+              onChange={(e) => setRevertGiftCard(e.target.checked)}
+              disabled={isLoading}
+            />
+            <div style={{ fontSize: '11.5px', color: '#4b5563', marginTop: '4px', marginLeft: '24px' }}>
+              {revertGiftCard
+                ? '✓ El servicio canjeado volverá a estar disponible en la GiftCard de la clienta al cancelar.'
+                : '⚠️ El saldo no se devolverá a la GiftCard (quedará como consumido).'}
+            </div>
+          </div>
+        )}
 
         {/* Checkbox Origen de Cancelación */}
         <div

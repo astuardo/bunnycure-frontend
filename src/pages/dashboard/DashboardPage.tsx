@@ -28,8 +28,11 @@ import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/
 import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { useCustomersStore } from '@/stores/customersStore';
+import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
 import { ServiceSummary } from '@/types/service.types';
+import { GiftCardRedeemItemRequest } from '@/types/giftcard.types';
+import { extractAppointmentGiftCardInfo } from '@/utils/appointmentUtils';
 import { statsApi } from '../../api/stats.api';
 import { DashboardStats, TodayOperationalStats } from '@/types/stats.types';
 import { 
@@ -218,6 +221,7 @@ export default function DashboardPage() {
     const toast = useToast();
     const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus, updateAppointment } = useAppointmentsStore();
     const { customers, fetchCustomers } = useCustomersStore();
+    const { giftCards, fetchGiftCards, revertGiftCardRedeem } = useGiftCardsStore();
     const [statsLoading, setStatsLoading] = useState(true);
     const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
     const [todayStats, setTodayStats] = useState<TodayOperationalStats | null>(null);
@@ -488,7 +492,8 @@ export default function DashboardPage() {
 
     const handleConfirmCancelAppointment = async (
         reason: string,
-        cancelledBy: CancelledByOption = 'CUSTOMER'
+        cancelledBy: CancelledByOption = 'CUSTOMER',
+        revertGiftCard: boolean = false
     ) => {
         if (!cancelingAppointmentId) return;
 
@@ -497,8 +502,61 @@ export default function DashboardPage() {
             const appointment = appointments.find((apt) => apt.id === cancelingAppointmentId);
             if (!appointment) throw new Error('Cita no encontrada');
 
+            let giftCardRestored = false;
+            const gcInfo = extractAppointmentGiftCardInfo(appointment.notes);
+
+            if (revertGiftCard && gcInfo) {
+                try {
+                    let currentGiftCards = giftCards;
+                    if (!currentGiftCards || currentGiftCards.length === 0) {
+                        await fetchGiftCards();
+                        currentGiftCards = useGiftCardsStore.getState().giftCards;
+                    }
+
+                    const targetGc = currentGiftCards.find(
+                        (gc) => gc.code.toUpperCase() === gcInfo.code.toUpperCase()
+                    );
+
+                    if (targetGc) {
+                        const aptServices = getAppointmentServices(appointment).map((s) => s.name.trim().toLowerCase());
+                        const itemsToRevert: GiftCardRedeemItemRequest[] = [];
+
+                        for (const item of targetGc.items) {
+                            const matchesText =
+                                gcInfo.servicesText && gcInfo.servicesText.toLowerCase().includes(item.serviceName.trim().toLowerCase());
+                            const matchesApt = aptServices.includes(item.serviceName.trim().toLowerCase());
+
+                            if ((matchesText || matchesApt) && item.redeemedQuantity > 0) {
+                                itemsToRevert.push({ giftCardItemId: item.id, quantity: 1 });
+                            }
+                        }
+
+                        if (itemsToRevert.length === 0) {
+                            const singleRedeemed = targetGc.items.find((i) => i.redeemedQuantity > 0);
+                            if (singleRedeemed) {
+                                itemsToRevert.push({ giftCardItemId: singleRedeemed.id, quantity: 1 });
+                            }
+                        }
+
+                        if (itemsToRevert.length > 0) {
+                            await revertGiftCardRedeem(targetGc.id, {
+                                note: `Restitución automática por cancelación de cita #${appointment.id} (${appointment.appointmentDate}). Motivo: ${reason}`,
+                                items: itemsToRevert,
+                            });
+                            await fetchGiftCards();
+                            giftCardRestored = true;
+                        }
+                    }
+                } catch (gcErr) {
+                    console.error('Error al revertir saldo de GiftCard en cancelación:', gcErr);
+                }
+            }
+
             const initiatorLabel = cancelledBy === 'MANICURIST' ? 'Manicurista' : 'Cliente';
-            const cancellationBlock = `--- CANCELACIÓN ---\nCancelado por: ${initiatorLabel}\nMotivo: ${reason}`;
+            const gcNotice = giftCardRestored
+                ? `\nSaldo GiftCard ${gcInfo?.code}: Restituido exitosamente a la clienta.`
+                : '';
+            const cancellationBlock = `--- CANCELACIÓN ---\nCancelado por: ${initiatorLabel}\nMotivo: ${reason}${gcNotice}`;
 
             const updatedNotes = appointment.notes
                 ? `${appointment.notes}\n\n${cancellationBlock}`
@@ -510,7 +568,16 @@ export default function DashboardPage() {
             // 🔍 Track cancellation en GA4
             trackAppointmentCancelled(cancelingAppointmentId, appointment.customer.id, reason, cancelledBy.toLowerCase());
 
-            toast.success(cancelledBy === 'MANICURIST' ? 'Cita cancelada (por manicurista)' : 'Cita cancelada correctamente');
+            if (giftCardRestored) {
+                toast.success(
+                    cancelledBy === 'MANICURIST'
+                        ? 'Cita cancelada y saldo de GiftCard restituido a la clienta'
+                        : 'Cita cancelada correctamente y saldo de GiftCard restituido a la clienta'
+                );
+            } else {
+                toast.success(cancelledBy === 'MANICURIST' ? 'Cita cancelada (por manicurista)' : 'Cita cancelada correctamente');
+            }
+
             setShowCancelModal(false);
             setCancelingAppointmentId(null);
             await fetchAppointments();
@@ -2046,6 +2113,9 @@ export default function DashboardPage() {
                     customerName={appointments.find((apt) => apt.id === cancelingAppointmentId)?.customer.fullName}
                     appointmentDate={appointments.find((apt) => apt.id === cancelingAppointmentId)?.appointmentDate}
                     appointmentTime={appointments.find((apt) => apt.id === cancelingAppointmentId)?.appointmentTime}
+                    giftCardInfo={extractAppointmentGiftCardInfo(
+                        appointments.find((apt) => apt.id === cancelingAppointmentId)?.notes
+                    )}
                     onConfirm={handleConfirmCancelAppointment}
                     onCancel={() => {
                         setShowCancelModal(false);
