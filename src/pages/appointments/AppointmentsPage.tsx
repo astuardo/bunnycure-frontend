@@ -129,6 +129,12 @@ export default function AppointmentsPage() {
   const isQuickCreateMode = searchParams.get('create') === '1';
   const showCreateAppointmentModal = showCreateModal || isQuickCreateMode;
 
+  // Estados para selección y uso de GiftCard al crear una cita
+  const [createUseGiftCardChoice, setCreateUseGiftCardChoice] = useState<'YES' | 'NO' | null>(null);
+  const [createSelectedGiftCardId, setCreateSelectedGiftCardId] = useState<number | null>(null);
+  const [createSelectedGiftCardItemIds, setCreateSelectedGiftCardItemIds] = useState<number[]>([]);
+  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false);
+
   const getErrorMessage = (err: unknown, fallback: string) => {
     if (err instanceof Error && err.message) {
       return err.message;
@@ -344,19 +350,40 @@ export default function AppointmentsPage() {
       (item) => item.description.trim().length > 0 && item.amount > 0
     );
 
-    if (validCustomItems.length === 0) {
-      return baseNotes;
+    const blocks: string[] = [];
+    if (baseNotes) {
+      blocks.push(baseNotes);
     }
 
-    const extrasBlock = [
-      'Extras personalizados:',
-      ...validCustomItems.map((item) => `- ${item.description.trim()}: ${formatCurrency(item.amount)}`),
-      `Subtotal servicios: ${formatCurrency(createTotal)}`,
-      `Total extras: ${formatCurrency(customChargesTotal)}`,
-      `Total final estimado: ${formatCurrency(createFinalTotal)}`,
-    ].join('\n');
+    if (createUseGiftCardChoice === 'YES' && effectiveSelectedGiftCard && chosenCreateGiftCardItems.length > 0) {
+      const itemsText = chosenCreateGiftCardItems.map((i) => i.serviceName).join(', ');
+      blocks.push(
+        [
+          `[Pago con GiftCard ${effectiveSelectedGiftCard.code}: ${itemsText}]`,
+          'Método de pago: GiftCard',
+          `Total cubierto por GiftCard: ${formatCurrency(createGiftCardCoverage)}`,
+          createNetTotalToPay > 0
+            ? `Saldo restante a pagar en local: ${formatCurrency(createNetTotalToPay)}`
+            : 'Cita 100% pagada con GiftCard ($0 a cobrar en local)',
+        ].join('\n')
+      );
+    }
 
-    return baseNotes ? `${baseNotes}\n\n${extrasBlock}` : extrasBlock;
+    if (validCustomItems.length > 0) {
+      const extrasBlock = [
+        'Extras personalizados:',
+        ...validCustomItems.map((item) => `- ${item.description.trim()}: ${formatCurrency(item.amount)}`),
+        `Subtotal servicios: ${formatCurrency(createTotal)}`,
+        createUseGiftCardChoice === 'YES' && createGiftCardCoverage > 0
+          ? `Descuento GiftCard: -${formatCurrency(createGiftCardCoverage)}`
+          : null,
+        `Total extras: ${formatCurrency(customChargesTotal)}`,
+        `Total final estimado: ${formatCurrency(createUseGiftCardChoice === 'YES' ? createNetTotalToPay : createFinalTotal)}`,
+      ].filter(Boolean).join('\n');
+      blocks.push(extrasBlock);
+    }
+
+    return blocks.length > 0 ? blocks.join('\n\n') : undefined;
   };
 
   const buildCreatePayload = (): AppointmentCreateRequest => ({
@@ -366,7 +393,7 @@ export default function AppointmentsPage() {
     appointmentDate: formData.appointmentDate,
     appointmentTime: formData.appointmentTime,
     notes: buildCreateNotes(),
-    totalPrice: createFinalTotal,
+    totalPrice: createUseGiftCardChoice === 'YES' ? createNetTotalToPay : createFinalTotal,
   });
 
   const availableEditCustomerGiftCards = useMemo(() => {
@@ -398,6 +425,67 @@ export default function AppointmentsPage() {
       return isBeneficiary && isActive && hasRemaining;
     });
   }, [giftCards, formData.customerId, customers]);
+
+  const effectiveSelectedGiftCard = useMemo(() => {
+    if (!availableCreateCustomerGiftCards.length) return null;
+    if (createSelectedGiftCardId) {
+      const found = availableCreateCustomerGiftCards.find((gc) => gc.id === createSelectedGiftCardId);
+      if (found) return found;
+    }
+    return availableCreateCustomerGiftCards[0];
+  }, [availableCreateCustomerGiftCards, createSelectedGiftCardId]);
+
+  const chosenCreateGiftCardItems = useMemo(() => {
+    if (!effectiveSelectedGiftCard || createUseGiftCardChoice !== 'YES') return [];
+    return effectiveSelectedGiftCard.items.filter(
+      (item) => createSelectedGiftCardItemIds.includes(item.id) && item.remainingQuantity > 0
+    );
+  }, [effectiveSelectedGiftCard, createUseGiftCardChoice, createSelectedGiftCardItemIds]);
+
+  const createGiftCardCoverage = useMemo(() => {
+    return chosenCreateGiftCardItems.reduce((sum, item) => sum + (item.unitPrice || 0), 0);
+  }, [chosenCreateGiftCardItems]);
+
+  const createNetTotalToPay = useMemo(() => {
+    if (createUseGiftCardChoice === 'YES') {
+      return Math.max(0, createTotal - createGiftCardCoverage) + customChargesTotal;
+    }
+    return createFinalTotal;
+  }, [createUseGiftCardChoice, createTotal, createGiftCardCoverage, customChargesTotal, createFinalTotal]);
+
+  const handleSelectCreateGiftCardUsage = (choice: 'YES' | 'NO') => {
+    setCreateUseGiftCardChoice(choice);
+    if (choice === 'YES') {
+      const targetGc = effectiveSelectedGiftCard || availableCreateCustomerGiftCards[0];
+      if (targetGc) {
+        if (!createSelectedGiftCardId) {
+          setCreateSelectedGiftCardId(targetGc.id);
+        }
+        // Pre-seleccionar items que coincidan con los servicios de la cita, o el primero disponible
+        const matchingItems = targetGc.items.filter((item) => {
+          if (item.remainingQuantity <= 0) return false;
+          return selectedCreateServices.some(
+            (s) => s.id === item.serviceId || s.name.trim().toLowerCase() === item.serviceName.trim().toLowerCase()
+          );
+        });
+
+        if (matchingItems.length > 0) {
+          setCreateSelectedGiftCardItemIds(matchingItems.map((i) => i.id));
+        } else {
+          const firstAvailable = targetGc.items.find((i) => i.remainingQuantity > 0);
+          if (firstAvailable) {
+            setCreateSelectedGiftCardItemIds([firstAvailable.id]);
+          }
+        }
+      }
+    }
+  };
+
+  const toggleCreateGiftCardItem = (itemId: number) => {
+    setCreateSelectedGiftCardItemIds((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
+  };
 
   const handleApplyGiftCardToEditAppointment = async (gc: GiftCard, item: GiftCardItem) => {
     if (applyingGiftCard) return;
@@ -527,15 +615,50 @@ export default function AppointmentsPage() {
   const handleGoToCreateSummary = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(formData.customerId, formData.serviceIds)) return;
+    if (availableCreateCustomerGiftCards.length > 0 && !createSelectedGiftCardId) {
+      setCreateSelectedGiftCardId(availableCreateCustomerGiftCards[0].id);
+    }
     setCreateStep('summary');
   };
 
   const handleConfirmCreateAppointment = async () => {
     if (!validateForm(formData.customerId, formData.serviceIds)) return;
 
+    if (availableCreateCustomerGiftCards.length > 0 && !createUseGiftCardChoice) {
+      toast.warning('Por favor selecciona si deseas utilizar la GiftCard para el cobro de esta cita o no.');
+      return;
+    }
+
+    if (createUseGiftCardChoice === 'YES') {
+      if (!effectiveSelectedGiftCard || chosenCreateGiftCardItems.length === 0) {
+        toast.warning('Por favor selecciona al menos un servicio de la GiftCard para canjear.');
+        return;
+      }
+    }
+
+    setIsCreatingAppointment(true);
     try {
-      await createAppointment(buildCreatePayload());
-      toast.success('Cita creada exitosamente');
+      const newApt = await createAppointment(buildCreatePayload());
+
+      if (createUseGiftCardChoice === 'YES' && effectiveSelectedGiftCard && chosenCreateGiftCardItems.length > 0) {
+        try {
+          await redeemGiftCard(effectiveSelectedGiftCard.id, {
+            note: `Canje aplicado a cita #${newApt.id} (${newApt.appointmentDate}) de ${selectedCreateCustomer?.fullName || 'Clienta'}`,
+            items: chosenCreateGiftCardItems.map((item) => ({
+              giftCardItemId: item.id,
+              quantity: 1,
+            })),
+          });
+          await fetchGiftCards();
+          toast.success(`Cita creada exitosamente y saldo de GiftCard ${effectiveSelectedGiftCard.code} canjeado.`);
+        } catch (gcErr) {
+          console.error('Error al redimir GiftCard:', gcErr);
+          toast.warning('La cita fue creada, pero ocurrió un problema al registrar el canje automático de la GiftCard. Puedes canjearla manualmente desde la edición de la cita.');
+        }
+      } else {
+        toast.success('Cita creada exitosamente');
+      }
+
       const returnTo = searchParams.get('returnTo');
       closeCreateModal();
       if (searchParams.get('create') === '1' && returnTo) {
@@ -545,6 +668,8 @@ export default function AppointmentsPage() {
       fetchAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al crear la cita'));
+    } finally {
+      setIsCreatingAppointment(false);
     }
   };
 
@@ -800,6 +925,10 @@ export default function AppointmentsPage() {
     setCustomChargeItems([]);
     setIsCustomerListCollapsed(false);
     setIsServiceListCollapsed(false);
+    setCreateUseGiftCardChoice(null);
+    setCreateSelectedGiftCardId(null);
+    setCreateSelectedGiftCardItemIds([]);
+    setIsCreatingAppointment(false);
   };
 
   const toggleCreateService = (serviceId: number) => {
@@ -1240,8 +1369,27 @@ export default function AppointmentsPage() {
                       <div>
                         <div className="fw-semibold text-bunny-dark">{selectedCreateCustomer.fullName}</div>
                         <small className="text-muted">{selectedCreateCustomer.phone}</small>
+                        {availableCreateCustomerGiftCards.length > 0 && (
+                          <div className="mt-1">
+                            <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                              <span>🎁</span>
+                              <span>{availableCreateCustomerGiftCards.length} GiftCard activa(s) con saldo</span>
+                            </Badge>
+                          </div>
+                        )}
                       </div>
-                      <Button variant="outline-primary" size="sm" onClick={() => setIsCustomerListCollapsed(false)}>Cambiar</Button>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => {
+                          setIsCustomerListCollapsed(false);
+                          setCreateUseGiftCardChoice(null);
+                          setCreateSelectedGiftCardId(null);
+                          setCreateSelectedGiftCardItemIds([]);
+                        }}
+                      >
+                        Cambiar
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -1264,6 +1412,9 @@ export default function AppointmentsPage() {
                               onClick={() => {
                                 setFormData((prev) => ({ ...prev, customerId: customer.id }));
                                 setIsCustomerListCollapsed(true);
+                                setCreateUseGiftCardChoice(null);
+                                setCreateSelectedGiftCardId(null);
+                                setCreateSelectedGiftCardItemIds([]);
                               }}
                             >
                               <div className="fw-semibold">{customer.fullName}</div>
@@ -1411,19 +1562,181 @@ export default function AppointmentsPage() {
               </div>
 
               {availableCreateCustomerGiftCards.length > 0 && (
-                <Alert variant="info" className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                  <div>
-                    <strong>🎁 GiftCard disponible:</strong> La clienta tiene {availableCreateCustomerGiftCards.length} GiftCard(s) activa(s) con saldo (
-                    {availableCreateCustomerGiftCards.map(gc => gc.code).join(', ')}).
+                <div className="p-3 border rounded mb-3 bg-light border-primary-subtle shadow-sm">
+                  <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="fs-5">🎁</span>
+                      <strong className="text-dark">GiftCard Activa Detectada</strong>
+                    </div>
+                    <Badge
+                      bg={
+                        createUseGiftCardChoice === 'YES'
+                          ? 'success'
+                          : createUseGiftCardChoice === 'NO'
+                          ? 'secondary'
+                          : 'warning'
+                      }
+                      className="px-2 py-1"
+                    >
+                      {createUseGiftCardChoice === 'YES'
+                        ? '✓ Cobro con GiftCard'
+                        : createUseGiftCardChoice === 'NO'
+                        ? 'Cobro habitual sin GiftCard'
+                        : '⚠️ Selección requerida'}
+                    </Badge>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline-primary"
-                    onClick={() => navigate(`/giftcards?search=${encodeURIComponent(availableCreateCustomerGiftCards[0].code)}`)}
-                  >
-                    Ver GiftCard
-                  </Button>
-                </Alert>
+
+                  <p className="small text-muted mb-2">
+                    La clienta tiene <strong>{availableCreateCustomerGiftCards.length} GiftCard(s) activa(s)</strong> con saldo ({availableCreateCustomerGiftCards.map((gc) => gc.code).join(', ')}).
+                  </p>
+
+                  <div className="p-3 rounded bg-white border mb-2">
+                    <label className="form-label fw-semibold small text-primary mb-2 d-block">
+                      ¿Deseas utilizar la GiftCard para el cobro de esta cita? <span className="text-danger">*</span>
+                    </label>
+                    <div className="d-flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={createUseGiftCardChoice === 'YES' ? 'success' : 'outline-success'}
+                        onClick={() => handleSelectCreateGiftCardUsage('YES')}
+                        className="d-flex align-items-center gap-1"
+                      >
+                        <span>🎁</span>
+                        <span>Sí, utilizar GiftCard para cobro</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={createUseGiftCardChoice === 'NO' ? 'secondary' : 'outline-secondary'}
+                        onClick={() => handleSelectCreateGiftCardUsage('NO')}
+                        className="d-flex align-items-center gap-1"
+                      >
+                        <span>💵</span>
+                        <span>No utilizar GiftCard (Cobro habitual)</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {createUseGiftCardChoice === 'NO' && (
+                    <div className="small text-muted fst-italic px-1">
+                      ℹ️ La cita se cobrará habitualmente en el local (efectivo/transferencia). El saldo de la GiftCard no se descontará.
+                    </div>
+                  )}
+
+                  {createUseGiftCardChoice === 'YES' && effectiveSelectedGiftCard && (
+                    <div className="mt-2 pt-2 border-top">
+                      {availableCreateCustomerGiftCards.length > 1 && (
+                        <Form.Group className="mb-2">
+                          <Form.Label className="small fw-semibold mb-1">GiftCard a utilizar:</Form.Label>
+                          <Form.Select
+                            size="sm"
+                            value={effectiveSelectedGiftCard.id}
+                            onChange={(e) => {
+                              const newId = Number(e.target.value);
+                              setCreateSelectedGiftCardId(newId);
+                              const newGc = availableCreateCustomerGiftCards.find((g) => g.id === newId);
+                              if (newGc) {
+                                const matchingItems = newGc.items.filter((item) => {
+                                  if (item.remainingQuantity <= 0) return false;
+                                  return selectedCreateServices.some(
+                                    (s) =>
+                                      s.id === item.serviceId ||
+                                      s.name.trim().toLowerCase() === item.serviceName.trim().toLowerCase()
+                                  );
+                                });
+                                if (matchingItems.length > 0) {
+                                  setCreateSelectedGiftCardItemIds(matchingItems.map((i) => i.id));
+                                } else {
+                                  const firstAvail = newGc.items.find((i) => i.remainingQuantity > 0);
+                                  setCreateSelectedGiftCardItemIds(firstAvail ? [firstAvail.id] : []);
+                                }
+                              }
+                            }}
+                          >
+                            {availableCreateCustomerGiftCards.map((gc) => (
+                              <option key={gc.id} value={gc.id}>
+                                {gc.code} - Vence: {gc.expiresOn} (
+                                {gc.items.filter((i) => i.remainingQuantity > 0).length} servicio(s) con saldo)
+                              </option>
+                            ))}
+                          </Form.Select>
+                        </Form.Group>
+                      )}
+
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <small className="fw-semibold text-dark">
+                          Selecciona los servicios de {effectiveSelectedGiftCard.code} a canjear en esta cita:
+                        </small>
+                        <Button
+                          size="sm"
+                          variant="link"
+                          className="p-0 text-decoration-none small"
+                          onClick={() =>
+                            navigate(`/giftcards?search=${encodeURIComponent(effectiveSelectedGiftCard.code)}`)
+                          }
+                        >
+                          Ver detalle GiftCard ↗
+                        </Button>
+                      </div>
+
+                      <div className="d-flex flex-column gap-1 mb-2">
+                        {effectiveSelectedGiftCard.items
+                          .filter((item) => item.remainingQuantity > 0)
+                          .map((item) => {
+                            const isChecked = createSelectedGiftCardItemIds.includes(item.id);
+                            const matchesService = selectedCreateServices.some(
+                              (s) =>
+                                s.id === item.serviceId ||
+                                s.name.trim().toLowerCase() === item.serviceName.trim().toLowerCase()
+                            );
+                            return (
+                              <div
+                                key={item.id}
+                                className={`p-2 rounded border d-flex justify-content-between align-items-center ${
+                                  isChecked ? 'bg-success-subtle border-success' : 'bg-white'
+                                }`}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => toggleCreateGiftCardItem(item.id)}
+                              >
+                                <Form.Check
+                                  type="checkbox"
+                                  id={`create-gc-item-${item.id}`}
+                                  label={
+                                    <div>
+                                      <span className="fw-semibold">{item.serviceName}</span>
+                                      {matchesService && (
+                                        <Badge bg="info" className="ms-2 small">
+                                          Coincide con servicio seleccionado
+                                        </Badge>
+                                      )}
+                                      <div className="text-muted small">
+                                        Valor: {formatCurrency(item.unitPrice)} · Disponibles:{' '}
+                                        {item.remainingQuantity}
+                                      </div>
+                                    </div>
+                                  }
+                                  checked={isChecked}
+                                  onChange={() => toggleCreateGiftCardItem(item.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <span className={`fw-bold ${isChecked ? 'text-success' : 'text-muted'}`}>
+                                  {isChecked ? `-${formatCurrency(item.unitPrice)}` : formatCurrency(item.unitPrice)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      {createGiftCardCoverage > 0 && (
+                        <div className="alert alert-success py-1 px-2 mb-0 small d-flex justify-content-between align-items-center">
+                          <span>Total cubierto por GiftCard:</span>
+                          <strong>-{formatCurrency(createGiftCardCoverage)}</strong>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
               <hr />
@@ -1517,29 +1830,41 @@ export default function AppointmentsPage() {
                   <span>Subtotal servicios</span>
                   <strong>{formatCurrency(createTotal)}</strong>
                 </div>
+                {createUseGiftCardChoice === 'YES' && createGiftCardCoverage > 0 && (
+                  <div className="d-flex justify-content-between text-success">
+                    <span>
+                      🎁 Cobertura GiftCard ({effectiveSelectedGiftCard?.code})
+                    </span>
+                    <strong>-{formatCurrency(createGiftCardCoverage)}</strong>
+                  </div>
+                )}
                 <div className="d-flex justify-content-between">
                   <span>Total extras</span>
                   <strong>{formatCurrency(customChargesTotal)}</strong>
                 </div>
-                <div className="d-flex justify-content-between fs-5 mt-1">
-                  <span>Total final estimado</span>
-                  <strong>{formatCurrency(createFinalTotal)}</strong>
+                <div className="d-flex justify-content-between fs-5 mt-1 border-top pt-1">
+                  <span>Total final a cobrar en local</span>
+                  <strong className={createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0 ? 'text-success' : ''}>
+                    {createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0
+                      ? '$0 (100% Cubierto con GiftCard)'
+                      : formatCurrency(createUseGiftCardChoice === 'YES' ? createNetTotalToPay : createFinalTotal)}
+                  </strong>
                 </div>
               </div>
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="outline-secondary" onClick={() => setCreateStep('form')}>
+              <Button variant="outline-secondary" onClick={() => setCreateStep('form')} disabled={isCreatingAppointment}>
                 Volver a editar datos
               </Button>
-              <Button variant="secondary" onClick={closeCreateModal}>
+              <Button variant="secondary" onClick={closeCreateModal} disabled={isCreatingAppointment}>
                 Cancelar
               </Button>
               <Button
                 variant="primary"
                 onClick={handleConfirmCreateAppointment}
-                disabled={formData.serviceIds.length === 0}
+                disabled={formData.serviceIds.length === 0 || isCreatingAppointment}
               >
-                Crear cita
+                {isCreatingAppointment ? 'Creando cita...' : 'Crear cita'}
               </Button>
             </Modal.Footer>
           </>
