@@ -75,11 +75,12 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
       .then((registration) => {
+        if (!registration) return;
         console.log('✅ Service Worker registrado correctamente:', registration);
 
         registerWebPushSubscription(registration);
 
-        // NUEVO: Trigger para chequeo de notificaciones
+        // Trigger para chequeo de notificaciones
         const triggerNotificationCheck = () => {
           if (registration.active) {
             registration.active.postMessage({ type: 'CHECK_APPOINTMENTS_NOW' });
