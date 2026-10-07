@@ -1,6 +1,7 @@
 /* Dashboard Layout Styles */
 .dashboard-layout {
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -18,6 +19,7 @@
     flex: 1 1 auto;
     width: 100%;
     min-height: calc(100vh - 56px);
+    min-height: calc(100dvh - 56px);
     margin: 0;
     padding: 0;
 }
@@ -48,6 +50,7 @@
     .dashboard-main-content {
         width: 100%;
         flex: 1 1 100%;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     }
 }
 

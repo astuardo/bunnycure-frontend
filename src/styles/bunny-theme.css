@@ -378,23 +378,78 @@ body {
     gap: 12px;
   }
 
+  /* ─── Bottom Sheet Nativo para Móviles (mobile-native + apple-design) ─── */
+  .modal-dialog {
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    display: flex !important;
+    align-items: flex-end !important;
+  }
+
+  .modal-dialog.modal-dialog-centered {
+    min-height: 100% !important;
+    align-items: flex-end !important;
+  }
+
+  .modal-content,
+  .bunny-modal .modal-content,
   .create-appointment-modal .modal-content {
-    border-radius: 0;
+    border-top-left-radius: 24px !important;
+    border-top-right-radius: 24px !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    border-top: 1px solid rgba(238, 208, 197, 0.9) !important;
+    max-height: 88svh !important;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -12px 36px rgba(66, 35, 20, 0.16) !important;
+    animation: bunnyBottomSheetSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .bunny-modal .modal-content {
-    border-radius: 0;
+  /* Indicador táctil superior (Handle / Grab pill) */
+  .modal-header {
+    position: relative;
+    padding-top: 24px !important;
+    border-top-left-radius: 24px !important;
+    border-top-right-radius: 24px !important;
   }
 
-  .create-appointment-modal .modal-footer .btn {
-    flex: 1 1 100%;
-    min-width: 0;
+  .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 38px;
+    height: 4.5px;
+    border-radius: 9999px;
+    background-color: rgba(92, 61, 46, 0.22);
   }
 
+  .modal-body {
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  .modal-footer {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 10px;
+  }
+
+  .create-appointment-modal .modal-footer .btn,
   .customer-form-modal .modal-footer .btn,
-  .appointment-edit-modal .modal-footer .btn {
+  .appointment-edit-modal .modal-footer .btn,
+  .bunny-modal .modal-footer .btn {
     flex: 1 1 100%;
     min-width: 0;
+    min-height: 44px; /* Altura ergonómica de toque recomendada */
   }
 
   .create-appointment-modal .create-appointment-list {
@@ -403,6 +458,35 @@ body {
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* Animación de entrada fluida estilo física Apple */
+@keyframes bunnyBottomSheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.95;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Respetar preferencia de accesibilidad reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal-content,
+  .bunny-modal .modal-content,
+  .create-appointment-modal .modal-content {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Scrim / Backdrop desenfocado con tono cálido BunnyCure */
+.modal-backdrop.show {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background-color: rgba(66, 35, 20, 0.45);
 }
 
 /* Utilidades de estilo BunnyCure */
