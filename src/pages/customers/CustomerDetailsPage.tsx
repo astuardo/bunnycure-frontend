@@ -213,12 +213,12 @@ export default function CustomerDetailsPage() {
       <Container fluid className="bunny-page">
         <Row className="mb-4">
           <Col>
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h2>👤 {customer.fullName}</h2>
+            <div className="d-flex justify-content-between align-items-center gap-3">
+              <div style={{ minWidth: 0 }}>
+                <h2 style={{ overflowWrap: 'anywhere', wordBreak: 'normal' }}>👤 {customer.fullName}</h2>
                 <p className="text-muted mb-0">Detalles del cliente</p>
               </div>
-              <Button variant="outline-secondary" onClick={() => navigate('/customers')}>
+              <Button variant="outline-secondary" onClick={() => navigate('/customers')} style={{ flexShrink: 0 }}>
                 ← Volver
               </Button>
             </div>
@@ -238,7 +238,9 @@ export default function CustomerDetailsPage() {
                 </div>
                 <div className="mb-3">
                   <strong>📧 Email:</strong>
-                  <p className="mb-0">{customer.email?.trim() ? customer.email.trim() : 'No tiene'}</p>
+                  <p className="mb-0" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    {customer.email?.trim() ? customer.email.trim() : 'No tiene'}
+                  </p>
                 </div>
                 <div className="mb-3">
                   <strong>📱 Teléfono:</strong>
@@ -250,13 +252,14 @@ export default function CustomerDetailsPage() {
                 </div>
                 <div className="mb-3">
                   <strong>📸 Instagram:</strong>
-                  <div>
+                  <div style={{ overflowWrap: 'anywhere' }}>
                     {customer.instagram?.trim() ? (
                       <a
                         href={`https://instagram.com/${customer.instagram.replace(/^@/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-decoration-none fw-semibold text-primary"
+                        style={{ overflowWrap: 'anywhere' }}
                       >
                         @{customer.instagram.replace(/^@/, '')}
                       </a>

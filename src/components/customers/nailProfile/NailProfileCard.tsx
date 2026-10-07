@@ -195,7 +195,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
 
             <Col xs={12} md={3}>
               <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>COLORES FAVORITOS</small>
-              <div style={{ color: '#422314', fontSize: '13.5px' }}>
+              <div style={{ color: '#422314', fontSize: '13.5px', overflowWrap: 'anywhere' }}>
                 {profile.favoriteColors || <span className="text-muted">Sin registrar</span>}
               </div>
             </Col>
@@ -203,8 +203,8 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             <Col xs={12} md={3}>
               <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>SENSIBILIDAD / ALERGIAS</small>
               {profile.allergyNotes ? (
-                <div className="d-flex align-items-center gap-1 text-danger fw-semibold" style={{ fontSize: '13px' }}>
-                  <FiAlertCircle /> {profile.allergyNotes}
+                <div className="d-flex align-items-start gap-1 text-danger fw-semibold" style={{ fontSize: '13px', overflowWrap: 'anywhere' }}>
+                  <FiAlertCircle style={{ flexShrink: 0, marginTop: '2px' }} /> <span>{profile.allergyNotes}</span>
                 </div>
               ) : (
                 <span className="text-muted" style={{ fontSize: '13px' }}>Ninguna reportada</span>

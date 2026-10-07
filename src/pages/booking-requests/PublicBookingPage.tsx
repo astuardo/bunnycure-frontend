@@ -339,7 +339,7 @@ export const PublicBookingPage: React.FC = () => {
                           <div
                             key={srv.id}
                             onClick={() => handleToggleService(srv.id)}
-                            className="p-3 rounded d-flex justify-content-between align-items-center"
+                            className="p-3 rounded d-flex justify-content-between align-items-start gap-2"
                             style={{
                               border: isSelected ? '2px solid #8c2a3e' : '1px solid #eed0c5',
                               background: isSelected ? '#fdf4f2' : '#fff',
@@ -347,20 +347,20 @@ export const PublicBookingPage: React.FC = () => {
                               transition: 'all 0.15s ease',
                             }}
                           >
-                            <div className="pe-2">
-                              <div className="d-flex align-items-center gap-2">
+                            <div className="pe-2" style={{ minWidth: 0, flex: '1 1 auto', overflowWrap: 'anywhere' }}>
+                              <div className="d-flex align-items-start gap-2">
                                 <Form.Check
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => {}}
-                                  style={{ pointerEvents: 'none' }}
+                                  style={{ pointerEvents: 'none', flexShrink: 0, marginTop: '3px' }}
                                 />
-                                <span className="fw-bold" style={{ color: '#422314', fontSize: '15px' }}>
+                                <span className="fw-bold" style={{ color: '#422314', fontSize: '15px', overflowWrap: 'anywhere', wordBreak: 'normal' }}>
                                   {srv.name}
                                 </span>
                               </div>
                               {srv.description && (
-                                <p className="text-muted small mb-0 mt-1" style={{ fontSize: '12.5px', paddingLeft: '24px' }}>
+                                <p className="text-muted small mb-0 mt-1" style={{ fontSize: '12.5px', paddingLeft: '24px', overflowWrap: 'anywhere' }}>
                                   {srv.description}
                                 </p>
                               )}
@@ -371,7 +371,7 @@ export const PublicBookingPage: React.FC = () => {
                               </div>
                             </div>
 
-                            <div className="text-end">
+                            <div className="text-end" style={{ flexShrink: 0, whiteSpace: 'nowrap', marginTop: '2px' }}>
                               <div className="fw-bold" style={{ color: '#8c2a3e', fontSize: '16px' }}>
                                 {formatCurrencyCLP(srv.price || 0)}
                               </div>

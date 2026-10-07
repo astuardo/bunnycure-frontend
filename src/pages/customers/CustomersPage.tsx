@@ -358,7 +358,9 @@ export default function CustomersPage() {
                                         <h5 className="mb-0">Lista de Clientes</h5>
                                         <div className="d-flex align-items-center gap-2">
                                             {loading && <Spinner animation="border" size="sm" variant="secondary" />}
-                                            <Badge bg="secondary">{customers.length} clientes</Badge>
+                                            <Badge bg="secondary">
+                                                {customers.length === 1 ? '1 cliente' : `${customers.length} clientes`}
+                                            </Badge>
                                         </div>
                                     </Card.Header>
                                     <Card.Body className="p-0">
