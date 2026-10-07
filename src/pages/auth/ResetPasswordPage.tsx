@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
 
   if (validatingToken) {
     return (
-      <div className="bunny-auth-page d-flex align-items-center justify-content-center">
+      <div className="bunny-auth-page d-flex align-items-center justify-content-center min-vh-100">
         <div className="text-center">
           <Spinner animation="border" />
           <p className="mt-3">Validando enlace...</p>
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
 
   if (!tokenValid) {
     return (
-      <div className="bunny-auth-page d-flex align-items-center">
+      <div className="bunny-auth-page d-flex align-items-center min-vh-100">
         <Container>
           <Row className="justify-content-center">
             <Col md={6} lg={5}>
@@ -119,7 +119,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="bunny-auth-page d-flex align-items-center">
+    <div className="bunny-auth-page d-flex align-items-center min-vh-100">
       <Container>
         <Row className="justify-content-center">
           <Col md={6} lg={5}>

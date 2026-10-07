@@ -663,7 +663,7 @@ export default function DashboardPage() {
             {/* inject keyframe for spinner */}
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-            <div style={{ minHeight: '100vh', background: PAGE_BG, padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="bunny-page" style={{ minHeight: '100vh', background: PAGE_BG, padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
                 {/* ══ 1. Clientes Activos ══════════════════════════════════ */}
                 <DashCard style={{ padding: CARD_PAD, textAlign: 'center' }}>

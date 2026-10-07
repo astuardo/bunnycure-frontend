@@ -152,6 +152,7 @@ export const PublicBookingPage: React.FC = () => {
 
   return (
     <div
+      className="bunny-public-page"
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg, #fdf6f0 0%, #faede8 100%)',

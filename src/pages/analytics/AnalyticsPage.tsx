@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <div style={{ minHeight: '100vh', background: PAGE_BG, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="bunny-page" style={{ minHeight: '100vh', background: PAGE_BG, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Encabezado y Filtros Rápidos */}
         <div
           style={{

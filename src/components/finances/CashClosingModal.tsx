@@ -78,15 +78,15 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="xl" centered scrollable dialogClassName="cash-closing-modal-dialog">
-      <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
+    <Modal show={show} onHide={onHide} size="xl" centered scrollable dialogClassName="cash-closing-modal-dialog bunny-modal">
+      <Modal.Header closeButton style={{ background: '#fdf6f3', borderBottom: '1px solid var(--bc-border)' }}>
         <div className="d-flex align-items-center gap-2">
           <div
             style={{
               width: '38px',
               height: '38px',
               borderRadius: '10px',
-              background: '#8c2a3e',
+              background: '#c9897a',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
@@ -119,10 +119,9 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                     variant={periodType === 'DAILY' ? 'primary' : 'outline-secondary'}
                     onClick={() => setPeriodType('DAILY')}
                     style={{
-                      borderRadius: '8px',
-                      background: periodType === 'DAILY' ? '#8c2a3e' : 'transparent',
-                      borderColor: '#8c2a3e',
-                      color: periodType === 'DAILY' ? '#fff' : '#8c2a3e',
+                      background: periodType === 'DAILY' ? '#c9897a' : 'transparent',
+                      borderColor: '#c9897a',
+                      color: periodType === 'DAILY' ? '#fff' : '#7c3a2d',
                       fontWeight: 600,
                     }}
                   >
@@ -133,10 +132,9 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                     variant={periodType === 'MONTHLY' ? 'primary' : 'outline-secondary'}
                     onClick={() => setPeriodType('MONTHLY')}
                     style={{
-                      borderRadius: '8px',
-                      background: periodType === 'MONTHLY' ? '#8c2a3e' : 'transparent',
-                      borderColor: '#8c2a3e',
-                      color: periodType === 'MONTHLY' ? '#fff' : '#8c2a3e',
+                      background: periodType === 'MONTHLY' ? '#c9897a' : 'transparent',
+                      borderColor: '#c9897a',
+                      color: periodType === 'MONTHLY' ? '#fff' : '#7c3a2d',
                       fontWeight: 600,
                     }}
                   >
@@ -205,9 +203,9 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           <div className="d-flex gap-2">
             <Button
               size="sm"
-              variant="outline-dark"
+              variant="outline-secondary"
               onClick={handlePrint}
-              style={{ borderRadius: '8px', borderColor: '#c9a898', fontWeight: 600 }}
+              style={{ fontWeight: 600 }}
             >
               <FiPrinter className="me-1" /> Imprimir / PDF
             </Button>
@@ -215,7 +213,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
               size="sm"
               variant="success"
               onClick={handleExportCSV}
-              style={{ borderRadius: '8px', background: '#2e7d32', borderColor: '#2e7d32', fontWeight: 600 }}
+              style={{ fontWeight: 600 }}
             >
               <FiDownload className="me-1" /> Exportar Excel (.csv)
             </Button>
@@ -430,12 +428,12 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         </Card>
       </Modal.Body>
 
-      <Modal.Footer style={{ background: '#fdf4f2', borderTop: '1px solid #eed0c5' }}>
+      <Modal.Footer>
         <div className="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
           <small style={{ color: '#8c6052' }}>
             BunnyCure POS &copy; {new Date().getFullYear()} &bull; Todos los valores calculados con reglas de negocio oficiales.
           </small>
-          <Button variant="secondary" onClick={onHide} style={{ borderRadius: '8px' }}>
+          <Button variant="secondary" onClick={onHide}>
             Cerrar
           </Button>
         </div>

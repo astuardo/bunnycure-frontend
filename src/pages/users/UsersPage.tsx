@@ -99,7 +99,7 @@ export default function UsersPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="px-3 px-md-4 py-4">
+      <Container fluid className="bunny-page px-3 px-md-4 py-4">
         {/* Header */}
         <Row className="mb-4 align-items-center">
           <Col xs={12} md={7}>
@@ -122,22 +122,15 @@ export default function UsersPage() {
               size="sm"
               onClick={fetchUsers}
               disabled={loading}
-              style={{ borderRadius: '8px' }}
             >
               <FiRefreshCw className={loading ? 'spin' : ''} />
             </Button>
             <Button
               size="sm"
+              variant="primary"
               onClick={() => {
                 setEditingUser(null);
                 setShowFormModal(true);
-              }}
-              style={{
-                borderRadius: '8px',
-                background: '#c9897a',
-                borderColor: '#c9897a',
-                color: '#fff',
-                fontWeight: 600,
               }}
             >
               <FiPlus className="me-1" /> Nuevo Usuario
@@ -322,11 +315,11 @@ export default function UsersPage() {
             ¿Está seguro de que desea eliminar permanentemente al usuario{' '}
             <strong>{deleteCandidate?.fullName} ({deleteCandidate?.username})</strong>?
           </Modal.Body>
-          <Modal.Footer style={{ background: '#fdf6f3', borderTop: '1px solid #eed0c5' }}>
-            <Button variant="secondary" onClick={() => setDeleteCandidate(null)} disabled={deleting} style={{ borderRadius: '8px' }}>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setDeleteCandidate(null)} disabled={deleting}>
               Cancelar
             </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={deleting} style={{ borderRadius: '8px' }}>
+            <Button variant="danger" onClick={handleDelete} disabled={deleting}>
               {deleting ? 'Eliminando...' : 'Eliminar Usuario'}
             </Button>
           </Modal.Footer>

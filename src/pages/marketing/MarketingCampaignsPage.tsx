@@ -487,7 +487,7 @@ export default function MarketingCampaignsPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="marketing-page-container px-3 px-md-4 py-3">
+      <Container fluid className="bunny-page marketing-page-container px-3 px-md-4 py-3">
         {/* Banner Superior */}
         <Card className="marketing-header-card mb-4 p-3 p-md-4">
           <Row className="align-items-center">

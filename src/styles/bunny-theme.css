@@ -7,6 +7,25 @@
   --bc-text: #5c3d2e;
   --bc-text-muted: #9e7b6e;
   --bc-shadow: 0 2px 12px rgba(180, 120, 100, 0.08);
+
+  /* Sobrescribir variables núcleo de Bootstrap para toda la aplicación */
+  --bs-primary: #c9897a;
+  --bs-primary-rgb: 201, 137, 122;
+  --bs-secondary: #6b4c38;
+  --bs-secondary-rgb: 107, 76, 56;
+  --bs-success: #4b856e;
+  --bs-success-rgb: 75, 133, 110;
+  --bs-danger: #be4d4d;
+  --bs-danger-rgb: 190, 77, 77;
+  --bs-warning: #e6993a;
+  --bs-warning-rgb: 230, 153, 58;
+  --bs-info: #8c5b76;
+  --bs-info-rgb: 140, 91, 118;
+  --bs-body-color: #5c3d2e;
+  --bs-body-bg: #fdf0ec;
+  --bs-border-color: #f0e0d8;
+  --bs-link-color: #7c3a2d;
+  --bs-link-hover-color: #5c3d2e;
 }
 
 #root {
@@ -22,8 +41,10 @@ body {
   background: var(--bc-page-bg);
 }
 
+/* ─── Contenedor Estándar de Páginas ─── */
 .bunny-page {
   min-height: calc(100vh - 56px);
+  min-height: calc(100dvh - 56px);
   background: var(--bc-page-bg);
   padding: 16px 20px;
   display: flex;
@@ -47,41 +68,101 @@ body {
   padding-right: 8px;
 }
 
-.bunny-page .text-muted {
+.text-muted,
+.bunny-page .text-muted,
+.dashboard-layout .text-muted,
+.modal .text-muted {
   color: var(--bc-text-muted) !important;
 }
 
-.bunny-page .card {
+/* ─── Tarjetas Uniformes (Cards) ─── */
+.bunny-page .card,
+.dashboard-layout .card,
+.modal .card {
   background: var(--bc-surface);
   border: 1px solid var(--bc-border);
   border-radius: 18px;
   box-shadow: var(--bc-shadow);
   overflow: hidden;
+  transition: box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bunny-page .card-header {
+.bunny-page .card-header,
+.dashboard-layout .card-header,
+.modal .card-header {
   background: #fdf6f3;
   border-bottom: 1px solid var(--bc-border);
+  color: var(--bc-text);
+  font-weight: 600;
 }
 
-.bunny-page .alert {
-  border-radius: 12px;
+/* ─── Alertas Uniformes ─── */
+.alert,
+.bunny-page .alert,
+.modal .alert {
+  border-radius: 14px;
   border-width: 1px;
 }
 
+.alert-danger {
+  background-color: #fdf2f0;
+  border-color: #f5cfc9;
+  color: #8c2a2a;
+}
+
+.alert-success {
+  background-color: #edf7f2;
+  border-color: #c5e4d6;
+  color: #1e5a42;
+}
+
+.alert-warning {
+  background-color: #fff9ed;
+  border-color: #fae4b5;
+  color: #855307;
+}
+
+.alert-info {
+  background-color: #f9f2f5;
+  border-color: #edd0df;
+  color: #5c2f48;
+}
+
+/* ─── Inputs y Formularios Uniformes ─── */
 .bunny-page .form-control,
-.bunny-page .form-select {
+.bunny-page .form-select,
+.dashboard-layout .form-control,
+.dashboard-layout .form-select,
+.modal .form-control,
+.modal .form-select,
+.bunny-auth-page .form-control,
+.bunny-public-page .form-control,
+.bunny-auth-page .form-select,
+.bunny-public-page .form-select {
   border-radius: 10px;
   border-color: var(--bc-border-strong);
+  color: var(--bc-text);
 }
 
 .bunny-page .form-control:focus,
-.bunny-page .form-select:focus {
+.bunny-page .form-select:focus,
+.dashboard-layout .form-control:focus,
+.dashboard-layout .form-select:focus,
+.modal .form-control:focus,
+.modal .form-select:focus,
+.bunny-auth-page .form-control:focus,
+.bunny-public-page .form-control:focus,
+.bunny-auth-page .form-select:focus,
+.bunny-public-page .form-select:focus {
   border-color: #d6a493;
   box-shadow: 0 0 0 0.25rem rgba(201, 137, 122, 0.2);
+  color: var(--bc-text);
 }
 
-.bunny-page .table {
+/* ─── Tablas Uniformes ─── */
+.bunny-page .table,
+.dashboard-layout .table,
+.modal .table {
   --bs-table-bg: transparent;
   --bs-table-hover-bg: #fdf6f3;
   --bs-table-striped-bg: #fff8f5;
@@ -89,30 +170,63 @@ body {
   color: var(--bc-text);
 }
 
-.bunny-page .table thead th {
+.bunny-page .table thead th,
+.dashboard-layout .table thead th,
+.modal .table thead th {
   background: #fdf6f3;
   color: var(--bc-text);
   border-bottom-width: 1px;
+  font-weight: 600;
 }
 
-.bunny-page .badge {
+/* ─── Badges Uniformes ─── */
+.badge,
+.bunny-page .badge,
+.dashboard-layout .badge,
+.modal .badge {
   border-radius: 999px;
+  padding: 0.35em 0.75em;
+  font-weight: 600;
 }
 
-.bunny-page .btn {
+/* ─── Botones Uniformes (Geometría y Micro-interacciones) ─── */
+.btn,
+.bunny-page .btn,
+.dashboard-layout .btn,
+.modal .btn,
+.bunny-auth-page .btn,
+.bunny-public-page .btn {
   border-radius: 10px;
+  font-weight: 600;
+  transition: background 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bunny-page .btn-primary {
+/* Botón Primario: Terracota BunnyCure */
+.btn-primary,
+.bunny-page .btn-primary,
+.dashboard-layout .btn-primary,
+.modal .btn-primary,
+.bunny-auth-page .btn-primary,
+.bunny-public-page .btn-primary {
   --bs-btn-bg: #c9897a;
   --bs-btn-border-color: #c9897a;
   --bs-btn-hover-bg: #b97b6d;
   --bs-btn-hover-border-color: #b97b6d;
   --bs-btn-active-bg: #a86e62;
   --bs-btn-active-border-color: #a86e62;
+  --bs-btn-color: #ffffff;
 }
 
-.bunny-page .btn-outline-primary {
+/* Botón Outline Primario */
+.btn-outline-primary,
+.bunny-page .btn-outline-primary,
+.dashboard-layout .btn-outline-primary,
+.modal .btn-outline-primary,
+.bunny-auth-page .btn-outline-primary,
+.bunny-public-page .btn-outline-primary {
   --bs-btn-color: #7c3a2d;
   --bs-btn-border-color: #cfa194;
   --bs-btn-hover-bg: #fce8e4;
@@ -120,8 +234,17 @@ body {
   --bs-btn-hover-color: #5c3d2e;
 }
 
+/* Botón Secundario & Outline Secundario: Beige Cálido */
+.btn-secondary,
+.btn-outline-secondary,
 .bunny-page .btn-secondary,
-.bunny-page .btn-outline-secondary {
+.bunny-page .btn-outline-secondary,
+.dashboard-layout .btn-secondary,
+.dashboard-layout .btn-outline-secondary,
+.modal .btn-secondary,
+.modal .btn-outline-secondary,
+.bunny-auth-page .btn-outline-secondary,
+.bunny-public-page .btn-outline-secondary {
   --bs-btn-bg: #f5ede8;
   --bs-btn-border-color: #e8d3c8;
   --bs-btn-hover-bg: #efe2db;
@@ -129,41 +252,100 @@ body {
   --bs-btn-color: #6b4c38;
 }
 
-.bunny-page .modal-content {
-  border-radius: 16px;
-  border-color: var(--bc-border);
+/* Botón Éxito: Salvia / Mint Armonizado */
+.btn-success,
+.bunny-page .btn-success,
+.dashboard-layout .btn-success,
+.modal .btn-success {
+  --bs-btn-bg: #4b856e;
+  --bs-btn-border-color: #4b856e;
+  --bs-btn-hover-bg: #3e705d;
+  --bs-btn-hover-border-color: #3e705d;
+  --bs-btn-active-bg: #335e4e;
+  --bs-btn-active-border-color: #335e4e;
+  --bs-btn-color: #ffffff;
 }
 
+.btn-outline-success,
+.bunny-page .btn-outline-success,
+.dashboard-layout .btn-outline-success,
+.modal .btn-outline-success {
+  --bs-btn-color: #3e705d;
+  --bs-btn-border-color: #9eccba;
+  --bs-btn-hover-bg: #eef7f3;
+  --bs-btn-hover-border-color: #4b856e;
+  --bs-btn-hover-color: #2d5546;
+}
+
+/* Botón Peligro: Terracota Profundo / Coral */
+.btn-danger,
+.bunny-page .btn-danger,
+.dashboard-layout .btn-danger,
+.modal .btn-danger {
+  --bs-btn-bg: #be4d4d;
+  --bs-btn-border-color: #be4d4d;
+  --bs-btn-hover-bg: #a83e3e;
+  --bs-btn-hover-border-color: #a83e3e;
+  --bs-btn-active-bg: #933535;
+  --bs-btn-active-border-color: #933535;
+  --bs-btn-color: #ffffff;
+}
+
+.btn-outline-danger,
+.bunny-page .btn-outline-danger,
+.dashboard-layout .btn-outline-danger,
+.modal .btn-outline-danger {
+  --bs-btn-color: #be4d4d;
+  --bs-btn-border-color: #e5a4a4;
+  --bs-btn-hover-bg: #fdf2f2;
+  --bs-btn-hover-border-color: #be4d4d;
+  --bs-btn-hover-color: #a83e3e;
+}
+
+/* Botón Advertencia: Ámbar Cálido */
+.btn-warning,
+.bunny-page .btn-warning,
+.dashboard-layout .btn-warning,
+.modal .btn-warning {
+  --bs-btn-bg: #e6993a;
+  --bs-btn-border-color: #e6993a;
+  --bs-btn-hover-bg: #d08428;
+  --bs-btn-hover-border-color: #d08428;
+  --bs-btn-color: #ffffff;
+}
+
+/* ─── Modales Uniformes para Toda la App ─── */
+.modal .modal-content,
 .bunny-modal .modal-content {
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid var(--bc-border);
   background: #fffdfc;
   box-shadow: 0 8px 28px rgba(180, 120, 100, 0.12);
+  color: var(--bc-text);
+  overflow: hidden;
 }
 
+.modal .modal-header,
 .bunny-modal .modal-header {
   background: #fdf6f3;
   border-bottom: 1px solid var(--bc-border);
+  color: var(--bc-text);
 }
 
+.modal .modal-header .modal-title,
+.bunny-modal .modal-header .modal-title {
+  color: var(--bc-text);
+  font-weight: 700;
+}
+
+.modal .modal-footer,
 .bunny-modal .modal-footer {
   background: #fffdfc;
   border-top: 1px solid var(--bc-border);
   gap: 8px;
 }
 
-.bunny-modal .form-control,
-.bunny-modal .form-select {
-  border-radius: 10px;
-  border-color: var(--bc-border-strong);
-}
-
-.bunny-modal .form-control:focus,
-.bunny-modal .form-select:focus {
-  border-color: #d6a493;
-  box-shadow: 0 0 0 0.25rem rgba(201, 137, 122, 0.2);
-}
-
+.modal .modal-content > form,
 .bunny-modal .modal-content > form {
   display: flex;
   flex-direction: column;
@@ -171,28 +353,13 @@ body {
   min-height: 0;
 }
 
+.modal .modal-content > form .modal-body,
 .bunny-modal .modal-content > form .modal-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-}
-
-.bunny-modal .btn-primary {
-  --bs-btn-bg: #c9897a;
-  --bs-btn-border-color: #c9897a;
-  --bs-btn-hover-bg: #b97b6d;
-  --bs-btn-hover-border-color: #b97b6d;
-}
-
-.bunny-modal .btn-secondary,
-.bunny-modal .btn-outline-secondary {
-  --bs-btn-bg: #f5ede8;
-  --bs-btn-border-color: #e8d3c8;
-  --bs-btn-hover-bg: #efe2db;
-  --bs-btn-hover-border-color: #dcc4b8;
-  --bs-btn-color: #6b4c38;
 }
 
 .create-appointment-modal .modal-content {

@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="bunny-auth-page d-flex align-items-center">
+    <div className="bunny-auth-page d-flex align-items-center min-vh-100">
       <Container>
         <Row className="justify-content-center">
           <Col md={6} lg={5}>

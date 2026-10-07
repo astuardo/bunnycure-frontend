@@ -98,9 +98,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
-      <Modal.Header closeButton style={{ background: '#fdf6f3', borderBottom: '1px solid #eed0c5' }}>
-        <Modal.Title style={{ color: '#422314', fontSize: '1.15rem', fontWeight: 700 }}>
+    <Modal show={show} onHide={onHide} centered className="bunny-modal">
+      <Modal.Header closeButton>
+        <Modal.Title style={{ color: 'var(--bc-text)', fontSize: '1.15rem', fontWeight: 700 }}>
           {isEditing ? '✏️ Editar Usuario' : '➕ Nuevo Usuario del Personal'}
         </Modal.Title>
       </Modal.Header>
@@ -184,14 +184,14 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           )}
         </Modal.Body>
 
-        <Modal.Footer style={{ background: '#fdf6f3', borderTop: '1px solid #eed0c5' }}>
-          <Button variant="secondary" onClick={onHide} disabled={submitting} style={{ borderRadius: '8px' }}>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={onHide} disabled={submitting}>
             <FiX className="me-1" /> Cancelar
           </Button>
           <Button
             type="submit"
+            variant="primary"
             disabled={submitting}
-            style={{ borderRadius: '8px', background: '#c9897a', borderColor: '#c9897a', color: '#fff' }}
           >
             {submitting ? 'Guardando...' : <><FiCheck className="me-1" /> {isEditing ? 'Actualizar' : 'Crear Usuario'}</>}
           </Button>

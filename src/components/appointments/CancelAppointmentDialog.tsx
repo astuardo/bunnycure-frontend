@@ -76,10 +76,10 @@ export function CancelAppointmentDialog({
   };
 
   return (
-    <Modal show={show} onHide={handleClose} centered>
+    <Modal show={show} onHide={handleClose} centered className="bunny-modal">
       <Modal.Header closeButton className="border-0" style={{ paddingBottom: '0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-          <AlertCircle size={22} style={{ color: '#dc3545', flexShrink: 0 }} />
+          <AlertCircle size={22} style={{ color: '#be4d4d', flexShrink: 0 }} />
           <Modal.Title style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
             Cancelar Cita
           </Modal.Title>
@@ -310,7 +310,7 @@ export function CancelAppointmentDialog({
         </Form.Group>
       </Modal.Body>
 
-      <Modal.Footer style={{ borderTop: '1px solid #e9ecef', paddingTop: '16px' }}>
+      <Modal.Footer style={{ borderTop: '1px solid var(--bc-border)', paddingTop: '16px' }}>
         <Button
           variant="secondary"
           onClick={handleClose}

@@ -76,14 +76,14 @@ export default function InstallPage() {
                   className="mb-3" 
                   style={{ 
                     fontSize: '4rem',
-                    background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)',
+                    background: 'linear-gradient(135deg, #c9897a 0%, #7c3a2d 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent'
                   }}
                 >
                   🐰
                 </div>
-                <h2 className="fw-bold mb-2">BunnyCure</h2>
+                <h2 className="fw-bold mb-2" style={{ color: '#5c3d2e' }}>BunnyCure</h2>
                 <p className="text-muted">Gestión de Centro Estético</p>
               </div>
 

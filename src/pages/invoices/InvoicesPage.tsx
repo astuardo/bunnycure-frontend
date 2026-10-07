@@ -488,7 +488,7 @@ export default function InvoicesPage() {
 
   return (
     <DashboardLayout>
-      <div className="container-fluid py-3 px-md-4">
+      <div className="bunny-page container-fluid py-3 px-md-4">
         {/* Header */}
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
           <div>

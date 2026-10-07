@@ -100,7 +100,8 @@ export default function PublicGiftCardPage() {
     : false;
 
   return (
-    <Container className="py-4">
+    <div className="bunny-public-page min-vh-100 py-4">
+      <Container className="py-2">
       <Row className="justify-content-center">
         <Col lg={10}>
           <Card className="shadow-sm border-0">
@@ -238,5 +239,6 @@ export default function PublicGiftCardPage() {
         </Col>
       </Row>
     </Container>
+    </div>
   );
 }
