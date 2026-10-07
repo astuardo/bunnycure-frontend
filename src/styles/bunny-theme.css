@@ -539,6 +539,11 @@ body {
   color: #7c3a2d !important;
 }
 
+body.modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
 @media (max-width: 767px) {
   .bunny-page {
     padding: 12px;
@@ -546,23 +551,39 @@ body {
   }
 
   /* ─── Bottom Sheet Nativo para Móviles (mobile-native + apple-design) ─── */
-  .modal-dialog {
+  /* Bloquear scroll en el contenedor fijo para evitar que arrastre la página de fondo */
+  .modal {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: none !important;
+  }
+
+  .modal-dialog,
+  .modal-dialog.modal-dialog-centered,
+  .modal-dialog.modal-dialog-scrollable,
+  .modal-dialog.modal-fullscreen-sm-down {
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
     min-height: 100% !important;
     display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
     align-items: flex-end !important;
+    pointer-events: none !important;
   }
 
-  .modal-dialog.modal-dialog-centered {
-    min-height: 100% !important;
-    align-items: flex-end !important;
+  .modal-dialog > * {
+    pointer-events: auto !important;
   }
 
   .modal-content,
   .bunny-modal .modal-content,
-  .create-appointment-modal .modal-content {
+  .create-appointment-modal .modal-content,
+  .appointment-edit-modal .modal-content {
+    width: 100% !important;
     border-top-left-radius: 24px !important;
     border-top-right-radius: 24px !important;
     border-bottom-left-radius: 0 !important;
@@ -571,11 +592,15 @@ body {
     border-right: none !important;
     border-bottom: none !important;
     border-top: 1px solid rgba(238, 208, 197, 0.9) !important;
-    max-height: 88svh !important;
-    display: flex;
-    flex-direction: column;
+    max-height: 90svh !important;
+    max-height: 90dvh !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
     box-shadow: 0 -12px 36px rgba(66, 35, 20, 0.16) !important;
     animation: bunnyBottomSheetSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden !important;
+    overscroll-behavior: contain !important;
   }
 
   /* Indicador táctil superior (Handle / Grab pill) */
@@ -584,6 +609,7 @@ body {
     padding-top: 24px !important;
     border-top-left-radius: 24px !important;
     border-top-right-radius: 24px !important;
+    flex-shrink: 0 !important;
   }
 
   .modal-header::before {
@@ -598,14 +624,36 @@ body {
     background-color: rgba(92, 61, 46, 0.22);
   }
 
-  .modal-body {
+  /* Formulario contenedor flex dentro del modal para habilitar scroll interno en modal-body */
+  .modal-content > form,
+  .create-appointment-modal .create-appointment-form,
+  .customer-form-modal .customer-form-inner,
+  .appointment-edit-modal form {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .modal-body,
+  .create-appointment-modal .modal-body,
+  .appointment-edit-modal .modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    padding: 16px !important;
   }
 
   .modal-footer {
+    flex-shrink: 0 !important;
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
     gap: 10px;
   }
@@ -619,11 +667,15 @@ body {
     min-height: 44px; /* Altura ergonómica de toque recomendada */
   }
 
-  .create-appointment-modal .create-appointment-list {
-    max-height: 34vh !important;
+  .create-appointment-modal .create-appointment-list,
+  .create-appointment-list {
+    max-height: 180px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 

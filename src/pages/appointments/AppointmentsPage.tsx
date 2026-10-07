@@ -1413,7 +1413,6 @@ export default function AppointmentsPage() {
         size="lg"
         className="bunny-modal create-appointment-modal"
         scrollable
-        fullscreen="sm-down"
       >
         <Modal.Header closeButton>
           <Modal.Title>
@@ -1517,7 +1516,7 @@ export default function AppointmentsPage() {
                         onChange={(e) => setServiceSearch(e.target.value)}
                         className="mb-2"
                       />
-                      <div className="border rounded p-2 create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                      <div className="border rounded p-2 create-appointment-list" style={{ maxHeight: '180px', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
                         {filteredServices.length > 0 ? (
                           filteredServices.map((service) => (
                             <Form.Check
@@ -1535,8 +1534,14 @@ export default function AppointmentsPage() {
                         )}
                       </div>
                       {formData.serviceIds.length > 0 && (
-                        <Button variant="outline-primary" size="sm" className="mt-2 w-100" onClick={() => setIsServiceListCollapsed(true)}>
-                          Ocultar lista
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          className="mt-2 w-100 py-2 d-flex align-items-center justify-content-center gap-2 shadow-xs fw-semibold"
+                          onClick={() => setIsServiceListCollapsed(true)}
+                        >
+                          <span>✓ Listo con servicios ({selectedCreateServices.length})</span>
+                          <small style={{ opacity: 0.9 }}>· Continuar a Fecha y Hora ↓</small>
                         </Button>
                       )}
                       <Form.Text className="text-muted d-block mt-2">
@@ -1940,7 +1945,6 @@ export default function AppointmentsPage() {
         size="lg"
         className="bunny-modal appointment-edit-modal"
         scrollable
-        fullscreen="sm-down"
       >
         <Modal.Header closeButton>
           <Modal.Title>{editMode === 'reschedule' ? 'Reagendar Cita' : 'Editar Cita'}</Modal.Title>
