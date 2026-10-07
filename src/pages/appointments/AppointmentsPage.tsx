@@ -1502,10 +1502,16 @@ export default function AppointmentsPage() {
                   {isServiceListCollapsed && selectedCreateServices.length > 0 ? (
                     <div className="p-3 border rounded mb-2 d-flex justify-content-between align-items-center bg-light" style={{ borderColor: '#c9897a' }}>
                       <div>
-                        <div className="fw-semibold text-bunny-dark">{selectedCreateServices.length} servicio(s) seleccionado(s)</div>
+                        <div className="fw-semibold text-bunny-dark">
+                          {selectedCreateServices.length === 1
+                            ? selectedCreateServices[0].name
+                            : `${selectedCreateServices.length} servicios (${selectedCreateServices.map((s) => s.name).join(' + ')})`}
+                        </div>
                         <small className="text-muted">{formatCurrency(createTotal)} ({createDuration} min)</small>
                       </div>
-                      <Button variant="outline-primary" size="sm" onClick={() => setIsServiceListCollapsed(false)}>Modificar</Button>
+                      <Button variant="outline-primary" size="sm" onClick={() => setIsServiceListCollapsed(false)}>
+                        Cambiar
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -1516,32 +1522,54 @@ export default function AppointmentsPage() {
                         onChange={(e) => setServiceSearch(e.target.value)}
                         className="mb-2"
                       />
-                      <div className="border rounded p-2 create-appointment-list" style={{ maxHeight: '180px', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+                      <div className="border rounded create-appointment-list" style={{ maxHeight: '180px', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
                         {filteredServices.length > 0 ? (
-                          filteredServices.map((service) => (
-                            <Form.Check
-                              key={service.id}
-                              id={`create-service-${service.id}`}
-                              type="checkbox"
-                              className="mb-2"
-                              label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
-                              checked={formData.serviceIds.includes(service.id)}
-                              onChange={() => toggleCreateService(service.id)}
-                            />
-                          ))
+                          filteredServices.map((service) => {
+                            const isSelected = formData.serviceIds.includes(service.id);
+                            return (
+                              <button
+                                key={service.id}
+                                type="button"
+                                className={`btn w-100 text-start border-bottom rounded-0 p-2 d-flex justify-content-between align-items-center ${
+                                  isSelected ? 'btn-primary' : 'btn-light'
+                                }`}
+                                onClick={() => {
+                                  if (!isSelected) {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      serviceIds: [...prev.serviceIds, service.id],
+                                    }));
+                                  } else {
+                                    toggleCreateService(service.id);
+                                  }
+                                  setIsServiceListCollapsed(true);
+                                }}
+                              >
+                                <div>
+                                  <div className="fw-semibold">{service.name}</div>
+                                  <small style={{ opacity: isSelected ? 0.9 : 0.7 }}>
+                                    ⏱️ {service.durationMinutes} min
+                                  </small>
+                                </div>
+                                <div className="text-end">
+                                  <div className="fw-bold">{formatCurrency(service.price)}</div>
+                                  {isSelected && <span className="badge bg-white text-dark mt-1">✓ Seleccionado</span>}
+                                </div>
+                              </button>
+                            );
+                          })
                         ) : (
-                          <div className="text-muted">No se encontraron servicios</div>
+                          <div className="p-3 text-muted">No se encontraron servicios</div>
                         )}
                       </div>
                       {formData.serviceIds.length > 0 && (
                         <Button
-                          variant="primary"
+                          variant="outline-primary"
                           size="sm"
-                          className="mt-2 w-100 py-2 d-flex align-items-center justify-content-center gap-2 shadow-xs fw-semibold"
+                          className="mt-2 w-100"
                           onClick={() => setIsServiceListCollapsed(true)}
                         >
-                          <span>✓ Listo con servicios ({selectedCreateServices.length})</span>
-                          <small style={{ opacity: 0.9 }}>· Continuar a Fecha y Hora ↓</small>
+                          Cerrar lista de servicios
                         </Button>
                       )}
                       <Form.Text className="text-muted d-block mt-2">
