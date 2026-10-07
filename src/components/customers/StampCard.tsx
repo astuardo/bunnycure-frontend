@@ -178,8 +178,8 @@ export default function StampCard({
                 style={{ 
                   width: '52px', 
                   height: '52px',
-                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                  transform: isFilled ? 'scale(1.1)' : 'scale(1)'
+                  transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1), background-color 200ms ease, box-shadow 200ms ease',
+                  transform: isFilled ? 'scale(1.06)' : 'scale(1)'
                 }}
               >
                 {isFilled ? <Award size={26} /> : <span className="small fw-bold">{index + 1}</span>}

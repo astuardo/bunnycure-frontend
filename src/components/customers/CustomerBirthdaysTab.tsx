@@ -122,8 +122,9 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
         className="border-0 shadow-sm mb-4"
         style={{
           borderRadius: '14px',
-          background: 'linear-gradient(135deg, #fff7ed 0%, #fff 100%)',
-          borderLeft: '5px solid #ea580c',
+          background: 'linear-gradient(135deg, #fffbf7 0%, #fff 100%)',
+          border: '1px solid rgba(234, 88, 12, 0.22)',
+          boxShadow: '0 2px 12px rgba(234, 88, 12, 0.05)',
         }}
       >
         <Card.Body className="p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
@@ -162,7 +163,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
       {/* ══ 1. Tarjetas KPI Resumen de Cumpleaños ══════════════════════════ */}
       <Row className="g-3 mb-4">
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #8c2a3e' }}>
+          <Card className="border shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(140, 42, 62, 0.16)' }}>
             <Card.Body className="p-3">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <span style={{ fontSize: '12px', color: '#8c6052', fontWeight: 600 }}>CUMPLE ESTE MES</span>
@@ -180,11 +181,12 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
 
         <Col xs={6} md={3}>
           <Card
-            className="border-0 shadow-sm h-100"
+            className="border shadow-sm h-100"
             style={{
               borderRadius: '14px',
               background: metrics.totalToday > 0 ? '#fff5f7' : '#fff',
-              borderLeft: '4px solid #e11d48',
+              borderColor: metrics.totalToday > 0 ? 'rgba(225, 29, 72, 0.35)' : 'rgba(225, 29, 72, 0.18)',
+              boxShadow: metrics.totalToday > 0 ? '0 2px 12px rgba(225, 29, 72, 0.1)' : undefined,
             }}
           >
             <Card.Body className="p-3">
@@ -203,7 +205,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
         </Col>
 
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #d97706' }}>
+          <Card className="border shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(217, 119, 6, 0.2)' }}>
             <Card.Body className="p-3">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <span style={{ fontSize: '12px', color: '#d97706', fontWeight: 600 }}>PRÓXIMOS 7 DÍAS</span>
@@ -220,7 +222,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
         </Col>
 
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #16a34a' }}>
+          <Card className="border shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(22, 163, 74, 0.2)' }}>
             <Card.Body className="p-3">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>SALUDADAS ESTE AÑO</span>

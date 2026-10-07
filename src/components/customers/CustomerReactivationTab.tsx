@@ -200,8 +200,9 @@ export default function CustomerReactivationTab({
         className="border-0 shadow-sm mb-3"
         style={{
           borderRadius: '14px',
-          background: 'linear-gradient(135deg, #fff5f5 0%, #fff 100%)',
-          borderLeft: '5px solid #8c2a3e',
+          background: 'linear-gradient(135deg, #fff9f9 0%, #fff 100%)',
+          border: '1px solid rgba(140, 42, 62, 0.2)',
+          boxShadow: '0 2px 12px rgba(140, 42, 62, 0.05)',
         }}
       >
         <Card.Body className="p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">

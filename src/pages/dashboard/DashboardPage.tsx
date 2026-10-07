@@ -699,7 +699,7 @@ export default function DashboardPage() {
 
                 {/* ══ Banner: Citas con Solicitud de Reprogramación ═════════ */}
                 {rescheduleRequestedAppointments.length > 0 && (
-                    <DashCard style={{ padding: '14px 20px', borderLeft: '5px solid #d9480f', background: '#fffaf5' }}>
+                    <DashCard style={{ padding: '16px 20px', border: '1px solid rgba(217, 72, 15, 0.22)', background: 'linear-gradient(135deg, #fffbf7 0%, #fff6ee 100%)', boxShadow: '0 2px 10px rgba(217, 72, 15, 0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <span style={{ fontSize: '22px' }}>🔄</span>
@@ -1962,10 +1962,12 @@ export default function DashboardPage() {
                                             <div style={{ height: '6px', background: '#f3e9e2', borderRadius: '3px', overflow: 'hidden' }}>
                                                 <div style={{ 
                                                     height: '100%', 
-                                                    width: `${percentage}%`, 
+                                                    width: '100%', 
+                                                    transform: `scaleX(${Math.min(Math.max(percentage, 0), 100) / 100})`,
+                                                    transformOrigin: 'left',
                                                     background: 'linear-gradient(90deg, #c9897a, #e5b2a7)',
                                                     borderRadius: '3px',
-                                                    transition: 'width 1s ease-in-out'
+                                                    transition: 'transform 600ms cubic-bezier(0.16, 1, 0.3, 1)'
                                                 }} />
                                             </div>
                                             <div style={{ fontSize: '10px', color: TEXT_MID, marginTop: '2px' }}>

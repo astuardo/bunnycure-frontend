@@ -59,7 +59,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
   };
 
   return (
-    <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #8c2a3e' }}>
+    <Card className="border shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(140, 42, 62, 0.16)' }}>
       <Card.Header className="bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3 px-md-4">
         <div>
           <h5 className="mb-0 fw-bold" style={{ color: '#422314', fontSize: '1rem' }}>

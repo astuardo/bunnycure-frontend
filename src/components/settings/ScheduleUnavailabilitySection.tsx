@@ -392,8 +392,8 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   className="d-flex justify-content-between align-items-center p-3 rounded-3 border"
                   style={{
                     background: isFullDay ? '#fff5f7' : '#fffaf2',
-                    borderColor: isFullDay ? '#ffd0db' : '#fce3c7',
-                    borderLeft: `5px solid ${isFullDay ? '#f87171' : '#f59e0b'}`,
+                    borderColor: isFullDay ? 'rgba(248, 113, 113, 0.4)' : 'rgba(245, 158, 11, 0.35)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
                   }}
                 >
                   <div className="d-flex align-items-start gap-3">

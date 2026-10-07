@@ -225,7 +225,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         {/* Tarjetas KPI de Resumen Financiero */}
         <Row className="g-3 mb-4">
           <Col xs={6} lg={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #8c2a3e' }}>
+            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(140, 42, 62, 0.16)' }}>
               <Card.Body className="p-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <span style={{ fontSize: '12px', color: '#8c6052', fontWeight: 600 }}>INGRESOS TOTALES</span>
@@ -242,7 +242,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           </Col>
 
           <Col xs={6} lg={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #2e7d32' }}>
+            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(46, 125, 50, 0.18)' }}>
               <Card.Body className="p-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <span style={{ fontSize: '12px', color: '#2e7d32', fontWeight: 600 }}>UTILIDAD NETA ESTIMADA</span>
@@ -259,7 +259,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           </Col>
 
           <Col xs={6} lg={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #d97706' }}>
+            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(217, 119, 6, 0.18)' }}>
               <Card.Body className="p-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <span style={{ fontSize: '12px', color: '#d97706', fontWeight: 600 }}>COSTO DE INSUMOS</span>
@@ -276,7 +276,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           </Col>
 
           <Col xs={6} lg={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderLeft: '4px solid #0284c7' }}>
+            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(2, 132, 199, 0.18)' }}>
               <Card.Body className="p-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: 600 }}>BOLETAS EMITIDAS</span>
