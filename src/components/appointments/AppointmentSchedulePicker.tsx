@@ -1,0 +1,628 @@
+import React, { useState, useMemo } from 'react';
+import { Form, Row, Col, Button, Badge, Alert } from 'react-bootstrap';
+import {
+  format,
+  isValid,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfWeek,
+  endOfWeek,
+  isSameMonth,
+  isToday,
+  addMonths,
+  subMonths,
+} from 'date-fns';
+import { es } from 'date-fns/locale';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import {
+  ScheduleUnavailability,
+  UnavailabilityColorConfig,
+  DEFAULT_UNAVAILABILITY_COLORS,
+} from '../../types/unavailability.types';
+import { Appointment } from '../../types/appointment.types';
+import {
+  isDateBlockedFullDay,
+  getTimeSlotBlocksForDate,
+  checkTimeSlotConflict,
+  timeToMinutes,
+  minutesToTime,
+} from '../../utils/unavailabilityUtils';
+
+interface AppointmentSchedulePickerProps {
+  selectedDate: string; // YYYY-MM-DD
+  selectedTime: string; // HH:mm
+  durationMinutes?: number;
+  onDateChange: (date: string) => void;
+  onTimeChange: (time: string) => void;
+  unavailabilities: ScheduleUnavailability[];
+  unavailabilityColors?: UnavailabilityColorConfig;
+  appointments?: Appointment[];
+  required?: boolean;
+  minDate?: string;
+  allowPastDates?: boolean;
+}
+
+const COMMON_SLOTS = [
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+];
+
+const WEEK_DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps> = ({
+  selectedDate,
+  selectedTime,
+  durationMinutes = 60,
+  onDateChange,
+  onTimeChange,
+  unavailabilities = [],
+  unavailabilityColors = DEFAULT_UNAVAILABILITY_COLORS,
+  appointments = [],
+  required = true,
+  minDate,
+}) => {
+  const [showVisualCalendar, setShowVisualCalendar] = useState(true);
+
+  // Parse current viewing month based on selected date or today
+  const initialMonth = useMemo(() => {
+    if (selectedDate && selectedDate.length >= 10) {
+      const parsed = new Date(`${selectedDate.slice(0, 10)}T00:00:00`);
+      if (isValid(parsed)) return parsed;
+    }
+    return new Date();
+  }, [selectedDate]);
+
+  const [currentMonth, setCurrentMonth] = useState<Date>(initialMonth);
+
+  // Selected date status checks
+  const fullDayBlock = useMemo(() => {
+    if (!selectedDate) return { blocked: false };
+    return isDateBlockedFullDay(selectedDate, unavailabilities);
+  }, [selectedDate, unavailabilities]);
+
+  const slotBlocks = useMemo(() => {
+    if (!selectedDate) return [];
+    return getTimeSlotBlocksForDate(selectedDate, unavailabilities);
+  }, [selectedDate, unavailabilities]);
+
+  // Appointments on selected date
+  const dayAppointments = useMemo(() => {
+    if (!selectedDate) return [];
+    return appointments.filter((apt) => {
+      const aptDate = apt.appointmentDate ? apt.appointmentDate.slice(0, 10) : '';
+      return (
+        aptDate === selectedDate &&
+        apt.status !== 'CANCELLED' &&
+        apt.status !== 'COMPLETED'
+      );
+    }).sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
+  }, [selectedDate, appointments]);
+
+  // Time conflict detection
+  const timeConflict = useMemo(() => {
+    if (!selectedDate || !selectedTime) return { hasConflict: false };
+    return checkTimeSlotConflict(selectedDate, selectedTime, durationMinutes, unavailabilities);
+  }, [selectedDate, selectedTime, durationMinutes, unavailabilities]);
+
+  // Conflict with existing appointment
+  const existingAptConflict = useMemo(() => {
+    if (!selectedDate || !selectedTime) return null;
+    const startMin = timeToMinutes(selectedTime);
+    const endMin = startMin + Math.max(1, durationMinutes);
+
+    return dayAppointments.find((apt) => {
+      if (!apt.appointmentTime) return false;
+      const aptStart = timeToMinutes(apt.appointmentTime);
+      const aptDuration = apt.services && apt.services.length > 0
+        ? apt.services.reduce((acc, s) => acc + (s.durationMinutes || 60), 0)
+        : (apt.service?.durationMinutes || 60);
+      const aptEnd = aptStart + aptDuration;
+
+      // Overlap check
+      return Math.max(startMin, aptStart) < Math.min(endMin, aptEnd);
+    });
+  }, [selectedDate, selectedTime, durationMinutes, dayAppointments]);
+
+  // Estimated end time
+  const calculatedEndTime = useMemo(() => {
+    if (!selectedTime) return '';
+    const startMin = timeToMinutes(selectedTime);
+    return minutesToTime(startMin + Math.max(1, durationMinutes));
+  }, [selectedTime, durationMinutes]);
+
+  // Calendar cells generation
+  const calendarCells = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+    const days = eachDayOfInterval({ start: calStart, end: calEnd });
+
+    return days.map((day) => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const isSelected = selectedDate === dayStr;
+      const isCurrentMonth = isSameMonth(day, currentMonth);
+      const fDayBlock = isDateBlockedFullDay(dayStr, unavailabilities);
+      const tSlotBlocks = getTimeSlotBlocksForDate(dayStr, unavailabilities);
+
+      const aptsCount = appointments.filter((apt) => {
+        const aptDate = apt.appointmentDate ? apt.appointmentDate.slice(0, 10) : '';
+        return aptDate === dayStr && apt.status !== 'CANCELLED';
+      }).length;
+
+      return {
+        date: day,
+        dateStr: dayStr,
+        dayNumber: format(day, 'd'),
+        isToday: isToday(day),
+        isSelected,
+        isOutsideMonth: !isCurrentMonth,
+        isFullDayBlocked: fDayBlock.blocked,
+        fullDayReason: fDayBlock.reason,
+        isTimeSlotBlocked: tSlotBlocks.length > 0,
+        timeSlotCount: tSlotBlocks.length,
+        timeSlotBlocks: tSlotBlocks,
+        appointmentCount: aptsCount,
+      };
+    });
+  }, [currentMonth, selectedDate, unavailabilities, appointments]);
+
+  const handleCellClick = (dateStr: string) => {
+    onDateChange(dateStr);
+  };
+
+  return (
+    <div className="appointment-schedule-picker mb-3">
+      {/* ─── FILA DE INPUTS DIRECTOS (Fecha y Hora) ─── */}
+      <Row className="g-2 mb-2 align-items-end">
+        <Col xs={12} sm={6}>
+          <Form.Group>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <Form.Label className="fw-semibold small mb-0">
+                <FiCalendar className="me-1 text-primary" /> Fecha *
+              </Form.Label>
+              <button
+                type="button"
+                className="btn btn-link p-0 text-decoration-none small text-primary fw-semibold"
+                style={{ fontSize: '11.5px' }}
+                onClick={() => setShowVisualCalendar(!showVisualCalendar)}
+              >
+                {showVisualCalendar ? '▼ Ocultar calendario' : '▶ Ver calendario visual'}
+              </button>
+            </div>
+            <Form.Control
+              type="date"
+              required={required}
+              min={minDate}
+              value={selectedDate}
+              onChange={(e) => onDateChange(e.target.value)}
+              className={fullDayBlock.blocked ? 'is-invalid' : ''}
+              style={{
+                borderRadius: '8px',
+                borderColor: fullDayBlock.blocked ? '#dc3545' : '#ced4da',
+                backgroundColor: fullDayBlock.blocked ? '#fff5f5' : '#fff',
+              }}
+            />
+          </Form.Group>
+        </Col>
+
+        <Col xs={12} sm={6}>
+          <Form.Group>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <Form.Label className="fw-semibold small mb-0">
+                <FiClock className="me-1 text-primary" /> Hora *
+              </Form.Label>
+              {calculatedEndTime && (
+                <small className="text-muted" style={{ fontSize: '11px' }}>
+                  Termina aprox: <strong>{calculatedEndTime} hrs</strong> ({durationMinutes} min)
+                </small>
+              )}
+            </div>
+            <Form.Control
+              type="time"
+              required={required}
+              value={selectedTime}
+              onChange={(e) => onTimeChange(e.target.value)}
+              className={timeConflict.hasConflict ? 'is-invalid' : ''}
+              style={{
+                borderRadius: '8px',
+                borderColor: timeConflict.hasConflict ? '#dc3545' : '#ced4da',
+                backgroundColor: timeConflict.hasConflict ? '#fff5f5' : '#fff',
+              }}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+
+      {/* ─── CALENDARIO VISUAL INTERACTIVO ─── */}
+      {showVisualCalendar && (
+        <div
+          className="p-3 rounded border mb-3 shadow-sm"
+          style={{
+            background: '#fffdfc',
+            borderColor: '#eed0c5',
+            borderRadius: '14px',
+          }}
+        >
+          {/* Navegación del mes */}
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary py-1 px-2"
+              onClick={() => setCurrentMonth((prev) => subMonths(prev, 1))}
+              aria-label="Mes anterior"
+              style={{ borderRadius: '6px' }}
+            >
+              <FaChevronLeft size={11} />
+            </button>
+
+            <span className="fw-bold small text-capitalize text-dark" style={{ letterSpacing: '0.2px' }}>
+              {format(currentMonth, 'MMMM yyyy', { locale: es })}
+            </span>
+
+            <div className="d-flex gap-1">
+              <Button
+                variant="outline-primary"
+                size="sm"
+                className="py-0 px-2 small"
+                style={{ fontSize: '11px', borderRadius: '6px' }}
+                onClick={() => {
+                  const today = new Date();
+                  setCurrentMonth(today);
+                  onDateChange(format(today, 'yyyy-MM-dd'));
+                }}
+              >
+                Hoy
+              </Button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary py-1 px-2"
+                onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}
+                aria-label="Mes siguiente"
+                style={{ borderRadius: '6px' }}
+              >
+                <FaChevronRight size={11} />
+              </button>
+            </div>
+          </div>
+
+          {/* Días de la semana */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              gap: '4px',
+              textAlign: 'center',
+              marginBottom: '4px',
+            }}
+          >
+            {WEEK_DAYS.map((d) => (
+              <div
+                key={d}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#9e7b6e',
+                  padding: '2px 0',
+                }}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Celdas del mes */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              gap: '4px',
+            }}
+          >
+            {calendarCells.map((cell) => {
+              let cellBg = '#ffffff';
+              let cellBorder = '#eef0f2';
+              let textColor = '#212529';
+
+              if (cell.isFullDayBlocked) {
+                cellBg = unavailabilityColors.fullDayColor || '#fee2e2';
+                cellBorder = '#f87171';
+                textColor = '#991b1b';
+              } else if (cell.isTimeSlotBlocked) {
+                cellBg = unavailabilityColors.timeSlotColor || '#fef3c7';
+                cellBorder = '#f59e0b';
+                textColor = '#92400e';
+              }
+
+              if (cell.isSelected) {
+                cellBorder = '#8c2a3e';
+                cellBg = cell.isFullDayBlocked ? '#fecaca' : '#fdf0ec';
+              }
+
+              const tooltipParts: string[] = [];
+              if (cell.isFullDayBlocked) tooltipParts.push(`Cerrado: ${cell.fullDayReason}`);
+              if (cell.isTimeSlotBlocked) {
+                tooltipParts.push(
+                  cell.timeSlotBlocks
+                    .map((b) => `${b.startTime}-${b.endTime}: ${b.reason}`)
+                    .join(' | ')
+                );
+              }
+              if (cell.appointmentCount > 0) tooltipParts.push(`${cell.appointmentCount} cita(s) agendadas`);
+
+              return (
+                <div
+                  key={cell.dateStr}
+                  onClick={() => handleCellClick(cell.dateStr)}
+                  title={tooltipParts.join(' · ') || undefined}
+                  style={{
+                    minHeight: '48px',
+                    padding: '4px 3px',
+                    borderRadius: '8px',
+                    border: `1.5px solid ${cellBorder}`,
+                    background: cellBg,
+                    opacity: cell.isOutsideMonth ? 0.35 : 1,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    boxShadow: cell.isSelected ? '0 0 0 2px #8c2a3e' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: cell.isSelected || cell.isToday ? 800 : 600,
+                        color: cell.isSelected ? '#8c2a3e' : textColor,
+                      }}
+                    >
+                      {cell.dayNumber}
+                    </span>
+                    {cell.isToday && (
+                      <span
+                        style={{
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '50%',
+                          background: '#8c2a3e',
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Indicadores en la celda */}
+                  <div>
+                    {cell.isFullDayBlocked && (
+                      <div
+                        style={{
+                          fontSize: '8.5px',
+                          color: '#991b1b',
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        🚫 Cerrado
+                      </div>
+                    )}
+                    {!cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
+                      <div
+                        style={{
+                          fontSize: '8px',
+                          color: '#92400e',
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        ⏰ Bloqueo
+                      </div>
+                    )}
+                    {cell.appointmentCount > 0 && (
+                      <div
+                        style={{
+                          fontSize: '8px',
+                          color: '#0d6efd',
+                          fontWeight: 600,
+                          lineHeight: 1,
+                          marginTop: '1px',
+                        }}
+                      >
+                        • {cell.appointmentCount} {cell.appointmentCount === 1 ? 'cita' : 'citas'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Leyenda del calendario */}
+          <div className="d-flex flex-wrap gap-2 mt-2 pt-2 border-top" style={{ fontSize: '10.5px' }}>
+            <span className="d-flex align-items-center gap-1 text-danger fw-semibold">
+              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f87171', display: 'inline-block' }} />
+              Día Cerrado
+            </span>
+            <span className="d-flex align-items-center gap-1 text-warning-emphasis fw-semibold">
+              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f59e0b', display: 'inline-block' }} />
+              Horario Bloqueado
+            </span>
+            <span className="d-flex align-items-center gap-1 text-primary fw-semibold">
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0d6efd', display: 'inline-block' }} />
+              Citas Agendadas
+            </span>
+            <span className="d-flex align-items-center gap-1 text-muted ms-auto">
+              Click en cualquier día para seleccionarlo
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ALERTAS Y AVISOS DE DISPONIBILIDAD PARA EL DÍA SELECCIONADO ─── */}
+      {selectedDate && (
+        <>
+          {/* CASO 1: DÍA COMPLETO CERRADO / BLOQUEADO */}
+          {fullDayBlock.blocked && (
+            <Alert
+              variant="danger"
+              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
+              style={{ borderRadius: '10px' }}
+            >
+              <span className="fs-5 lh-1">🚫</span>
+              <div style={{ fontSize: '13px' }}>
+                <strong className="d-block text-danger">
+                  DÍA CERRADO / BLOQUEADO: {fullDayBlock.reason || 'Sin motivo especificado'}
+                </strong>
+                <span>
+                  Este día completo ({selectedDate}) está configurado como bloqueado o no laborable en la agenda.
+                </span>
+                <div className="small fw-semibold mt-1 text-danger">
+                  ⚠️ No se recomienda agendar citas en esta fecha.
+                </div>
+              </div>
+            </Alert>
+          )}
+
+          {/* CASO 2: HORARIOS PARCIALES BLOQUEADOS EN LA FECHA */}
+          {!fullDayBlock.blocked && slotBlocks.length > 0 && (
+            <Alert
+              variant="warning"
+              className="py-2 px-3 mb-2 shadow-sm"
+              style={{ borderRadius: '10px', background: '#fffbeb', borderColor: '#fde68a' }}
+            >
+              <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '13px', color: '#92400e' }}>
+                <span className="fs-6">⏰</span>
+                <strong>Horarios bloqueados registrados para este día:</strong>
+              </div>
+              <div className="d-flex flex-wrap gap-2 ps-4">
+                {slotBlocks.map((b) => (
+                  <Badge
+                    key={b.id}
+                    bg="warning"
+                    text="dark"
+                    className="py-1 px-2 fw-semibold border border-warning"
+                    style={{ fontSize: '11px' }}
+                  >
+                    🚫 {b.startTime} a {b.endTime} hrs: {b.reason || 'Horario bloqueado'}
+                  </Badge>
+                ))}
+              </div>
+            </Alert>
+          )}
+
+          {/* CASO 3: CONFLICTO ESPECÍFICO DE LA HORA SELECCIONADA CON BLOQUEO */}
+          {timeConflict.hasConflict && (
+            <Alert
+              variant="danger"
+              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
+              style={{ borderRadius: '10px', background: '#fee2e2', borderColor: '#f87171' }}
+            >
+              <FiAlertTriangle className="text-danger fs-5 flex-shrink-0 mt-1" />
+              <div style={{ fontSize: '13px' }}>
+                <strong className="d-block text-danger">
+                  CONFLICTO CON HORARIO BLOQUEADO
+                </strong>
+                <span>
+                  La cita seleccionada (<strong>{selectedTime} a {calculatedEndTime}</strong> hrs)
+                  se superpone con el bloqueo registrado:{' '}
+                  <strong>"{timeConflict.reason}"</strong> ({timeConflict.conflictSlot}).
+                </span>
+                <div className="small fw-bold text-danger mt-1">
+                  Por favor selecciona otro horario para no invadir el bloqueo de agenda.
+                </div>
+              </div>
+            </Alert>
+          )}
+
+          {/* CASO 4: ADVERTENCIA DE SUPERPOSICIÓN CON CITA EXISTENTE */}
+          {!timeConflict.hasConflict && existingAptConflict && (
+            <Alert
+              variant="warning"
+              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
+              style={{ borderRadius: '10px' }}
+            >
+              <FiAlertTriangle className="text-warning-emphasis fs-5 flex-shrink-0 mt-1" />
+              <div style={{ fontSize: '12.5px' }}>
+                <strong>Aviso de superposición con otra cita:</strong>
+                <div>
+                  Ya existe una cita a las <strong>{existingAptConflict.appointmentTime} hrs</strong> de{' '}
+                  <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>.
+                </div>
+              </div>
+            </Alert>
+          )}
+
+          {/* CASO 5: DÍA Y HORA TOTALMENTE LIBRES */}
+          {!fullDayBlock.blocked && !timeConflict.hasConflict && !existingAptConflict && selectedTime && (
+            <div
+              className="py-1 px-2 mb-2 rounded d-flex align-items-center gap-2 small text-success bg-success-subtle border border-success-subtle"
+              style={{ fontSize: '12px' }}
+            >
+              <FiCheckCircle />
+              <span>Horario disponible: {selectedTime} a {calculatedEndTime} hrs sin conflictos.</span>
+            </div>
+          )}
+
+          {/* ─── SUGERENCIAS RÁPIDAS DE HORAS (SLOTS HABITUALES) ─── */}
+          {!fullDayBlock.blocked && (
+            <div className="mb-2">
+              <div className="d-flex justify-content-between align-items-center mb-1">
+                <small className="text-muted fw-semibold" style={{ fontSize: '11px' }}>
+                  Atajos de horarios comunes:
+                </small>
+              </div>
+              <div className="d-flex flex-wrap gap-1">
+                {COMMON_SLOTS.map((slot) => {
+                  const check = checkTimeSlotConflict(selectedDate, slot, durationMinutes, unavailabilities);
+                  const isBlocked = check.hasConflict;
+                  const isCurrent = selectedTime === slot;
+
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      disabled={isBlocked}
+                      onClick={() => onTimeChange(slot)}
+                      className={`btn btn-sm py-1 px-2 ${
+                        isCurrent
+                          ? 'btn-primary'
+                          : isBlocked
+                          ? 'btn-outline-danger disabled text-decoration-line-through'
+                          : 'btn-outline-secondary'
+                      }`}
+                      style={{
+                        fontSize: '11px',
+                        borderRadius: '6px',
+                        opacity: isBlocked ? 0.6 : 1,
+                      }}
+                      title={isBlocked ? `Bloqueado: ${check.reason}` : `Seleccionar ${slot}`}
+                    >
+                      {slot} {isBlocked && '🚫'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};

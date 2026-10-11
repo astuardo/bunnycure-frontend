@@ -13,6 +13,13 @@ import {
   OFFICIAL_WHATSAPP_PHONE,
   OFFICIAL_WHATSAPP_DISPLAY,
 } from '../../utils/bookingSettingsUtils';
+import { settingsApi } from '../../api/settings.api';
+import { ScheduleUnavailability } from '../../types/unavailability.types';
+import {
+  isDateBlockedFullDay,
+  checkTimeSlotConflict,
+  getTimeSlotBlocksForDate,
+} from '../../utils/unavailabilityUtils';
 
 export const PublicBookingPage: React.FC = () => {
   const isEnabled = getPublicBookingEnabled();
@@ -43,6 +50,7 @@ export const PublicBookingPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdRequestId, setCreatedRequestId] = useState<number | null>(null);
+  const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>([]);
 
   useEffect(() => {
     if (!isEnabled) return;
@@ -63,6 +71,11 @@ export const PublicBookingPage: React.FC = () => {
       }
     };
     fetchServices();
+    settingsApi.getAll().then((data) => {
+      if (data.unavailabilities && data.unavailabilities.length > 0) {
+        setUnavailabilities(data.unavailabilities);
+      }
+    }).catch((err) => console.error('Error loading unavailabilities in PublicBookingPage:', err));
   }, [isEnabled]);
 
   const selectedServices = useMemo(() => {
@@ -76,6 +89,26 @@ export const PublicBookingPage: React.FC = () => {
   const totalEstimatedDuration = useMemo(() => {
     return selectedServices.reduce((sum, s) => sum + (s.durationMinutes || 60), 0);
   }, [selectedServices]);
+
+  const preferredDateBlock = useMemo(() => {
+    if (!preferredDate) return { blocked: false };
+    return isDateBlockedFullDay(preferredDate, unavailabilities);
+  }, [preferredDate, unavailabilities]);
+
+  const preferredDateSlotBlocks = useMemo(() => {
+    if (!preferredDate) return [];
+    return getTimeSlotBlocksForDate(preferredDate, unavailabilities);
+  }, [preferredDate, unavailabilities]);
+
+  const exactTimeConflict = useMemo(() => {
+    if (!preferredDate || !preferredTimeExact) return { hasConflict: false };
+    return checkTimeSlotConflict(
+      preferredDate,
+      preferredTimeExact,
+      totalEstimatedDuration,
+      unavailabilities
+    );
+  }, [preferredDate, preferredTimeExact, totalEstimatedDuration, unavailabilities]);
 
   const handleToggleService = (id: number) => {
     if (selectedServiceIds.includes(id)) {
@@ -106,6 +139,20 @@ export const PublicBookingPage: React.FC = () => {
 
     if (rut.trim() && !isValidRutFormat(rut)) {
       setSubmitError('El RUT ingresado no tiene un formato válido.');
+      return;
+    }
+
+    if (preferredDateBlock.blocked) {
+      setSubmitError(
+        `La fecha seleccionada (${preferredDate}) no está disponible para atención (${preferredDateBlock.reason || 'Día cerrado'}). Por favor elige otra fecha.`
+      );
+      return;
+    }
+
+    if (exactTimeConflict.hasConflict) {
+      setSubmitError(
+        `El horario seleccionado (${preferredTimeExact} hrs) no está disponible (${exactTimeConflict.reason}). Por favor elige otra hora.`
+      );
       return;
     }
 
@@ -428,69 +475,170 @@ export const PublicBookingPage: React.FC = () => {
                       value={preferredDate}
                       onChange={(e) => setPreferredDate(e.target.value)}
                       size="lg"
-                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
+                      className={preferredDateBlock.blocked ? 'is-invalid' : ''}
+                      style={{
+                        borderRadius: '10px',
+                        borderColor: preferredDateBlock.blocked ? '#dc3545' : '#eed0c5',
+                        backgroundColor: preferredDateBlock.blocked ? '#fff5f5' : '#fff',
+                      }}
                     />
                   </Form.Group>
+
+                  {/* Alerta de Día Cerrado / Bloqueado */}
+                  {preferredDateBlock.blocked && (
+                    <Alert
+                      variant="danger"
+                      className="py-2 px-3 mb-3 d-flex align-items-start gap-2 shadow-sm"
+                      style={{ borderRadius: '12px' }}
+                    >
+                      <span className="fs-5 lh-1">🚫</span>
+                      <div style={{ fontSize: '13px' }}>
+                        <strong className="d-block text-danger">
+                          Día no disponible: {preferredDateBlock.reason || 'Cerrado'}
+                        </strong>
+                        <span>
+                          En esta fecha BunnyCure no atenderá público. Por favor escoge otra fecha disponible para tu reserva.
+                        </span>
+                      </div>
+                    </Alert>
+                  )}
+
+                  {/* Alerta de Horarios parciales bloqueados */}
+                  {!preferredDateBlock.blocked && preferredDateSlotBlocks.length > 0 && (
+                    <Alert
+                      variant="warning"
+                      className="py-2 px-3 mb-3 shadow-sm"
+                      style={{ borderRadius: '12px', background: '#fffbeb', borderColor: '#fde68a' }}
+                    >
+                      <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '12.5px', color: '#92400e' }}>
+                        <span>⏰</span>
+                        <strong>Horarios con bloqueos registrados en esta fecha:</strong>
+                      </div>
+                      <div className="d-flex flex-wrap gap-1 ps-3">
+                        {preferredDateSlotBlocks.map((b) => (
+                          <Badge key={b.id} bg="warning" text="dark" className="border border-warning small">
+                            🚫 {b.startTime} a {b.endTime} hrs ({b.reason})
+                          </Badge>
+                        ))}
+                      </div>
+                    </Alert>
+                  )}
 
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold small text-muted">BLOQUE HORARIO DESEADO</Form.Label>
                     <Row className="g-2">
-                      {Object.entries(timeBlockLabels).map(([key, label]) => (
-                        <Col xs={12} key={key}>
-                          <div
-                            onClick={() => {
-                              setPreferredTimeBlock(key);
-                              if (key === 'MANANA') setPreferredTimeExact('11:00');
-                              if (key === 'TARDE') setPreferredTimeExact('15:00');
-                              if (key === 'NOCHE') setPreferredTimeExact('18:30');
-                            }}
-                            className="p-3 rounded d-flex align-items-center justify-content-between"
-                            style={{
-                              border: preferredTimeBlock === key ? '2px solid #8c2a3e' : '1px solid #eed0c5',
-                              background: preferredTimeBlock === key ? '#fdf4f2' : '#fff',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <span className="fw-semibold" style={{ fontSize: '14px' }}>
-                              {label}
-                            </span>
-                            <Form.Check
-                              type="radio"
-                              name="timeBlock"
-                              checked={preferredTimeBlock === key}
-                              onChange={() => {}}
-                              style={{ pointerEvents: 'none' }}
-                            />
-                          </div>
-                        </Col>
-                      ))}
+                      {Object.entries(timeBlockLabels).map(([key, label]) => {
+                        const blockTimeCheck =
+                          key === 'MANANA'
+                            ? checkTimeSlotConflict(preferredDate, '11:00', 90, unavailabilities)
+                            : key === 'TARDE'
+                            ? checkTimeSlotConflict(preferredDate, '15:00', 90, unavailabilities)
+                            : checkTimeSlotConflict(preferredDate, '18:30', 90, unavailabilities);
+                        const isBlockBlocked = !preferredDateBlock.blocked && blockTimeCheck.hasConflict;
+
+                        return (
+                          <Col xs={12} key={key}>
+                            <div
+                              onClick={() => {
+                                if (isBlockBlocked) return;
+                                setPreferredTimeBlock(key);
+                                if (key === 'MANANA') setPreferredTimeExact('11:00');
+                                if (key === 'TARDE') setPreferredTimeExact('15:00');
+                                if (key === 'NOCHE') setPreferredTimeExact('18:30');
+                              }}
+                              className="p-3 rounded d-flex align-items-center justify-content-between"
+                              style={{
+                                border:
+                                  preferredTimeBlock === key
+                                    ? '2px solid #8c2a3e'
+                                    : isBlockBlocked
+                                    ? '1px dashed #fca5a5'
+                                    : '1px solid #eed0c5',
+                                background:
+                                  preferredTimeBlock === key
+                                    ? '#fdf4f2'
+                                    : isBlockBlocked
+                                    ? '#fff5f5'
+                                    : '#fff',
+                                opacity: isBlockBlocked ? 0.6 : 1,
+                                cursor: isBlockBlocked ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="fw-semibold" style={{ fontSize: '14px' }}>
+                                  {label}
+                                </span>
+                                {isBlockBlocked && (
+                                  <Badge bg="danger" className="small">
+                                    Bloqueado
+                                  </Badge>
+                                )}
+                              </div>
+                              <Form.Check
+                                type="radio"
+                                name="timeBlock"
+                                checked={preferredTimeBlock === key}
+                                onChange={() => {}}
+                                disabled={isBlockBlocked}
+                                style={{ pointerEvents: 'none' }}
+                              />
+                            </div>
+                          </Col>
+                        );
+                      })}
                     </Row>
                   </Form.Group>
 
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold small text-muted">HORA ESPECÍFICA (APROXIMADA)</Form.Label>
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <Form.Label className="fw-bold small text-muted mb-0">HORA ESPECÍFICA (APROXIMADA)</Form.Label>
+                      {exactTimeConflict.hasConflict && (
+                        <span className="small text-danger fw-bold">
+                          ⚠️ Horario seleccionado bloqueado
+                        </span>
+                      )}
+                    </div>
                     <Form.Select
                       value={preferredTimeExact}
                       onChange={(e) => setPreferredTimeExact(e.target.value)}
                       size="lg"
-                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
+                      className={exactTimeConflict.hasConflict ? 'is-invalid' : ''}
+                      style={{ borderRadius: '10px', borderColor: exactTimeConflict.hasConflict ? '#dc3545' : '#eed0c5' }}
                     >
-                      <option value="10:00">10:00 hrs</option>
-                      <option value="10:30">10:30 hrs</option>
-                      <option value="11:00">11:00 hrs</option>
-                      <option value="11:30">11:30 hrs</option>
-                      <option value="12:00">12:00 hrs</option>
-                      <option value="12:30">12:30 hrs</option>
-                      <option value="14:30">14:30 hrs</option>
-                      <option value="15:00">15:00 hrs</option>
-                      <option value="15:30">15:30 hrs</option>
-                      <option value="16:00">16:00 hrs</option>
-                      <option value="16:30">16:30 hrs</option>
-                      <option value="17:00">17:00 hrs</option>
-                      <option value="17:30">17:30 hrs</option>
-                      <option value="18:00">18:00 hrs</option>
-                      <option value="18:30">18:30 hrs</option>
-                      <option value="19:00">19:00 hrs</option>
+                      {[
+                        '10:00',
+                        '10:30',
+                        '11:00',
+                        '11:30',
+                        '12:00',
+                        '12:30',
+                        '14:30',
+                        '15:00',
+                        '15:30',
+                        '16:00',
+                        '16:30',
+                        '17:00',
+                        '17:30',
+                        '18:00',
+                        '18:30',
+                        '19:00',
+                      ].map((slot) => {
+                        const slotConflict = checkTimeSlotConflict(
+                          preferredDate,
+                          slot,
+                          totalEstimatedDuration,
+                          unavailabilities
+                        );
+                        return (
+                          <option
+                            key={slot}
+                            value={slot}
+                            disabled={slotConflict.hasConflict}
+                          >
+                            {slot} hrs {slotConflict.hasConflict ? `— 🚫 Bloqueado (${slotConflict.reason})` : ''}
+                          </option>
+                        );
+                      })}
                     </Form.Select>
                   </Form.Group>
 
@@ -507,10 +655,15 @@ export const PublicBookingPage: React.FC = () => {
                       variant="primary"
                       size="lg"
                       className="w-100 fw-bold shadow-sm"
+                      disabled={preferredDateBlock.blocked || exactTimeConflict.hasConflict}
                       onClick={() => setStep(3)}
                       style={{ background: '#8c2a3e', borderColor: '#8c2a3e', borderRadius: '12px' }}
                     >
-                      Continuar a tus Datos &rarr;
+                      {preferredDateBlock.blocked
+                        ? 'Día Cerrado (Elige otra fecha)'
+                        : exactTimeConflict.hasConflict
+                        ? 'Horario Bloqueado'
+                        : 'Continuar a tus Datos →'}
                     </Button>
                   </div>
                 </div>

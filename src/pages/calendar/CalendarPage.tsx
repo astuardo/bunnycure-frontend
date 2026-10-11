@@ -22,7 +22,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { FaChevronLeft, FaChevronRight, FaWhatsapp, FaBell, FaEnvelope, FaHistory } from 'react-icons/fa';
-import { FiCalendar, FiSlash } from 'react-icons/fi';
+import { FiCalendar, FiSlash, FiPlus } from 'react-icons/fi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
@@ -481,8 +481,23 @@ export default function CalendarPage() {
         {/* Citas del día seleccionado */}
         {selectedDate && (
           <Card className="mt-3 selected-day-section">
-            <div className="selected-day-header">
-              Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}
+            <div className="selected-day-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span>Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}</span>
+              {isDateBlockedFullDay(selectedDate, unavailabilities).blocked ? (
+                <Badge bg="danger" className="py-2 px-3 fw-bold d-flex align-items-center gap-1 shadow-sm">
+                  🚫 Día Cerrado ({isDateBlockedFullDay(selectedDate, unavailabilities).reason || 'Bloqueado'}) - No disponible
+                </Badge>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="d-flex align-items-center gap-1 shadow-sm py-1 px-3"
+                  style={{ background: '#8c2a3e', borderColor: '#8c2a3e', borderRadius: '8px', fontWeight: 600 }}
+                  onClick={() => navigate(`/appointments?create=1&date=${format(selectedDate, 'yyyy-MM-dd')}`)}
+                >
+                  <FiPlus /> Agendar Cita en este día
+                </Button>
+              )}
             </div>
 
             {/* Alertas de Bloqueos para el día seleccionado */}

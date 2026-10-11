@@ -25,6 +25,20 @@ import { matchRutSearch } from '../../utils/rutUtils';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardItem, GiftCardRedeemItemRequest } from '../../types/giftcard.types';
 import { toWhatsAppPhone } from '../../utils/giftcardRenderer';
+import { AppointmentSchedulePicker } from '../../components/appointments/AppointmentSchedulePicker';
+import {
+  settingsApi,
+  loadCachedUnavailabilities,
+  loadCachedUnavailabilityColors,
+} from '../../api/settings.api';
+import {
+  ScheduleUnavailability,
+  UnavailabilityColorConfig,
+} from '../../types/unavailability.types';
+import {
+  isDateBlockedFullDay,
+  checkTimeSlotConflict,
+} from '../../utils/unavailabilityUtils';
 
 interface AppointmentFormState {
   customerId: number;
@@ -114,7 +128,7 @@ export default function AppointmentsPage() {
   const [formData, setFormData] = useState<AppointmentFormState>({
     customerId: 0,
     serviceIds: [],
-    appointmentDate: '',
+    appointmentDate: initialDate || '',
     appointmentTime: '',
     notes: '',
   });
@@ -128,6 +142,9 @@ export default function AppointmentsPage() {
   });
   const isQuickCreateMode = searchParams.get('create') === '1';
   const showCreateAppointmentModal = showCreateModal || isQuickCreateMode;
+
+  const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>(loadCachedUnavailabilities);
+  const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(loadCachedUnavailabilityColors);
 
   // Estados para selección y uso de GiftCard al crear una cita
   const [createUseGiftCardChoice, setCreateUseGiftCardChoice] = useState<'YES' | 'NO' | null>(null);
@@ -155,6 +172,15 @@ export default function AppointmentsPage() {
     fetchCustomers();
     fetchServices(true);
     fetchGiftCards();
+
+    settingsApi.getAll().then((data) => {
+      if (data.unavailabilities && data.unavailabilities.length > 0) {
+        setUnavailabilities(data.unavailabilities);
+      }
+      if (data.unavailabilityColors) {
+        setUnavailabilityColors(data.unavailabilityColors);
+      }
+    }).catch((err) => console.error('Error fetching unavailabilities in AppointmentsPage:', err));
   }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards, initialStatus, initialDate]);
 
   // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
@@ -593,8 +619,13 @@ export default function AppointmentsPage() {
     return true;
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (defaultDate?: string) => {
     resetForm();
+    if (defaultDate) {
+      setFormData((prev) => ({ ...prev, appointmentDate: defaultDate }));
+    } else if (searchParams.get('date')) {
+      setFormData((prev) => ({ ...prev, appointmentDate: searchParams.get('date') || '' }));
+    }
     setCustomChargeItems([]);
     setSummaryServiceSearch('');
     setCreateStep('form');
@@ -615,6 +646,37 @@ export default function AppointmentsPage() {
   const handleGoToCreateSummary = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(formData.customerId, formData.serviceIds)) return;
+
+    if (!formData.appointmentDate) {
+      toast.error('Por favor selecciona una fecha para la cita');
+      return;
+    }
+    if (!formData.appointmentTime) {
+      toast.error('Por favor selecciona una hora para la cita');
+      return;
+    }
+
+    const fullDayCheck = isDateBlockedFullDay(formData.appointmentDate, unavailabilities);
+    if (fullDayCheck.blocked) {
+      toast.error(
+        `No es posible agendar: La fecha seleccionada (${formData.appointmentDate}) está marcada como día cerrado o bloqueado ("${fullDayCheck.reason || 'Día bloqueado'}").`
+      );
+      return;
+    }
+
+    const timeSlotCheck = checkTimeSlotConflict(
+      formData.appointmentDate,
+      formData.appointmentTime,
+      createDuration,
+      unavailabilities
+    );
+    if (timeSlotCheck.hasConflict) {
+      toast.error(
+        `Conflicto de horario: La hora seleccionada coincide con el bloqueo de agenda "${timeSlotCheck.reason}" (${timeSlotCheck.conflictSlot}). Por favor selecciona otro horario.`
+      );
+      return;
+    }
+
     if (availableCreateCustomerGiftCards.length > 0 && !createSelectedGiftCardId) {
       setCreateSelectedGiftCardId(availableCreateCustomerGiftCards[0].id);
     }
@@ -767,6 +829,36 @@ export default function AppointmentsPage() {
     e.preventDefault();
     if (editMode === 'edit' && !editingAppointmentId) return;
     if (!validateForm(editFormData.customerId, editFormData.serviceIds)) return;
+
+    if (!editFormData.appointmentDate) {
+      toast.error('Por favor selecciona una fecha para la cita');
+      return;
+    }
+    if (!editFormData.appointmentTime) {
+      toast.error('Por favor selecciona una hora para la cita');
+      return;
+    }
+
+    const editFullDayCheck = isDateBlockedFullDay(editFormData.appointmentDate, unavailabilities);
+    if (editFullDayCheck.blocked) {
+      toast.error(
+        `No es posible agendar: La fecha seleccionada (${editFormData.appointmentDate}) está marcada como día cerrado o bloqueado ("${editFullDayCheck.reason || 'Día bloqueado'}").`
+      );
+      return;
+    }
+
+    const editTimeSlotCheck = checkTimeSlotConflict(
+      editFormData.appointmentDate,
+      editFormData.appointmentTime,
+      editDuration,
+      unavailabilities
+    );
+    if (editTimeSlotCheck.hasConflict) {
+      toast.error(
+        `Conflicto de horario: La hora seleccionada coincide con el bloqueo de agenda "${editTimeSlotCheck.reason}" (${editTimeSlotCheck.conflictSlot}). Por favor selecciona otro horario.`
+      );
+      return;
+    }
 
     const finalNotes = buildEditNotes();
     const finalTotal = editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0);
@@ -978,7 +1070,7 @@ export default function AppointmentsPage() {
     setFormData({
       customerId: 0,
       serviceIds: [],
-      appointmentDate: '',
+      appointmentDate: searchParams.get('date') || '',
       appointmentTime: '',
       notes: '',
     });
@@ -1057,7 +1149,7 @@ export default function AppointmentsPage() {
           <p className="text-muted">Administra las citas y agenda del salón</p>
         </Col>
         <Col xs="auto">
-          <Button variant="primary" onClick={openCreateModal}>
+          <Button variant="primary" onClick={() => openCreateModal()}>
             + Nueva Cita
           </Button>
         </Col>
@@ -1580,30 +1672,17 @@ export default function AppointmentsPage() {
                 </Form.Group>
               </Col>
             </Row>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Fecha *</Form.Label>
-                  <Form.Control
-                    type="date"
-                    required
-                    value={formData.appointmentDate}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, appointmentDate: e.target.value }))}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Hora *</Form.Label>
-                  <Form.Control
-                    type="time"
-                    required
-                    value={formData.appointmentTime}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, appointmentTime: e.target.value }))}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
+            <AppointmentSchedulePicker
+              selectedDate={formData.appointmentDate}
+              selectedTime={formData.appointmentTime}
+              durationMinutes={createDuration}
+              onDateChange={(date) => setFormData((prev) => ({ ...prev, appointmentDate: date }))}
+              onTimeChange={(time) => setFormData((prev) => ({ ...prev, appointmentTime: time }))}
+              unavailabilities={unavailabilities}
+              unavailabilityColors={unavailabilityColors}
+              appointments={appointments}
+              minDate={format(new Date(), 'yyyy-MM-dd')}
+            />
             <Form.Group className="mb-3">
               <Form.Label>Detalle de servicios</Form.Label>
               <Form.Control
@@ -2058,30 +2137,16 @@ export default function AppointmentsPage() {
                 </Form.Group>
               </Col>
             </Row>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Fecha *</Form.Label>
-                  <Form.Control
-                    type="date"
-                    required
-                    value={editFormData.appointmentDate}
-                    onChange={(e) => setEditFormData((prev) => ({ ...prev, appointmentDate: e.target.value }))}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Hora *</Form.Label>
-                  <Form.Control
-                    type="time"
-                    required
-                    value={editFormData.appointmentTime}
-                    onChange={(e) => setEditFormData((prev) => ({ ...prev, appointmentTime: e.target.value }))}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
+            <AppointmentSchedulePicker
+              selectedDate={editFormData.appointmentDate}
+              selectedTime={editFormData.appointmentTime}
+              durationMinutes={editDuration}
+              onDateChange={(date) => setEditFormData((prev) => ({ ...prev, appointmentDate: date }))}
+              onTimeChange={(time) => setEditFormData((prev) => ({ ...prev, appointmentTime: time }))}
+              unavailabilities={unavailabilities}
+              unavailabilityColors={unavailabilityColors}
+              appointments={appointments.filter((a) => a.id !== editingAppointmentId)}
+            />
             {editMode === 'edit' ? (
               <Row>
                 <Col md={6}>
