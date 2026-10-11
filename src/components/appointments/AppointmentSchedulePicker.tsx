@@ -223,9 +223,6 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
   const handleDateFieldClick = () => {
     setShowVisualCalendar(true);
-    setTimeout(() => {
-      calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 50);
   };
 
   const handleAdjustTimeMinutes = (delta: number) => {
@@ -261,50 +258,65 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 {showVisualCalendar ? '▼ Ocultar calendario' : '▶ Ver calendario'}
               </button>
             </div>
-            <div className="position-relative" onClick={handleDateFieldClick} style={{ cursor: 'pointer' }}>
-              <Form.Control
-                type="text"
-                readOnly
-                required={required}
-                value={formattedDateDisplay}
-                placeholder="Toca un día en el calendario interactivo..."
-                className={fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? 'is-invalid' : ''}
+            {/* Contenedor interactivo no-input: nunca activa zoom en iOS/Android */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={handleDateFieldClick}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleDateFieldClick();
+                }
+              }}
+              className={`form-control d-flex align-items-center justify-content-between ${
+                fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? 'is-invalid' : ''
+              }`}
+              style={{
+                borderRadius: '8px',
+                cursor: 'pointer',
+                minHeight: '38px',
+                backgroundColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
+                  ? '#fff5f5'
+                  : selectedDate
+                  ? '#fdf8f6'
+                  : '#ffffff',
+                borderColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
+                  ? '#dc3545'
+                  : selectedDate
+                  ? '#8c2a3e'
+                  : '#ced4da',
+                userSelect: 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+              title="Toca para ver el calendario y seleccionar fecha"
+            >
+              <span
                 style={{
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  backgroundColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
-                    ? '#fff5f5'
-                    : selectedDate
-                    ? '#fdf8f6'
-                    : '#ffffff',
-                  borderColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
-                    ? '#dc3545'
-                    : selectedDate
-                    ? '#8c2a3e'
-                    : '#ced4da',
+                  fontSize: '13.5px',
                   fontWeight: selectedDate ? 600 : 400,
-                  fontSize: '12.5px',
-                  color: '#2d1a12',
+                  color: selectedDate ? '#2d1a12' : '#6c757d',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
-              />
+              >
+                {formattedDateDisplay || 'Toca un día en el calendario interactivo...'}
+              </span>
               {selectedDate ? (
                 <span
-                  className="position-absolute end-0 top-50 translate-middle-y me-2 badge"
+                  className="badge ms-2"
                   style={{
                     fontSize: '10.5px',
                     backgroundColor: '#8c2a3e',
                     color: '#fff',
-                    pointerEvents: 'none',
                     borderRadius: '6px',
+                    flexShrink: 0,
                   }}
                 >
                   📅 {selectedDate}
                 </span>
               ) : (
-                <span
-                  className="position-absolute end-0 top-50 translate-middle-y me-2 text-muted"
-                  style={{ fontSize: '12px', pointerEvents: 'none' }}
-                >
+                <span className="text-muted ms-2" style={{ fontSize: '13px', flexShrink: 0 }}>
                   📅
                 </span>
               )}
@@ -337,6 +349,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   borderColor: timeConflict.hasConflict ? '#dc3545' : '#ced4da',
                   backgroundColor: timeConflict.hasConflict ? '#fff5f5' : '#fff',
                   fontWeight: selectedTime ? 600 : 400,
+                  fontSize: '16px', // 16px previene el zoom automático de iOS Safari
                 }}
               />
               <Button

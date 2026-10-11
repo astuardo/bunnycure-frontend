@@ -148,3 +148,15 @@ button:not(:disabled):active,
     transition: none !important;
   }
 }
+
+/* Prevenir zoom no deseado en dispositivos móviles (iOS Safari / Android) */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  .form-control,
+  .form-select {
+    font-size: 16px !important;
+  }
+}
+
