@@ -15,7 +15,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle, FiUser } from 'react-icons/fi';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
@@ -101,20 +101,53 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
     return getTimeSlotBlocksForDate(selectedDate, unavailabilities);
   }, [selectedDate, unavailabilities]);
 
-  // Appointments on selected date
+  // Appointments on selected date (incluyendo confirmadas, pendientes y completadas)
   const dayAppointments = useMemo(() => {
     if (!selectedDate) return [];
     return appointments.filter((apt) => {
       const aptDate = apt.appointmentDate ? apt.appointmentDate.slice(0, 10) : '';
       return (
         aptDate === selectedDate &&
-        apt.status !== 'CANCELLED' &&
-        apt.status !== 'COMPLETED'
+        apt.status !== 'CANCELLED'
       );
     }).sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
   }, [selectedDate, appointments]);
 
-  // Time conflict detection
+  // Funciones de ayuda para citas del día
+  const getAptDuration = (apt: Appointment): number => {
+    if (apt.totalDurationMinutes && apt.totalDurationMinutes > 0) {
+      return apt.totalDurationMinutes;
+    }
+    if (apt.services && apt.services.length > 0) {
+      return apt.services.reduce((acc, s) => acc + (s.durationMinutes || 60), 0);
+    }
+    return apt.service?.durationMinutes || 60;
+  };
+
+  const getAptEndTime = (apt: Appointment): string => {
+    if (!apt.appointmentTime) return '';
+    const startMin = timeToMinutes(apt.appointmentTime);
+    const dur = getAptDuration(apt);
+    return minutesToTime(startMin + dur);
+  };
+
+  const getAptServicesText = (apt: Appointment): string => {
+    if (apt.services && apt.services.length > 0) {
+      return apt.services.map((s) => s.name).join(' + ');
+    }
+    return apt.service?.name || 'Servicio';
+  };
+
+  const isAptCollidingWithSelected = (apt: Appointment): boolean => {
+    if (!selectedDate || !selectedTime || !apt.appointmentTime) return false;
+    const startMin = timeToMinutes(selectedTime);
+    const endMin = startMin + Math.max(1, durationMinutes);
+    const aptStart = timeToMinutes(apt.appointmentTime);
+    const aptEnd = aptStart + getAptDuration(apt);
+    return Math.max(startMin, aptStart) < Math.min(endMin, aptEnd);
+  };
+
+  // Time conflict detection with schedule unavailabilities
   const timeConflict = useMemo(() => {
     if (!selectedDate || !selectedTime) return { hasConflict: false };
     return checkTimeSlotConflict(selectedDate, selectedTime, durationMinutes, unavailabilities);
@@ -123,20 +156,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   // Conflict with existing appointment
   const existingAptConflict = useMemo(() => {
     if (!selectedDate || !selectedTime) return null;
-    const startMin = timeToMinutes(selectedTime);
-    const endMin = startMin + Math.max(1, durationMinutes);
-
-    return dayAppointments.find((apt) => {
-      if (!apt.appointmentTime) return false;
-      const aptStart = timeToMinutes(apt.appointmentTime);
-      const aptDuration = apt.services && apt.services.length > 0
-        ? apt.services.reduce((acc, s) => acc + (s.durationMinutes || 60), 0)
-        : (apt.service?.durationMinutes || 60);
-      const aptEnd = aptStart + aptDuration;
-
-      // Overlap check
-      return Math.max(startMin, aptStart) < Math.min(endMin, aptEnd);
-    });
+    return dayAppointments.find((apt) => isAptCollidingWithSelected(apt));
   }, [selectedDate, selectedTime, durationMinutes, dayAppointments]);
 
   // Estimated end time
@@ -578,6 +598,147 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
             </Alert>
           )}
 
+          {/* CASO 2.5: CITAS YA AGENDADAS PARA ESTE DÍA */}
+          {dayAppointments.length > 0 ? (
+            <div
+              className="p-3 mb-2 rounded-3 border shadow-sm"
+              style={{
+                background: '#f8fafc',
+                borderColor: '#cbd5e1',
+              }}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ fontSize: '1.2rem' }}>📋</span>
+                  <div>
+                    <strong className="text-dark" style={{ fontSize: '13px' }}>
+                      Citas agendadas para este día ({dayAppointments.length})
+                    </strong>
+                    <div className="text-muted" style={{ fontSize: '11px' }}>
+                      Revisa los horarios ocupados para organizar la nueva cita
+                    </div>
+                  </div>
+                </div>
+                <Badge
+                  bg="primary"
+                  className="px-2 py-1 fw-semibold"
+                  style={{ fontSize: '11px', borderRadius: '6px' }}
+                >
+                  {dayAppointments.length} {dayAppointments.length === 1 ? 'cita agendada' : 'citas agendadas'}
+                </Badge>
+              </div>
+
+              {/* Lista cronológica de citas del día */}
+              <div
+                className="d-flex flex-column gap-2"
+                style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '2px' }}
+              >
+                {dayAppointments.map((apt) => {
+                  const aptEndTime = getAptEndTime(apt);
+                  const dur = getAptDuration(apt);
+                  const servicesText = getAptServicesText(apt);
+                  const isColliding = isAptCollidingWithSelected(apt);
+
+                  return (
+                    <div
+                      key={apt.id}
+                      className="p-2 rounded-2 border d-flex justify-content-between align-items-center flex-wrap gap-2"
+                      style={{
+                        background: isColliding ? '#fff1f2' : '#ffffff',
+                        borderColor: isColliding ? '#f87171' : '#e2e8f0',
+                        borderWidth: isColliding ? '1.5px' : '1px',
+                        boxShadow: isColliding ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div className="d-flex align-items-center gap-2">
+                        <div
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            background: isColliding ? '#fee2e2' : '#eff6ff',
+                            color: isColliding ? '#991b1b' : '#1e40af',
+                            fontWeight: 700,
+                            fontSize: '11.5px',
+                            minWidth: '105px',
+                            textAlign: 'center',
+                          }}
+                        >
+                          <FiClock size={11} className="me-1" />
+                          {apt.appointmentTime} - {aptEndTime}
+                        </div>
+
+                        <div>
+                          <div className="fw-semibold text-dark d-flex align-items-center gap-1" style={{ fontSize: '12px' }}>
+                            <FiUser size={12} className="text-muted" />
+                            <span>{apt.customer?.fullName || 'Clienta'}</span>
+                            {apt.customer?.phone && (
+                              <small className="text-muted fw-normal">
+                                ({apt.customer.phone})
+                              </small>
+                            )}
+                          </div>
+                          <div className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
+                            <span>💅 {servicesText}</span>
+                            <span className="text-secondary fw-semibold">({dur} min)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="d-flex align-items-center gap-1">
+                        {isColliding && (
+                          <Badge bg="danger" className="py-1 px-2" style={{ fontSize: '10.5px' }}>
+                            ⚠️ Choca con tu hora
+                          </Badge>
+                        )}
+                        <Badge
+                          bg={
+                            apt.status === 'CONFIRMED'
+                              ? 'success'
+                              : apt.status === 'COMPLETED'
+                              ? 'info'
+                              : apt.status === 'PENDING'
+                              ? 'warning'
+                              : 'secondary'
+                          }
+                          text={apt.status === 'PENDING' ? 'dark' : 'white'}
+                          className="py-1 px-2 fw-semibold"
+                          style={{ fontSize: '10.5px', borderRadius: '4px' }}
+                        >
+                          {apt.status === 'CONFIRMED'
+                            ? 'Confirmada'
+                            : apt.status === 'COMPLETED'
+                            ? 'Completada'
+                            : apt.status === 'PENDING'
+                            ? 'Pendiente'
+                            : apt.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            !fullDayBlock.blocked &&
+            (!selectedDate || selectedDate >= todayStr || allowPastDates) && (
+              <div
+                className="py-2 px-3 mb-2 rounded-3 d-flex align-items-center gap-2 border"
+                style={{
+                  background: '#f0fdf4',
+                  borderColor: '#bbf7d0',
+                  color: '#166534',
+                  fontSize: '12px',
+                }}
+              >
+                <FiCheckCircle className="text-success fs-6 flex-shrink-0" />
+                <div>
+                  <strong>Agenda despejada:</strong> No hay otras citas agendadas registradas para esta fecha.
+                </div>
+              </div>
+            )
+          )}
+
           {/* CASO 3: CONFLICTO ESPECÍFICO DE LA HORA SELECCIONADA CON BLOQUEO */}
           {timeConflict.hasConflict && (
             <Alert
@@ -611,10 +772,11 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
             >
               <FiAlertTriangle className="text-warning-emphasis fs-5 flex-shrink-0 mt-1" />
               <div style={{ fontSize: '12.5px' }}>
-                <strong>Aviso de superposición con otra cita:</strong>
+                <strong className="text-dark">Aviso de superposición con otra cita:</strong>
                 <div>
-                  Ya existe una cita a las <strong>{existingAptConflict.appointmentTime} hrs</strong> de{' '}
-                  <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>.
+                  La hora seleccionada se superpone con la cita de{' '}
+                  <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>{' '}
+                  ({existingAptConflict.appointmentTime} a {getAptEndTime(existingAptConflict)} hrs).
                 </div>
               </div>
             </Alert>
@@ -638,11 +800,26 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 <small className="text-muted fw-semibold" style={{ fontSize: '11px' }}>
                   Atajos de horarios comunes:
                 </small>
+                <small className="text-muted" style={{ fontSize: '10.5px' }}>
+                  👤 = Ocupado por otra cita · 🚫 = Bloqueado
+                </small>
               </div>
               <div className="d-flex flex-wrap gap-1">
                 {COMMON_SLOTS.map((slot) => {
                   const check = checkTimeSlotConflict(selectedDate, slot, durationMinutes, unavailabilities);
                   const isBlocked = check.hasConflict;
+
+                  // Verificar si el slot choca con una cita agendada
+                  const conflictingApt = dayAppointments.find((apt) => {
+                    if (!apt.appointmentTime) return false;
+                    const aptStart = timeToMinutes(apt.appointmentTime);
+                    const aptDur = getAptDuration(apt);
+                    const aptEnd = aptStart + aptDur;
+                    const slotStart = timeToMinutes(slot);
+                    const slotEnd = slotStart + durationMinutes;
+                    return Math.max(slotStart, aptStart) < Math.min(slotEnd, aptEnd);
+                  });
+                  const isAptOccupied = !!conflictingApt;
                   const isCurrent = selectedTime === slot;
 
                   return (
@@ -653,19 +830,31 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                       onClick={() => onTimeChange(slot)}
                       className={`btn btn-sm py-1 px-2 ${
                         isCurrent
-                          ? 'btn-primary'
+                          ? isAptOccupied
+                            ? 'btn-danger'
+                            : 'btn-primary'
                           : isBlocked
                           ? 'btn-outline-danger disabled text-decoration-line-through'
+                          : isAptOccupied
+                          ? 'btn-outline-warning text-dark'
                           : 'btn-outline-secondary'
                       }`}
                       style={{
                         fontSize: '11px',
                         borderRadius: '6px',
                         opacity: isBlocked ? 0.6 : 1,
+                        borderStyle: isAptOccupied && !isCurrent ? 'dashed' : 'solid',
+                        fontWeight: isCurrent || isAptOccupied ? 600 : 400,
                       }}
-                      title={isBlocked ? `Bloqueado: ${check.reason}` : `Seleccionar ${slot}`}
+                      title={
+                        isBlocked
+                          ? `Bloqueado por agenda: ${check.reason}`
+                          : isAptOccupied
+                          ? `Ocupado por cita de ${conflictingApt.customer?.fullName || 'Clienta'} (${conflictingApt.appointmentTime} a ${getAptEndTime(conflictingApt)})`
+                          : `Seleccionar ${slot} (Disponible)`
+                      }
                     >
-                      {slot} {isBlocked && '🚫'}
+                      {slot} {isBlocked ? '🚫' : isAptOccupied ? '👤' : ''}
                     </button>
                   );
                 })}

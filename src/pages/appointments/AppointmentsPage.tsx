@@ -160,15 +160,7 @@ export default function AppointmentsPage() {
   };
 
   useEffect(() => {
-    const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
-    if (initialStatus !== 'ACTIVE' && initialStatus !== 'ALL') {
-      filters.status = initialStatus;
-    }
-    if (initialDate) {
-      filters.startDate = initialDate;
-      filters.endDate = initialDate;
-    }
-    fetchAppointments(Object.keys(filters).length > 0 ? filters : undefined);
+    fetchAppointments();
     fetchCustomers();
     fetchServices(true);
     fetchGiftCards();
@@ -181,7 +173,7 @@ export default function AppointmentsPage() {
         setUnavailabilityColors(data.unavailabilityColors);
       }
     }).catch((err) => console.error('Error fetching unavailabilities in AppointmentsPage:', err));
-  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards, initialStatus, initialDate]);
+  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards]);
 
   // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
   useEffect(() => {
