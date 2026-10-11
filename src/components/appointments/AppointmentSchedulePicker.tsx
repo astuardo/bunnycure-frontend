@@ -45,6 +45,7 @@ interface AppointmentSchedulePickerProps {
 }
 
 const COMMON_SLOTS = [
+  '09:00',
   '10:00',
   '11:00',
   '12:00',
@@ -55,6 +56,8 @@ const COMMON_SLOTS = [
   '17:00',
   '18:00',
   '19:00',
+  '20:00',
+  '21:00',
 ];
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -70,8 +73,11 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   appointments = [],
   required = true,
   minDate,
+  allowPastDates = false,
 }) => {
   const [showVisualCalendar, setShowVisualCalendar] = useState(true);
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const effectiveMinDate = minDate || (allowPastDates ? undefined : todayStr);
 
   // Parse current viewing month based on selected date or today
   const initialMonth = useMemo(() => {
@@ -153,6 +159,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
       const dayStr = format(day, 'yyyy-MM-dd');
       const isSelected = selectedDate === dayStr;
       const isCurrentMonth = isSameMonth(day, currentMonth);
+      const isPast = !allowPastDates && dayStr < todayStr;
       const fDayBlock = isDateBlockedFullDay(dayStr, unavailabilities);
       const tSlotBlocks = getTimeSlotBlocksForDate(dayStr, unavailabilities);
 
@@ -167,6 +174,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         dayNumber: format(day, 'd'),
         isToday: isToday(day),
         isSelected,
+        isPast,
         isOutsideMonth: !isCurrentMonth,
         isFullDayBlocked: fDayBlock.blocked,
         fullDayReason: fDayBlock.reason,
@@ -176,9 +184,12 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         appointmentCount: aptsCount,
       };
     });
-  }, [currentMonth, selectedDate, unavailabilities, appointments]);
+  }, [currentMonth, selectedDate, unavailabilities, appointments, allowPastDates, todayStr]);
 
   const handleCellClick = (dateStr: string) => {
+    if (!allowPastDates && dateStr < todayStr) {
+      return;
+    }
     onDateChange(dateStr);
   };
 
@@ -204,14 +215,14 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
             <Form.Control
               type="date"
               required={required}
-              min={minDate}
+              min={effectiveMinDate}
               value={selectedDate}
               onChange={(e) => onDateChange(e.target.value)}
-              className={fullDayBlock.blocked ? 'is-invalid' : ''}
+              className={fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? 'is-invalid' : ''}
               style={{
                 borderRadius: '8px',
-                borderColor: fullDayBlock.blocked ? '#dc3545' : '#ced4da',
-                backgroundColor: fullDayBlock.blocked ? '#fff5f5' : '#fff',
+                borderColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? '#dc3545' : '#ced4da',
+                backgroundColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? '#fff5f5' : '#fff',
               }}
             />
           </Form.Group>
@@ -335,7 +346,11 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               let cellBorder = '#eef0f2';
               let textColor = '#212529';
 
-              if (cell.isFullDayBlocked) {
+              if (cell.isPast) {
+                cellBg = '#f8f9fa';
+                cellBorder = '#e5e7eb';
+                textColor = '#9ca3af';
+              } else if (cell.isFullDayBlocked) {
                 cellBg = unavailabilityColors.fullDayColor || '#fee2e2';
                 cellBorder = '#f87171';
                 textColor = '#991b1b';
@@ -351,6 +366,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               }
 
               const tooltipParts: string[] = [];
+              if (cell.isPast) tooltipParts.push('Fecha pasada (No disponible para agendar)');
               if (cell.isFullDayBlocked) tooltipParts.push(`Cerrado: ${cell.fullDayReason}`);
               if (cell.isTimeSlotBlocked) {
                 tooltipParts.push(
@@ -372,8 +388,8 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                     borderRadius: '8px',
                     border: `1.5px solid ${cellBorder}`,
                     background: cellBg,
-                    opacity: cell.isOutsideMonth ? 0.35 : 1,
-                    cursor: 'pointer',
+                    opacity: cell.isPast ? 0.4 : cell.isOutsideMonth ? 0.35 : 1,
+                    cursor: cell.isPast ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -386,7 +402,8 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                       style={{
                         fontSize: '11px',
                         fontWeight: cell.isSelected || cell.isToday ? 800 : 600,
-                        color: cell.isSelected ? '#8c2a3e' : textColor,
+                        color: cell.isPast ? '#9ca3af' : cell.isSelected ? '#8c2a3e' : textColor,
+                        textDecoration: cell.isPast ? 'line-through' : 'none',
                       }}
                     >
                       {cell.dayNumber}
@@ -405,7 +422,19 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
                   {/* Indicadores en la celda */}
                   <div>
-                    {cell.isFullDayBlocked && (
+                    {cell.isPast && (
+                      <div
+                        style={{
+                          fontSize: '8px',
+                          color: '#9ca3af',
+                          fontWeight: 700,
+                          lineHeight: 1,
+                        }}
+                      >
+                        Pasado
+                      </div>
+                    )}
+                    {!cell.isPast && cell.isFullDayBlocked && (
                       <div
                         style={{
                           fontSize: '8.5px',
@@ -420,7 +449,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                         🚫 Cerrado
                       </div>
                     )}
-                    {!cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
+                    {!cell.isPast && !cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
                       <div
                         style={{
                           fontSize: '8px',
@@ -468,8 +497,12 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0d6efd', display: 'inline-block' }} />
               Citas Agendadas
             </span>
+            <span className="d-flex align-items-center gap-1 text-muted">
+              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#d1d5db', display: 'inline-block' }} />
+              Fechas Pasadas (Inactivas)
+            </span>
             <span className="d-flex align-items-center gap-1 text-muted ms-auto">
-              Click en cualquier día para seleccionarlo
+              Click en cualquier día futuro para seleccionarlo
             </span>
           </div>
         </div>
@@ -478,6 +511,24 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
       {/* ─── ALERTAS Y AVISOS DE DISPONIBILIDAD PARA EL DÍA SELECCIONADO ─── */}
       {selectedDate && (
         <>
+          {/* CASO 0: FECHA EN EL PASADO */}
+          {!allowPastDates && selectedDate < todayStr && (
+            <Alert
+              variant="danger"
+              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
+              style={{ borderRadius: '10px' }}
+            >
+              <FiAlertTriangle className="text-danger fs-5 flex-shrink-0 mt-1" />
+              <div style={{ fontSize: '13px' }}>
+                <strong className="d-block text-danger">FECHA EN EL PASADO</strong>
+                <span>
+                  No está permitido agendar citas en fechas anteriores a hoy ({todayStr}).
+                  Por favor selecciona hoy o una fecha posterior.
+                </span>
+              </div>
+            </Alert>
+          )}
+
           {/* CASO 1: DÍA COMPLETO CERRADO / BLOQUEADO */}
           {fullDayBlock.blocked && (
             <Alert
@@ -581,7 +632,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           )}
 
           {/* ─── SUGERENCIAS RÁPIDAS DE HORAS (SLOTS HABITUALES) ─── */}
-          {!fullDayBlock.blocked && (
+          {!fullDayBlock.blocked && !(selectedDate && !allowPastDates && selectedDate < todayStr) && (
             <div className="mb-2">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <small className="text-muted fw-semibold" style={{ fontSize: '11px' }}>

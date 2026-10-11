@@ -651,6 +651,13 @@ export default function AppointmentsPage() {
       toast.error('Por favor selecciona una fecha para la cita');
       return;
     }
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (formData.appointmentDate < todayStr) {
+      toast.error(`No es posible agendar citas en fechas pasadas (${formData.appointmentDate}).`);
+      return;
+    }
+
     if (!formData.appointmentTime) {
       toast.error('Por favor selecciona una hora para la cita');
       return;
@@ -834,6 +841,13 @@ export default function AppointmentsPage() {
       toast.error('Por favor selecciona una fecha para la cita');
       return;
     }
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (editMode === 'reschedule' && editFormData.appointmentDate < todayStr) {
+      toast.error(`No es posible reagendar citas a fechas pasadas (${editFormData.appointmentDate}).`);
+      return;
+    }
+
     if (!editFormData.appointmentTime) {
       toast.error('Por favor selecciona una hora para la cita');
       return;
@@ -2146,6 +2160,7 @@ export default function AppointmentsPage() {
               unavailabilities={unavailabilities}
               unavailabilityColors={unavailabilityColors}
               appointments={appointments.filter((a) => a.id !== editingAppointmentId)}
+              allowPastDates={editMode === 'edit'}
             />
             {editMode === 'edit' ? (
               <Row>

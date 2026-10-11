@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, Row, Col, Form, Button, Badge, Alert } from 'react-bootstrap';
 import { 
   FiCalendar, 
@@ -8,7 +8,9 @@ import {
   FiBell, 
   FiTag, 
   FiDroplet,
+  FiArchive,
 } from 'react-icons/fi';
+import { format } from 'date-fns';
 import {
   ScheduleUnavailability,
   UnavailabilityColorConfig,
@@ -41,6 +43,32 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
   const [endTime, setEndTime] = useState('16:00');
   const [reason, setReason] = useState('');
   const [showConfig, setShowConfig] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+
+  const { activeBlocks, pastBlocks } = useMemo(() => {
+    const active: ScheduleUnavailability[] = [];
+    const past: ScheduleUnavailability[] = [];
+
+    for (const item of unavailabilities) {
+      const effectiveEnd = item.endDate || item.startDate;
+      if (effectiveEnd >= todayStr) {
+        active.push(item);
+      } else {
+        past.push(item);
+      }
+    }
+
+    active.sort((a, b) => 
+      a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || '')
+    );
+    past.sort((a, b) => 
+      b.startDate.localeCompare(a.startDate) || (b.startTime || '').localeCompare(a.startTime || '')
+    );
+
+    return { activeBlocks: active, pastBlocks: past };
+  }, [unavailabilities, todayStr]);
 
   const handleAdd = () => {
     if (!startDate) {
@@ -244,6 +272,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   </Form.Label>
                   <Form.Control
                     type="date"
+                    min={todayStr}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     size="sm"
@@ -257,7 +286,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   <Form.Control
                     type="date"
                     value={endDate}
-                    min={startDate}
+                    min={startDate || todayStr}
                     onChange={(e) => setEndDate(e.target.value)}
                     size="sm"
                     placeholder="Mismo día"
@@ -273,6 +302,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   </Form.Label>
                   <Form.Control
                     type="date"
+                    min={todayStr}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     size="sm"
@@ -361,39 +391,112 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Lista de Bloqueos Registrados */}
-        <h6 className="fw-bold mb-3 d-flex align-items-center justify-content-between" style={{ color: '#422314' }}>
-          <span>📋 Registros de Bloqueos ({unavailabilities.length})</span>
-          {unavailabilities.length > 0 && (
-            <small className="text-muted fw-normal" style={{ fontSize: '0.8rem' }}>
-              Se reflejan automáticamente en Calendario y Dashboard
-            </small>
-          )}
-        </h6>
+        {/* Selector de pestañas: Bloqueos Activos vs Historial de Bloqueos */}
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div className="d-flex gap-2">
+            <Button
+              variant={activeTab === 'active' ? 'primary' : 'outline-secondary'}
+              size="sm"
+              onClick={() => setActiveTab('active')}
+              className="d-flex align-items-center gap-2 fw-semibold px-3 py-1"
+              style={{
+                borderRadius: '8px',
+                backgroundColor: activeTab === 'active' ? '#8c2a3e' : 'transparent',
+                borderColor: activeTab === 'active' ? '#8c2a3e' : '#d5c2ba',
+                color: activeTab === 'active' ? '#fff' : '#6b4f43',
+              }}
+            >
+              <span>Vigentes y Próximos</span>
+              <Badge
+                bg={activeTab === 'active' ? 'light' : 'secondary'}
+                text={activeTab === 'active' ? 'dark' : 'white'}
+                pill
+              >
+                {activeBlocks.length}
+              </Badge>
+            </Button>
 
-        {unavailabilities.length === 0 ? (
+            <Button
+              variant={activeTab === 'history' ? 'primary' : 'outline-secondary'}
+              size="sm"
+              onClick={() => setActiveTab('history')}
+              className="d-flex align-items-center gap-2 fw-semibold px-3 py-1"
+              style={{
+                borderRadius: '8px',
+                backgroundColor: activeTab === 'history' ? '#8c2a3e' : 'transparent',
+                borderColor: activeTab === 'history' ? '#8c2a3e' : '#d5c2ba',
+                color: activeTab === 'history' ? '#fff' : '#6b4f43',
+              }}
+            >
+              <FiArchive size={14} />
+              <span>Historial Pasado</span>
+              <Badge
+                bg={activeTab === 'history' ? 'light' : 'secondary'}
+                text={activeTab === 'history' ? 'dark' : 'white'}
+                pill
+              >
+                {pastBlocks.length}
+              </Badge>
+            </Button>
+          </div>
+
+          {activeTab === 'history' && pastBlocks.length > 0 && (
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={() => {
+                if (window.confirm(`¿Estás segura de eliminar los ${pastBlocks.length} registros del historial de bloqueos pasados?`)) {
+                  onUnavailabilitiesChange(unavailabilities.filter((u) => (u.endDate || u.startDate) >= todayStr));
+                }
+              }}
+              className="d-flex align-items-center gap-1"
+              style={{ borderRadius: '6px', fontSize: '0.8rem' }}
+            >
+              <FiTrash2 size={13} /> Limpiar Historial Pasado
+            </Button>
+          )}
+        </div>
+
+        {/* Mensaje de lista vacía */}
+        {activeTab === 'active' && activeBlocks.length === 0 ? (
           <Alert variant="light" className="text-center py-4 border rounded-3 mb-0">
             <div className="text-muted mb-1" style={{ fontSize: '1.5rem' }}>🗓️</div>
-            <div className="fw-semibold text-muted">No hay bloqueos ni días cerrados configurados</div>
-            <small className="text-muted">Utiliza el formulario superior para programar vacaciones, descansos o citas médicas.</small>
+            <div className="fw-semibold text-muted">No hay bloqueos activos ni próximos configurados</div>
+            <small className="text-muted">Utiliza el formulario superior para programar vacaciones, descansos o citas médicas pendientes.</small>
+          </Alert>
+        ) : activeTab === 'history' && pastBlocks.length === 0 ? (
+          <Alert variant="light" className="text-center py-4 border rounded-3 mb-0">
+            <div className="text-muted mb-1" style={{ fontSize: '1.5rem' }}>📂</div>
+            <div className="fw-semibold text-muted">No hay bloqueos en el historial pasado</div>
+            <small className="text-muted">Los bloqueos o días cerrados que ya hayan transcurrido se guardarán aquí automáticamente como histórico.</small>
           </Alert>
         ) : (
           <div 
             className="d-flex flex-column gap-2"
             style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}
           >
-            {unavailabilities.map((item) => {
+            {(activeTab === 'active' ? activeBlocks : pastBlocks).map((item) => {
               const isFullDay = item.type === 'FULL_DAY';
               const isMultiDay = isFullDay && item.endDate && item.endDate !== item.startDate;
+              const isPast = (item.endDate || item.startDate) < todayStr;
 
               return (
                 <div
                   key={item.id}
                   className="d-flex justify-content-between align-items-center p-3 rounded-3 border"
                   style={{
-                    background: isFullDay ? '#fff5f7' : '#fffaf2',
-                    borderColor: isFullDay ? 'rgba(248, 113, 113, 0.4)' : 'rgba(245, 158, 11, 0.35)',
+                    background: isPast
+                      ? '#f8f9fa'
+                      : isFullDay
+                      ? '#fff5f7'
+                      : '#fffaf2',
+                    borderColor: isPast
+                      ? '#e2e8f0'
+                      : isFullDay
+                      ? 'rgba(248, 113, 113, 0.4)'
+                      : 'rgba(245, 158, 11, 0.35)',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                    opacity: isPast ? 0.85 : 1,
                   }}
                 >
                   <div className="d-flex align-items-start gap-3">
@@ -401,20 +504,33 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                       style={{
                         padding: '6px 10px',
                         borderRadius: '8px',
-                        background: isFullDay ? '#ffe0e6' : '#fef3c7',
-                        color: isFullDay ? '#991b1b' : '#92400e',
+                        background: isPast
+                          ? '#e2e8f0'
+                          : isFullDay
+                          ? '#ffe0e6'
+                          : '#fef3c7',
+                        color: isPast
+                          ? '#475569'
+                          : isFullDay
+                          ? '#991b1b'
+                          : '#92400e',
                         fontWeight: 700,
                         fontSize: '0.8rem',
                         textAlign: 'center',
                         minWidth: '70px',
                       }}
                     >
-                      {isFullDay ? (isMultiDay ? 'RANGO' : 'DÍA COMPLETO') : 'HORARIO'}
+                      {isPast ? 'PASADO' : isFullDay ? (isMultiDay ? 'RANGO' : 'DÍA COMPLETO') : 'HORARIO'}
                     </div>
 
                     <div>
-                      <div className="fw-bold" style={{ color: '#2d1a12', fontSize: '0.95rem' }}>
+                      <div className="fw-bold" style={{ color: isPast ? '#64748b' : '#2d1a12', fontSize: '0.95rem' }}>
                         {item.reason}
+                        {isPast && (
+                          <Badge bg="secondary" className="ms-2" style={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                            Histórico
+                          </Badge>
+                        )}
                       </div>
                       <div className="small text-muted d-flex align-items-center gap-2 mt-1">
                         <span className="d-flex align-items-center gap-1">
@@ -444,7 +560,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                         </span>
 
                         {!isFullDay && item.startTime && item.endTime && (
-                          <span className="d-flex align-items-center gap-1 fw-semibold" style={{ color: '#b45309' }}>
+                          <span
+                            className="d-flex align-items-center gap-1 fw-semibold"
+                            style={{ color: isPast ? '#64748b' : '#b45309' }}
+                          >
                             <FiClock size={13} /> {item.startTime} a {item.endTime} hrs
                           </span>
                         )}
@@ -457,7 +576,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                     size="sm"
                     onClick={() => handleDelete(item.id)}
                     className="p-1 px-2 border-0"
-                    title="Eliminar bloqueo"
+                    title={isPast ? 'Eliminar del historial' : 'Eliminar bloqueo'}
                   >
                     <FiTrash2 size={16} />
                   </Button>

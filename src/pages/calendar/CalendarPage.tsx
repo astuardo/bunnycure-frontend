@@ -100,6 +100,11 @@ export default function CalendarPage() {
   const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(loadCachedUnavailabilityColors);
   const [unavailabilityNotifications, setUnavailabilityNotifications] = useState<UnavailabilityNotificationConfig>(loadCachedUnavailabilityNotifications);
 
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const activeUnavailabilitiesCount = useMemo(() => {
+    return unavailabilities.filter((u) => (u.endDate || u.startDate) >= todayStr).length;
+  }, [unavailabilities, todayStr]);
+
   useEffect(() => {
     if (searchParams.get('manageBlocks') === '1' || searchParams.get('block') === '1') {
       setShowBlocksModal(true);
@@ -343,7 +348,7 @@ export default function CalendarPage() {
               className="d-flex align-items-center gap-2 px-3 py-2 shadow-sm"
               style={{ borderRadius: '10px', fontWeight: 600, fontSize: '0.85rem' }}
             >
-              <FiSlash /> Bloquear Agenda ({unavailabilities.length})
+              <FiSlash /> Bloquear Agenda ({activeUnavailabilitiesCount})
             </Button>
             {Object.entries(statusLabels).map(([status, label]) => (
               <Badge
@@ -486,6 +491,10 @@ export default function CalendarPage() {
               {isDateBlockedFullDay(selectedDate, unavailabilities).blocked ? (
                 <Badge bg="danger" className="py-2 px-3 fw-bold d-flex align-items-center gap-1 shadow-sm">
                   🚫 Día Cerrado ({isDateBlockedFullDay(selectedDate, unavailabilities).reason || 'Bloqueado'}) - No disponible
+                </Badge>
+              ) : format(selectedDate, 'yyyy-MM-dd') < todayStr ? (
+                <Badge bg="secondary" className="py-2 px-3 fw-medium d-flex align-items-center gap-1 shadow-sm">
+                  ⏳ Fecha Pasada (No disponible para agendar)
                 </Badge>
               ) : (
                 <Button
