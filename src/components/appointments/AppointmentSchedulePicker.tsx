@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Form, Row, Col, Button, Badge, Alert } from 'react-bootstrap';
+import React, { useState, useMemo, useRef } from 'react';
+import { Form, Row, Col, Button, Badge, Alert, InputGroup } from 'react-bootstrap';
 import {
   format,
   isValid,
@@ -179,7 +179,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
       const dayStr = format(day, 'yyyy-MM-dd');
       const isSelected = selectedDate === dayStr;
       const isCurrentMonth = isSameMonth(day, currentMonth);
-      const isPast = !allowPastDates && dayStr < todayStr;
+      const isPast = effectiveMinDate ? dayStr < effectiveMinDate : (!allowPastDates && dayStr < todayStr);
       const fDayBlock = isDateBlockedFullDay(dayStr, unavailabilities);
       const tSlotBlocks = getTimeSlotBlocksForDate(dayStr, unavailabilities);
 
@@ -204,10 +204,39 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         appointmentCount: aptsCount,
       };
     });
-  }, [currentMonth, selectedDate, unavailabilities, appointments, allowPastDates, todayStr]);
+  }, [currentMonth, selectedDate, unavailabilities, appointments, allowPastDates, todayStr, effectiveMinDate]);
+
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Formato legible en español para el campo de texto de fecha
+  const formattedDateDisplay = useMemo(() => {
+    if (!selectedDate) return '';
+    try {
+      const d = new Date(`${selectedDate.slice(0, 10)}T12:00:00`);
+      if (!isValid(d)) return selectedDate;
+      const formatted = format(d, "EEEE dd 'de' MMMM, yyyy", { locale: es });
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    } catch {
+      return selectedDate;
+    }
+  }, [selectedDate]);
+
+  const handleDateFieldClick = () => {
+    setShowVisualCalendar(true);
+    setTimeout(() => {
+      calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  };
+
+  const handleAdjustTimeMinutes = (delta: number) => {
+    const base = selectedTime || '10:00';
+    const cur = timeToMinutes(base);
+    const updated = Math.max(0, Math.min(23 * 60 + 55, cur + delta));
+    onTimeChange(minutesToTime(updated));
+  };
 
   const handleCellClick = (dateStr: string) => {
-    if (!allowPastDates && dateStr < todayStr) {
+    if (effectiveMinDate && dateStr < effectiveMinDate) {
       return;
     }
     onDateChange(dateStr);
@@ -229,22 +258,58 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 style={{ fontSize: '11.5px' }}
                 onClick={() => setShowVisualCalendar(!showVisualCalendar)}
               >
-                {showVisualCalendar ? '▼ Ocultar calendario' : '▶ Ver calendario visual'}
+                {showVisualCalendar ? '▼ Ocultar calendario' : '▶ Ver calendario'}
               </button>
             </div>
-            <Form.Control
-              type="date"
-              required={required}
-              min={effectiveMinDate}
-              value={selectedDate}
-              onChange={(e) => onDateChange(e.target.value)}
-              className={fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? 'is-invalid' : ''}
-              style={{
-                borderRadius: '8px',
-                borderColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? '#dc3545' : '#ced4da',
-                backgroundColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? '#fff5f5' : '#fff',
-              }}
-            />
+            <div className="position-relative" onClick={handleDateFieldClick} style={{ cursor: 'pointer' }}>
+              <Form.Control
+                type="text"
+                readOnly
+                required={required}
+                value={formattedDateDisplay}
+                placeholder="Toca un día en el calendario interactivo..."
+                className={fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? 'is-invalid' : ''}
+                style={{
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  backgroundColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
+                    ? '#fff5f5'
+                    : selectedDate
+                    ? '#fdf8f6'
+                    : '#ffffff',
+                  borderColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
+                    ? '#dc3545'
+                    : selectedDate
+                    ? '#8c2a3e'
+                    : '#ced4da',
+                  fontWeight: selectedDate ? 600 : 400,
+                  fontSize: '12.5px',
+                  color: '#2d1a12',
+                }}
+              />
+              {selectedDate ? (
+                <span
+                  className="position-absolute end-0 top-50 translate-middle-y me-2 badge"
+                  style={{
+                    fontSize: '10.5px',
+                    backgroundColor: '#8c2a3e',
+                    color: '#fff',
+                    pointerEvents: 'none',
+                    borderRadius: '6px',
+                  }}
+                >
+                  📅 {selectedDate}
+                </span>
+              ) : (
+                <span
+                  className="position-absolute end-0 top-50 translate-middle-y me-2 text-muted"
+                  style={{ fontSize: '12px', pointerEvents: 'none' }}
+                >
+                  📅
+                </span>
+              )}
+            </div>
+            <input type="hidden" name="appointmentDate" value={selectedDate} />
           </Form.Group>
         </Col>
 
@@ -256,22 +321,43 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               </Form.Label>
               {calculatedEndTime && (
                 <small className="text-muted" style={{ fontSize: '11px' }}>
-                  Termina aprox: <strong>{calculatedEndTime} hrs</strong> ({durationMinutes} min)
+                  Termina: <strong>{calculatedEndTime} hrs</strong> ({durationMinutes} min)
                 </small>
               )}
             </div>
-            <Form.Control
-              type="time"
-              required={required}
-              value={selectedTime}
-              onChange={(e) => onTimeChange(e.target.value)}
-              className={timeConflict.hasConflict ? 'is-invalid' : ''}
-              style={{
-                borderRadius: '8px',
-                borderColor: timeConflict.hasConflict ? '#dc3545' : '#ced4da',
-                backgroundColor: timeConflict.hasConflict ? '#fff5f5' : '#fff',
-              }}
-            />
+            <InputGroup>
+              <Form.Control
+                type="time"
+                required={required}
+                value={selectedTime}
+                onChange={(e) => onTimeChange(e.target.value)}
+                className={timeConflict.hasConflict ? 'is-invalid' : ''}
+                style={{
+                  borderRadius: '8px 0 0 8px',
+                  borderColor: timeConflict.hasConflict ? '#dc3545' : '#ced4da',
+                  backgroundColor: timeConflict.hasConflict ? '#fff5f5' : '#fff',
+                  fontWeight: selectedTime ? 600 : 400,
+                }}
+              />
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => handleAdjustTimeMinutes(-15)}
+                title="Atrasar 15 minutos"
+                style={{ fontSize: '11px', borderColor: '#ced4da', fontWeight: 600 }}
+              >
+                -15m
+              </Button>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => handleAdjustTimeMinutes(15)}
+                title="Adelantar 15 minutos"
+                style={{ fontSize: '11px', borderColor: '#ced4da', fontWeight: 600 }}
+              >
+                +15m
+              </Button>
+            </InputGroup>
           </Form.Group>
         </Col>
       </Row>
@@ -279,6 +365,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
       {/* ─── CALENDARIO VISUAL INTERACTIVO ─── */}
       {showVisualCalendar && (
         <div
+          ref={calendarRef}
           className="p-3 rounded border mb-3 shadow-sm"
           style={{
             background: '#fffdfc',
