@@ -84,7 +84,7 @@ function RoutesWithTracking() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/install" element={<InstallPage />} />
-                <Route path="/test" element={<TestApiPage />} />
+                {import.meta.env.DEV && <Route path="/test" element={<TestApiPage />} />}
                 <Route path="/giftcards/public/:code" element={<PublicGiftCardPage />} />
                 <Route path="/reservar" element={<PublicBookingPage />} />
 
