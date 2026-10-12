@@ -4,20 +4,22 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Form, Nav } from 'react-bootstrap';
 import { FaBell, FaClock, FaCheckCircle, FaPaperPlane, FaWhatsapp } from 'react-icons/fa';
 import { FiSearch, FiRefreshCw, FiCalendar } from 'react-icons/fi';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
-import { remindersApi, ReminderStats } from '../../api/reminders.api';
+import { remindersApi, type ReminderStats } from '../../api/reminders.api';
 import { appointmentsApi } from '../../api/appointments.api';
 import { useToast } from '../../hooks/useToast';
 import { format, isToday, isTomorrow, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Appointment, AppointmentStatus } from '../../types/appointment.types';
+import type { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { matchRutSearch } from '../../utils/rutUtils';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Spinner } from '@/components/ui/Spinner';
 
-const statusColors: Record<AppointmentStatus, string> = {
+const statusBadgeVariant: Record<AppointmentStatus, 'primary' | 'warning' | 'success' | 'danger' | 'neutral'> = {
   CONFIRMED: 'primary',
   PENDING: 'warning',
   COMPLETED: 'success',
@@ -226,341 +228,269 @@ export default function RemindersPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page">
-        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Encabezado y Acciones */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="mb-1 fw-bold" style={{ color: '#422314' }}>
-              <FaBell className="me-2 text-danger" />
+            <h2 className="text-2xl font-bold text-amber-950 flex items-center gap-2">
+              <FaBell className="text-rose-600" />
               Gestión de Recordatorios
             </h2>
-            <p className="text-muted mb-0">
+            <p className="text-sm text-stone-500">
               Notifica a tus clientas de forma automática o mediante WhatsApp directo en 1-clic
             </p>
           </div>
-          <div className="d-flex gap-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Button
-              variant="outline-secondary"
+              variant="outline"
               size="sm"
               onClick={() => loadData()}
               disabled={isLoading || loadingStats}
-              style={{ borderRadius: '10px' }}
+              leftIcon={<FiRefreshCw className={isLoading ? 'animate-spin' : ''} />}
             >
-              <FiRefreshCw className={isLoading ? 'spinner-border spinner-border-sm' : ''} /> Actualizar
+              Actualizar
             </Button>
             <Button
               variant="primary"
               size="sm"
               onClick={handleSendBulk}
               disabled={sendingBulk || todayAppointments.filter((a) => !a.reminderSent).length === 0}
-              style={{
-                background: '#8c2a3e',
-                borderColor: '#8c2a3e',
-                borderRadius: '10px',
-                fontWeight: 600,
-                padding: '8px 16px',
-              }}
+              isLoading={sendingBulk}
+              leftIcon={!sendingBulk ? <FaPaperPlane /> : undefined}
             >
-              {sendingBulk ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <FaPaperPlane className="me-2" />
-                  Enviar Automático (Citas de Hoy)
-                </>
-              )}
+              Enviar Automático (Citas de Hoy)
             </Button>
           </div>
         </div>
 
         {/* Tarjetas KPI */}
-        <Row className="g-3 mb-4">
-          <Col xs={12} sm={6} md={3}>
-            <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff' }}>
-              <Card.Body className="d-flex align-items-center">
-                <div className="bg-warning bg-opacity-10 rounded p-3 me-3 text-warning">
-                  <FaClock size={28} />
-                </div>
-                <div>
-                  <div className="text-muted small fw-semibold">Pendientes Hoy</div>
-                  <h3 className="mb-0 fw-bold" style={{ color: '#422314' }}>
-                    {todayAppointments.filter((a) => !a.reminderSent).length}
-                  </h3>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
+              <FaClock />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-stone-500">Pendientes Hoy</div>
+              <h3 className="text-2xl font-bold text-amber-950">
+                {todayAppointments.filter((a) => !a.reminderSent).length}
+              </h3>
+            </div>
+          </div>
 
-          <Col xs={12} sm={6} md={3}>
-            <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff' }}>
-              <Card.Body className="d-flex align-items-center">
-                <div className="bg-info bg-opacity-10 rounded p-3 me-3 text-info">
-                  <FiCalendar size={28} />
-                </div>
-                <div>
-                  <div className="text-muted small fw-semibold">Citas Mañana</div>
-                  <h3 className="mb-0 fw-bold" style={{ color: '#422314' }}>
-                    {tomorrowAppointments.length}
-                  </h3>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shrink-0">
+              <FiCalendar />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-stone-500">Citas Mañana</div>
+              <h3 className="text-2xl font-bold text-amber-950">
+                {tomorrowAppointments.length}
+              </h3>
+            </div>
+          </div>
 
-          <Col xs={12} sm={6} md={3}>
-            <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff' }}>
-              <Card.Body className="d-flex align-items-center">
-                <div className="bg-success bg-opacity-10 rounded p-3 me-3 text-success">
-                  <FaCheckCircle size={28} />
-                </div>
-                <div>
-                  <div className="text-muted small fw-semibold">Enviados Hoy (Backend)</div>
-                  <h3 className="mb-0 fw-bold" style={{ color: '#14532d' }}>
-                    {loadingStats ? <Spinner animation="border" size="sm" /> : stats?.sentToday ?? todayAppointments.filter((a) => a.reminderSent).length}
-                  </h3>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+              <FaCheckCircle />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-stone-500">Enviados Hoy (Backend)</div>
+              <h3 className="text-2xl font-bold text-emerald-700">
+                {loadingStats ? <Spinner size="sm" /> : stats?.sentToday ?? todayAppointments.filter((a) => a.reminderSent).length}
+              </h3>
+            </div>
+          </div>
 
-          <Col xs={12} sm={6} md={3}>
-            <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '14px', background: '#fff' }}>
-              <Card.Body className="d-flex align-items-center">
-                <div className="bg-danger bg-opacity-10 rounded p-3 me-3 text-danger">
-                  <FaBell size={28} />
-                </div>
-                <div>
-                  <div className="text-muted small fw-semibold">Total Próximas</div>
-                  <h3 className="mb-0 fw-bold" style={{ color: '#8c2a3e' }}>
-                    {allActiveAppointments.length}
-                  </h3>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center text-xl shrink-0">
+              <FaBell />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-stone-500">Total Próximas</div>
+              <h3 className="text-2xl font-bold text-rose-900">
+                {allActiveAppointments.length}
+              </h3>
+            </div>
+          </div>
+        </div>
 
         {/* Pestañas Rápidas y Buscador */}
-        <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff' }}>
-          <Card.Body className="p-3">
-            <Row className="g-3 align-items-center">
-              <Col xs={12} md={7}>
-                <Nav variant="pills" className="gap-2 flex-wrap">
-                  <Nav.Item>
-                    <Nav.Link
-                      active={activeTab === 'TODAY'}
-                      onClick={() => setActiveTab('TODAY')}
-                      style={{
-                        borderRadius: '10px',
-                        fontWeight: 600,
-                        background: activeTab === 'TODAY' ? '#8c2a3e' : '#fff',
-                        color: activeTab === 'TODAY' ? '#fff' : '#5c3d2e',
-                        border: '1px solid #eed0c5',
-                        fontSize: '13.5px',
-                      }}
-                    >
-                      📅 Citas de Hoy ({todayAppointments.length})
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link
-                      active={activeTab === 'TOMORROW'}
-                      onClick={() => setActiveTab('TOMORROW')}
-                      style={{
-                        borderRadius: '10px',
-                        fontWeight: 600,
-                        background: activeTab === 'TOMORROW' ? '#8c2a3e' : '#fff',
-                        color: activeTab === 'TOMORROW' ? '#fff' : '#5c3d2e',
-                        border: '1px solid #eed0c5',
-                        fontSize: '13.5px',
-                      }}
-                    >
-                      🌅 Citas de Mañana ({tomorrowAppointments.length})
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link
-                      active={activeTab === 'ALL_PENDING'}
-                      onClick={() => setActiveTab('ALL_PENDING')}
-                      style={{
-                        borderRadius: '10px',
-                        fontWeight: 600,
-                        background: activeTab === 'ALL_PENDING' ? '#8c2a3e' : '#fff',
-                        color: activeTab === 'ALL_PENDING' ? '#fff' : '#5c3d2e',
-                        border: '1px solid #eed0c5',
-                        fontSize: '13.5px',
-                      }}
-                    >
-                      ⏳ Todas las Pendientes ({pendingReminders.length})
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link
-                      active={activeTab === 'UPCOMING'}
-                      onClick={() => setActiveTab('UPCOMING')}
-                      style={{
-                        borderRadius: '10px',
-                        fontWeight: 600,
-                        background: activeTab === 'UPCOMING' ? '#8c2a3e' : '#fff',
-                        color: activeTab === 'UPCOMING' ? '#fff' : '#5c3d2e',
-                        border: '1px solid #eed0c5',
-                        fontSize: '13.5px',
-                      }}
-                    >
-                      🗓️ Todas ({allActiveAppointments.length})
-                    </Nav.Link>
-                  </Nav.Item>
-                </Nav>
-              </Col>
+        <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('TODAY')}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                activeTab === 'TODAY'
+                  ? 'bg-rose-900 text-white shadow-sm'
+                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+              }`}
+            >
+              📅 Citas de Hoy ({todayAppointments.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('TOMORROW')}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                activeTab === 'TOMORROW'
+                  ? 'bg-rose-900 text-white shadow-sm'
+                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+              }`}
+            >
+              🌅 Citas de Mañana ({tomorrowAppointments.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('ALL_PENDING')}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                activeTab === 'ALL_PENDING'
+                  ? 'bg-rose-900 text-white shadow-sm'
+                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+              }`}
+            >
+              ⏳ Todas las Pendientes ({pendingReminders.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('UPCOMING')}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                activeTab === 'UPCOMING'
+                  ? 'bg-rose-900 text-white shadow-sm'
+                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+              }`}
+            >
+              🗓️ Todas ({allActiveAppointments.length})
+            </button>
+          </div>
 
-              <Col xs={12} md={5}>
-                <div className="position-relative">
-                  <Form.Control
-                    type="text"
-                    size="sm"
-                    placeholder="Buscar por clienta, RUT, teléfono o servicio..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ borderRadius: '8px', borderColor: '#eed0c5', paddingLeft: '32px' }}
-                  />
-                  <FiSearch className="position-absolute text-muted" style={{ top: '10px', left: '10px' }} />
-                </div>
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
+          <div className="relative w-full md:w-80">
+            <input
+              type="text"
+              placeholder="Buscar por clienta, RUT, teléfono o servicio..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
+            />
+            <FiSearch className="absolute text-stone-400 top-2.5 left-3 text-sm" />
+          </div>
+        </div>
 
         {/* Tabla de Citas */}
-        <Card className="border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', overflow: 'hidden' }}>
-          <Card.Header className="bg-transparent border-0 pt-3 px-3 px-md-4">
-            <h5 className="mb-0 fw-bold" style={{ color: '#422314', fontSize: '1rem' }}>
+        <div className="rounded-2xl bg-white border border-rose-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-rose-100">
+            <h5 className="font-bold text-amber-950 text-base">
               Listado de Citas ({tabAppointments.length})
             </h5>
-          </Card.Header>
+          </div>
 
-          <Card.Body className="p-0">
-            {isLoading ? (
-              <div className="text-center py-5">
-                <Spinner animation="border" variant="danger" />
-                <p className="text-muted mt-2 small">Cargando citas...</p>
-              </div>
-            ) : tabAppointments.length === 0 ? (
-              <div className="text-center py-5 px-3">
-                <FaCheckCircle size={40} className="text-success opacity-50 mb-2" />
-                <h6 className="fw-bold" style={{ color: '#422314' }}>
-                  No hay citas en este filtro
-                </h6>
-                <p className="text-muted small mb-0">
-                  Todas las clientas de esta sección están al día o no tienen citas agendadas.
-                </p>
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <Table hover className="align-middle mb-0">
-                  <thead style={{ background: '#fdf4f2' }}>
-                    <tr>
-                      <th className="ps-3 ps-md-4">Fecha y Hora</th>
-                      <th>Clienta</th>
-                      <th>Servicio</th>
-                      <th>Estado Cita</th>
-                      <th>Recordatorio</th>
-                      <th className="text-end pe-3 pe-md-4">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tabAppointments.map((apt) => {
-                      const isPending = !apt.reminderSent;
-                      return (
-                        <tr key={apt.id}>
-                          <td className="ps-3 ps-md-4">
-                            <div className="fw-bold" style={{ color: '#422314', fontSize: '14px' }}>
-                              {apt.appointmentTime} hrs
-                            </div>
-                            <small className="text-muted" style={{ fontSize: '12px' }}>
-                              {formatAppointmentDateTime(apt)}
-                            </small>
-                          </td>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Spinner size="lg" variant="primary" />
+              <p className="text-stone-400 mt-2 text-xs">Cargando citas...</p>
+            </div>
+          ) : tabAppointments.length === 0 ? (
+            <div className="text-center py-12 px-4 space-y-2">
+              <FaCheckCircle className="text-emerald-500/50 mx-auto text-4xl" />
+              <h6 className="font-bold text-amber-950">No hay citas en este filtro</h6>
+              <p className="text-stone-400 text-xs">
+                Todas las clientas de esta sección están al día o no tienen citas agendadas.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-rose-50/50 border-b border-rose-100 text-xs font-semibold text-stone-600 uppercase tracking-wider">
+                    <th className="py-3 px-5">Fecha y Hora</th>
+                    <th className="py-3 px-5">Clienta</th>
+                    <th className="py-3 px-5">Servicio</th>
+                    <th className="py-3 px-5">Estado Cita</th>
+                    <th className="py-3 px-5">Recordatorio</th>
+                    <th className="py-3 px-5 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-rose-50 text-stone-700">
+                  {tabAppointments.map((apt) => {
+                    const isPending = !apt.reminderSent;
+                    return (
+                      <tr key={apt.id} className="hover:bg-rose-50/30 transition-colors">
+                        <td className="py-3.5 px-5">
+                          <div className="font-bold text-amber-950 text-sm">
+                            {apt.appointmentTime} hrs
+                          </div>
+                          <div className="text-xs text-stone-400">
+                            {formatAppointmentDateTime(apt)}
+                          </div>
+                        </td>
 
-                          <td>
-                            <div className="fw-semibold" style={{ color: '#422314' }}>
-                              {apt.customer?.fullName || 'Clienta'}
-                            </div>
-                            <small className="text-muted d-block" style={{ fontSize: '12px' }}>
-                              {apt.customer?.phone || 'Sin teléfono'} {apt.customer?.rut ? `• ${apt.customer.rut}` : ''}
-                            </small>
-                          </td>
+                        <td className="py-3.5 px-5">
+                          <div className="font-semibold text-amber-950 text-sm">
+                            {apt.customer?.fullName || 'Clienta'}
+                          </div>
+                          <div className="text-xs text-stone-400">
+                            {apt.customer?.phone || 'Sin teléfono'} {apt.customer?.rut ? `• ${apt.customer.rut}` : ''}
+                          </div>
+                        </td>
 
-                          <td>
-                            <span style={{ fontSize: '13.5px' }}>{getAppointmentServiceLabel(apt)}</span>
-                          </td>
+                        <td className="py-3.5 px-5 text-sm">
+                          {getAppointmentServiceLabel(apt)}
+                        </td>
 
-                          <td>
-                            <Badge bg={statusColors[apt.status] || 'secondary'} style={{ fontSize: '11px' }}>
-                              {statusLabels[apt.status] || apt.status}
+                        <td className="py-3.5 px-5">
+                          <Badge variant={statusBadgeVariant[apt.status] || 'neutral'}>
+                            {statusLabels[apt.status] || apt.status}
+                          </Badge>
+                        </td>
+
+                        <td className="py-3.5 px-5">
+                          {apt.reminderSent ? (
+                            <Badge variant="success">
+                              <FaCheckCircle className="inline mr-1" /> Enviado
                             </Badge>
-                          </td>
+                          ) : (
+                            <Badge variant="warning">
+                              <FaClock className="inline mr-1" /> Pendiente
+                            </Badge>
+                          )}
+                        </td>
 
-                          <td>
-                            {apt.reminderSent ? (
-                              <Badge bg="success" style={{ fontSize: '11px' }}>
-                                <FaCheckCircle className="me-1" /> Enviado
-                              </Badge>
-                            ) : (
-                              <Badge bg="warning" text="dark" style={{ fontSize: '11px' }}>
-                                <FaClock className="me-1" /> Pendiente
-                              </Badge>
-                            )}
-                          </td>
+                        <td className="py-3.5 px-5 text-right">
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {/* Botón 1: Automático Backend */}
+                            <Button
+                              variant={isPending ? 'primary' : 'outline'}
+                              size="sm"
+                              onClick={() => handleSendSingleBackend(apt.id)}
+                              disabled={sendingIds.has(apt.id)}
+                              title="Enviar recordatorio automático vía Backend"
+                              isLoading={sendingIds.has(apt.id)}
+                              leftIcon={!sendingIds.has(apt.id) ? <FaPaperPlane /> : undefined}
+                            >
+                              Auto
+                            </Button>
 
-                          <td className="text-end pe-3 pe-md-4">
-                            <div className="d-flex justify-content-end gap-1 flex-wrap">
-                              {/* Botón 1: Automático Backend */}
-                              <Button
-                                variant={isPending ? 'primary' : 'outline-secondary'}
-                                size="sm"
-                                onClick={() => handleSendSingleBackend(apt.id)}
-                                disabled={sendingIds.has(apt.id)}
-                                title="Enviar recordatorio automático vía Backend"
-                                style={{
-                                  borderRadius: '8px',
-                                  fontSize: '12px',
-                                  background: isPending ? '#8c2a3e' : undefined,
-                                  borderColor: isPending ? '#8c2a3e' : undefined,
-                                }}
-                              >
-                                {sendingIds.has(apt.id) ? (
-                                  <Spinner animation="border" size="sm" />
-                                ) : (
-                                  <>
-                                    <FaPaperPlane className="me-1" /> Auto
-                                  </>
-                                )}
-                              </Button>
-
-                              {/* Botón 2: Contingencia Manual WhatsApp */}
-                              <Button
-                                variant="outline-success"
-                                size="sm"
-                                onClick={() => handleSendManualWhatsApp(apt)}
-                                title="Abrir chat de WhatsApp con recordatorio pre-cargado"
-                                style={{ borderRadius: '8px', fontSize: '12px' }}
-                              >
-                                <FaWhatsapp className="me-1" /> WhatsApp
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-      </Container>
+                            {/* Botón 2: Contingencia Manual WhatsApp */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSendManualWhatsApp(apt)}
+                              title="Abrir chat de WhatsApp con recordatorio pre-cargado"
+                              leftIcon={<FaWhatsapp className="text-emerald-600" />}
+                              className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                            >
+                              WhatsApp
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </DashboardLayout>
   );
 }

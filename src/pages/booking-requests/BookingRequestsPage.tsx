@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Table, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
+import { useEffect, useState, type FormEvent } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -10,9 +9,13 @@ import {
   getPublicBookingEnabled,
   setPublicBookingEnabled,
 } from '../../utils/bookingSettingsUtils';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
+import { Spinner } from '@/components/ui/Spinner';
 import './BookingRequestsPage.css';
 
-const BookingRequestsPage: React.FC = () => {
+export default function BookingRequestsPage() {
   const toast = useToast();
   const {
     bookingRequests,
@@ -71,13 +74,13 @@ const BookingRequestsPage: React.FC = () => {
   const getStatusBadge = (status: BookingRequestStatus) => {
     switch (status) {
       case 'PENDING':
-        return <Badge bg="warning" text="dark">Pendiente</Badge>;
+        return <Badge variant="warning">Pendiente</Badge>;
       case 'APPROVED':
-        return <Badge bg="success">Aprobada</Badge>;
+        return <Badge variant="success">Aprobada</Badge>;
       case 'REJECTED':
-        return <Badge bg="danger">Rechazada</Badge>;
+        return <Badge variant="danger">Rechazada</Badge>;
       default:
-        return <Badge bg="secondary">{status}</Badge>;
+        return <Badge variant="neutral">{status}</Badge>;
     }
   };
 
@@ -100,7 +103,7 @@ const BookingRequestsPage: React.FC = () => {
     setShowRejectModal(true);
   };
 
-  const handleApproveSubmit = async (e: React.FormEvent) => {
+  const handleApproveSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedRequest) return;
 
@@ -132,7 +135,7 @@ const BookingRequestsPage: React.FC = () => {
     }
   };
 
-  const handleRejectSubmit = async (e: React.FormEvent) => {
+  const handleRejectSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedRequest) return;
 
@@ -176,177 +179,173 @@ const BookingRequestsPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page booking-requests-page">
-        <Row className="mb-4 align-items-center">
-          <Col xs={12} md={6}>
-            <h2>Solicitudes de Citas</h2>
-            <p className="text-muted mb-0">Gestiona las solicitudes de citas recibidas desde el portal público</p>
-          </Col>
-          <Col xs={12} md={6} className="d-flex justify-content-md-end align-items-center gap-3 mt-3 mt-md-0 flex-wrap">
-            <div className="d-flex align-items-center gap-2 p-2 px-3 rounded shadow-sm border bg-white">
-              <Form.Check
-                type="switch"
-                id="booking-toggle-switch"
-                label={
-                  <span className="fw-semibold" style={{ fontSize: '13.5px' }}>
-                    Agendamiento Online:{' '}
-                    <span className={bookingEnabled ? 'text-success' : 'text-danger'}>
-                      {bookingEnabled ? 'ACTIVO' : 'PAUSADO'}
-                    </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 booking-requests-page space-y-6">
+        {/* Header & Controls */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-amber-950">Solicitudes de Citas</h2>
+            <p className="text-sm text-stone-500">Gestiona las solicitudes de citas recibidas desde el portal público</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 py-2 px-3.5 rounded-xl shadow-sm border border-rose-100 bg-white">
+              <label htmlFor="booking-toggle-switch" className="flex items-center cursor-pointer gap-2.5">
+                <span className="text-xs font-semibold text-stone-700">
+                  Agendamiento Online:{' '}
+                  <span className={bookingEnabled ? 'text-emerald-600 font-bold' : 'text-red-500 font-bold'}>
+                    {bookingEnabled ? 'ACTIVO' : 'PAUSADO'}
                   </span>
-                }
-                checked={bookingEnabled}
-                onChange={(e) => handleToggleBooking(e.target.checked)}
-              />
+                </span>
+                <div className="relative inline-flex items-center">
+                  <input
+                    id="booking-toggle-switch"
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={bookingEnabled}
+                    onChange={(e) => handleToggleBooking(e.target.checked)}
+                  />
+                  <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </div>
+              </label>
             </div>
 
-            <Button
-              as="a"
+            <a
               href="/reservar"
               target="_blank"
               rel="noopener noreferrer"
-              variant="outline-secondary"
-              size="sm"
-              style={{ borderRadius: '8px' }}
+              className="inline-flex items-center justify-center font-medium transition-all duration-200 border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 text-xs rounded-xl shadow-2xs"
             >
               🌐 Ver Portal (/reservar)
-            </Button>
-          </Col>
-        </Row>
+            </a>
+          </div>
+        </div>
 
         {/* Filters */}
-        <Row className="mb-3">
-          <Col md={6}>
-            <Form.Group>
-              <Form.Label>Filtrar por estado:</Form.Label>
-              <Form.Select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending')}
-              >
-                <option value="pending">Pendientes</option>
-                <option value="all">Todas</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col md={6} className="d-flex align-items-end justify-content-end">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-rose-100 shadow-sm">
+          <div className="w-full sm:w-64">
+            <label className="block text-xs font-semibold text-stone-600 mb-1">Filtrar por estado:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending')}
+              className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+            >
+              <option value="pending">Pendientes</option>
+              <option value="all">Todas</option>
+            </select>
+          </div>
+          <div className="flex justify-end">
             <Button 
-              variant="outline-primary" 
+              variant="outline" 
               onClick={() => fetchBookingRequests()}
               disabled={isLoading}
+              size="sm"
             >
               🔄 Actualizar
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </div>
 
         {/* Error Alert */}
         {error && (
-          <Alert variant="danger" dismissible onClose={() => {}}>
-            {error}
-          </Alert>
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+            <span>{error}</span>
+          </div>
         )}
 
         {/* Loading */}
         {isLoading && (
-          <div className="text-center my-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Cargando...</span>
-            </div>
+          <div className="flex justify-center items-center py-12">
+            <Spinner size="lg" variant="primary" />
           </div>
         )}
 
         {/* Table */}
         {!isLoading && (
-          <Row>
-            <Col>
-              <div className="table-responsive">
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Cliente</th>
-                      <th>Contacto</th>
-                      <th>Fecha Solicitada</th>
-                      <th>Hora Solicitada</th>
-                      <th>Servicio</th>
-                      <th>Estado</th>
-                      <th>Fecha Solicitud</th>
-                      <th>Acciones</th>
+          <div className="overflow-x-auto rounded-2xl border border-rose-100 shadow-sm bg-white">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-stone-50 border-b border-rose-100 text-xs font-semibold text-stone-600 uppercase tracking-wider">
+                  <th className="py-3 px-4">ID</th>
+                  <th className="py-3 px-4">Cliente</th>
+                  <th className="py-3 px-4">Contacto</th>
+                  <th className="py-3 px-4">Fecha Solicitada</th>
+                  <th className="py-3 px-4">Hora Solicitada</th>
+                  <th className="py-3 px-4">Servicio</th>
+                  <th className="py-3 px-4">Estado</th>
+                  <th className="py-3 px-4">Fecha Solicitud</th>
+                  <th className="py-3 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-rose-50 text-stone-700">
+                {filteredRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-stone-400">
+                      No hay solicitudes {filterStatus === 'pending' ? 'pendientes' : ''}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRequests.map((request: BookingRequest) => (
+                    <tr key={request.id} className="hover:bg-rose-50/40 transition-colors">
+                      <td className="py-3 px-4 font-mono text-xs text-stone-500">#{request.id}</td>
+                      <td className="py-3 px-4 font-medium text-amber-950">{request.fullName}</td>
+                      <td className="py-3 px-4">
+                        {request.phone && (
+                          <div className="text-xs">
+                            📱 {request.phone}
+                          </div>
+                        )}
+                        {request.email && (
+                          <div className="text-xs text-stone-400">✉️ {request.email}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {request.preferredDate 
+                          ? format(parseISO(request.preferredDate), 'dd/MM/yyyy', { locale: es })
+                          : '-'}
+                      </td>
+                      <td className="py-3 px-4">{request.preferredBlock || '-'}</td>
+                      <td className="py-3 px-4">{request.service?.name || '-'}</td>
+                      <td className="py-3 px-4">{getStatusBadge(request.status)}</td>
+                      <td className="py-3 px-4 text-xs text-stone-500">
+                        {request.createdAt 
+                          ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm', { locale: es })
+                          : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {request.status === 'PENDING' && (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => handleApproveClick(request)}
+                            >
+                              ✓ Aprobar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleRejectClick(request)}
+                            >
+                              ✗ Rechazar
+                            </Button>
+                          </div>
+                        )}
+                        {request.status === 'APPROVED' && (
+                          <span className="text-emerald-600 text-xs font-medium">
+                            Convertida a cita
+                          </span>
+                        )}
+                        {request.status === 'REJECTED' && (
+                          <span className="text-red-500 text-xs font-medium">
+                            Rechazada
+                          </span>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRequests.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="text-center text-muted">
-                          No hay solicitudes {filterStatus === 'pending' ? 'pendientes' : ''}
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredRequests.map((request: BookingRequest) => (
-                        <tr key={request.id}>
-                          <td>{request.id}</td>
-                          <td>{request.fullName}</td>
-                          <td>
-                            {request.phone && (
-                              <div>
-                                📱 {request.phone}
-                              </div>
-                            )}
-                            {request.email && (
-                              <div className="text-muted small">✉️ {request.email}</div>
-                            )}
-                          </td>
-                          <td>
-                            {request.preferredDate 
-                              ? format(parseISO(request.preferredDate), 'dd/MM/yyyy', { locale: es })
-                              : '-'}
-                          </td>
-                          <td>{request.preferredBlock || '-'}</td>
-                          <td>{request.service?.name || '-'}</td>
-                          <td>{getStatusBadge(request.status)}</td>
-                          <td>
-                            {request.createdAt 
-                              ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm', { locale: es })
-                              : '-'}
-                          </td>
-                          <td>
-                            {request.status === 'PENDING' && (
-                              <div className="d-flex gap-2">
-                                <Button
-                                  variant="success"
-                                  size="sm"
-                                  onClick={() => handleApproveClick(request)}
-                                >
-                                  ✓ Aprobar
-                                </Button>
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => handleRejectClick(request)}
-                                >
-                                  ✗ Rechazar
-                                </Button>
-                              </div>
-                            )}
-                            {request.status === 'APPROVED' && (
-                              <span className="text-success small">
-                                Convertida a cita
-                              </span>
-                            )}
-                            {request.status === 'REJECTED' && (
-                              <span className="text-danger small">
-                                Rechazada
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </Table>
-              </div>
-            </Col>
-          </Row>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Approve Modal */}
@@ -354,144 +353,140 @@ const BookingRequestsPage: React.FC = () => {
           show={showApproveModal}
           onHide={handleCloseApproveModal}
           size="lg"
-          className="bunny-modal booking-request-modal"
-          scrollable
-          fullscreen="sm-down"
         >
           <Modal.Header closeButton>
             <Modal.Title>Aprobar Solicitud y Crear Cita</Modal.Title>
           </Modal.Header>
-          <Form onSubmit={handleApproveSubmit}>
-            <Modal.Body>
+          <form onSubmit={handleApproveSubmit}>
+            <Modal.Body className="space-y-4">
               {actionError && (
-                <Alert variant="danger" dismissible onClose={() => setActionError(null)}>
-                  {actionError}
-                </Alert>
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+                  <span>{actionError}</span>
+                  <button type="button" onClick={() => setActionError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
+                </div>
               )}
 
               {selectedRequest && (
-                <div className="mb-3">
-                  <h6>Información del Cliente:</h6>
-                  <p className="mb-1"><strong>Nombre:</strong> {selectedRequest.fullName}</p>
-                  <p className="mb-1"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
+                <div className="p-3.5 bg-rose-50/60 rounded-xl border border-rose-100 text-sm space-y-1">
+                  <h6 className="font-bold text-amber-950 mb-1">Información del Cliente:</h6>
+                  <p className="text-stone-700"><strong>Nombre:</strong> {selectedRequest.fullName}</p>
+                  <p className="text-stone-700"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
                   {selectedRequest.email && (
-                    <p className="mb-1"><strong>Email:</strong> {selectedRequest.email}</p>
+                    <p className="text-stone-700"><strong>Email:</strong> {selectedRequest.email}</p>
                   )}
                   {selectedRequest.service && (
-                    <p className="mb-1"><strong>Servicio:</strong> {selectedRequest.service.name}</p>
+                    <p className="text-stone-700"><strong>Servicio:</strong> {selectedRequest.service.name}</p>
                   )}
                 </div>
               )}
 
-              <Form.Group className="mb-3">
-                <Form.Label>Fecha de la Cita *</Form.Label>
-                <Form.Control
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">Fecha de la Cita *</label>
+                <input
                   type="date"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={appointmentDate}
                   onChange={(e) => setAppointmentDate(e.target.value)}
                   required
                 />
-              </Form.Group>
+              </div>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Hora de la Cita *</Form.Label>
-                <Form.Control
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">Hora de la Cita *</label>
+                <input
                   type="time"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={appointmentTime}
                   onChange={(e) => setAppointmentTime(e.target.value)}
                   required
                 />
-              </Form.Group>
+              </div>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Notas Adicionales</Form.Label>
-                <Form.Control
-                  as="textarea"
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">Notas Adicionales</label>
+                <textarea
                   rows={3}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Notas adicionales para la cita..."
                 />
-              </Form.Group>
+              </div>
 
-              <Alert variant="info">
-                Al aprobar esta solicitud, se creará automáticamente una cita y se enviará una notificación al cliente.
-              </Alert>
+              <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-xs flex items-center gap-2">
+                <span>ℹ️ Al aprobar esta solicitud, se creará automáticamente una cita y se enviará una notificación al cliente.</span>
+              </div>
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="secondary" onClick={handleCloseApproveModal}>
+              <Button variant="ghost" onClick={handleCloseApproveModal} type="button">
                 Cancelar
               </Button>
               <Button 
                 variant="success" 
                 type="submit"
-                disabled={actionLoading}
+                isLoading={actionLoading}
               >
-                {actionLoading ? 'Procesando...' : '✓ Aprobar y Crear Cita'}
+                ✓ Aprobar y Crear Cita
               </Button>
             </Modal.Footer>
-          </Form>
+          </form>
         </Modal>
 
         {/* Reject Modal */}
         <Modal
           show={showRejectModal}
           onHide={handleCloseRejectModal}
-          className="bunny-modal booking-request-modal"
-          scrollable
-          fullscreen="sm-down"
         >
           <Modal.Header closeButton>
             <Modal.Title>Rechazar Solicitud</Modal.Title>
           </Modal.Header>
-          <Form onSubmit={handleRejectSubmit}>
-            <Modal.Body>
+          <form onSubmit={handleRejectSubmit}>
+            <Modal.Body className="space-y-4">
               {actionError && (
-                <Alert variant="danger" dismissible onClose={() => setActionError(null)}>
-                  {actionError}
-                </Alert>
-              )}
-
-              {selectedRequest && (
-                <div className="mb-3">
-                  <p><strong>Cliente:</strong> {selectedRequest.fullName}</p>
-                  <p><strong>Teléfono:</strong> {selectedRequest.phone}</p>
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+                  <span>{actionError}</span>
+                  <button type="button" onClick={() => setActionError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
                 </div>
               )}
 
-              <Form.Group className="mb-3">
-                <Form.Label>Motivo del Rechazo *</Form.Label>
-                <Form.Control
-                  as="textarea"
+              {selectedRequest && (
+                <div className="p-3.5 bg-rose-50/60 rounded-xl border border-rose-100 text-sm space-y-1">
+                  <p className="text-stone-700"><strong>Cliente:</strong> {selectedRequest.fullName}</p>
+                  <p className="text-stone-700"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">Motivo del Rechazo *</label>
+                <textarea
                   rows={3}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Indica el motivo por el cual se rechaza esta solicitud..."
                   required
                 />
-              </Form.Group>
+              </div>
 
-              <Alert variant="warning">
-                Se enviará una notificación al cliente informando que su solicitud fue rechazada.
-              </Alert>
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                <span>⚠️ Se enviará una notificación al cliente informando que su solicitud fue rechazada.</span>
+              </div>
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="secondary" onClick={handleCloseRejectModal}>
+              <Button variant="ghost" onClick={handleCloseRejectModal} type="button">
                 Cancelar
               </Button>
               <Button 
                 variant="danger" 
                 type="submit"
-                disabled={actionLoading}
+                isLoading={actionLoading}
               >
-                {actionLoading ? 'Procesando...' : '✗ Rechazar Solicitud'}
+                ✗ Rechazar Solicitud
               </Button>
             </Modal.Footer>
-          </Form>
+          </form>
         </Modal>
-      </Container>
+      </div>
     </DashboardLayout>
   );
-};
-
-export default BookingRequestsPage;
+}

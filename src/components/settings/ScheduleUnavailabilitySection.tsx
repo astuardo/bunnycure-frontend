@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { Card, Row, Col, Form, Button, Badge, Alert } from 'react-bootstrap';
 import { 
   FiCalendar, 
   FiClock, 
@@ -18,6 +17,9 @@ import {
   UnavailabilityType,
   QUICK_REASONS,
 } from '../../types/unavailability.types';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 
 interface Props {
   unavailabilities: ScheduleUnavailability[];
@@ -118,363 +120,321 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
   };
 
   return (
-    <Card className="shadow-sm border-0 mb-4" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-      <Card.Header 
-        className="d-flex justify-content-between align-items-center py-3"
-        style={{
-          background: 'linear-gradient(135deg, #fdf4f2 0%, #fae6e2 100%)',
-          borderBottom: '1px solid #eed0c5',
-        }}
-      >
-        <div className="d-flex align-items-center gap-2">
-          <div 
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: '#8c2a3e',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-            }}
-          >
+    <Card className="mb-6">
+      <Card.Header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-bunny-blush/40 to-bunny-paper/80 py-3.5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-bunny-primary text-white flex items-center justify-center text-lg flex-shrink-0">
             <FiCalendar />
           </div>
           <div>
-            <h5 className="mb-0 fw-bold" style={{ color: '#422314', fontSize: '1.05rem' }}>
+            <h3 className="text-sm font-bold text-bunny-text leading-tight">
               Bloqueos de Agenda y Días No Laborables
-            </h5>
-            <small style={{ color: '#825942' }}>
+            </h3>
+            <p className="text-xs text-bunny-text-muted mt-0.5">
               Bloquea semanas completas, días festivos o franjas horarias con comentarios
-            </small>
+            </p>
           </div>
         </div>
 
         <Button
-          variant="outline-secondary"
+          variant="outline"
           size="sm"
           onClick={() => setShowConfig(!showConfig)}
-          style={{ borderRadius: '8px', fontSize: '0.85rem' }}
         >
           {showConfig ? 'Ocultar Opciones' : '🎨 Personalizar Colores y Avisos'}
         </Button>
       </Card.Header>
 
-      <Card.Body className="p-4">
+      <Card.Body className="p-4 sm:p-6 space-y-5">
         {/* Panel de Configuración de Colores y Notificaciones (Desplegable) */}
         {showConfig && (
-          <div 
-            className="p-3 mb-4 rounded-3 border"
-            style={{ background: '#fcf8f6', borderColor: '#f0ded6' }}
-          >
-            <Row className="g-3">
-              <Col md={6}>
-                <h6 className="fw-bold d-flex align-items-center gap-2 mb-2" style={{ color: '#5c3d2e' }}>
-                  <FiDroplet /> Colores de Visualización en Calendarios
-                </h6>
-                <div className="mb-2 d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <Form.Control
+          <div className="p-4 rounded-xl border border-bunny-border bg-bunny-paper/40">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-xs font-bold text-bunny-text flex items-center gap-2 mb-3 uppercase tracking-wider">
+                  <FiDroplet className="text-bunny-primary" /> Colores de Visualización en Calendarios
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
                       type="color"
                       value={colors.fullDayColor}
                       onChange={(e) => onColorsChange({ ...colors, fullDayColor: e.target.value })}
-                      style={{ width: '42px', height: '36px', padding: '2px', cursor: 'pointer' }}
+                      className="w-10 h-9 rounded-lg border border-bunny-border cursor-pointer p-0.5 bg-white"
                     />
                     <div>
-                      <div className="small fw-semibold">Día Completo / Rango</div>
-                      <small className="text-muted">Ej: Vacaciones, Feriados</small>
+                      <span className="text-xs font-semibold text-bunny-text block">Día Completo / Rango</span>
+                      <span className="text-[11px] text-bunny-text-muted">Ej: Vacaciones, Feriados</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={colors.timeSlotColor}
+                      onChange={(e) => onColorsChange({ ...colors, timeSlotColor: e.target.value })}
+                      className="w-10 h-9 rounded-lg border border-bunny-border cursor-pointer p-0.5 bg-white"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-bunny-text block">Horario Específico</span>
+                      <span className="text-[11px] text-bunny-text-muted">Ej: Médico, Trámites (13:00 - 16:00)</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="d-flex align-items-center gap-2">
-                  <Form.Control
-                    type="color"
-                    value={colors.timeSlotColor}
-                    onChange={(e) => onColorsChange({ ...colors, timeSlotColor: e.target.value })}
-                    style={{ width: '42px', height: '36px', padding: '2px', cursor: 'pointer' }}
-                  />
-                  <div>
-                    <div className="small fw-semibold">Horario Específico</div>
-                    <small className="text-muted">Ej: Médico, Trámites (13:00 - 16:00)</small>
-                  </div>
+              <div>
+                <h4 className="text-xs font-bold text-bunny-text flex items-center gap-2 mb-3 uppercase tracking-wider">
+                  <FiBell className="text-bunny-primary" /> Notificaciones Push PWA
+                </h4>
+                <div className="space-y-2.5">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-bunny-text">
+                    <input
+                      type="checkbox"
+                      id="notif-enabled"
+                      checked={notifications.enabled}
+                      onChange={(e) => onNotificationsChange({ ...notifications, enabled: e.target.checked })}
+                      className="w-4 h-4 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary"
+                    />
+                    Habilitar avisos PWA para bloqueos
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-bunny-text pl-6">
+                    <input
+                      type="checkbox"
+                      id="notif-24h"
+                      disabled={!notifications.enabled}
+                      checked={notifications.notify24HoursBefore}
+                      onChange={(e) => onNotificationsChange({ ...notifications, notify24HoursBefore: e.target.checked })}
+                      className="w-4 h-4 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary disabled:opacity-50"
+                    />
+                    Avisar 24 horas antes del evento
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-bunny-text pl-6">
+                    <input
+                      type="checkbox"
+                      id="notif-1h"
+                      disabled={!notifications.enabled}
+                      checked={notifications.notify1HourBefore}
+                      onChange={(e) => onNotificationsChange({ ...notifications, notify1HourBefore: e.target.checked })}
+                      className="w-4 h-4 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary disabled:opacity-50"
+                    />
+                    Avisar 1 hora antes del horario bloqueado
+                  </label>
                 </div>
-              </Col>
-
-              <Col md={6}>
-                <h6 className="fw-bold d-flex align-items-center gap-2 mb-2" style={{ color: '#5c3d2e' }}>
-                  <FiBell /> Notificaciones Push PWA
-                </h6>
-                <Form.Check
-                  type="switch"
-                  id="notif-enabled"
-                  label="Habilitar avisos PWA para bloqueos"
-                  checked={notifications.enabled}
-                  onChange={(e) => onNotificationsChange({ ...notifications, enabled: e.target.checked })}
-                  className="mb-2 small fw-semibold"
-                />
-                <Form.Check
-                  type="switch"
-                  id="notif-24h"
-                  label="Avisar 24 horas antes del evento"
-                  disabled={!notifications.enabled}
-                  checked={notifications.notify24HoursBefore}
-                  onChange={(e) => onNotificationsChange({ ...notifications, notify24HoursBefore: e.target.checked })}
-                  className="mb-1 small"
-                />
-                <Form.Check
-                  type="switch"
-                  id="notif-1h"
-                  label="Avisar 1 hora antes del horario bloqueado"
-                  disabled={!notifications.enabled}
-                  checked={notifications.notify1HourBefore}
-                  onChange={(e) => onNotificationsChange({ ...notifications, notify1HourBefore: e.target.checked })}
-                  className="small"
-                />
-              </Col>
-            </Row>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Selector de Tipo de Bloqueo */}
-        <div className="d-flex gap-2 mb-3">
+        <div className="flex flex-wrap gap-2">
           <Button
-            variant={blockType === 'FULL_DAY' ? 'primary' : 'outline-secondary'}
+            variant={blockType === 'FULL_DAY' ? 'primary' : 'outline'}
+            size="sm"
             onClick={() => setBlockType('FULL_DAY')}
-            className="d-flex align-items-center gap-2"
-            style={{ borderRadius: '10px', fontSize: '0.9rem' }}
+            leftIcon={<FiCalendar />}
           >
-            <FiCalendar /> Día Completo o Semana / Vacaciones
+            Día Completo o Semana / Vacaciones
           </Button>
           <Button
-            variant={blockType === 'TIME_SLOT' ? 'primary' : 'outline-secondary'}
+            variant={blockType === 'TIME_SLOT' ? 'primary' : 'outline'}
+            size="sm"
             onClick={() => setBlockType('TIME_SLOT')}
-            className="d-flex align-items-center gap-2"
-            style={{ borderRadius: '10px', fontSize: '0.9rem' }}
+            leftIcon={<FiClock />}
           >
-            <FiClock /> Franja Horaria Específica
+            Franja Horaria Específica
           </Button>
         </div>
 
         {/* Formulario de Alta de Bloqueo */}
-        <div 
-          className="p-3 mb-4 rounded-3"
-          style={{ background: '#fff9f7', border: '1px solid #f2dfd8' }}
-        >
-          <Row className="g-3 align-items-end">
+        <div className="p-4 rounded-xl bg-bunny-paper/40 border border-bunny-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-end">
             {blockType === 'FULL_DAY' ? (
               <>
-                <Col xs={12} sm={6} md={3}>
-                  <Form.Label className="small fw-semibold text-muted mb-1">
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Fecha Inicio / Día
-                  </Form.Label>
-                  <Form.Control
+                  </label>
+                  <input
                     type="date"
                     min={todayStr}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    size="sm"
-                    style={{ borderRadius: '8px' }}
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                </Col>
-                <Col xs={12} sm={6} md={3}>
-                  <Form.Label className="small fw-semibold text-muted mb-1">
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Fecha Fin (Opcional si es 1 día)
-                  </Form.Label>
-                  <Form.Control
+                  </label>
+                  <input
                     type="date"
                     value={endDate}
                     min={startDate || todayStr}
                     onChange={(e) => setEndDate(e.target.value)}
-                    size="sm"
                     placeholder="Mismo día"
-                    style={{ borderRadius: '8px' }}
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                </Col>
+                </div>
               </>
             ) : (
               <>
-                <Col xs={12} sm={6} md={3}>
-                  <Form.Label className="small fw-semibold text-muted mb-1">
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Fecha del Bloqueo
-                  </Form.Label>
-                  <Form.Control
+                  </label>
+                  <input
                     type="date"
                     min={todayStr}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    size="sm"
-                    style={{ borderRadius: '8px' }}
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                </Col>
-                <Col xs={6} sm={3} md={2}>
-                  <Form.Label className="small fw-semibold text-muted mb-1">
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Hora Inicio
-                  </Form.Label>
-                  <Form.Control
+                  </label>
+                  <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    size="sm"
-                    style={{ borderRadius: '8px' }}
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                </Col>
-                <Col xs={6} sm={3} md={2}>
-                  <Form.Label className="small fw-semibold text-muted mb-1">
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Hora Fin
-                  </Form.Label>
-                  <Form.Control
+                  </label>
+                  <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    size="sm"
-                    style={{ borderRadius: '8px' }}
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                </Col>
+                </div>
               </>
             )}
 
-            <Col xs={12} md={blockType === 'FULL_DAY' ? 4 : 3}>
-              <Form.Label className="small fw-semibold text-muted mb-1">
+            <div className={blockType === 'FULL_DAY' ? 'md:col-span-4' : 'md:col-span-3'}>
+              <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                 Motivo / Comentario
-              </Form.Label>
-              <Form.Control
+              </label>
+              <input
                 type="text"
                 placeholder={blockType === 'FULL_DAY' ? 'Ej: Vacaciones, Feriado' : 'Ej: Médico, Trámite'}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                size="sm"
-                style={{ borderRadius: '8px' }}
+                className="w-full rounded-xl border border-bunny-border bg-white px-3 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
               />
-            </Col>
+            </div>
 
-            <Col xs={12} md={2} className="d-grid">
+            <div className="md:col-span-2">
               <Button
                 variant="primary"
                 size="sm"
+                fullWidth
                 onClick={handleAdd}
-                className="d-flex align-items-center justify-content-center gap-1"
-                style={{ borderRadius: '8px', height: '34px' }}
+                leftIcon={<FiPlus />}
               >
-                <FiPlus /> Registrar
+                Registrar
               </Button>
-            </Col>
-          </Row>
+            </div>
+          </div>
 
           {/* Chips de Sugerencias de Motivo */}
-          <div className="d-flex flex-wrap gap-1 align-items-center mt-2 pt-1">
-            <span className="small text-muted me-1 d-flex align-items-center gap-1">
+          <div className="flex flex-wrap gap-1.5 items-center mt-3 pt-2 border-t border-bunny-border/40">
+            <span className="text-xs text-bunny-text-muted mr-1 flex items-center gap-1">
               <FiTag size={12} /> Sugerencias:
             </span>
             {QUICK_REASONS.map((r) => (
-              <Badge
+              <button
                 key={r}
-                bg="light"
-                text="dark"
-                className="border"
-                style={{
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  backgroundColor: reason === r ? '#fce8e4' : '#fff',
-                  borderColor: reason === r ? '#c9897a' : '#eeddd6',
-                }}
+                type="button"
+                className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${
+                  reason === r
+                    ? 'bg-bunny-blush/60 border-bunny-primary text-bunny-primary'
+                    : 'bg-white border-bunny-border text-bunny-text hover:bg-bunny-paper'
+                }`}
                 onClick={() => setReason(r)}
               >
                 {r}
-              </Badge>
+              </button>
             ))}
           </div>
         </div>
 
         {/* Selector de pestañas: Bloqueos Activos vs Historial de Bloqueos */}
-        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div className="d-flex gap-2">
-            <Button
-              variant={activeTab === 'active' ? 'primary' : 'outline-secondary'}
-              size="sm"
+        <div className="flex justify-between items-center flex-wrap gap-2 pt-2">
+          <div className="flex gap-2">
+            <button
+              type="button"
               onClick={() => setActiveTab('active')}
-              className="d-flex align-items-center gap-2 fw-semibold px-3 py-1"
-              style={{
-                borderRadius: '8px',
-                backgroundColor: activeTab === 'active' ? '#8c2a3e' : 'transparent',
-                borderColor: activeTab === 'active' ? '#8c2a3e' : '#d5c2ba',
-                color: activeTab === 'active' ? '#fff' : '#6b4f43',
-              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'active'
+                  ? 'bg-bunny-primary text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
               <span>Vigentes y Próximos</span>
-              <Badge
-                bg={activeTab === 'active' ? 'light' : 'secondary'}
-                text={activeTab === 'active' ? 'dark' : 'white'}
-                pill
-              >
+              <Badge variant={activeTab === 'active' ? 'neutral' : 'neutral'}>
                 {activeBlocks.length}
               </Badge>
-            </Button>
+            </button>
 
-            <Button
-              variant={activeTab === 'history' ? 'primary' : 'outline-secondary'}
-              size="sm"
+            <button
+              type="button"
               onClick={() => setActiveTab('history')}
-              className="d-flex align-items-center gap-2 fw-semibold px-3 py-1"
-              style={{
-                borderRadius: '8px',
-                backgroundColor: activeTab === 'history' ? '#8c2a3e' : 'transparent',
-                borderColor: activeTab === 'history' ? '#8c2a3e' : '#d5c2ba',
-                color: activeTab === 'history' ? '#fff' : '#6b4f43',
-              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'history'
+                  ? 'bg-bunny-primary text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
-              <FiArchive size={14} />
+              <FiArchive size={13} />
               <span>Historial Pasado</span>
-              <Badge
-                bg={activeTab === 'history' ? 'light' : 'secondary'}
-                text={activeTab === 'history' ? 'dark' : 'white'}
-                pill
-              >
+              <Badge variant={activeTab === 'history' ? 'neutral' : 'neutral'}>
                 {pastBlocks.length}
               </Badge>
-            </Button>
+            </button>
           </div>
 
           {activeTab === 'history' && pastBlocks.length > 0 && (
             <Button
-              variant="outline-danger"
+              variant="outline"
               size="sm"
               onClick={() => {
                 if (window.confirm(`¿Estás segura de eliminar los ${pastBlocks.length} registros del historial de bloqueos pasados?`)) {
                   onUnavailabilitiesChange(unavailabilities.filter((u) => (u.endDate || u.startDate) >= todayStr));
                 }
               }}
-              className="d-flex align-items-center gap-1"
-              style={{ borderRadius: '6px', fontSize: '0.8rem' }}
+              leftIcon={<FiTrash2 size={13} className="text-rose-600" />}
+              className="text-rose-600 border-rose-200 hover:bg-rose-50"
             >
-              <FiTrash2 size={13} /> Limpiar Historial Pasado
+              Limpiar Historial Pasado
             </Button>
           )}
         </div>
 
         {/* Mensaje de lista vacía */}
         {activeTab === 'active' && activeBlocks.length === 0 ? (
-          <Alert variant="light" className="text-center py-4 border rounded-3 mb-0">
-            <div className="text-muted mb-1" style={{ fontSize: '1.5rem' }}>🗓️</div>
-            <div className="fw-semibold text-muted">No hay bloqueos activos ni próximos configurados</div>
-            <small className="text-muted">Utiliza el formulario superior para programar vacaciones, descansos o citas médicas pendientes.</small>
-          </Alert>
+          <div className="text-center py-8 border border-bunny-border rounded-xl bg-bunny-paper/20">
+            <div className="text-2xl mb-1">🗓️</div>
+            <div className="font-semibold text-xs text-bunny-text">No hay bloqueos activos ni próximos configurados</div>
+            <p className="text-[11px] text-bunny-text-muted mt-0.5">
+              Utiliza el formulario superior para programar vacaciones, descansos o citas médicas pendientes.
+            </p>
+          </div>
         ) : activeTab === 'history' && pastBlocks.length === 0 ? (
-          <Alert variant="light" className="text-center py-4 border rounded-3 mb-0">
-            <div className="text-muted mb-1" style={{ fontSize: '1.5rem' }}>📂</div>
-            <div className="fw-semibold text-muted">No hay bloqueos en el historial pasado</div>
-            <small className="text-muted">Los bloqueos o días cerrados que ya hayan transcurrido se guardarán aquí automáticamente como histórico.</small>
-          </Alert>
+          <div className="text-center py-8 border border-bunny-border rounded-xl bg-bunny-paper/20">
+            <div className="text-2xl mb-1">📂</div>
+            <div className="font-semibold text-xs text-bunny-text">No hay bloqueos en el historial pasado</div>
+            <p className="text-[11px] text-bunny-text-muted mt-0.5">
+              Los bloqueos o días cerrados que ya hayan transcurrido se guardarán aquí automáticamente como histórico.
+            </p>
+          </div>
         ) : (
-          <div 
-            className="d-flex flex-column gap-2"
-            style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}
-          >
+          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {(activeTab === 'active' ? activeBlocks : pastBlocks).map((item) => {
               const isFullDay = item.type === 'FULL_DAY';
               const isMultiDay = isFullDay && item.endDate && item.endDate !== item.startDate;
@@ -483,58 +443,39 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
               return (
                 <div
                   key={item.id}
-                  className="d-flex justify-content-between align-items-center p-3 rounded-3 border"
-                  style={{
-                    background: isPast
-                      ? '#f8f9fa'
+                  className={`flex justify-between items-center p-3 rounded-xl border transition-all ${
+                    isPast
+                      ? 'bg-slate-50 border-slate-200 opacity-80'
                       : isFullDay
-                      ? '#fff5f7'
-                      : '#fffaf2',
-                    borderColor: isPast
-                      ? '#e2e8f0'
-                      : isFullDay
-                      ? 'rgba(248, 113, 113, 0.4)'
-                      : 'rgba(245, 158, 11, 0.35)',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-                    opacity: isPast ? 0.85 : 1,
-                  }}
+                      ? 'bg-rose-50/60 border-rose-200'
+                      : 'bg-amber-50/60 border-amber-200'
+                  }`}
                 >
-                  <div className="d-flex align-items-start gap-3">
+                  <div className="flex items-start gap-3">
                     <div
-                      style={{
-                        padding: '6px 10px',
-                        borderRadius: '8px',
-                        background: isPast
-                          ? '#e2e8f0'
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold text-center min-w-[70px] ${
+                        isPast
+                          ? 'bg-slate-200 text-slate-700'
                           : isFullDay
-                          ? '#ffe0e6'
-                          : '#fef3c7',
-                        color: isPast
-                          ? '#475569'
-                          : isFullDay
-                          ? '#991b1b'
-                          : '#92400e',
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        textAlign: 'center',
-                        minWidth: '70px',
-                      }}
+                          ? 'bg-rose-200 text-rose-900'
+                          : 'bg-amber-200 text-amber-900'
+                      }`}
                     >
                       {isPast ? 'PASADO' : isFullDay ? (isMultiDay ? 'RANGO' : 'DÍA COMPLETO') : 'HORARIO'}
                     </div>
 
                     <div>
-                      <div className="fw-bold" style={{ color: isPast ? '#64748b' : '#2d1a12', fontSize: '0.95rem' }}>
+                      <div className="font-bold text-xs text-bunny-text flex items-center gap-2">
                         {item.reason}
                         {isPast && (
-                          <Badge bg="secondary" className="ms-2" style={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                          <Badge variant="neutral" className="text-[10px]">
                             Histórico
                           </Badge>
                         )}
                       </div>
-                      <div className="small text-muted d-flex align-items-center gap-2 mt-1">
-                        <span className="d-flex align-items-center gap-1">
-                          <FiCalendar size={13} />
+                      <div className="text-[11px] text-bunny-text-muted flex items-center gap-2 mt-0.5">
+                        <span className="flex items-center gap-1">
+                          <FiCalendar size={12} />
                           {isMultiDay ? (
                             <>
                               {new Date(item.startDate + 'T12:00:00').toLocaleDateString('es-CL', {
@@ -560,26 +501,22 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                         </span>
 
                         {!isFullDay && item.startTime && item.endTime && (
-                          <span
-                            className="d-flex align-items-center gap-1 fw-semibold"
-                            style={{ color: isPast ? '#64748b' : '#b45309' }}
-                          >
-                            <FiClock size={13} /> {item.startTime} a {item.endTime} hrs
+                          <span className="flex items-center gap-1 font-semibold text-amber-800">
+                            <FiClock size={12} /> {item.startTime} a {item.endTime} hrs
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => handleDelete(item.id)}
-                    className="p-1 px-2 border-0"
+                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100/60 transition-colors"
                     title={isPast ? 'Eliminar del historial' : 'Eliminar bloqueo'}
                   >
                     <FiTrash2 size={16} />
-                  </Button>
+                  </button>
                 </div>
               );
             })}
@@ -589,3 +526,5 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
     </Card>
   );
 };
+
+export default ScheduleUnavailabilitySection;

@@ -3,7 +3,6 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Row, Col, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
 import {
   LineChart,
   Line,
@@ -51,6 +50,9 @@ import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import { useAppointmentsStore } from '@/stores/appointmentsStore';
 import { statsApi } from '../../api/stats.api';
 import { SpecialistStat } from '../../types/stats.types';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Spinner } from '@/components/ui/Spinner';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
@@ -148,7 +150,7 @@ export default function AnalyticsPage() {
         newEnd = format(today, 'yyyy-MM-dd');
         break;
       case 'last7':
-        newStart = format(subDays(today, 7), 'yyyy-MM-dd');
+        newStart = format(subDays(today, 6), 'yyyy-MM-dd');
         newEnd = format(today, 'yyyy-MM-dd');
         break;
       case 'thisMonth':
@@ -156,27 +158,27 @@ export default function AnalyticsPage() {
         newEnd = format(endOfMonth(today), 'yyyy-MM-dd');
         break;
       case 'lastMonth': {
-        const prevMonthDate = subMonths(today, 1);
-        newStart = format(startOfMonth(prevMonthDate), 'yyyy-MM-dd');
-        newEnd = format(endOfMonth(prevMonthDate), 'yyyy-MM-dd');
+        const lastMonthDate = subMonths(today, 1);
+        newStart = format(startOfMonth(lastMonthDate), 'yyyy-MM-dd');
+        newEnd = format(endOfMonth(lastMonthDate), 'yyyy-MM-dd');
         break;
       }
       case 'last90':
-        newStart = format(subDays(today, 90), 'yyyy-MM-dd');
+        newStart = format(subDays(today, 89), 'yyyy-MM-dd');
         newEnd = format(today, 'yyyy-MM-dd');
         break;
       case 'thisYear':
         newStart = format(startOfYear(today), 'yyyy-MM-dd');
         newEnd = format(endOfYear(today), 'yyyy-MM-dd');
         break;
-      case 'custom':
       default:
         break;
     }
 
-    setActivePreset(preset);
     setStartDate(newStart);
     setEndDate(newEnd);
+    setActivePreset(preset);
+
     if (preset !== 'custom') {
       loadAnalytics(newStart, newEnd);
     }
@@ -194,10 +196,8 @@ export default function AnalyticsPage() {
     return (
       <DashboardLayout>
         <div style={{ padding: '20px', minHeight: '100vh', background: PAGE_BG }}>
-          <div className="text-center py-5">
-            <Spinner animation="border" role="status" variant="danger">
-              <span className="visually-hidden">Cargando...</span>
-            </Spinner>
+          <div className="flex justify-center items-center py-24">
+            <Spinner size="lg" variant="primary" />
           </div>
         </div>
       </DashboardLayout>
@@ -287,75 +287,55 @@ export default function AnalyticsPage() {
             {/* Acciones y Selector de Rango Personalizado */}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <Button
-                variant="outline-secondary"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   exportFullAnalyticsReport(data, specialistPerformance, `informe-ejecutivo-${startDate}-${endDate}`);
                   toast.success('Informe ejecutivo descargado exitosamente');
                 }}
-                style={{
-                  borderRadius: '10px',
-                  borderColor: '#d4a89a',
-                  color: TEXT_DARK,
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
-                }}
+                leftIcon={<Download size={16} />}
               >
-                <Download size={16} /> 📄 Informe Ejecutivo
+                📄 Informe Ejecutivo
               </Button>
 
               <Button
-                variant="outline-primary"
+                variant="outline"
                 size="sm"
                 onClick={() => setShowCashClosing(true)}
-                style={{
-                  borderRadius: '10px',
-                  background: '#fdf4f2',
-                  borderColor: '#eed0c5',
-                  color: '#8c2a3e',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
-                }}
+                leftIcon={<DollarSign size={16} />}
+                className="text-rose-900 border-rose-200 bg-rose-50/50 hover:bg-rose-100/50"
               >
-                <DollarSign size={16} /> 💰 Cierre de Caja & Finanzas
+                💰 Cierre de Caja & Finanzas
               </Button>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <Form.Control
+                <input
                   type="date"
                   value={startDate}
                   onChange={(e) => {
                     setStartDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  style={{ width: '130px', fontSize: '13px', borderRadius: '8px' }}
+                  className="w-32 text-xs rounded-xl border border-rose-200 px-2 py-1.5 bg-white text-stone-700"
                 />
                 <span style={{ color: TEXT_MID, fontSize: '13px' }}>a</span>
-                <Form.Control
+                <input
                   type="date"
                   value={endDate}
                   onChange={(e) => {
                     setEndDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  style={{ width: '130px', fontSize: '13px', borderRadius: '8px' }}
+                  className="w-32 text-xs rounded-xl border border-rose-200 px-2 py-1.5 bg-white text-stone-700"
                 />
                 <Button
                   variant="primary"
                   onClick={() => loadAnalytics()}
                   disabled={loading}
                   size="sm"
-                  style={{ background: '#c9897a', borderColor: '#c9897a', borderRadius: '8px', padding: '6px 14px' }}
+                  isLoading={loading}
                 >
-                  {loading ? 'Cargando...' : 'Filtrar'}
+                  Filtrar
                 </Button>
               </div>
             </div>
@@ -376,31 +356,26 @@ export default function AnalyticsPage() {
             ].map((p) => {
               const isSelected = activePreset === p.key;
               return (
-                <Button
+                <button
                   key={p.key}
-                  variant={isSelected ? 'primary' : 'outline-secondary'}
-                  size="sm"
+                  type="button"
                   onClick={() => applyPreset(p.key as PresetKey)}
-                  style={{
-                    fontSize: '12px',
-                    borderRadius: '20px',
-                    padding: '4px 12px',
-                    background: isSelected ? '#5c3d2e' : 'transparent',
-                    borderColor: isSelected ? '#5c3d2e' : '#e0cfc7',
-                    color: isSelected ? '#ffffff' : TEXT_DARK,
-                    fontWeight: isSelected ? 600 : 500,
-                  }}
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
+                    isSelected
+                      ? 'bg-amber-950 text-white shadow-sm font-semibold'
+                      : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
+                  }`}
                 >
                   {p.label}
-                </Button>
+                </button>
               );
             })}
           </div>
         </div>
 
         {/* Tarjetas de Métricas Principales */}
-        <Row className="g-3">
-          <Col xs={12} sm={6} md={4} xl={2}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div>
             <MetricCard
               label="Citas Totales"
               value={metrics.totalAppointments}
@@ -408,8 +383,8 @@ export default function AnalyticsPage() {
               icon={Calendar}
               color="#5a8f7b"
             />
-          </Col>
-          <Col xs={12} sm={6} md={4} xl={2}>
+          </div>
+          <div>
             <MetricCard
               label="Completadas"
               value={metrics.totalCompleted}
@@ -417,8 +392,8 @@ export default function AnalyticsPage() {
               icon={CheckCircle2}
               color="#28a745"
             />
-          </Col>
-          <Col xs={12} sm={6} md={4} xl={2}>
+          </div>
+          <div>
             <MetricCard
               label="Tasa Cancelación"
               value={`${metrics.cancelledRate}%`}
@@ -426,8 +401,8 @@ export default function AnalyticsPage() {
               icon={AlertCircle}
               color="#dc3545"
             />
-          </Col>
-          <Col xs={12} sm={6} md={4} xl={2}>
+          </div>
+          <div>
             <MetricCard
               label="Ingreso Proyectado"
               value={formatCurrency(metrics.totalRevenue)}
@@ -435,8 +410,8 @@ export default function AnalyticsPage() {
               icon={TrendingUp}
               color="#1976d2"
             />
-          </Col>
-          <Col xs={12} sm={6} md={4} xl={2}>
+          </div>
+          <div>
             <MetricCard
               label="Ingresos Cobrados"
               value={formatCurrency(metrics.completedRevenue)}
@@ -444,8 +419,8 @@ export default function AnalyticsPage() {
               icon={DollarSign}
               color="#2e7d32"
             />
-          </Col>
-          <Col xs={12} sm={6} md={4} xl={2}>
+          </div>
+          <div>
             <MetricCard
               label="Ticket Promedio"
               value={formatCurrency(metrics.averageTicket)}
@@ -453,8 +428,8 @@ export default function AnalyticsPage() {
               icon={Sparkles}
               color="#c9897a"
             />
-          </Col>
-        </Row>
+          </div>
+        </div>
 
         {/* Banner de Proyecciones & Insights Predictivos de Demanda */}
         {(() => {
@@ -472,52 +447,54 @@ export default function AnalyticsPage() {
                 boxShadow: '0 2px 8px rgba(180, 120, 100, 0.08)',
               }}
             >
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <Sparkles size={18} className="text-warning" />
-                <span className="fw-bold" style={{ color: TEXT_DARK, fontSize: '15px' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={18} className="text-amber-500" />
+                <span className="font-bold" style={{ color: TEXT_DARK, fontSize: '15px' }}>
                   🔮 Insights &amp; Proyecciones de Demanda del Salón
                 </span>
-                <Badge bg="success" className="ms-auto" style={{ fontSize: '11px' }}>
-                  {effectiveness}% Efectividad
-                </Badge>
+                <div className="ml-auto">
+                  <Badge variant="success">
+                    {effectiveness}% Efectividad
+                  </Badge>
+                </div>
               </div>
-              <Row className="g-2 small">
-                <Col md={4}>
-                  <div className="p-2 rounded bg-white border border-peach">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                <div>
+                  <div className="p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
                     <strong>📅 Día Pico de Demanda:</strong>{' '}
-                    <span className="text-primary fw-semibold">
+                    <span className="text-blue-600 font-semibold">
                       {peakWeekday && peakWeekday.count > 0
                         ? `${peakWeekday.dayName} (${peakWeekday.count} citas • ${peakWeekday.completedCount} completadas)`
                         : 'Sin datos suficientes'}
                     </span>
                   </div>
-                </Col>
-                <Col md={4}>
-                  <div className="p-2 rounded bg-white border border-peach">
+                </div>
+                <div>
+                  <div className="p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
                     <strong>⏰ Franja Horaria de Mayor Flujo:</strong>{' '}
-                    <span className="text-success fw-semibold">
+                    <span className="text-emerald-600 font-semibold">
                       {peakSlot && peakSlot.count > 0
                         ? `${peakSlot.slotName} ${peakSlot.timeRange} (${peakSlot.count} citas)`
                         : 'Sin datos suficientes'}
                     </span>
                   </div>
-                </Col>
-                <Col md={4}>
-                  <div className="p-2 rounded bg-white border border-peach">
+                </div>
+                <div>
+                  <div className="p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
                     <strong>🎯 Optimización de Turnos:</strong>{' '}
-                    <span className="text-dark">
+                    <span className="text-stone-800">
                       {peakWeekday && peakWeekday.count > 0
                         ? `Reforzar disponibilidad los días ${peakWeekday.dayName} durante la franja de la ${peakSlot?.slotName?.toLowerCase() || 'tarde'}.`
                         : 'Continúa registrando citas para obtener sugerencias automáticas.'}
                     </span>
                   </div>
-                </Col>
-              </Row>
+                </div>
+              </div>
             </div>
           );
         })()}
 
-        {/* 🚨 Alertas Inteligentes de Cancelación & Clientes en Riesgo (Fase 2.3) */}
+        {/* 🚨 Alertas Inteligentes de Cancelación & Clientes en Riesgo */}
         {data.cancellationAlerts && data.cancellationAlerts.length > 0 && (
           <div
             style={{
@@ -528,14 +505,16 @@ export default function AnalyticsPage() {
               boxShadow: '0 2px 8px rgba(220, 53, 69, 0.08)',
             }}
           >
-            <div className="d-flex align-items-center gap-2 mb-3">
-              <AlertCircle size={20} style={{ color: '#dc3545' }} />
-              <span className="fw-bold" style={{ color: '#991b1b', fontSize: '15px' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle size={20} className="text-red-500" />
+              <span className="font-bold text-red-900 text-sm">
                 🚨 Alertas de Retención: Clientas con Alto Patrón de Cancelación
               </span>
-              <Badge bg="danger" className="ms-auto" style={{ fontSize: '11px' }}>
-                {data.cancellationAlerts.length} en seguimiento
-              </Badge>
+              <div className="ml-auto">
+                <Badge variant="danger">
+                  {data.cancellationAlerts.length} en seguimiento
+                </Badge>
+              </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
               {data.cancellationAlerts.slice(0, 4).map((alert) => (
@@ -549,9 +528,9 @@ export default function AnalyticsPage() {
                     fontSize: '12px',
                   }}
                 >
-                  <div className="d-flex justify-content-between align-items-center mb-1">
+                  <div className="flex justify-between items-center mb-1">
                     <strong style={{ color: TEXT_DARK, fontSize: '13px' }}>{alert.clientName}</strong>
-                    <Badge bg={alert.severity === 'CRITICAL' ? 'danger' : 'warning'} text={alert.severity === 'CRITICAL' ? 'white' : 'dark'}>
+                    <Badge variant={alert.severity === 'CRITICAL' ? 'danger' : 'warning'}>
                       {alert.severity === 'CRITICAL' ? 'Alto Riesgo' : 'Atención'}
                     </Badge>
                   </div>
@@ -568,332 +547,317 @@ export default function AnalyticsPage() {
         )}
 
         {/* Fila 1 de Gráficos: Línea de tiempo & Distribución de Estados */}
-        <Row className="g-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Citas por Día */}
-          <Col xs={12} lg={7}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Evolución de Citas por Día
-                </h5>
-                <Badge bg="light" text="dark" style={{ border: '1px solid #e0cfc7', fontWeight: 500 }}>
-                  {appointmentsByDay.length} días
-                </Badge>
-              </div>
-              <ResponsiveContainer width="100%" height={270}>
-                <LineChart data={appointmentsByDay}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
-                  <XAxis dataKey="date" stroke={TEXT_MID} fontSize={11} tickFormatter={(val) => val.slice(5)} />
-                  <YAxis stroke={TEXT_MID} fontSize={11} allowDecimals={false} />
-                  <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Line type="monotone" dataKey="count" stroke="#8c6b5d" name="Total Agendadas" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="completed" stroke="#28a745" name="Completadas" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="cancelled" stroke="#dc3545" name="Canceladas" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+          <div className="lg:col-span-7" style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                Evolución de Citas por Día
+              </h5>
+              <Badge variant="neutral">
+                {appointmentsByDay.length} días
+              </Badge>
             </div>
-          </Col>
+            <ResponsiveContainer width="100%" height={270}>
+              <LineChart data={appointmentsByDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
+                <XAxis dataKey="date" stroke={TEXT_MID} fontSize={11} tickFormatter={(val) => val.slice(5)} />
+                <YAxis stroke={TEXT_MID} fontSize={11} allowDecimals={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" dataKey="count" stroke="#8c6b5d" name="Total Agendadas" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="completed" stroke="#28a745" name="Completadas" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="cancelled" stroke="#dc3545" name="Canceladas" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
           {/* Estado de Citas */}
-          <Col xs={12} lg={5}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <h5 style={{ color: TEXT_DARK, fontWeight: 700, marginBottom: '16px', fontSize: '15px' }}>
-                Distribución de Estados
-              </h5>
-              <ResponsiveContainer width="100%" height={270}>
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Completadas', value: metrics.totalCompleted },
-                      { name: 'Confirmadas', value: metrics.totalConfirmed },
-                      { name: 'Pendientes', value: metrics.totalPending },
-                      { name: 'Canceladas', value: metrics.totalCancelled },
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => (value > 0 ? `${name}: ${value}` : '')}
-                    outerRadius={85}
-                    dataKey="value"
-                  >
-                    {['#28a745', '#ffc107', '#17a2b8', '#dc3545'].map((color, index) => (
-                      <Cell key={`cell-${index}`} fill={color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </Col>
-        </Row>
+          <div className="lg:col-span-5" style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <h5 style={{ color: TEXT_DARK, fontWeight: 700, marginBottom: '16px', fontSize: '15px' }}>
+              Distribución de Estados
+            </h5>
+            <ResponsiveContainer width="100%" height={270}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Completadas', value: metrics.totalCompleted },
+                    { name: 'Confirmadas', value: metrics.totalConfirmed },
+                    { name: 'Pendientes', value: metrics.totalPending },
+                    { name: 'Canceladas', value: metrics.totalCancelled },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => (value > 0 ? `${name}: ${value}` : '')}
+                  outerRadius={85}
+                  dataKey="value"
+                >
+                  {['#28a745', '#ffc107', '#17a2b8', '#dc3545'].map((color, index) => (
+                    <Cell key={`cell-${index}`} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        {/* Fila 2 de Gráficos (NUEVAS ANALÍTICAS): Días de Mayor Demanda y Franjas Horarias */}
-        <Row className="g-3">
+        {/* Fila 2 de Gráficos: Días de Mayor Demanda y Franjas Horarias */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Días de Mayor Demanda */}
-          <Col xs={12} lg={6}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Calendar size={18} style={{ color: '#c9897a' }} />
+          <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Calendar size={18} style={{ color: '#c9897a' }} />
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                Días de Mayor Demanda (Semanal)
+              </h5>
+            </div>
+            <small style={{ color: TEXT_MID, display: 'block', marginBottom: '12px' }}>
+              Distribución de citas por día para identificar días pico y de alta demanda
+            </small>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={appointmentsByWeekday}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
+                <XAxis dataKey="dayShort" stroke={TEXT_MID} fontSize={12} />
+                <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(value: any, name: any, item: any) => {
+                    if (name === 'Completadas') {
+                      return [`${value} citas (${item.payload.percentage}% del total)`, name];
+                    }
+                    return [`${value} citas`, name];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="completedCount" fill="#5a8f7b" name="Completadas" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#e0cfc7" name="Total Agendado" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Horarios Pico & Tasa de Ocupación por Franja */}
+          <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={18} style={{ color: '#c9897a' }} />
                 <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Días de Mayor Demanda (Semanal)
+                  Franjas Horarias &amp; Ocupación
                 </h5>
               </div>
-              <small style={{ color: TEXT_MID, display: 'block', marginBottom: '12px' }}>
-                Distribución de citas por día para identificar días pico y de alta demanda
-              </small>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={appointmentsByWeekday}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
-                  <XAxis dataKey="dayShort" stroke={TEXT_MID} fontSize={12} />
-                  <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value: any, name: any, item: any) => {
-                      if (name === 'Completadas') {
-                        return [`${value} citas (${item.payload.percentage}% del total)`, name];
-                      }
-                      return [`${value} citas`, name];
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="completedCount" fill="#5a8f7b" name="Completadas" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="count" fill="#e0cfc7" name="Total Agendado" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
-          </Col>
+            <small style={{ color: TEXT_MID, display: 'block', marginBottom: '12px' }}>
+              Capacidad instalada y porcentaje de ocupación estimada
+            </small>
 
-          {/* Horarios Pico & Tasa de Ocupación por Franja (Fase 2.2) */}
-          <Col xs={12} lg={6}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Clock size={18} style={{ color: '#c9897a' }} />
-                  <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                    Franjas Horarias &amp; Ocupación
-                  </h5>
-                </div>
+            {/* Indicadores rápidos de ocupación */}
+            {data.occupancyByHourSlot && data.occupancyByHourSlot.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '14px' }}>
+                {data.occupancyByHourSlot.map((occ) => {
+                  const badgeVariant: 'danger' | 'success' | 'warning' | 'neutral' =
+                    occ.status === 'OVERCAPACITY' ? 'danger' : occ.status === 'OPTIMAL' ? 'success' : occ.status === 'MODERATE' ? 'warning' : 'neutral';
+                  const badgeText = occ.status === 'OVERCAPACITY' ? 'Alta' : occ.status === 'OPTIMAL' ? 'Óptima' : occ.status === 'MODERATE' ? 'Media' : 'Baja';
+                  return (
+                    <div key={occ.slotKey} style={{ background: '#fdf8f6', border: '1px solid #f2e4de', borderRadius: '8px', padding: '6px 8px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: TEXT_DARK }}>{occ.slotName}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#5a8f7b' }}>{occ.occupancyRate}%</div>
+                      <Badge variant={badgeVariant}>{badgeText}</Badge>
+                    </div>
+                  );
+                })}
               </div>
-              <small style={{ color: TEXT_MID, display: 'block', marginBottom: '12px' }}>
-                Capacidad instalada y porcentaje de ocupación estimada
-              </small>
+            )}
 
-              {/* Indicadores rápidos de ocupación */}
-              {data.occupancyByHourSlot && data.occupancyByHourSlot.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '14px' }}>
-                  {data.occupancyByHourSlot.map((occ) => {
-                    const badgeVariant = occ.status === 'OVERCAPACITY' ? 'danger' : occ.status === 'OPTIMAL' ? 'success' : occ.status === 'MODERATE' ? 'warning' : 'secondary';
-                    const badgeText = occ.status === 'OVERCAPACITY' ? 'Alta' : occ.status === 'OPTIMAL' ? 'Óptima' : occ.status === 'MODERATE' ? 'Media' : 'Baja';
-                    return (
-                      <div key={occ.slotKey} style={{ background: '#fdf8f6', border: '1px solid #f2e4de', borderRadius: '8px', padding: '6px 8px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: TEXT_DARK }}>{occ.slotName}</div>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#5a8f7b' }}>{occ.occupancyRate}%</div>
-                        <Badge bg={badgeVariant} style={{ fontSize: '9px', padding: '2px 4px' }}>{badgeText}</Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <ResponsiveContainer width="100%" height={210}>
-                <BarChart data={appointmentsByHourSlot}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
-                  <XAxis dataKey="slotName" stroke={TEXT_MID} fontSize={12} />
-                  <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value: any, name: any, item: any) => {
-                      if (name === 'Completadas') {
-                        return [`${value} citas (${item.payload.percentage}% del total)`, name];
-                      }
-                      return [`${value} citas`, name];
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="completedCount" fill="#c9897a" name="Completadas" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="count" fill="#f0d5ca" name="Total Agendado" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Col>
-        </Row>
+            <ResponsiveContainer width="100%" height={210}>
+              <BarChart data={appointmentsByHourSlot}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
+                <XAxis dataKey="slotName" stroke={TEXT_MID} fontSize={12} />
+                <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(value: any, name: any, item: any) => {
+                    if (name === 'Completadas') {
+                      return [`${value} citas (${item.payload.percentage}% del total)`, name];
+                    }
+                    return [`${value} citas`, name];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="completedCount" fill="#c9897a" name="Completadas" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#f0d5ca" name="Total Agendado" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Fila 3 de Gráficos: Top Servicios & Ingresos por Servicio */}
-        <Row className="g-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top Servicios */}
-          <Col xs={12} lg={6}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <Sparkles size={18} style={{ color: '#c9897a' }} />
-                <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Top 5 Servicios Más Demandados
-                </h5>
-              </div>
-              <small style={{ color: TEXT_MID, display: 'block', marginBottom: '16px' }}>
-                Servicios más solicitados en el período (demanda activa)
-              </small>
-              {topServices.length === 0 ? (
-                <Alert variant="info" style={{ fontSize: '12px' }}>
-                  No hay citas registradas en este período
-                </Alert>
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={topServices}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
-                    <XAxis dataKey="serviceName" stroke={TEXT_MID} fontSize={11} angle={-25} textAnchor="end" height={60} />
-                    <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
-                    <Bar dataKey="appointmentCount" fill="#5a8f7b" name="Citas Activas" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
+          <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <Sparkles size={18} style={{ color: '#c9897a' }} />
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                Top 5 Servicios Más Demandados
+              </h5>
             </div>
-          </Col>
+            <small style={{ color: TEXT_MID, display: 'block', marginBottom: '16px' }}>
+              Servicios más solicitados en el período (demanda activa)
+            </small>
+            {topServices.length === 0 ? (
+              <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
+                No hay citas registradas en este período
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topServices}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
+                  <XAxis dataKey="serviceName" stroke={TEXT_MID} fontSize={11} angle={-25} textAnchor="end" height={60} />
+                  <YAxis stroke={TEXT_MID} fontSize={12} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }} />
+                  <Bar dataKey="appointmentCount" fill="#5a8f7b" name="Citas Activas" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
 
           {/* Ingresos por Servicio */}
-          <Col xs={12} lg={6}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <DollarSign size={18} style={{ color: '#2e7d32' }} />
-                <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  Ingresos por Servicio
-                </h5>
-              </div>
-              <small style={{ color: TEXT_MID, display: 'block', marginBottom: '16px' }}>
-                Facturación generada y proyectada por servicios
-              </small>
-              {topServices.length === 0 ? (
-                <Alert variant="info" style={{ fontSize: '12px' }}>
-                  No hay datos de ingresos en este período
-                </Alert>
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={topServices}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
-                    <XAxis dataKey="serviceName" stroke={TEXT_MID} fontSize={11} angle={-25} textAnchor="end" height={60} />
-                    <YAxis stroke={TEXT_MID} fontSize={12} tickFormatter={(val) => `$${val / 1000}k`} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }}
-                      formatter={(value: any) => [formatCurrency(value as number), 'Ingresos']}
-                    />
-                    <Bar dataKey="totalRevenue" fill="#c9897a" name="Ingresos" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
+          <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <DollarSign size={18} style={{ color: '#2e7d32' }} />
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                Ingresos por Servicio
+              </h5>
             </div>
-          </Col>
-        </Row>
+            <small style={{ color: TEXT_MID, display: 'block', marginBottom: '16px' }}>
+              Facturación generada y proyectada por servicios
+            </small>
+            {topServices.length === 0 ? (
+              <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
+                No hay datos de ingresos en este período
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topServices}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f2e4de" />
+                  <XAxis dataKey="serviceName" stroke={TEXT_MID} fontSize={11} angle={-25} textAnchor="end" height={60} />
+                  <YAxis stroke={TEXT_MID} fontSize={12} tickFormatter={(val) => `$${val / 1000}k`} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fffdfb', borderColor: '#d4a89a', borderRadius: '8px', fontSize: '12px' }}
+                    formatter={(value: any) => [formatCurrency(value as number), 'Ingresos']}
+                  />
+                  <Bar dataKey="totalRevenue" fill="#c9897a" name="Ingresos" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
 
         {/* Tablas de Resumen */}
-        <Row className="g-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top Clientes */}
-          <Col xs={12} lg={6}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  <Users size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#5a8f7b' }} />
-                  Top 5 Clientas Más Activas
-                </h5>
-                <Badge bg="primary" style={{ fontSize: '11px', fontWeight: 600 }}>Demanda Activa</Badge>
-              </div>
-              {topClients.length === 0 ? (
-                <Alert variant="info" style={{ fontSize: '12px', marginBottom: 0 }}>
-                  No hay clientas con citas en este período
-                </Alert>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #f2e4de' }}>
-                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
-                          Clienta
-                        </th>
-                        <th style={{ textAlign: 'center', padding: '8px', fontWeight: 700, color: '#28a745' }}>
-                          Atendidas
-                        </th>
-                        <th style={{ textAlign: 'right', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
-                          Gasto Real
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topClients.map((client) => (
-                        <tr key={client.clientId} style={{ borderBottom: '1px solid #f8ede8' }}>
-                          <td style={{ padding: '10px 8px', color: TEXT_DARK }}>
-                            <div style={{ fontWeight: 600 }}>{client.clientName}</div>
-                            <small style={{ color: TEXT_MID }}>{client.clientPhone}</small>
-                          </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'center', color: '#28a745', fontWeight: 700 }}>
-                            {client.completedCount}
-                          </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'right', color: '#5a8f7b', fontWeight: 700 }}>
-                            {formatCurrency(client.totalSpent)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                <Users size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#5a8f7b' }} />
+                Top 5 Clientas Más Activas
+              </h5>
+              <Badge variant="primary">Demanda Activa</Badge>
             </div>
-          </Col>
+            {topClients.length === 0 ? (
+              <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
+                No hay clientas con citas en este período
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #f2e4de' }}>
+                      <th style={{ textAlign: 'left', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
+                        Clienta
+                      </th>
+                      <th style={{ textAlign: 'center', padding: '8px', fontWeight: 700, color: '#28a745' }}>
+                        Atendidas
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
+                        Gasto Real
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topClients.map((client) => (
+                      <tr key={client.clientId} style={{ borderBottom: '1px solid #f8ede8' }}>
+                        <td style={{ padding: '10px 8px', color: TEXT_DARK }}>
+                          <div style={{ fontWeight: 600 }}>{client.clientName}</div>
+                          <small style={{ color: TEXT_MID }}>{client.clientPhone}</small>
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#28a745', fontWeight: 700 }}>
+                          {client.completedCount}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#5a8f7b', fontWeight: 700 }}>
+                          {formatCurrency(client.totalSpent)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
           {/* Clientes que Cancelan */}
-          <Col xs={12} lg={6}>
-            <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
-                  <AlertCircle size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#dc3545' }} />
-                  Clientas con Mayor Cancelación
-                </h5>
-                <Badge bg="danger" style={{ fontSize: '11px', fontWeight: 600 }}>Canceladas</Badge>
-              </div>
-              {cancelledClients.length === 0 ? (
-                <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
-                  No hay cancelaciones en este período
-                </Alert>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #f2e4de' }}>
-                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
-                          Clienta
-                        </th>
-                        <th style={{ textAlign: 'center', padding: '8px', fontWeight: 700, color: '#dc3545' }}>
-                          Canceladas
-                        </th>
-                        <th style={{ textAlign: 'center', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
-                          Tasa
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cancelledClients.map((client) => (
-                        <tr key={client.clientId} style={{ borderBottom: '1px solid #f8ede8' }}>
-                          <td style={{ padding: '10px 8px', color: TEXT_DARK }}>
-                            <div style={{ fontWeight: 600 }}>{client.clientName}</div>
-                            <small style={{ color: TEXT_MID }}>{client.clientPhone}</small>
-                          </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'center', color: '#dc3545', fontWeight: 700 }}>
-                            {client.cancelledCount}
-                          </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'center', color: TEXT_MID, fontWeight: 600 }}>
-                            {client.appointmentCount > 0
-                              ? `${Math.round((client.cancelledCount / client.appointmentCount) * 100)}%`
-                              : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h5 style={{ color: TEXT_DARK, fontWeight: 700, margin: 0, fontSize: '15px' }}>
+                <AlertCircle size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: '#dc3545' }} />
+                Clientas con Mayor Cancelación
+              </h5>
+              <Badge variant="danger">Canceladas</Badge>
             </div>
-          </Col>
-        </Row>
+            {cancelledClients.length === 0 ? (
+              <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
+                No hay cancelaciones en este período
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #f2e4de' }}>
+                      <th style={{ textAlign: 'left', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
+                        Clienta
+                      </th>
+                      <th style={{ textAlign: 'center', padding: '8px', fontWeight: 700, color: '#dc3545' }}>
+                        Canceladas
+                      </th>
+                      <th style={{ textAlign: 'center', padding: '8px', fontWeight: 700, color: TEXT_DARK }}>
+                        Tasa
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cancelledClients.map((client) => (
+                      <tr key={client.clientId} style={{ borderBottom: '1px solid #f8ede8' }}>
+                        <td style={{ padding: '10px 8px', color: TEXT_DARK }}>
+                          <div style={{ fontWeight: 600 }}>{client.clientName}</div>
+                          <small style={{ color: TEXT_MID }}>{client.clientPhone}</small>
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#dc3545', fontWeight: 700 }}>
+                          {client.cancelledCount}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: TEXT_MID, fontWeight: 600 }}>
+                          {client.appointmentCount > 0
+                            ? `${Math.round((client.cancelledCount / client.appointmentCount) * 100)}%`
+                            : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Motivos de Cancelación */}
         <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
@@ -901,9 +865,9 @@ export default function AnalyticsPage() {
             Motivos de Cancelación Frecuentes
           </h5>
           {cancellationReasons.length === 0 ? (
-            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+            <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
               No se registran motivos de cancelación en este período
-            </Alert>
+            </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
@@ -946,9 +910,9 @@ export default function AnalyticsPage() {
               Detalle de Cancelaciones
             </h5>
             <Button
-              variant="outline-secondary"
+              variant="outline"
               size="sm"
-              style={{ borderRadius: '8px', borderColor: '#d4a89a', color: TEXT_DARK }}
+              leftIcon={<Download size={14} />}
               onClick={() => {
                 exportToCSV({
                   filename: `reporte-cancelaciones-${startDate}-${endDate}`,
@@ -966,15 +930,14 @@ export default function AnalyticsPage() {
                 toast.success('Reporte descargado exitosamente');
               }}
             >
-              <Download size={14} style={{ marginRight: '6px' }} />
               Descargar CSV
             </Button>
           </div>
 
           {cancelledDetail.length === 0 ? (
-            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+            <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
               No hay cancelaciones registradas en este período
-            </Alert>
+            </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
@@ -1074,7 +1037,7 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {/* Rendimiento & Atenciones por Especialista (Fase 3) */}
+        {/* Rendimiento & Atenciones por Especialista */}
         <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(180, 120, 100, 0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
             <div>
@@ -1085,9 +1048,9 @@ export default function AnalyticsPage() {
               <small style={{ color: TEXT_MID }}>Métricas operativas y recaudación generada por manicurista en el período</small>
             </div>
             <Button
-              variant="outline-secondary"
+              variant="outline"
               size="sm"
-              style={{ borderRadius: '8px', borderColor: '#d4a89a', color: TEXT_DARK }}
+              leftIcon={<Download size={14} />}
               onClick={() => {
                 exportToCSV({
                   filename: `rendimiento-especialistas-${startDate}-${endDate}`,
@@ -1103,15 +1066,14 @@ export default function AnalyticsPage() {
                 toast.success('Informe de especialistas descargado');
               }}
             >
-              <Download size={14} style={{ marginRight: '6px' }} />
               Descargar CSV
             </Button>
           </div>
 
           {specialistPerformance.length === 0 ? (
-            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+            <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
               No hay citas registradas con especialistas en este período
-            </Alert>
+            </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
@@ -1177,9 +1139,9 @@ export default function AnalyticsPage() {
               <small style={{ color: TEXT_MID }}>Clasificadas por número de citas efectivamente completadas</small>
             </div>
             <Button
-              variant="outline-secondary"
+              variant="outline"
               size="sm"
-              style={{ borderRadius: '8px', borderColor: '#d4a89a', color: TEXT_DARK }}
+              leftIcon={<Download size={14} />}
               onClick={() => {
                 exportToCSV({
                   filename: `ranking-clientas-${startDate}-${endDate}`,
@@ -1198,15 +1160,14 @@ export default function AnalyticsPage() {
                 toast.success('Ranking descargado exitosamente');
               }}
             >
-              <Download size={14} style={{ marginRight: '6px' }} />
               Descargar CSV
             </Button>
           </div>
 
           {clientsMetrics.length === 0 ? (
-            <Alert variant="info" style={{ marginBottom: 0, fontSize: '12px' }}>
+            <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs">
               No hay registros de clientas en este período
-            </Alert>
+            </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>

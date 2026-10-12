@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Badge, Button, Form, Spinner, Alert, Table, InputGroup } from 'react-bootstrap';
 import { FaWhatsapp, FaCheckCircle, FaExclamationTriangle, FaTimesCircle, FaSyncAlt, FaShieldAlt } from 'react-icons/fa';
 import { FiSave, FiGlobe, FiMail, FiMapPin, FiInfo, FiLayers } from 'react-icons/fi';
 import {
@@ -9,6 +8,10 @@ import {
   WhatsAppMetaTemplate,
 } from '../../api/settings.api';
 import { useToast } from '../../hooks/useToast';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Spinner } from '@/components/ui/Spinner';
 
 export const WhatsAppMetaSection: React.FC = () => {
   const toast = useToast();
@@ -72,13 +75,25 @@ export const WhatsAppMetaSection: React.FC = () => {
   const getQualityBadge = (rating?: string) => {
     switch (rating?.toUpperCase()) {
       case 'GREEN':
-        return <Badge bg="success" className="px-2 py-1"><FaCheckCircle className="me-1" /> Calidad Alta (GREEN)</Badge>;
+        return (
+          <Badge variant="success" className="px-2.5 py-1 flex items-center gap-1 w-fit">
+            <FaCheckCircle /> Calidad Alta (GREEN)
+          </Badge>
+        );
       case 'YELLOW':
-        return <Badge bg="warning" text="dark" className="px-2 py-1"><FaExclamationTriangle className="me-1" /> Calidad Media (YELLOW)</Badge>;
+        return (
+          <Badge variant="warning" className="px-2.5 py-1 flex items-center gap-1 w-fit">
+            <FaExclamationTriangle /> Calidad Media (YELLOW)
+          </Badge>
+        );
       case 'RED':
-        return <Badge bg="danger" className="px-2 py-1"><FaTimesCircle className="me-1" /> Calidad Baja / Riesgo (RED)</Badge>;
+        return (
+          <Badge variant="danger" className="px-2.5 py-1 flex items-center gap-1 w-fit">
+            <FaTimesCircle /> Calidad Baja / Riesgo (RED)
+          </Badge>
+        );
       default:
-        return <Badge bg="secondary" className="px-2 py-1">Desconocida</Badge>;
+        return <Badge variant="neutral" className="px-2.5 py-1">Desconocida</Badge>;
     }
   };
 
@@ -102,13 +117,25 @@ export const WhatsAppMetaSection: React.FC = () => {
   const getTemplateStatusBadge = (status: string) => {
     switch (status?.toUpperCase()) {
       case 'APPROVED':
-        return <Badge bg="success"><FaCheckCircle className="me-1" /> Aprobada</Badge>;
+        return (
+          <Badge variant="success" className="flex items-center gap-1 w-fit">
+            <FaCheckCircle /> Aprobada
+          </Badge>
+        );
       case 'REJECTED':
-        return <Badge bg="danger"><FaTimesCircle className="me-1" /> Rechazada</Badge>;
+        return (
+          <Badge variant="danger" className="flex items-center gap-1 w-fit">
+            <FaTimesCircle /> Rechazada
+          </Badge>
+        );
       case 'PENDING':
-        return <Badge bg="warning" text="dark"><FaExclamationTriangle className="me-1" /> En Revisión</Badge>;
+        return (
+          <Badge variant="warning" className="flex items-center gap-1 w-fit">
+            <FaExclamationTriangle /> En Revisión
+          </Badge>
+        );
       default:
-        return <Badge bg="secondary">{status}</Badge>;
+        return <Badge variant="neutral">{status}</Badge>;
     }
   };
 
@@ -119,259 +146,266 @@ export const WhatsAppMetaSection: React.FC = () => {
   });
 
   return (
-    <div className="whatsapp-meta-section">
+    <div className="space-y-6">
       {/* ─── 1. TARJETA DE SALUD Y SEMÁFORO META ─── */}
-      <Card className="shadow-sm border-0 mb-4">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center gap-2">
-            <FaWhatsapp className="text-success fs-4" />
-            <h5 className="mb-0 fs-6 fw-bold">Estado y Salud de la Cuenta Meta WhatsApp</h5>
+      <Card>
+        <Card.Header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white py-3.5">
+          <div className="flex items-center gap-2">
+            <FaWhatsapp className="text-emerald-600 text-xl" />
+            <h3 className="text-sm font-bold text-bunny-text leading-tight">
+              Estado y Salud de la Cuenta Meta WhatsApp
+            </h3>
           </div>
           <Button
             size="sm"
-            variant="outline-secondary"
+            variant="outline"
             onClick={fetchStatus}
             disabled={loading}
-            className="d-flex align-items-center gap-1"
+            leftIcon={<FaSyncAlt className={loading ? 'animate-spin' : ''} />}
           >
-            <FaSyncAlt className={loading ? 'fa-spin' : ''} />
-            <span>Actualizar</span>
+            Actualizar
           </Button>
         </Card.Header>
-        <Card.Body className="p-4">
+        <Card.Body className="p-4 sm:p-6">
           {loading && !metaStatus ? (
-            <div className="text-center py-4">
-              <Spinner animation="border" variant="success" />
-              <p className="text-muted mt-2 small">Consultando Meta Graph API v22.0...</p>
+            <div className="text-center py-8">
+              <Spinner size="md" className="mx-auto mb-2" />
+              <p className="text-xs text-bunny-text-muted">Consultando Meta Graph API v22.0...</p>
             </div>
           ) : !metaStatus?.configured ? (
-            <Alert variant="warning" className="mb-0">
-              <FaExclamationTriangle className="me-2" />
-              WhatsApp Cloud API no está configurada o falta el token/Phone ID en las propiedades del sistema.
-            </Alert>
+            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs flex items-center gap-2">
+              <FaExclamationTriangle className="text-base flex-shrink-0" />
+              <span>WhatsApp Cloud API no está configurada o falta el token/Phone ID en las propiedades del sistema.</span>
+            </div>
           ) : (
-            <Row className="g-3">
-              <Col md={4} sm={6}>
-                <div className="p-3 bg-light rounded-3 border">
-                  <span className="small text-muted d-block fw-semibold mb-1">Reputación y Calidad</span>
-                  <div>{getQualityBadge(metaStatus.health?.quality_rating)}</div>
-                  <div className="small text-muted mt-1" style={{ fontSize: '0.8rem' }}>
-                    Evaluación de Meta basada en reportes y bloqueos de clientes.
-                  </div>
-                </div>
-              </Col>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border">
+                <span className="text-xs text-bunny-text-muted block font-semibold mb-1.5">
+                  Reputación y Calidad
+                </span>
+                <div>{getQualityBadge(metaStatus.health?.quality_rating)}</div>
+                <p className="text-[11px] text-bunny-text-muted mt-2">
+                  Evaluación de Meta basada en reportes y bloqueos de clientes.
+                </p>
+              </div>
 
-              <Col md={4} sm={6}>
-                <div className="p-3 bg-light rounded-3 border">
-                  <span className="small text-muted d-block fw-semibold mb-1">Límite de Envíos Diarios</span>
-                  <div className="fw-bold text-dark fs-6">{getTierLabel(metaStatus.health?.messaging_limit_tier)}</div>
-                  <div className="small text-muted mt-1" style={{ fontSize: '0.8rem' }}>
-                    Tier de capacidad para mensajes iniciados por la empresa.
-                  </div>
-                </div>
-              </Col>
+              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border">
+                <span className="text-xs text-bunny-text-muted block font-semibold mb-1.5">
+                  Límite de Envíos Diarios
+                </span>
+                <div className="font-bold text-bunny-text text-sm">{getTierLabel(metaStatus.health?.messaging_limit_tier)}</div>
+                <p className="text-[11px] text-bunny-text-muted mt-2">
+                  Tier de capacidad para mensajes iniciados por la empresa.
+                </p>
+              </div>
 
-              <Col md={4} sm={12}>
-                <div className="p-3 bg-light rounded-3 border">
-                  <span className="small text-muted d-block fw-semibold mb-1">Nombre Verificado &amp; Teléfono</span>
-                  <div className="fw-bold text-primary">
-                    <FaShieldAlt className="me-1 text-success" />
-                    {metaStatus.health?.verified_name || 'BunnyCure'}
-                  </div>
-                  <div className="small text-dark mt-1 font-monospace">
-                    {metaStatus.health?.display_phone_number || metaStatus.phoneId}
-                  </div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border sm:col-span-2 md:col-span-1">
+                <span className="text-xs text-bunny-text-muted block font-semibold mb-1.5">
+                  Nombre Verificado &amp; Teléfono
+                </span>
+                <div className="font-bold text-bunny-primary text-sm flex items-center gap-1.5">
+                  <FaShieldAlt className="text-emerald-600" />
+                  {metaStatus.health?.verified_name || 'BunnyCure'}
                 </div>
-              </Col>
-            </Row>
+                <div className="text-xs text-bunny-text font-mono mt-1">
+                  {metaStatus.health?.display_phone_number || metaStatus.phoneId}
+                </div>
+              </div>
+            </div>
           )}
         </Card.Body>
       </Card>
 
       {/* ─── 2. PERFIL COMERCIAL DE WHATSAPP ─── */}
-      <Card className="shadow-sm border-0 mb-4">
-        <Card.Header className="bg-white py-3">
-          <div className="d-flex align-items-center gap-2">
-            <FiInfo className="text-primary fs-5" />
-            <h5 className="mb-0 fs-6 fw-bold">Perfil Comercial en WhatsApp (Meta Business Profile)</h5>
-          </div>
+      <Card>
+        <Card.Header className="flex items-center gap-2 bg-white py-3.5">
+          <FiInfo className="text-bunny-primary text-lg" />
+          <h3 className="text-sm font-bold text-bunny-text leading-tight">
+            Perfil Comercial en WhatsApp (Meta Business Profile)
+          </h3>
         </Card.Header>
-        <Card.Body className="p-4">
-          <Form onSubmit={handleSaveProfile}>
-            <Row className="g-3 mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="fw-semibold">Descripción Corta / Slogan (About)</Form.Label>
-                  <Form.Control
+        <Card.Body className="p-4 sm:p-6">
+          <form onSubmit={handleSaveProfile} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  Descripción Corta / Slogan (About)
+                </label>
+                <input
+                  type="text"
+                  maxLength={139}
+                  value={profileData.about}
+                  onChange={(e) => setProfileData((prev) => ({ ...prev, about: e.target.value }))}
+                  placeholder="Ej: Salón de Manicura y Belleza BunnyCure ✨"
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                />
+                <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
+                  Aparece debajo del nombre en el chat de WhatsApp.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  Correo de Contacto
+                </label>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="contacto@bunnycure.cl"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-bunny-border bg-white text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  Dirección Física del Salón
+                </label>
+                <div className="relative">
+                  <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
+                  <input
                     type="text"
-                    maxLength={139}
-                    value={profileData.about}
-                    onChange={(e) => setProfileData((prev) => ({ ...prev, about: e.target.value }))}
-                    placeholder="Ej: Salón de Manicura y Belleza BunnyCure ✨"
+                    value={profileData.address}
+                    onChange={(e) => setProfileData((prev) => ({ ...prev, address: e.target.value }))}
+                    placeholder="Ej: Providencia, Santiago"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-bunny-border bg-white text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                  <Form.Text className="text-muted">Aparece debajo del nombre en el chat de WhatsApp.</Form.Text>
-                </Form.Group>
-              </Col>
+                </div>
+              </div>
 
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="fw-semibold">Correo de Contacto</Form.Label>
-                  <InputGroup>
-                    <InputGroup.Text><FiMail /></InputGroup.Text>
-                    <Form.Control
-                      type="email"
-                      value={profileData.email}
-                      onChange={(e) => setProfileData((prev) => ({ ...prev, email: e.target.value }))}
-                      placeholder="contacto@bunnycure.cl"
-                    />
-                  </InputGroup>
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="fw-semibold">Dirección Física del Salón</Form.Label>
-                  <InputGroup>
-                    <InputGroup.Text><FiMapPin /></InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      value={profileData.address}
-                      onChange={(e) => setProfileData((prev) => ({ ...prev, address: e.target.value }))}
-                      placeholder="Ej: Providencia, Santiago"
-                    />
-                  </InputGroup>
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="fw-semibold">Sitio Web Oficial</Form.Label>
-                  <InputGroup>
-                    <InputGroup.Text><FiGlobe /></InputGroup.Text>
-                    <Form.Control
-                      type="url"
-                      value={profileData.websites?.[0] || ''}
-                      onChange={(e) => setProfileData((prev) => ({ ...prev, websites: [e.target.value] }))}
-                      placeholder="https://bunnycure.cl"
-                    />
-                  </InputGroup>
-                </Form.Group>
-              </Col>
-
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="fw-semibold">Descripción Extensa del Negocio</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    maxLength={512}
-                    value={profileData.description}
-                    onChange={(e) => setProfileData((prev) => ({ ...prev, description: e.target.value }))}
-                    placeholder="BunnyCure es un estudio especializado en manicura rusa, esmaltado permanente y cuidado de uñas..."
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  Sitio Web Oficial
+                </label>
+                <div className="relative">
+                  <FiGlobe className="absolute left-3 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
+                  <input
+                    type="url"
+                    value={profileData.websites?.[0] || ''}
+                    onChange={(e) => setProfileData((prev) => ({ ...prev, websites: [e.target.value] }))}
+                    placeholder="https://bunnycure.cl"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-bunny-border bg-white text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   />
-                  <Form.Text className="text-muted">Se muestra en la ficha de empresa de WhatsApp Business.</Form.Text>
-                </Form.Group>
-              </Col>
-            </Row>
+                </div>
+              </div>
 
-            <div className="d-flex justify-content-end">
-              <Button type="submit" variant="primary" disabled={savingProfile} className="d-flex align-items-center gap-2">
-                {savingProfile ? (
-                  <>
-                    <Spinner animation="border" size="sm" />
-                    <span>Guardando en Meta...</span>
-                  </>
-                ) : (
-                  <>
-                    <FiSave />
-                    <span>Guardar Perfil en Meta WhatsApp</span>
-                  </>
-                )}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  Descripción Extensa del Negocio
+                </label>
+                <textarea
+                  rows={3}
+                  maxLength={512}
+                  value={profileData.description}
+                  onChange={(e) => setProfileData((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="BunnyCure es un estudio especializado en manicura rusa, esmaltado permanente y cuidado de uñas..."
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                />
+                <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
+                  Se muestra en la ficha de empresa de WhatsApp Business.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                type="submit"
+                disabled={savingProfile}
+                isLoading={savingProfile}
+                leftIcon={<FiSave />}
+              >
+                Guardar Perfil en Meta WhatsApp
               </Button>
             </div>
-          </Form>
+          </form>
         </Card.Body>
       </Card>
 
       {/* ─── 3. VISOR DE PLANTILLAS META EN TIEMPO REAL ─── */}
-      <Card className="shadow-sm border-0 mb-4">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div className="d-flex align-items-center gap-2">
-            <FiLayers className="text-primary fs-5" />
-            <h5 className="mb-0 fs-6 fw-bold">Plantillas Registradas en Meta ({templates.length})</h5>
+      <Card>
+        <Card.Header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white py-3.5">
+          <div className="flex items-center gap-2">
+            <FiLayers className="text-bunny-primary text-lg" />
+            <h3 className="text-sm font-bold text-bunny-text leading-tight">
+              Plantillas Registradas en Meta ({templates.length})
+            </h3>
           </div>
 
-          <div className="d-flex gap-2">
-            <Form.Select
-              size="sm"
+          <div className="flex gap-2">
+            <select
               value={templateFilter}
               onChange={(e) => setTemplateFilter(e.target.value)}
-              style={{ width: '160px' }}
+              className="rounded-xl border border-bunny-border bg-white px-3 py-1.5 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             >
               <option value="ALL">Todas ({templates.length})</option>
               <option value="UTILITY">Utilidad (Operativas)</option>
               <option value="MARKETING">Marketing</option>
-            </Form.Select>
+            </select>
           </div>
         </Card.Header>
         <Card.Body className="p-0">
           {templates.length === 0 ? (
-            <div className="p-4 text-center text-muted small">
+            <div className="p-6 text-center text-bunny-text-muted text-xs">
               No se detectaron plantillas en la cuenta o falta consultar Meta Graph API.
             </div>
           ) : (
-            <div className="table-responsive">
-              <Table hover className="mb-0 align-middle">
-                <thead className="table-light">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                   <tr>
-                    <th>Nombre de la Plantilla</th>
-                    <th>Categoría</th>
-                    <th>Estado Meta</th>
-                    <th>Idioma</th>
-                    <th>Botones y Acciones</th>
+                    <th className="py-3 px-4">Nombre de la Plantilla</th>
+                    <th className="py-3 px-4">Categoría</th>
+                    <th className="py-3 px-4">Estado Meta</th>
+                    <th className="py-3 px-4">Idioma</th>
+                    <th className="py-3 px-4">Botones y Acciones</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-bunny-border/30">
                   {filteredTemplates.map((tpl) => {
                     const buttonsComponent = tpl.components?.find((c) => c.type === 'BUTTONS');
                     const buttons = buttonsComponent?.buttons || [];
 
                     return (
-                      <tr key={tpl.name}>
-                        <td>
-                          <div className="fw-bold font-monospace text-dark">{tpl.name}</div>
+                      <tr key={tpl.name} className="hover:bg-bunny-paper/40 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-bold font-mono text-bunny-text">{tpl.name}</div>
                           {tpl.name === 'recordatorio_cita' && (
-                            <span className="small text-muted">Recordatorio 24h / 2h con confirmación y reprogramación</span>
+                            <span className="text-[11px] text-bunny-text-muted block mt-0.5">Recordatorio 24h / 2h con confirmación y reprogramación</span>
                           )}
                           {tpl.name === 'confirmacion_cita' && (
-                            <span className="small text-muted">Aviso de cita confirmada + fidelización</span>
+                            <span className="text-[11px] text-bunny-text-muted block mt-0.5">Aviso de cita confirmada + fidelización</span>
                           )}
                           {tpl.name === 'confirmacion_hora' && (
-                            <span className="small text-muted">Alerta interna a especialista / admin</span>
+                            <span className="text-[11px] text-bunny-text-muted block mt-0.5">Alerta interna a especialista / admin</span>
                           )}
                           {tpl.name === 'cancelacion_cita' && (
-                            <span className="small text-muted">Aviso de cancelación + enlace a reagendar</span>
+                            <span className="text-[11px] text-bunny-text-muted block mt-0.5">Aviso de cancelación + enlace a reagendar</span>
                           )}
                           {tpl.name === 'valoracion_servicio_google' && (
-                            <span className="small text-muted">Solicitud de reseña en Google Maps</span>
+                            <span className="text-[11px] text-bunny-text-muted block mt-0.5">Solicitud de reseña en Google Maps</span>
                           )}
                         </td>
-                        <td>
-                          <Badge bg={tpl.category === 'UTILITY' ? 'info' : 'primary'} className="text-dark fw-semibold">
+                        <td className="py-3 px-4">
+                          <Badge variant={tpl.category === 'UTILITY' ? 'info' : 'primary'}>
                             {tpl.category}
                           </Badge>
                         </td>
-                        <td>{getTemplateStatusBadge(tpl.status)}</td>
-                        <td>
-                          <span className="badge bg-light text-dark border font-monospace">{tpl.language}</span>
+                        <td className="py-3 px-4">{getTemplateStatusBadge(tpl.status)}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-block px-2 py-0.5 rounded border border-bunny-border bg-slate-50 font-mono text-[11px]">
+                            {tpl.language}
+                          </span>
                         </td>
-                        <td>
+                        <td className="py-3 px-4">
                           {buttons.length === 0 ? (
-                            <span className="text-muted small">Sin botones</span>
+                            <span className="text-bunny-text-muted">Sin botones</span>
                           ) : (
-                            <div className="d-flex gap-1 flex-wrap">
+                            <div className="flex gap-1 flex-wrap">
                               {buttons.map((btn, idx) => (
-                                <Badge key={idx} bg="secondary" className="fw-normal">
+                                <Badge key={idx} variant="neutral">
                                   {btn.text} ({btn.type})
                                 </Badge>
                               ))}
@@ -382,7 +416,7 @@ export const WhatsAppMetaSection: React.FC = () => {
                     );
                   })}
                 </tbody>
-              </Table>
+              </table>
             </div>
           )}
         </Card.Body>

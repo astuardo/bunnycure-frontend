@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Modal, Form, Badge } from 'react-bootstrap';
+import { Modal } from '@/components/ui/Modal';
+import { Badge } from '@/components/ui/Badge';
 import { useNavigate } from 'react-router-dom';
 import {
   FiSearch,
@@ -307,31 +308,13 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
       onHide={onHide}
       size="lg"
       centered
-      dialogClassName="spotlight-modal-dialog"
-      contentClassName="border-0 shadow-lg"
-      style={{ backdropFilter: 'blur(4px)' }}
+      className="spotlight-modal-dialog"
     >
-      <div
-        style={{
-          borderRadius: '16px',
-          overflow: 'hidden',
-          background: '#ffffff',
-          boxShadow: '0 12px 40px rgba(92, 61, 46, 0.25)',
-        }}
-      >
+      <div className="overflow-hidden bg-white rounded-2xl shadow-bunny-lg">
         {/* Input de Búsqueda */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '16px 20px',
-            borderBottom: '1px solid #eed0c5',
-            background: '#fdf6f3',
-            gap: '12px',
-          }}
-        >
-          <FiSearch style={{ fontSize: '22px', color: '#8c2a3e', flexShrink: 0 }} />
-          <Form.Control
+        <div className="flex items-center p-4 border-b border-bunny-border bg-bunny-paper/60 gap-3">
+          <FiSearch className="text-xl text-bunny-primary flex-shrink-0" />
+          <input
             ref={inputRef}
             type="text"
             placeholder="Buscar clienta, RUT, cita, servicio o acción rápida..."
@@ -341,26 +324,9 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              fontSize: '16px',
-              color: '#422314',
-              boxShadow: 'none',
-              padding: 0,
-              fontWeight: 500,
-            }}
+            className="w-full bg-transparent border-0 text-base text-bunny-text placeholder:text-bunny-cocoa-light/60 focus:outline-none font-medium p-0"
           />
-          <Badge
-            bg="light"
-            text="dark"
-            style={{
-              border: '1px solid #eed0c5',
-              fontSize: '11px',
-              padding: '4px 8px',
-              color: '#8c6052',
-            }}
-          >
+          <Badge variant="neutral" className="text-[11px] font-mono px-2 py-0.5">
             ESC
           </Badge>
         </div>
@@ -468,15 +434,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
 
                     <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
                       {item.badge && (
-                        <Badge
-                          bg="light"
-                          text="dark"
-                          style={{
-                            fontSize: '10.5px',
-                            border: '1px solid #eed0c5',
-                            fontWeight: 500,
-                          }}
-                        >
+                        <Badge variant="neutral" className="text-[10px] font-medium">
                           {item.badge}
                         </Badge>
                       )}

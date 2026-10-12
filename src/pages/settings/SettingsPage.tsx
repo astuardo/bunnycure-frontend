@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge, Nav, InputGroup } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   FiSave, 
@@ -47,6 +46,10 @@ import {
   setPublicBookingEnabled,
 } from '../../utils/bookingSettingsUtils';
 import { useTenant } from '../../context/TenantContext';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Spinner } from '@/components/ui/Spinner';
 
 interface BusinessSettings {
   businessName: string;
@@ -150,133 +153,132 @@ const dayNames: Record<keyof BusinessSettings['workingHours'], string> = {
   sunday: 'Domingo',
 };
 
-type SettingsTab = 'identity' | 'hours' | 'blocks' | 'booking' | 'whatsapp' | 'notifications' | 'loyalty';
+type TabType = 'identity' | 'hours' | 'blocks' | 'booking' | 'whatsapp' | 'notifications' | 'loyalty';
 
 export default function SettingsPage() {
+  const toast = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = (searchParams.get('tab') as SettingsTab) || 'identity';
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
-  
-  const toast = useToast();
   const { tenant, refreshTenant } = useTenant();
+
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
-  const [loading, setLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [hasChanges, setHasChanges] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [publicBookingEnabled, setPublicBookingEnabledState] = useState<boolean>(getPublicBookingEnabled());
+
+  const activeTab = (searchParams.get('tab') as TabType) || 'identity';
+
   const { permission, requestPermission, sendTestNotification } = useNotificationPermission();
 
-  useEffect(() => {
-    const tabParam = searchParams.get('tab') as SettingsTab;
-    if (tabParam) setActiveTab(tabParam);
-  }, [searchParams]);
-
-  const handleTabChange = (tab: SettingsTab) => {
-    setActiveTab(tab);
+  const handleTabChange = (tab: TabType) => {
     setSearchParams({ tab });
   };
 
-  const handleTogglePublicBooking = async (checked: boolean) => {
-    setPublicBookingEnabledState(checked);
-    await setPublicBookingEnabled(checked);
-    if (checked) {
-      toast.success('✅ Portal público de reservas (/reservar) habilitado');
-    } else {
-      toast.info('⏸️ Portal público de reservas (/reservar) pausado');
-    }
+  const handleTogglePublicBooking = (enabled: boolean) => {
+    setPublicBookingEnabled(enabled);
+    setPublicBookingEnabledState(enabled);
+    toast.success(
+      enabled 
+        ? 'Portal público de reservas activado' 
+        : 'Portal público de reservas pausado'
+    );
   };
 
   const loadSettings = useCallback(async () => {
-    setLoading(true);
+    setInitialLoading(true);
     try {
-      const serverSettings = await settingsApi.getAll();
-      const cachedUnavailabilities = loadCachedUnavailabilities();
-      const cachedUnavailabilityColors = loadCachedUnavailabilityColors();
-      const cachedUnavailabilityNotifications = loadCachedUnavailabilityNotifications();
-
-      const rawStoredCalendarDisplay = localStorage.getItem(CALENDAR_DISPLAY_STORAGE_KEY);
-      let parsedCalendarDisplay = defaultSettings.calendarDisplay;
-      if (rawStoredCalendarDisplay) {
-        try {
-          parsedCalendarDisplay = {
-            ...defaultSettings.calendarDisplay,
-            ...JSON.parse(rawStoredCalendarDisplay),
+      const data = await settingsApi.getAll();
+      
+      let savedCalendarDisplay = DEFAULT_CALENDAR_DISPLAY_CONFIG;
+      try {
+        const rawCalendarDisplay = localStorage.getItem(CALENDAR_DISPLAY_STORAGE_KEY);
+        if (rawCalendarDisplay) {
+          savedCalendarDisplay = {
+            ...DEFAULT_CALENDAR_DISPLAY_CONFIG,
+            ...JSON.parse(rawCalendarDisplay),
           };
-        } catch {
-          // ignore
         }
+      } catch (err) {
+        console.warn('Error reading calendarDisplay config:', err);
       }
 
       setSettings({
-        businessName: serverSettings.businessName || tenant.name || 'BunnyCure',
-        slogan: 'Arte en tus manos ✨',
-        email: serverSettings.businessEmail || tenant.email || 'contacto@bunnycure.cl',
-        phone: serverSettings.businessPhone || tenant.phone || '+56983692046',
-        address: serverSettings.businessAddress || tenant.address || 'Santiago, Chile',
-        customDomain: tenant.customDomain || 'app.bunnycure.cl',
-        slug: tenant.slug || 'bunnycure',
-        logoUrl: tenant.logoUrl || '/images/logo.png',
-        primaryColor: tenant.primaryColor || '#d48b70',
+        businessName: data.businessName || tenant?.name || defaultSettings.businessName,
+        slogan: defaultSettings.slogan,
+        email: data.businessEmail || defaultSettings.email,
+        phone: data.businessPhone || defaultSettings.phone,
+        address: data.businessAddress || defaultSettings.address,
+        customDomain: tenant?.customDomain || defaultSettings.customDomain,
+        slug: tenant?.slug || defaultSettings.slug,
+        logoUrl: tenant?.logoUrl || defaultSettings.logoUrl,
+        primaryColor: tenant?.primaryColor || defaultSettings.primaryColor,
         workingHours: {
-          monday: {
-            start: serverSettings.mondayStart || '09:00',
-            end: serverSettings.mondayEnd || '18:00',
-            enabled: serverSettings.mondayEnabled ?? true,
+          monday: { 
+            start: data.mondayStart || '09:00', 
+            end: data.mondayEnd || '18:00', 
+            enabled: data.mondayEnabled ?? true 
           },
-          tuesday: {
-            start: serverSettings.tuesdayStart || '09:00',
-            end: serverSettings.tuesdayEnd || '18:00',
-            enabled: serverSettings.tuesdayEnabled ?? true,
+          tuesday: { 
+            start: data.tuesdayStart || '09:00', 
+            end: data.tuesdayEnd || '18:00', 
+            enabled: data.tuesdayEnabled ?? true 
           },
-          wednesday: {
-            start: serverSettings.wednesdayStart || '09:00',
-            end: serverSettings.wednesdayEnd || '18:00',
-            enabled: serverSettings.wednesdayEnabled ?? true,
+          wednesday: { 
+            start: data.wednesdayStart || '09:00', 
+            end: data.wednesdayEnd || '18:00', 
+            enabled: data.wednesdayEnabled ?? true 
           },
-          thursday: {
-            start: serverSettings.thursdayStart || '09:00',
-            end: serverSettings.thursdayEnd || '18:00',
-            enabled: serverSettings.thursdayEnabled ?? true,
+          thursday: { 
+            start: data.thursdayStart || '09:00', 
+            end: data.thursdayEnd || '18:00', 
+            enabled: data.thursdayEnabled ?? true 
           },
-          friday: {
-            start: serverSettings.fridayStart || '09:00',
-            end: serverSettings.fridayEnd || '18:00',
-            enabled: serverSettings.fridayEnabled ?? true,
+          friday: { 
+            start: data.fridayStart || '09:00', 
+            end: data.fridayEnd || '18:00', 
+            enabled: data.fridayEnabled ?? true 
           },
-          saturday: {
-            start: serverSettings.saturdayStart || '09:00',
-            end: serverSettings.saturdayEnd || '14:00',
-            enabled: serverSettings.saturdayEnabled ?? true,
+          saturday: { 
+            start: data.saturdayStart || '09:00', 
+            end: data.saturdayEnd || '14:00', 
+            enabled: data.saturdayEnabled ?? true 
           },
-          sunday: {
-            start: serverSettings.sundayStart || '10:00',
-            end: serverSettings.sundayEnd || '14:00',
-            enabled: serverSettings.sundayEnabled ?? false,
+          sunday: { 
+            start: data.sundayStart || '10:00', 
+            end: data.sundayEnd || '14:00', 
+            enabled: data.sundayEnabled ?? false 
           },
         },
-        appointmentDuration: serverSettings.appointmentDuration || 60,
-        notificationsEnabled: serverSettings.emailNotificationsEnabled ?? true,
+        appointmentDuration: data.appointmentDuration || 60,
+        notificationsEnabled: data.emailNotificationsEnabled ?? true,
         whatsappEnabled: true,
-        whatsappPhone: serverSettings.whatsappNumber || '+56983692046',
-        reminderStrategy: serverSettings.reminderStrategy || 'TWO_HOURS',
-        reminderHoursAhead: serverSettings.reminderHoursAhead ?? 12,
-        whatsappHandoffEnabled: serverSettings.whatsappHandoffEnabled ?? true,
-        whatsappHumanNumber: serverSettings.whatsappHumanNumber || '+56983692046',
-        whatsappHumanDisplayName: serverSettings.whatsappHumanDisplayName || 'Atención BunnyCure',
-        whatsappHandoffClientMessage: serverSettings.whatsappHandoffClientMessage || defaultSettings.whatsappHandoffClientMessage,
-        whatsappHandoffAdminPrefill: serverSettings.whatsappHandoffAdminPrefill || defaultSettings.whatsappHandoffAdminPrefill,
-        unavailabilities: serverSettings.unavailabilities || cachedUnavailabilities,
-        unavailabilityColors: serverSettings.unavailabilityColors || cachedUnavailabilityColors,
-        unavailabilityNotifications: serverSettings.unavailabilityNotifications || cachedUnavailabilityNotifications,
-        calendarDisplay: parsedCalendarDisplay,
+        whatsappPhone: data.whatsappNumber || data.businessPhone || defaultSettings.whatsappPhone,
+        reminderStrategy: data.reminderStrategy || 'TWO_HOURS',
+        reminderHoursAhead: data.reminderHoursAhead ?? 12,
+        whatsappHandoffEnabled: data.whatsappHandoffEnabled ?? true,
+        whatsappHumanNumber: data.whatsappHumanNumber || defaultSettings.whatsappHumanNumber,
+        whatsappHumanDisplayName: data.whatsappHumanDisplayName || defaultSettings.whatsappHumanDisplayName,
+        whatsappHandoffClientMessage: data.whatsappHandoffClientMessage || defaultSettings.whatsappHandoffClientMessage,
+        whatsappHandoffAdminPrefill: data.whatsappHandoffAdminPrefill || defaultSettings.whatsappHandoffAdminPrefill,
+        unavailabilities: data.unavailabilities && data.unavailabilities.length > 0 
+          ? data.unavailabilities 
+          : loadCachedUnavailabilities(),
+        unavailabilityColors: data.unavailabilityColors 
+          ? data.unavailabilityColors 
+          : loadCachedUnavailabilityColors(),
+        unavailabilityNotifications: data.unavailabilityNotifications 
+          ? data.unavailabilityNotifications 
+          : loadCachedUnavailabilityNotifications(),
+        calendarDisplay: savedCalendarDisplay,
       });
       setHasChanges(false);
     } catch (error) {
       console.error('Error loading settings:', error);
       toast.error('Error al cargar la configuración');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   }, [tenant, toast]);
 
@@ -284,18 +286,15 @@ export default function SettingsPage() {
     loadSettings();
   }, [loadSettings]);
 
-  const handleChange = <K extends keyof BusinessSettings>(
-    key: K,
-    value: BusinessSettings[K]
-  ) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+  const handleChange = (field: keyof BusinessSettings, value: any) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
 
   const handleWorkingHoursChange = (
     day: keyof BusinessSettings['workingHours'],
     field: 'start' | 'end' | 'enabled',
-    value: string | boolean
+    value: any
   ) => {
     setSettings(prev => ({
       ...prev,
@@ -384,7 +383,6 @@ export default function SettingsPage() {
       await settingsApi.saveAll(settingsData);
       localStorage.setItem(CALENDAR_DISPLAY_STORAGE_KEY, JSON.stringify(settings.calendarDisplay));
       
-      // Actualizar variables de branding si cambió el color primario
       if (settings.primaryColor) {
         document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
         document.documentElement.style.setProperty('--bs-primary', settings.primaryColor);
@@ -430,334 +428,298 @@ export default function SettingsPage() {
     toast.success('Notificación de prueba enviada');
   };
 
+  const tabs: Array<{ key: TabType; label: string; icon: React.ReactNode }> = [
+    { key: 'identity', label: 'Identidad & Marca', icon: <FiGlobe /> },
+    { key: 'hours', label: 'Horarios & Agenda', icon: <FiClock /> },
+    { key: 'blocks', label: 'Bloqueos & Feriados', icon: <FiSlash /> },
+    { key: 'booking', label: 'Portal de Reservas', icon: <FiEye /> },
+    { key: 'whatsapp', label: 'WhatsApp & Handoff', icon: <FaWhatsapp /> },
+    { key: 'notifications', label: 'Notificaciones', icon: <FiBell /> },
+    { key: 'loyalty', label: 'Fidelización', icon: <FiAward /> },
+  ];
+
+  if (initialLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center py-24 text-bunny-text-muted">
+          <Spinner size="lg" className="mb-3" />
+          <p className="text-sm font-medium">Cargando configuración del salón...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page pb-5">
+      <div className="space-y-6 pb-12">
         {/* Encabezado y Barra de Guardado */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="mb-1 d-flex align-items-center gap-2">
-              <FiSettings className="text-primary" />
+            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+              <FiSettings className="text-bunny-primary" />
               Configuración del Salón
             </h1>
-            <p className="text-muted mb-0 small">
+            <p className="text-sm text-bunny-text-muted mt-1">
               Administra la identidad de tu negocio, horarios de atención, WhatsApp y portal de reservas
             </p>
           </div>
 
-          <div className="d-flex gap-2 w-100 w-md-auto flex-wrap">
-            <Button
-              as="a"
+          <div className="flex flex-wrap items-center gap-2">
+            <a
               href="/reservar"
               target="_blank"
               rel="noopener noreferrer"
-              variant="outline-secondary"
-              className="d-flex align-items-center gap-2 flex-fill flex-md-grow-0"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-bunny-border bg-white text-bunny-text hover:bg-bunny-paper transition-all"
             >
               <FiExternalLink />
               <span>Ver Portal Público</span>
-            </Button>
+            </a>
             <Button
-              variant="primary"
               onClick={handleSave}
               disabled={!hasChanges || loading}
-              className="d-flex align-items-center justify-content-center gap-2 flex-fill flex-md-grow-0 shadow-sm"
+              isLoading={loading}
+              leftIcon={<FiSave />}
             >
-              {loading ? (
-                <>
-                  <Spinner animation="border" size="sm" />
-                  <span>Guardando...</span>
-                </>
-              ) : (
-                <>
-                  <FiSave />
-                  <span>Guardar Cambios</span>
-                </>
-              )}
+              Guardar Cambios
             </Button>
           </div>
         </div>
 
         {hasChanges && (
-          <Alert variant="warning" className="d-flex justify-content-between align-items-center mb-4 shadow-sm border-0">
+          <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm text-xs">
             <div>
               <strong>⚠️ Tienes modificaciones pendientes:</strong> Recuerda pulsar <strong>"Guardar Cambios"</strong> para que surtan efecto en el sistema.
             </div>
             <Button size="sm" variant="warning" onClick={handleSave} disabled={loading}>
               Guardar ahora
             </Button>
-          </Alert>
+          </div>
         )}
 
         {/* Pestañas de Configuración */}
-        <Nav variant="pills" className="mb-4 gap-2 flex-wrap bg-white p-2 rounded-3 shadow-sm border">
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'identity'} 
-              onClick={() => handleTabChange('identity')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
+        <div className="flex flex-wrap gap-1.5 p-1.5 bg-white rounded-2xl shadow-bunny border border-bunny-border">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => handleTabChange(tab.key)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === tab.key
+                  ? 'bg-bunny-primary text-white shadow-sm'
+                  : 'text-bunny-text hover:bg-bunny-paper'
+              }`}
             >
-              <FiGlobe />
-              <span>Identidad &amp; Marca</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'hours'} 
-              onClick={() => handleTabChange('hours')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
-            >
-              <FiClock />
-              <span>Horarios &amp; Agenda</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'blocks'} 
-              onClick={() => handleTabChange('blocks')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
-            >
-              <FiSlash />
-              <span>Bloqueos &amp; Feriados</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'booking'} 
-              onClick={() => handleTabChange('booking')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
-            >
-              <FiEye />
-              <span>Portal de Reservas</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'whatsapp'} 
-              onClick={() => handleTabChange('whatsapp')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
-            >
-              <FaWhatsapp />
-              <span>WhatsApp &amp; Handoff</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'notifications'} 
-              onClick={() => handleTabChange('notifications')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
-            >
-              <FiBell />
-              <span>Notificaciones</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'loyalty'} 
-              onClick={() => handleTabChange('loyalty')}
-              className="d-flex align-items-center gap-2 py-2 px-3"
-            >
-              <FiAward />
-              <span>Fidelización</span>
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 1: IDENTIDAD & MARCA
-        ───────────────────────────────────────────────────────────────────────────── */}
+        {/* TAB 1: IDENTIDAD & MARCA */}
         {activeTab === 'identity' && (
-          <Row>
-            <Col lg={7} className="mb-4">
-              <Card className="shadow-sm border-0 h-100">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">🏢 Datos Generales del Salón</h5>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7">
+              <Card className="h-full">
+                <Card.Header>
+                  <Card.Title>🏢 Datos Generales del Salón</Card.Title>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <Row className="g-3">
-                    <Col md={12}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Nombre Comercial del Salón</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={settings.businessName}
-                          onChange={(e) => handleChange('businessName', e.target.value)}
-                          placeholder="Ej: BunnyCure Studio"
-                        />
-                      </Form.Group>
-                    </Col>
+                <Card.Body className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      Nombre Comercial del Salón
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.businessName}
+                      onChange={(e) => handleChange('businessName', e.target.value)}
+                      placeholder="Ej: BunnyCure Studio"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                    />
+                  </div>
 
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Correo Electrónico Oficial</Form.Label>
-                        <Form.Control
-                          type="email"
-                          value={settings.email}
-                          onChange={(e) => handleChange('email', e.target.value)}
-                          placeholder="contacto@bunnycure.cl"
-                        />
-                      </Form.Group>
-                    </Col>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        Correo Electrónico Oficial
+                      </label>
+                      <input
+                        type="email"
+                        value={settings.email}
+                        onChange={(e) => handleChange('email', e.target.value)}
+                        placeholder="contacto@bunnycure.cl"
+                        className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        Teléfono / WhatsApp Oficial
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.phone}
+                        onChange={(e) => handleChange('phone', e.target.value)}
+                        placeholder="+56983692046"
+                        className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      />
+                    </div>
+                  </div>
 
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Teléfono / WhatsApp Oficial</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={settings.phone}
-                          onChange={(e) => handleChange('phone', e.target.value)}
-                          placeholder="+56983692046"
-                        />
-                      </Form.Group>
-                    </Col>
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      Dirección Física del Salón
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.address}
+                      onChange={(e) => handleChange('address', e.target.value)}
+                      placeholder="Av. Providencia 1234, Oficina 502, Santiago"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                    />
+                  </div>
 
-                    <Col md={12}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Dirección Física del Salón</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={settings.address}
-                          onChange={(e) => handleChange('address', e.target.value)}
-                          placeholder="Av. Providencia 1234, Oficina 502, Santiago"
-                        />
-                      </Form.Group>
-                    </Col>
-
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Dominio Propio (Custom Domain)</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={settings.customDomain}
-                          disabled
-                          className="bg-light text-muted"
-                          placeholder="app.bunnycure.cl"
-                        />
-                        <Form.Text className="text-muted">
-                          Configurado en el plan Multi-Tenant SaaS.
-                        </Form.Text>
-                      </Form.Group>
-                    </Col>
-
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Identificador (Slug)</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={settings.slug}
-                          disabled
-                          className="bg-light text-muted"
-                          placeholder="bunnycure"
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        Dominio Propio (Custom Domain)
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.customDomain}
+                        disabled
+                        placeholder="app.bunnycure.cl"
+                        className="w-full rounded-xl border border-bunny-border bg-slate-50 px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed"
+                      />
+                      <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
+                        Configurado en el plan Multi-Tenant SaaS.
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        Identificador (Slug)
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.slug}
+                        disabled
+                        placeholder="bunnycure"
+                        className="w-full rounded-xl border border-bunny-border bg-slate-50 px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
                 </Card.Body>
               </Card>
-            </Col>
+            </div>
 
-            {/* Selector de Color y Vista Previa de Marca */}
-            <Col lg={5} className="mb-4">
-              <Card className="shadow-sm border-0 mb-4">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">🎨 Color y Branding</h5>
+            <div className="lg:col-span-5">
+              <Card>
+                <Card.Header>
+                  <Card.Title>🎨 Color y Branding</Card.Title>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Color Primario de Marca</Form.Label>
-                    <div className="d-flex align-items-center gap-3">
-                      <Form.Control
+                <Card.Body className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                      Color Primario de Marca
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
                         type="color"
                         value={settings.primaryColor}
                         onChange={(e) => handleChange('primaryColor', e.target.value)}
-                        style={{ width: '60px', height: '42px', padding: '2px', cursor: 'pointer' }}
+                        className="w-14 h-10 rounded-xl border border-bunny-border p-1 cursor-pointer bg-white"
                         title="Seleccionar color"
                       />
-                      <Form.Control
+                      <input
                         type="text"
                         value={settings.primaryColor}
                         onChange={(e) => handleChange('primaryColor', e.target.value)}
                         placeholder="#d48b70"
-                        style={{ fontFamily: 'monospace' }}
+                        className="flex-1 font-mono rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                       />
                     </div>
-                  </Form.Group>
+                  </div>
 
-                  <div className="p-3 bg-light rounded-3 mt-3 border">
-                    <small className="text-muted d-block fw-bold mb-2">VISTA PREVIA EN VIVO</small>
-                    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
-                      <Button style={{ backgroundColor: settings.primaryColor, borderColor: settings.primaryColor, color: '#fff' }}>
+                  <div className="p-4 bg-bunny-paper/40 rounded-xl border border-bunny-border mt-3">
+                    <span className="text-[10px] text-bunny-text-muted font-bold block uppercase tracking-wider mb-2">
+                      VISTA PREVIA EN VIVO
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <button
+                        type="button"
+                        style={{ backgroundColor: settings.primaryColor }}
+                        className="px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-sm"
+                      >
                         Botón Principal
-                      </Button>
-                      <Badge style={{ backgroundColor: settings.primaryColor, color: '#fff' }} className="p-2">
+                      </button>
+                      <span
+                        style={{ backgroundColor: settings.primaryColor }}
+                        className="px-2.5 py-1 rounded-full text-white text-xs font-semibold"
+                      >
                         Insignia de Estado
-                      </Badge>
+                      </span>
                     </div>
-                    <small className="text-muted">
+                    <p className="text-[11px] text-bunny-text-muted mt-2">
                       Este color se aplicará dinámicamente a todos los botones, títulos y componentes de la PWA.
-                    </small>
+                    </p>
                   </div>
                 </Card.Body>
               </Card>
-            </Col>
-          </Row>
+            </div>
+          </div>
         )}
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 2: HORARIOS & AGENDA
-        ───────────────────────────────────────────────────────────────────────────── */}
+        {/* TAB 2: HORARIOS & AGENDA */}
         {activeTab === 'hours' && (
-          <Row>
-            <Col lg={8} className="mb-4">
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-light py-3 d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0 fs-6 fw-bold">🕒 Horarios de Atención Semanales</h5>
-                  <Badge bg="secondary">Zona Horaria: Santiago (CLT)</Badge>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8">
+              <Card>
+                <Card.Header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <Card.Title>🕒 Horarios de Atención Semanales</Card.Title>
+                  <Badge variant="neutral">Zona Horaria: Santiago (CLT)</Badge>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <div className="table-responsive">
-                    <table className="table align-middle">
-                      <thead>
+                <Card.Body className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                         <tr>
-                          <th style={{ width: '140px' }}>Día</th>
-                          <th style={{ width: '120px' }}>Estado</th>
-                          <th>Apertura</th>
-                          <th>Cierre</th>
+                          <th className="py-3 px-4 w-32">Día</th>
+                          <th className="py-3 px-4 w-32">Estado</th>
+                          <th className="py-3 px-4">Apertura</th>
+                          <th className="py-3 px-4">Cierre</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-bunny-border/30">
                         {(Object.keys(settings.workingHours) as Array<keyof BusinessSettings['workingHours']>).map((day) => {
                           const hours = settings.workingHours[day];
                           return (
-                            <tr key={day} className={!hours.enabled ? 'text-muted bg-light' : ''}>
-                              <td className="fw-semibold">{dayNames[day]}</td>
-                              <td>
-                                <Form.Check
-                                  type="switch"
-                                  id={`switch-${day}`}
-                                  label={hours.enabled ? 'Abierto' : 'Cerrado'}
-                                  checked={hours.enabled}
-                                  onChange={(e) => handleWorkingHoursChange(day, 'enabled', e.target.checked)}
-                                />
+                            <tr key={day} className={`hover:bg-bunny-paper/40 transition-colors ${!hours.enabled ? 'bg-slate-50/70 text-slate-400' : ''}`}>
+                              <td className="py-3 px-4 font-semibold text-bunny-text">{dayNames[day]}</td>
+                              <td className="py-3 px-4">
+                                <label className="flex items-center gap-2 cursor-pointer font-medium text-xs">
+                                  <input
+                                    type="checkbox"
+                                    className="w-4 h-4 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary"
+                                    checked={hours.enabled}
+                                    onChange={(e) => handleWorkingHoursChange(day, 'enabled', e.target.checked)}
+                                  />
+                                  <span>{hours.enabled ? 'Abierto' : 'Cerrado'}</span>
+                                </label>
                               </td>
-                              <td>
-                                <Form.Control
+                              <td className="py-3 px-4">
+                                <input
                                   type="time"
-                                  size="sm"
                                   value={hours.start}
                                   disabled={!hours.enabled}
                                   onChange={(e) => handleWorkingHoursChange(day, 'start', e.target.value)}
-                                  style={{ maxWidth: '130px' }}
+                                  className="w-32 rounded-lg border border-bunny-border bg-white px-2.5 py-1 text-xs text-bunny-text focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:bg-slate-100 disabled:text-slate-400"
                                 />
                               </td>
-                              <td>
-                                <Form.Control
+                              <td className="py-3 px-4">
+                                <input
                                   type="time"
-                                  size="sm"
                                   value={hours.end}
                                   disabled={!hours.enabled}
                                   onChange={(e) => handleWorkingHoursChange(day, 'end', e.target.value)}
-                                  style={{ maxWidth: '130px' }}
+                                  className="w-32 rounded-lg border border-bunny-border bg-white px-2.5 py-1 text-xs text-bunny-text focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:bg-slate-100 disabled:text-slate-400"
                                 />
                               </td>
                             </tr>
@@ -768,19 +730,22 @@ export default function SettingsPage() {
                   </div>
                 </Card.Body>
               </Card>
-            </Col>
+            </div>
 
-            <Col lg={4} className="mb-4">
-              <Card className="shadow-sm border-0 mb-4">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">⏱️ Duración de Citas</h5>
+            <div className="lg:col-span-4 space-y-6">
+              <Card>
+                <Card.Header>
+                  <Card.Title>⏱️ Duración de Citas</Card.Title>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <Form.Group>
-                    <Form.Label className="fw-semibold">Duración Estándar (Minutos)</Form.Label>
-                    <Form.Select
+                <Card.Body className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      Duración Estándar (Minutos)
+                    </label>
+                    <select
                       value={settings.appointmentDuration}
                       onChange={(e) => handleChange('appointmentDuration', Number(e.target.value))}
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     >
                       <option value={30}>30 minutos</option>
                       <option value={45}>45 minutos</option>
@@ -788,435 +753,426 @@ export default function SettingsPage() {
                       <option value={75}>75 minutos</option>
                       <option value={90}>90 minutos (1.5 horas)</option>
                       <option value={120}>120 minutos (2 horas)</option>
-                    </Form.Select>
-                    <Form.Text className="text-muted">
+                    </select>
+                    <span className="text-[11px] text-bunny-text-muted mt-1 block">
                       Se utiliza como bloque predeterminado al agendar nuevas citas.
-                    </Form.Text>
-                  </Form.Group>
+                    </span>
+                  </div>
                 </Card.Body>
               </Card>
 
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">🎨 Franjas del Calendario</h5>
+              <Card>
+                <Card.Header>
+                  <Card.Title>🎨 Franjas del Calendario</Card.Title>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <div className="d-flex flex-column gap-3">
-                    <div>
-                      <label className="small fw-semibold text-muted d-block mb-1">MAÑANA</label>
-                      <div className="d-flex align-items-center gap-2">
-                        <Form.Control
-                          type="time"
-                          size="sm"
-                          value={settings.calendarDisplay.morning.start}
-                          onChange={(e) => handleCalendarDisplayChange('morning', 'start', e.target.value)}
-                        />
-                        <span>a</span>
-                        <Form.Control
-                          type="time"
-                          size="sm"
-                          value={settings.calendarDisplay.morning.end}
-                          onChange={(e) => handleCalendarDisplayChange('morning', 'end', e.target.value)}
-                        />
-                        <Form.Control
-                          type="color"
-                          value={settings.calendarDisplay.morning.color}
-                          onChange={(e) => handleCalendarDisplayChange('morning', 'color', e.target.value)}
-                          style={{ width: '45px', height: '31px', padding: '1px' }}
-                        />
-                      </div>
+                <Card.Body className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
+                      MAÑANA
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={settings.calendarDisplay.morning.start}
+                        onChange={(e) => handleCalendarDisplayChange('morning', 'start', e.target.value)}
+                        className="w-24 rounded-lg border border-bunny-border px-2 py-1 text-xs"
+                      />
+                      <span className="text-xs text-bunny-text-muted">a</span>
+                      <input
+                        type="time"
+                        value={settings.calendarDisplay.morning.end}
+                        onChange={(e) => handleCalendarDisplayChange('morning', 'end', e.target.value)}
+                        className="w-24 rounded-lg border border-bunny-border px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="color"
+                        value={settings.calendarDisplay.morning.color}
+                        onChange={(e) => handleCalendarDisplayChange('morning', 'color', e.target.value)}
+                        className="w-10 h-8 rounded-lg border border-bunny-border cursor-pointer p-0.5 bg-white"
+                      />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="small fw-semibold text-muted d-block mb-1">TARDE</label>
-                      <div className="d-flex align-items-center gap-2">
-                        <Form.Control
-                          type="time"
-                          size="sm"
-                          value={settings.calendarDisplay.afternoon.start}
-                          onChange={(e) => handleCalendarDisplayChange('afternoon', 'start', e.target.value)}
-                        />
-                        <span>a</span>
-                        <Form.Control
-                          type="time"
-                          size="sm"
-                          value={settings.calendarDisplay.afternoon.end}
-                          onChange={(e) => handleCalendarDisplayChange('afternoon', 'end', e.target.value)}
-                        />
-                        <Form.Control
-                          type="color"
-                          value={settings.calendarDisplay.afternoon.color}
-                          onChange={(e) => handleCalendarDisplayChange('afternoon', 'color', e.target.value)}
-                          style={{ width: '45px', height: '31px', padding: '1px' }}
-                        />
-                      </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
+                      TARDE
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={settings.calendarDisplay.afternoon.start}
+                        onChange={(e) => handleCalendarDisplayChange('afternoon', 'start', e.target.value)}
+                        className="w-24 rounded-lg border border-bunny-border px-2 py-1 text-xs"
+                      />
+                      <span className="text-xs text-bunny-text-muted">a</span>
+                      <input
+                        type="time"
+                        value={settings.calendarDisplay.afternoon.end}
+                        onChange={(e) => handleCalendarDisplayChange('afternoon', 'end', e.target.value)}
+                        className="w-24 rounded-lg border border-bunny-border px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="color"
+                        value={settings.calendarDisplay.afternoon.color}
+                        onChange={(e) => handleCalendarDisplayChange('afternoon', 'color', e.target.value)}
+                        className="w-10 h-8 rounded-lg border border-bunny-border cursor-pointer p-0.5 bg-white"
+                      />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="small fw-semibold text-muted d-block mb-1">NOCHE</label>
-                      <div className="d-flex align-items-center gap-2">
-                        <Form.Control
-                          type="time"
-                          size="sm"
-                          value={settings.calendarDisplay.night.start}
-                          onChange={(e) => handleCalendarDisplayChange('night', 'start', e.target.value)}
-                        />
-                        <span>a</span>
-                        <Form.Control
-                          type="time"
-                          size="sm"
-                          value={settings.calendarDisplay.night.end}
-                          onChange={(e) => handleCalendarDisplayChange('night', 'end', e.target.value)}
-                        />
-                        <Form.Control
-                          type="color"
-                          value={settings.calendarDisplay.night.color}
-                          onChange={(e) => handleCalendarDisplayChange('night', 'color', e.target.value)}
-                          style={{ width: '45px', height: '31px', padding: '1px' }}
-                        />
-                      </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
+                      NOCHE
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={settings.calendarDisplay.night.start}
+                        onChange={(e) => handleCalendarDisplayChange('night', 'start', e.target.value)}
+                        className="w-24 rounded-lg border border-bunny-border px-2 py-1 text-xs"
+                      />
+                      <span className="text-xs text-bunny-text-muted">a</span>
+                      <input
+                        type="time"
+                        value={settings.calendarDisplay.night.end}
+                        onChange={(e) => handleCalendarDisplayChange('night', 'end', e.target.value)}
+                        className="w-24 rounded-lg border border-bunny-border px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="color"
+                        value={settings.calendarDisplay.night.color}
+                        onChange={(e) => handleCalendarDisplayChange('night', 'color', e.target.value)}
+                        className="w-10 h-8 rounded-lg border border-bunny-border cursor-pointer p-0.5 bg-white"
+                      />
                     </div>
                   </div>
                 </Card.Body>
               </Card>
-            </Col>
-          </Row>
+            </div>
+          </div>
         )}
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 3: BLOQUEOS & FERIADOS
-        ───────────────────────────────────────────────────────────────────────────── */}
+        {/* TAB 3: BLOQUEOS & FERIADOS */}
         {activeTab === 'blocks' && (
-          <Row>
-            <Col lg={12}>
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">🚫 Bloqueos de Agenda, Feriados y Excepciones</h5>
-                </Card.Header>
-                <Card.Body className="p-4">
-                  <ScheduleUnavailabilitySection
-                    unavailabilities={settings.unavailabilities}
-                    colors={settings.unavailabilityColors}
-                    notifications={settings.unavailabilityNotifications}
-                    onUnavailabilitiesChange={(unavailabilities: ScheduleUnavailability[]) => {
-                      setSettings((prev) => ({ ...prev, unavailabilities }));
-                      setHasChanges(true);
-                    }}
-                    onColorsChange={(unavailabilityColors) => {
-                      setSettings((prev) => ({ ...prev, unavailabilityColors }));
-                      setHasChanges(true);
-                    }}
-                    onNotificationsChange={(unavailabilityNotifications) => {
-                      setSettings((prev) => ({ ...prev, unavailabilityNotifications }));
-                      setHasChanges(true);
-                    }}
-                  />
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+          <ScheduleUnavailabilitySection
+            unavailabilities={settings.unavailabilities}
+            colors={settings.unavailabilityColors}
+            notifications={settings.unavailabilityNotifications}
+            onUnavailabilitiesChange={(unavailabilities: ScheduleUnavailability[]) => {
+              setSettings((prev) => ({ ...prev, unavailabilities }));
+              setHasChanges(true);
+            }}
+            onColorsChange={(unavailabilityColors) => {
+              setSettings((prev) => ({ ...prev, unavailabilityColors }));
+              setHasChanges(true);
+            }}
+            onNotificationsChange={(unavailabilityNotifications) => {
+              setSettings((prev) => ({ ...prev, unavailabilityNotifications }));
+              setHasChanges(true);
+            }}
+          />
         )}
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 4: PORTAL DE RESERVAS
-        ───────────────────────────────────────────────────────────────────────────── */}
+        {/* TAB 4: PORTAL DE RESERVAS */}
         {activeTab === 'booking' && (
-          <Row>
-            <Col lg={8} className="mb-4">
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">🌐 Portal Público de Agendamiento</h5>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8">
+              <Card>
+                <Card.Header>
+                  <Card.Title>🌐 Portal Público de Agendamiento</Card.Title>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 mb-4 border">
+                <Card.Body className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-bunny-paper/40 rounded-xl border border-bunny-border">
                     <div>
-                      <h6 className="mb-1 fw-bold">Estado del Portal de Reservas</h6>
-                      <p className="text-muted mb-0 small">
+                      <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider">
+                        Estado del Portal de Reservas
+                      </h4>
+                      <p className="text-xs text-bunny-text-muted mt-0.5">
                         Permite a tus clientas agendar citas directamente desde tu página web oficial.
                       </p>
                     </div>
-                    <Form.Check
-                      type="switch"
-                      id="public-booking-switch"
-                      checked={publicBookingEnabled}
-                      onChange={(e) => handleTogglePublicBooking(e.target.checked)}
-                      style={{ fontSize: '1.2rem' }}
-                    />
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={publicBookingEnabled}
+                        onChange={(e) => handleTogglePublicBooking(e.target.checked)}
+                        className="w-5 h-5 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary cursor-pointer"
+                      />
+                    </label>
                   </div>
 
-                  <Form.Group className="mb-4">
-                    <Form.Label className="fw-semibold">Enlace Directo de Reservas</Form.Label>
-                    <InputGroup>
-                      <Form.Control
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                      Enlace Directo de Reservas
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
                         type="text"
                         value={`${window.location.origin}/reservar`}
                         readOnly
-                        className="bg-light"
+                        className="flex-1 rounded-xl border border-bunny-border bg-slate-50 px-3.5 py-2 text-xs font-mono text-bunny-text"
                       />
-                      <Button 
-                        variant={copiedLink ? "success" : "outline-primary"}
-                        onClick={handleCopyBookingLink}
-                        className="d-flex align-items-center gap-2"
-                      >
-                        {copiedLink ? <FiCheck /> : <FiCopy />}
-                        <span>{copiedLink ? 'Copiado' : 'Copiar'}</span>
-                      </Button>
                       <Button
-                        as="a"
+                        variant={copiedLink ? "success" : "outline"}
+                        size="sm"
+                        onClick={handleCopyBookingLink}
+                        leftIcon={copiedLink ? <FiCheck /> : <FiCopy />}
+                      >
+                        {copiedLink ? 'Copiado' : 'Copiar'}
+                      </Button>
+                      <a
                         href="/reservar"
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="primary"
-                        className="d-flex align-items-center gap-2"
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-bunny-primary text-white hover:bg-bunny-primary-hover shadow-bunny transition-all"
                       >
                         <FiExternalLink />
                         <span>Abrir</span>
-                      </Button>
-                    </InputGroup>
-                    <Form.Text className="text-muted">
+                      </a>
+                    </div>
+                    <span className="text-[11px] text-bunny-text-muted mt-1 block">
                       Comparte este link en tu biografía de Instagram, WhatsApp o sitio web.
-                    </Form.Text>
-                  </Form.Group>
+                    </span>
+                  </div>
                 </Card.Body>
               </Card>
-            </Col>
+            </div>
 
-            <Col lg={4} className="mb-4">
-              <Card className="shadow-sm border-0 bg-primary text-white">
-                <Card.Body className="p-4">
-                  <h5 className="text-white fw-bold mb-3">📱 Experiencia de la Clienta</h5>
-                  <p className="small mb-3 text-white-50">
-                    El portal de reservas está optimizado para teléfonos móviles (PWA). Permite selección de servicios, horarios disponibles, verificación de teléfono y descarga de tarjeta a Google Wallet.
-                  </p>
-                  <Button 
-                    variant="light" 
-                    className="w-100 text-primary fw-bold"
-                    as="a"
-                    href="/reservar"
-                    target="_blank"
-                  >
-                    Probar Flujo de Reserva
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+            <div className="lg:col-span-4">
+              <div className="rounded-2xl shadow-bunny p-6 text-white bg-gradient-to-br from-bunny-primary to-bunny-cocoa-dark">
+                <h3 className="text-base font-bold mb-2">📱 Experiencia de la Clienta</h3>
+                <p className="text-xs text-white/90 leading-relaxed mb-4">
+                  El portal de reservas está optimizado para teléfonos móviles (PWA). Permite selección de servicios, horarios disponibles, verificación de teléfono y descarga de tarjeta a Google Wallet.
+                </p>
+                <a
+                  href="/reservar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-bunny-primary text-xs font-bold shadow-sm hover:bg-white/90 transition-all"
+                >
+                  Probar Flujo de Reserva
+                </a>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 5: WHATSAPP & HANDOFF
-        ───────────────────────────────────────────────────────────────────────────── */}
+        {/* TAB 5: WHATSAPP & HANDOFF */}
         {activeTab === 'whatsapp' && (
-          <div>
-            {/* Sección Visual Meta WhatsApp (Salud, Perfil y Plantillas) */}
+          <div className="space-y-6">
             <WhatsAppMetaSection />
 
-            <Row>
-              <Col lg={8} className="mb-4">
-                <Card className="shadow-sm border-0">
-                  <Card.Header className="bg-light py-3">
-                    <h5 className="mb-0 fs-6 fw-bold">💬 Asistente WhatsApp &amp; Derivación Humana</h5>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8">
+                <Card>
+                  <Card.Header>
+                    <Card.Title>💬 Asistente WhatsApp &amp; Derivación Humana</Card.Title>
                   </Card.Header>
-                <Card.Body className="p-4">
-                  <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 mb-4 border">
-                    <div>
-                      <h6 className="mb-1 fw-bold">Habilitar Derivación a Operadora (Handoff)</h6>
-                      <p className="text-muted mb-0 small">
-                        Cuando el cliente solicita hablar con una persona, el bot envía un enlace de contacto directo.
-                      </p>
+                  <Card.Body className="space-y-4">
+                    <div className="flex justify-between items-center p-4 bg-bunny-paper/40 rounded-xl border border-bunny-border">
+                      <div>
+                        <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider">
+                          Habilitar Derivación a Operadora (Handoff)
+                        </h4>
+                        <p className="text-xs text-bunny-text-muted mt-0.5">
+                          Cuando el cliente solicita hablar con una persona, el bot envía un enlace de contacto directo.
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.whatsappHandoffEnabled}
+                        onChange={(e) => handleChange('whatsappHandoffEnabled', e.target.checked)}
+                        className="w-5 h-5 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary cursor-pointer"
+                      />
                     </div>
-                    <Form.Check
-                      type="switch"
-                      id="whatsapp-handoff-switch"
-                      checked={settings.whatsappHandoffEnabled}
-                      onChange={(e) => handleChange('whatsappHandoffEnabled', e.target.checked)}
-                      style={{ fontSize: '1.2rem' }}
-                    />
-                  </div>
 
-                  <Row className="g-3 mb-3">
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Teléfono de Derivación (Operadora)</Form.Label>
-                        <Form.Control
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                          Teléfono de Derivación (Operadora)
+                        </label>
+                        <input
                           type="text"
                           value={settings.whatsappHumanNumber}
                           onChange={(e) => handleChange('whatsappHumanNumber', e.target.value)}
                           placeholder="+56983692046"
+                          className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                         />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-semibold">Nombre Visible de la Operadora</Form.Label>
-                        <Form.Control
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                          Nombre Visible de la Operadora
+                        </label>
+                        <input
                           type="text"
                           value={settings.whatsappHumanDisplayName}
                           onChange={(e) => handleChange('whatsappHumanDisplayName', e.target.value)}
                           placeholder="Atención BunnyCure"
+                          className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                         />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Mensaje de Derivación al Cliente</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      value={settings.whatsappHandoffClientMessage}
-                      onChange={(e) => handleChange('whatsappHandoffClientMessage', e.target.value)}
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Prefijo de Asistencia Pre-rellenado</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={settings.whatsappHandoffAdminPrefill}
-                      onChange={(e) => handleChange('whatsappHandoffAdminPrefill', e.target.value)}
-                    />
-                  </Form.Group>
-
-                  <hr className="my-4" />
-
-                  <h6 className="fw-bold mb-3">⏰ Estrategia de Recordatorios Automáticos</h6>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="small text-muted mb-1">Momento del recordatorio</Form.Label>
-                    <Form.Select
-                      value={settings.reminderStrategy}
-                      onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
-                    >
-                      <option value="TWO_HOURS">Horas antes de la cita (Configurable)</option>
-                      <option value="MORNING">En la mañana del mismo día (08:30 AM)</option>
-                      <option value="DAY_BEFORE">El día anterior (18:00 PM)</option>
-                      <option value="BOTH">Doble recordatorio (Día anterior + Horas antes)</option>
-                    </Form.Select>
-                  </Form.Group>
-
-                  {(settings.reminderStrategy === 'TWO_HOURS' || settings.reminderStrategy === 'BOTH') && (
-                    <Form.Group className="p-3 bg-light rounded-3 border mb-3">
-                      <Form.Label className="fw-semibold small d-block mb-2">
-                        ⏰ Horas de anticipación del recordatorio previo:
-                      </Form.Label>
-                      <div className="d-flex align-items-center gap-2 mb-2">
-                        <Form.Control
-                          type="number"
-                          min={1}
-                          max={72}
-                          style={{ maxWidth: '120px' }}
-                          value={settings.reminderHoursAhead ?? 12}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            handleChange('reminderHoursAhead', isNaN(val) ? 12 : Math.max(1, Math.min(72, val)));
-                          }}
-                        />
-                        <span className="fw-semibold text-secondary">horas antes de la cita</span>
                       </div>
-                      <div className="d-flex flex-wrap gap-2 mb-2">
-                        {[1, 2, 6, 12, 24].map((hours) => (
-                          <Button
-                            key={hours}
-                            size="sm"
-                            variant={settings.reminderHoursAhead === hours ? "primary" : "outline-secondary"}
-                            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-                            onClick={() => handleChange('reminderHoursAhead', hours)}
-                          >
-                            {hours}h
-                          </Button>
-                        ))}
-                      </div>
-                      <Form.Text className="text-muted small d-block">
-                        El recordatorio automático se enviará cuando falten aproximadamente <strong>{settings.reminderHoursAhead ?? 12} horas</strong> para la cita.
-                      </Form.Text>
-                    </Form.Group>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-        )}
+                    </div>
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 6: NOTIFICACIONES & PLANTILLAS
-        ───────────────────────────────────────────────────────────────────────────── */}
-        {activeTab === 'notifications' && (
-          <Row>
-            <Col lg={12} className="mb-4">
-              <Card className="shadow-sm border-0 mb-4">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">🔔 Notificaciones Web Push (Navegador)</h5>
-                </Card.Header>
-                <Card.Body className="p-4">
-                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 p-3 bg-light rounded-3 border">
                     <div>
-                      <h6 className="mb-1 fw-bold">Alertas en Tiempo Real en tu Computador o Móvil</h6>
-                      <p className="text-muted mb-0 small">
-                        Estado actual: <strong>{permission === 'granted' ? '✅ Concedido' : permission === 'denied' ? '❌ Denegado' : '⏳ Pendiente'}</strong>
-                      </p>
+                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        Mensaje de Derivación al Cliente
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={settings.whatsappHandoffClientMessage}
+                        onChange={(e) => handleChange('whatsappHandoffClientMessage', e.target.value)}
+                        className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      />
                     </div>
-                    <div className="d-flex gap-2">
-                      <Button
-                        variant="outline-primary"
-                        onClick={handleRequestNotificationPermission}
-                      >
-                        Solicitar Permisos
-                      </Button>
-                      <Button
-                        variant="outline-secondary"
-                        onClick={handleSendTestNotification}
-                        disabled={permission !== 'granted'}
-                      >
-                        Enviar Prueba
-                      </Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
 
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-light py-3">
-                  <h5 className="mb-0 fs-6 fw-bold">📝 Plantillas de Mensajes WhatsApp</h5>
-                </Card.Header>
-                <Card.Body className="p-4">
-                  <NotificationTemplatesSection />
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                    <div>
+                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        Prefijo de Asistencia Pre-rellenado
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.whatsappHandoffAdminPrefill}
+                        onChange={(e) => handleChange('whatsappHandoffAdminPrefill', e.target.value)}
+                        className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      />
+                    </div>
+
+                    <hr className="border-bunny-border/50" />
+
+                    <div>
+                      <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider mb-2">
+                        ⏰ Estrategia de Recordatorios Automáticos
+                      </h4>
+                      <div>
+                        <label className="text-[11px] text-bunny-text-muted mb-1 block">Momento del recordatorio</label>
+                        <select
+                          value={settings.reminderStrategy}
+                          onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
+                          className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                        >
+                          <option value="TWO_HOURS">Horas antes de la cita (Configurable)</option>
+                          <option value="MORNING">En la mañana del mismo día (08:30 AM)</option>
+                          <option value="DAY_BEFORE">El día anterior (18:00 PM)</option>
+                          <option value="BOTH">Doble recordatorio (Día anterior + Horas antes)</option>
+                        </select>
+                      </div>
+
+                      {(settings.reminderStrategy === 'TWO_HOURS' || settings.reminderStrategy === 'BOTH') && (
+                        <div className="p-4 bg-bunny-paper/40 rounded-xl border border-bunny-border mt-3 space-y-2">
+                          <label className="text-xs font-semibold text-bunny-text block">
+                            ⏰ Horas de anticipación del recordatorio previo:
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={1}
+                              max={72}
+                              value={settings.reminderHoursAhead ?? 12}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                handleChange('reminderHoursAhead', isNaN(val) ? 12 : Math.max(1, Math.min(72, val)));
+                              }}
+                              className="w-24 rounded-lg border border-bunny-border bg-white px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                            />
+                            <span className="text-xs text-bunny-text-muted">horas antes de la cita</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {[1, 2, 6, 12, 24].map((hours) => (
+                              <button
+                                key={hours}
+                                type="button"
+                                className={`text-[11px] px-2.5 py-0.5 rounded-lg border font-medium transition-all ${
+                                  settings.reminderHoursAhead === hours
+                                    ? 'bg-bunny-primary text-white border-bunny-primary'
+                                    : 'bg-white border-bunny-border text-bunny-text hover:bg-bunny-paper'
+                                }`}
+                                onClick={() => handleChange('reminderHoursAhead', hours)}
+                              >
+                                {hours}h
+                              </button>
+                            ))}
+                          </div>
+                          <span className="text-[11px] text-bunny-text-muted block mt-1">
+                            El recordatorio automático se enviará cuando falten aproximadamente <strong>{settings.reminderHoursAhead ?? 12} horas</strong> para la cita.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </Card.Body>
+                </Card>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* ─────────────────────────────────────────────────────────────────────────────
-            TAB 7: PROGRAMA DE FIDELIZACIÓN
-        ───────────────────────────────────────────────────────────────────────────── */}
+        {/* TAB 6: NOTIFICACIONES & PLANTILLAS */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            <Card>
+              <Card.Header>
+                <Card.Title>🔔 Notificaciones Web Push (Navegador)</Card.Title>
+              </Card.Header>
+              <Card.Body>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-bunny-border bg-bunny-paper/40">
+                  <div>
+                    <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider">
+                      Alertas en Tiempo Real en tu Computador o Móvil
+                    </h4>
+                    <p className="text-xs text-bunny-text-muted mt-0.5">
+                      Estado actual: <strong>{permission === 'granted' ? '✅ Concedido' : permission === 'denied' ? '❌ Denegado' : '⏳ Pendiente'}</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRequestNotificationPermission}
+                    >
+                      Solicitar Permisos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSendTestNotification}
+                      disabled={permission !== 'granted'}
+                    >
+                      Enviar Prueba
+                    </Button>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+
+            <NotificationTemplatesSection />
+          </div>
+        )}
+
+        {/* TAB 7: PROGRAMA DE FIDELIZACIÓN */}
         {activeTab === 'loyalty' && (
-          <Row>
-            <Col lg={8} className="mb-4">
-              <Card className="shadow-sm border-0">
-                <Card.Header className="bg-primary text-white py-3">
-                  <h5 className="mb-0 fs-6 fw-bold text-white">⭐ Configuración de Fidelización &amp; Sellos</h5>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8">
+              <Card>
+                <Card.Header>
+                  <Card.Title>⭐ Configuración de Fidelización &amp; Sellos</Card.Title>
                 </Card.Header>
-                <Card.Body className="p-4">
-                  <p className="mb-3">
+                <Card.Body className="space-y-4">
+                  <p className="text-xs text-bunny-text leading-relaxed">
                     El sistema de fidelización de BunnyCure acumula sellos en las visitas 1 a 10. Al alcanzar 10 sellos, la visita #11 aplica un premio exclusivo configurable.
                   </p>
-                  <div className="d-flex gap-3">
+                  <div>
                     <Button 
-                      variant="primary" 
                       onClick={() => navigate('/settings/loyalty')}
-                      className="d-flex align-items-center gap-2"
+                      leftIcon={<FiAward />}
                     >
-                      <FiAward />
-                      <span>Gestionar Premios y Ranking de Clientas</span>
+                      Gestionar Premios y Ranking de Clientas
                     </Button>
                   </div>
                 </Card.Body>
               </Card>
-            </Col>
-          </Row>
+            </div>
+          </div>
         )}
-      </Container>
+      </div>
     </DashboardLayout>
   );
 }

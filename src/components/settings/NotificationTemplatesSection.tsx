@@ -4,10 +4,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, Form, Button, Badge, Alert, Spinner } from 'react-bootstrap';
 import { FaBell, FaSave, FaUndo } from 'react-icons/fa';
 import { appSettingsApi } from '../../api/appSettings.api';
 import { useToast } from '../../hooks/useToast';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Spinner } from '@/components/ui/Spinner';
 
 interface NotificationTemplates {
   defaultTitle: string;
@@ -105,182 +108,184 @@ export function NotificationTemplatesSection() {
 
   if (loading) {
     return (
-      <Card className="mb-4">
-        <Card.Body className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Cargando templates...</p>
+      <Card className="mb-6">
+        <Card.Body className="text-center py-12">
+          <Spinner size="md" className="mx-auto mb-2" />
+          <p className="text-xs text-bunny-text-muted">Cargando templates...</p>
         </Card.Body>
       </Card>
     );
   }
 
   return (
-    <Card className="mb-4 shadow-sm">
-      <Card.Header className="bg-primary text-white d-flex align-items-center">
-        <FaBell className="me-2" />
-        <h5 className="mb-0">Templates de Notificaciones Push</h5>
+    <Card className="mb-6">
+      <Card.Header className="flex items-center gap-2">
+        <FaBell className="text-bunny-primary" />
+        <Card.Title>Templates de Notificaciones Push</Card.Title>
       </Card.Header>
       
-      <Card.Body>
-        <Alert variant="info" className="d-flex align-items-start">
-          <FaBell className="me-2 mt-1" />
+      <Card.Body className="space-y-6">
+        <div className="p-4 rounded-xl border border-purple-200 bg-purple-50 text-purple-900 text-xs flex items-start gap-3">
+          <FaBell className="mt-1 flex-shrink-0" />
           <div>
             <strong>Variables disponibles:</strong>
-            <div className="mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-2">
               {VARIABLES.map((v, idx) => (
-                <Badge 
-                  key={idx} 
-                  bg="secondary" 
-                  className="me-2 mb-2"
-                  style={{ cursor: 'pointer' }}
+                <span
+                  key={idx}
                   title={v.description}
+                  className="inline-block"
                 >
-                  {v.name}
-                </Badge>
+                  <Badge variant="neutral" className="cursor-pointer hover:bg-slate-200 transition-colors">
+                    {v.name}
+                  </Badge>
+                </span>
               ))}
             </div>
-            <small className="text-muted">Haz clic en una variable para copiarla</small>
+            <p className="text-[11px] text-purple-700 mt-1">Haz clic en una variable para ver su descripción</p>
           </div>
-        </Alert>
+        </div>
 
         {/* Template por defecto */}
-        <div className="mb-4">
-          <h6 className="text-primary mb-3">📬 Notificación Estándar</h6>
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold text-bunny-primary uppercase tracking-wider">
+            📬 Notificación Estándar
+          </h4>
           
-          <Form.Group className="mb-3">
-            <Form.Label>Título</Form.Label>
-            <Form.Control
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+              Título
+            </label>
+            <input
               type="text"
               value={templates.defaultTitle}
               onChange={(e) => handleChange('defaultTitle', e.target.value)}
               placeholder="Recordatorio de Cita"
               maxLength={50}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             />
-            <Form.Text className="text-muted">
+            <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
               {templates.defaultTitle.length}/50 caracteres
-            </Form.Text>
-          </Form.Group>
+            </span>
+          </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Mensaje</Form.Label>
-            <Form.Control
-              as="textarea"
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+              Mensaje
+            </label>
+            <textarea
               rows={3}
               value={templates.defaultBody}
               onChange={(e) => handleChange('defaultBody', e.target.value)}
               placeholder="Hola {customerName}, tienes una cita..."
               maxLength={200}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             />
-            <Form.Text className="text-muted">
+            <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
               {templates.defaultBody.length}/200 caracteres
-            </Form.Text>
-          </Form.Group>
+            </span>
+          </div>
         </div>
 
-        <hr />
+        <hr className="border-bunny-border/50" />
 
         {/* Template 2 horas */}
-        <div className="mb-4">
-          <h6 className="text-primary mb-3">⏰ Notificación 2 Horas Antes</h6>
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold text-bunny-primary uppercase tracking-wider">
+            ⏰ Notificación 2 Horas Antes
+          </h4>
           
-          <Form.Group className="mb-3">
-            <Form.Label>Título</Form.Label>
-            <Form.Control
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+              Título
+            </label>
+            <input
               type="text"
               value={templates.twoHourTitle}
               onChange={(e) => handleChange('twoHourTitle', e.target.value)}
               placeholder="¡Tu cita es pronto!"
               maxLength={50}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             />
-            <Form.Text className="text-muted">
+            <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
               {templates.twoHourTitle.length}/50 caracteres
-            </Form.Text>
-          </Form.Group>
+            </span>
+          </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Mensaje</Form.Label>
-            <Form.Control
-              as="textarea"
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+              Mensaje
+            </label>
+            <textarea
               rows={3}
               value={templates.twoHourBody}
               onChange={(e) => handleChange('twoHourBody', e.target.value)}
               placeholder="Tu cita es en {minutesUntil} minutos..."
               maxLength={200}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             />
-            <Form.Text className="text-muted">
+            <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
               {templates.twoHourBody.length}/200 caracteres
-            </Form.Text>
-          </Form.Group>
+            </span>
+          </div>
         </div>
 
         {/* Preview */}
-        <div className="mb-4">
+        <div>
           <Button 
-            variant="outline-secondary" 
+            variant="outline" 
             size="sm" 
             onClick={() => setShowPreview(!showPreview)}
-            className="mb-3"
           >
             {showPreview ? '🙈 Ocultar' : '👁️ Ver'} Vista Previa
           </Button>
 
           {showPreview && (
-            <>
-              <Alert variant="light" className="border">
-                <div className="mb-3">
-                  <strong>📬 Notificación Estándar:</strong>
-                  <div className="p-3 bg-white border rounded mt-2">
-                    <div className="fw-bold">{getPreviewText(templates.defaultTitle)}</div>
-                    <div className="text-muted small">{getPreviewText(templates.defaultBody)}</div>
-                  </div>
+            <div className="p-4 rounded-xl border border-bunny-border bg-bunny-paper/40 space-y-4 mt-3">
+              <div>
+                <strong className="text-xs text-bunny-text uppercase tracking-wider">📬 Notificación Estándar:</strong>
+                <div className="p-3 bg-white border border-bunny-border rounded-xl mt-1.5 shadow-sm">
+                  <div className="font-bold text-xs text-bunny-text">{getPreviewText(templates.defaultTitle)}</div>
+                  <div className="text-xs text-bunny-text-muted mt-0.5">{getPreviewText(templates.defaultBody)}</div>
                 </div>
-                
-                <div>
-                  <strong>⏰ Notificación 2 Horas:</strong>
-                  <div className="p-3 bg-white border rounded mt-2">
-                    <div className="fw-bold">{getPreviewText(templates.twoHourTitle)}</div>
-                    <div className="text-muted small">{getPreviewText(templates.twoHourBody)}</div>
-                  </div>
+              </div>
+              
+              <div>
+                <strong className="text-xs text-bunny-text uppercase tracking-wider">⏰ Notificación 2 Horas:</strong>
+                <div className="p-3 bg-white border border-bunny-border rounded-xl mt-1.5 shadow-sm">
+                  <div className="font-bold text-xs text-bunny-text">{getPreviewText(templates.twoHourTitle)}</div>
+                  <div className="text-xs text-bunny-text-muted mt-0.5">{getPreviewText(templates.twoHourBody)}</div>
                 </div>
-              </Alert>
-            </>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Botones de acción */}
-        <div className="d-flex gap-2">
+        <div className="flex items-center gap-2 pt-2">
           <Button
-            variant="primary"
             onClick={handleSave}
             disabled={!hasChanges || saving}
+            isLoading={saving}
+            leftIcon={<FaSave />}
           >
-            {saving ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <FaSave className="me-2" />
-                Guardar Cambios
-              </>
-            )}
+            Guardar Cambios
           </Button>
 
           <Button
-            variant="outline-secondary"
+            variant="outline"
             onClick={handleReset}
             disabled={saving}
+            leftIcon={<FaUndo />}
           >
-            <FaUndo className="me-2" />
             Restaurar Defaults
           </Button>
         </div>
 
         {hasChanges && (
-          <Alert variant="warning" className="mt-3 mb-0">
-            <small>⚠️ Tienes cambios sin guardar</small>
-          </Alert>
+          <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs">
+            ⚠️ Tienes cambios sin guardar
+          </div>
         )}
       </Card.Body>
     </Card>
