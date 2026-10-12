@@ -1,12 +1,12 @@
 /**
- * Componente para proteger rutas que requieren autenticación.
+ * Componente para proteger rutas que requieren autenticación (Migrado a Tailwind CSS)
  * Redirige a /login si el usuario no está autenticado.
  */
 
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
+import { Spinner } from './ui/Spinner';
 
 const FORCE_RELOGIN_KEY = 'bunnycure-force-relogin-build-id';
 
@@ -34,7 +34,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       console.log('🔍 Verificando autenticación...');
       checkAuth();
     }
-  }, [location.pathname, isAuthenticated, user, checkAuth, forceRelogin]); // Incluir todas las dependencias
+  }, [location.pathname, isAuthenticated, user, checkAuth, forceRelogin]);
 
   if (forceRelogin) {
     sessionStorage.setItem('redirectAfterLogin', location.pathname);
@@ -44,12 +44,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Mostrar loader mientras verifica
   if (isLoading) {
     return (
-      <Container className="d-flex justify-content-center align-items-center min-vh-100">
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Verificando autenticación...</p>
+      <div className="min-h-screen min-h-[100dvh] bg-bunny-primary-light flex items-center justify-center p-4">
+        <div className="text-center flex flex-col items-center gap-3">
+          <Spinner size="lg" variant="primary" />
+          <p className="text-sm font-medium text-bunny-text-muted">Verificando autenticación...</p>
         </div>
-      </Container>
+      </div>
     );
   }
 

@@ -1,56 +1,63 @@
-import { Alert, Button } from 'react-bootstrap'
-import { usePWA } from '../utils/pwa'
+import { Button } from './ui/Button';
+import { usePWA } from '../utils/pwa';
 
 /**
- * Componente que muestra un banner cuando hay una actualización disponible
- * o cuando la app está lista para funcionar offline
+ * Componente que muestra un banner flotante cuando hay una actualización disponible
+ * o cuando la app está lista para funcionar offline (Migrado a Tailwind CSS)
  */
 export function PWAUpdatePrompt() {
-  const { needRefresh, offlineReady, update, close } = usePWA()
+  const { needRefresh, offlineReady, update, close } = usePWA();
 
   if (!needRefresh && !offlineReady) {
-    return null
+    return null;
   }
 
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        left: 0,
-        zIndex: 9999,
-        padding: '1rem'
-      }}
+    <aside
+      aria-label="Notificación de actualización de la aplicación"
+      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-[9999]"
     >
       {needRefresh && (
-        <Alert variant="info" className="d-flex justify-content-between align-items-center mb-0">
-          <div>
-            <strong>🎉 Nueva versión disponible</strong>
-            <p className="mb-0 small">Actualiza para obtener las últimas funcionalidades</p>
+        <div className="bg-white border border-bunny-border rounded-2xl shadow-bunny-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex-1">
+            <h6 className="font-bold text-sm text-bunny-text flex items-center gap-1.5">
+              <span>🎉</span> Nueva versión disponible
+            </h6>
+            <p className="text-xs text-bunny-text-muted mt-0.5">
+              Actualiza para obtener las últimas funcionalidades y mejoras.
+            </p>
           </div>
-          <div className="d-flex gap-2">
-            <Button variant="primary" size="sm" onClick={update}>
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <Button variant="primary" size="sm" onClick={update} className="flex-1 sm:flex-initial">
               Actualizar
             </Button>
-            <Button variant="outline-secondary" size="sm" onClick={close}>
+            <Button variant="outline" size="sm" onClick={close} className="flex-1 sm:flex-initial">
               Más tarde
             </Button>
           </div>
-        </Alert>
+        </div>
       )}
 
       {offlineReady && !needRefresh && (
-        <Alert variant="success" className="d-flex justify-content-between align-items-center mb-0">
+        <div className="bg-white border border-emerald-200 rounded-2xl shadow-bunny-lg p-4 flex items-center justify-between gap-3">
           <div>
-            <strong>✅ App lista para funcionar offline</strong>
-            <p className="mb-0 small">Ahora puedes usar BunnyCure sin conexión</p>
+            <h6 className="font-bold text-sm text-emerald-900 flex items-center gap-1.5">
+              <span>✅</span> Lista para funcionar offline
+            </h6>
+            <p className="text-xs text-emerald-700 mt-0.5">
+              Ahora puedes usar BunnyCure sin conexión a internet.
+            </p>
           </div>
-          <Button variant="outline-success" size="sm" onClick={close}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={close}
+            className="shrink-0 border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+          >
             Entendido
           </Button>
-        </Alert>
+        </div>
       )}
-    </div>
-  )
+    </aside>
+  );
 }

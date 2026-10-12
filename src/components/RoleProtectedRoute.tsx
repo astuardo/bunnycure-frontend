@@ -1,7 +1,7 @@
 import React from 'react';
-import { Container, Card, Button } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
 import ProtectedRoute from './ProtectedRoute';
+import { Card, CardBody, Button } from './ui';
 import { isSalonAdmin, isSpecialist, isReceptionist, isSuperAdmin } from '../types/user.types';
 
 interface RoleProtectedRouteProps {
@@ -41,20 +41,27 @@ export default function RoleProtectedRoute({ children, allowedRoles }: RoleProte
       {hasAccess() ? (
         children
       ) : (
-        <Container className="py-5">
-          <Card className="border-0 shadow-sm text-center p-5 mx-auto" style={{ maxWidth: '540px', borderRadius: '16px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
-            <h4 className="fw-bold text-dark mb-2">Acceso Restringido</h4>
-            <p className="text-muted mb-4">
-              Tu cuenta con rol <strong>{user?.role}</strong> no dispone de permisos para ingresar a este módulo.
-            </p>
-            <div>
-              <Button variant="primary" onClick={() => window.location.href = '/dashboard'} className="px-4 py-2 rounded-pill fw-semibold">
-                Volver al Dashboard
-              </Button>
-            </div>
+        <div className="min-h-[70vh] flex items-center justify-center p-4">
+          <Card className="w-full max-w-lg text-center shadow-bunny-lg border-bunny-border">
+            <CardBody className="p-8 sm:p-10">
+              <div className="text-5xl mb-4 select-none">🔒</div>
+              <h4 className="text-2xl font-bold text-bunny-text mb-2">Acceso Restringido</h4>
+              <p className="text-sm text-bunny-text-muted mb-6 leading-relaxed">
+                Tu cuenta con rol <strong className="font-semibold text-bunny-text">{user?.role}</strong> no dispone de permisos para ingresar a este módulo.
+              </p>
+              <div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => (window.location.href = '/dashboard')}
+                  className="rounded-full px-6"
+                >
+                  Volver al Dashboard
+                </Button>
+              </div>
+            </CardBody>
           </Card>
-        </Container>
+        </div>
       )}
     </ProtectedRoute>
   );

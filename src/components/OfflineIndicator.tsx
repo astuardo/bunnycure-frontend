@@ -1,26 +1,25 @@
-import { Alert } from 'react-bootstrap'
-import { useOnlineStatus } from '../utils/pwa'
+import { useOnlineStatus } from '../utils/pwa';
 
 /**
- * Indicador de estado offline
- * Muestra un banner cuando la app pierde conexión
+ * Indicador de estado offline (Migrado a Tailwind CSS)
+ * Muestra un banner sticky superior cuando la app pierde conexión
  */
 export function OfflineIndicator() {
-  const isOnline = useOnlineStatus()
+  const isOnline = useOnlineStatus();
 
   if (isOnline) {
-    return null
+    return null;
   }
 
   return (
-    <Alert 
-      variant="warning" 
-      className="mb-0 rounded-0 text-center py-2"
-      style={{ position: 'sticky', top: 0, zIndex: 1050 }}
+    <div
+      role="alert"
+      className="sticky top-0 z-[1050] bg-amber-600 text-white text-center py-2 px-4 shadow-md text-xs sm:text-sm font-medium flex items-center justify-center gap-2 tracking-wide"
     >
-      <small>
-        📡 <strong>Sin conexión</strong> - Estás trabajando en modo offline
-      </small>
-    </Alert>
-  )
+      <span className="text-base">📡</span>
+      <span>
+        <strong>Sin conexión</strong> — Estás trabajando en modo offline. Los datos se sincronizarán al reconectar.
+      </span>
+    </div>
+  );
 }
