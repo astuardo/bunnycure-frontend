@@ -1,11 +1,14 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Container, Row, Col, Card, Form, Button, ListGroup, Table, Badge, ProgressBar, Spinner } from 'react-bootstrap';
+import { useEffect, useState, useMemo, type ReactNode } from 'react';
 import { Plus, Trash2, Trophy, Search, ExternalLink, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../../components/common/DashboardLayout';
-import { useLoyaltyStore } from '../../stores/loyaltyStore';
-import { useCustomersStore } from '../../stores/customersStore';
-import { formatRutWithDots } from '../../utils/rutUtils';
+import DashboardLayout from '@/components/common/DashboardLayout';
+import { useLoyaltyStore } from '@/stores/loyaltyStore';
+import { useCustomersStore } from '@/stores/customersStore';
+import { formatRutWithDots } from '@/utils/rutUtils';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import { Spinner } from '@/components/ui/Spinner';
 
 export default function LoyaltySettingsPage() {
   const navigate = useNavigate();
@@ -56,290 +59,283 @@ export default function LoyaltySettingsPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page py-4 px-3 px-md-4">
+      <div className="space-y-6">
         {/* Header */}
-        <Row className="mb-4">
-          <Col>
-            <div className="d-flex align-items-center gap-2">
-              <h2 className="mb-0 fw-bold" style={{ color: '#422314', letterSpacing: '-0.5px' }}>
-                ⭐ Fidelización &amp; Club de Sellos
-              </h2>
-            </div>
-            <p className="text-muted mb-0 mt-1">
-              Configura el ciclo de recompensas y consulta el ranking de clientas con mayor cantidad de sellos y visitas.
-            </p>
-          </Col>
-        </Row>
+        <div>
+          <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+            <span>⭐</span> Fidelización &amp; Club de Sellos
+          </h1>
+          <p className="text-sm text-bunny-text-muted mt-1">
+            Configura el ciclo de recompensas y consulta el ranking de clientas con mayor cantidad de sellos y visitas.
+          </p>
+        </div>
 
-        {/* Sección Superior: Configuración de Premios y Consejos */}
-        <Row className="mb-4">
-          <Col lg={7} className="mb-4 mb-lg-0">
-            <Card className="shadow-sm border-0 h-100" style={{ borderRadius: '14px', overflow: 'hidden' }}>
-              <Card.Header className="bg-white py-3 border-bottom" style={{ borderColor: '#eed0c5' }}>
-                <h5 className="mb-0 fw-bold" style={{ color: '#422314' }}>Ciclo de Premios</h5>
-                <small className="text-muted">Las clientas ganarán estos premios en orden cada vez que completen 10 visitas.</small>
-              </Card.Header>
-              <Card.Body>
-                {rewardsLoading ? (
-                  <div className="text-center py-4">
-                    <Spinner animation="border" style={{ color: '#c9897a' }} />
-                  </div>
-                ) : (
-                  <ListGroup variant="flush">
-                    {rewards.map((reward, index) => (
-                      <ListGroup.Item key={reward.id} className="d-flex align-items-center gap-3 py-3 border-light">
-                        <div className="fw-bold text-center" style={{ width: '32px', color: '#c9897a', fontSize: '15px' }}>
-                          #{index + 1}
-                        </div>
-                        <Form.Control
-                          type="text"
-                          defaultValue={reward.name}
-                          onBlur={(e) => {
-                            if (e.target.value !== reward.name) {
-                              updateReward(reward.id, e.target.value);
-                            }
-                          }}
-                          className="border-0 bg-light"
-                          style={{ borderRadius: '8px', fontWeight: 500 }}
-                        />
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm" 
-                          onClick={() => handleDelete(reward.id)}
-                          className="border-0 p-2"
-                          style={{ borderRadius: '8px' }}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </ListGroup.Item>
-                    ))}
-                    
-                    <ListGroup.Item className="py-3 border-0">
-                      <Form onSubmit={handleAddReward} className="d-flex gap-2">
-                        <Form.Control
+        {/* Sección Superior: Configuración de Premios y Estrategia */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7">
+            <Card className="h-full flex flex-col justify-between">
+              <div>
+                <Card.Header>
+                  <Card.Title>Ciclo de Premios</Card.Title>
+                  <Card.Description>
+                    Las clientas ganarán estos premios en orden cada vez que completen 10 visitas.
+                  </Card.Description>
+                </Card.Header>
+                <Card.Body>
+                  {rewardsLoading ? (
+                    <div className="text-center py-8">
+                      <Spinner size="md" className="mx-auto" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="divide-y divide-bunny-border/40 border border-bunny-border rounded-xl overflow-hidden bg-white">
+                        {rewards.map((reward, index) => (
+                          <div
+                            key={reward.id}
+                            className="flex items-center gap-3 p-3 hover:bg-bunny-paper/30 transition-colors"
+                          >
+                            <div className="font-bold text-center w-8 text-bunny-primary text-sm flex-shrink-0">
+                              #{index + 1}
+                            </div>
+                            <input
+                              type="text"
+                              defaultValue={reward.name}
+                              onBlur={(e) => {
+                                if (e.target.value !== reward.name) {
+                                  updateReward(reward.id, e.target.value);
+                                }
+                              }}
+                              className="flex-1 rounded-lg border-0 bg-slate-50 px-3 py-1.5 text-sm font-medium text-bunny-text focus:ring-2 focus:ring-bunny-primary/20 focus:bg-white transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(reward.id)}
+                              className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors flex-shrink-0"
+                              title="Eliminar premio"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <form onSubmit={handleAddReward} className="flex gap-2 pt-2">
+                        <input
                           type="text"
                           placeholder="Nuevo premio (ej: 20% Descuento en Esmaltado)"
                           value={newRewardName}
                           onChange={(e) => setNewRewardName(e.target.value)}
-                          style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
+                          className="flex-1 rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                         />
                         <Button
                           type="submit"
-                          className="d-flex align-items-center gap-2 text-nowrap"
-                          style={{ background: '#c9897a', borderColor: '#c9897a', borderRadius: '8px', color: '#fff', fontWeight: 600 }}
+                          leftIcon={<Plus size={18} />}
                         >
-                          <Plus size={18} /> Agregar
+                          Agregar
                         </Button>
-                      </Form>
-                    </ListGroup.Item>
-                  </ListGroup>
-                )}
-              </Card.Body>
-              <Card.Footer className="bg-light p-3 border-0" style={{ fontSize: '12.5px', color: '#6c757d' }}>
+                      </form>
+                    </div>
+                  )}
+                </Card.Body>
+              </div>
+              <Card.Footer>
                 <strong>¿Cómo funciona el ciclo?</strong> Al completar 10 sellos, la visita #11 redime el premio actual. El contador vuelve a 0 y avanza al siguiente premio de la lista en orden continuo.
               </Card.Footer>
             </Card>
-          </Col>
+          </div>
 
-          <Col lg={5}>
-            <Card className="border-0 shadow-sm text-white mb-3" style={{ borderRadius: '14px', background: 'linear-gradient(135deg, #c9897a 0%, #a86253 100%)' }}>
-              <Card.Body className="p-4">
-                <div className="d-flex align-items-center gap-2 mb-2">
-                  <Trophy size={22} className="text-warning" />
-                  <h5 className="mb-0 fw-bold">Estrategia de Fidelidad</h5>
-                </div>
-                <p className="small mb-3 opacity-90">
-                  Premia la constancia de tus clientas para asegurar visitas recurrentes y aumentar el valor de por vida (LTV).
-                </p>
-                <ul className="mb-0 ps-3 small opacity-95" style={{ lineHeight: 1.6 }}>
-                  <li className="mb-1"><strong>Premio 1:</strong> Descuento accesible o servicio express de regalo.</li>
-                  <li className="mb-1"><strong>Premio 3 ó 5:</strong> Spa de manos o diseño nail art premium.</li>
-                  <li><strong>Edición en vivo:</strong> Puedes renombrar cualquier premio haciendo clic directamente en su texto.</li>
-                </ul>
-              </Card.Body>
-            </Card>
+          <div className="lg:col-span-5 space-y-4">
+            <div className="rounded-2xl shadow-bunny p-6 text-white bg-gradient-to-br from-bunny-primary to-bunny-cocoa-dark">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy size={22} className="text-amber-300" />
+                <h3 className="text-base font-bold">Estrategia de Fidelidad</h3>
+              </div>
+              <p className="text-xs text-white/90 mb-3 leading-relaxed">
+                Premia la constancia de tus clientas para asegurar visitas recurrentes y aumentar el valor de por vida (LTV).
+              </p>
+              <ul className="space-y-1.5 text-xs text-white/95 list-disc pl-4">
+                <li><strong>Premio 1:</strong> Descuento accesible o servicio express de regalo.</li>
+                <li><strong>Premio 3 ó 5:</strong> Spa de manos o diseño nail art premium.</li>
+                <li><strong>Edición en vivo:</strong> Puedes renombrar cualquier premio haciendo clic directamente en su texto.</li>
+              </ul>
+            </div>
 
-            <Card className="border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fdf6f3', border: '1px solid #eed0c5' }}>
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-center">
+            <Card>
+              <Card.Body className="p-5">
+                <div className="flex justify-between items-center">
                   <div>
-                    <span className="small text-muted d-block">Total Clientas en Programa</span>
-                    <h4 className="fw-bold mb-0" style={{ color: '#422314' }}>{customers.length} clientas</h4>
+                    <span className="text-xs text-bunny-text-muted block">Total Clientas en Programa</span>
+                    <h3 className="text-xl font-bold text-bunny-text mt-0.5">
+                      {customers.length} clientas
+                    </h3>
                   </div>
-                  <div className="text-end">
-                    <span className="small text-muted d-block">Clientas con Sellos Activos</span>
-                    <h4 className="fw-bold mb-0" style={{ color: '#5a8f7b' }}>
+                  <div className="text-right">
+                    <span className="text-xs text-bunny-text-muted block">Clientas con Sellos Activos</span>
+                    <h3 className="text-xl font-bold text-emerald-700 mt-0.5">
                       {customers.filter((c) => (c.loyaltyStamps || 0) > 0).length}
-                    </h4>
+                    </h3>
                   </div>
                 </div>
               </Card.Body>
             </Card>
-          </Col>
-        </Row>
+          </div>
+        </div>
 
-        {/* Sección Inferior: Ranking de Clientas con Mayor Cantidad de Sellos por Visita */}
-        <Row>
-          <Col xs={12}>
-            <Card className="border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', overflow: 'hidden' }}>
-              <Card.Header className="bg-white py-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2" style={{ borderColor: '#eed0c5' }}>
-                <div>
-                  <div className="d-flex align-items-center gap-2">
-                    <Trophy size={20} style={{ color: '#c9897a' }} />
-                    <h5 className="mb-0 fw-bold" style={{ color: '#422314' }}>
-                      Ranking de Clientas Más Fieles (Sellos &amp; Visitas)
-                    </h5>
-                  </div>
-                  <small className="text-muted">
-                    Ordenadas por total de visitas completadas y cantidad de sellos acumulados en su ciclo actual.
-                  </small>
-                </div>
+        {/* Sección Inferior: Ranking de Clientas */}
+        <Card>
+          <Card.Header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Trophy size={20} className="text-bunny-primary" />
+                <h3 className="text-base font-bold text-bunny-text">
+                  Ranking de Clientas Más Fieles (Sellos &amp; Visitas)
+                </h3>
+              </div>
+              <p className="text-xs text-bunny-text-muted mt-0.5">
+                Ordenadas por total de visitas completadas y cantidad de sellos acumulados en su ciclo actual.
+              </p>
+            </div>
 
-                <div className="input-group input-group-sm" style={{ maxWidth: '300px' }}>
-                  <span className="input-group-text bg-light border-end-0" style={{ borderColor: '#eed0c5' }}>
-                    <Search size={14} className="text-muted" />
-                  </span>
-                  <Form.Control
-                    type="text"
-                    placeholder="Buscar clienta por nombre o RUT..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-start-0 bg-light"
-                    style={{ borderColor: '#eed0c5' }}
-                  />
-                </div>
-              </Card.Header>
+            <div className="relative w-full sm:w-72">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
+              <input
+                type="text"
+                placeholder="Buscar clienta por nombre o RUT..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-1.5 text-xs rounded-xl border border-bunny-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary transition-all"
+              />
+            </div>
+          </Card.Header>
 
-              <Card.Body className="p-0">
-                {customersLoading ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" style={{ color: '#c9897a' }} />
-                    <p className="text-muted small mt-2">Cargando ranking de fidelidad...</p>
-                  </div>
-                ) : filteredRankedCustomers.length === 0 ? (
-                  <div className="text-center py-5">
-                    <p className="text-muted mb-0">No se encontraron clientas para mostrar en el ranking.</p>
-                  </div>
-                ) : (
-                  <div className="table-responsive">
-                    <Table hover className="align-middle mb-0">
-                      <thead style={{ background: '#fdf6f3', borderBottom: '1px solid #eed0c5' }}>
-                        <tr>
-                          <th className="px-3 py-3 text-muted small fw-bold text-center" style={{ width: '70px' }}>LUGAR</th>
-                          <th className="py-3 text-muted small fw-bold">CLIENTA</th>
-                          <th className="py-3 text-muted small fw-bold">SELLOS DEL CICLO</th>
-                          <th className="py-3 text-muted small fw-bold text-center">TOTAL VISITAS</th>
-                          <th className="py-3 text-muted small fw-bold text-center">PREMIOS GANADOS</th>
-                          <th className="px-3 py-3 text-muted small fw-bold text-end">ACCIONES</th>
+          <Card.Body className="p-0">
+            {customersLoading ? (
+              <div className="text-center py-12 text-bunny-text-muted">
+                <Spinner size="md" className="mx-auto mb-2" />
+                <p className="text-xs">Cargando ranking de fidelidad...</p>
+              </div>
+            ) : filteredRankedCustomers.length === 0 ? (
+              <div className="text-center py-12 text-bunny-text-muted text-sm">
+                No se encontraron clientas para mostrar en el ranking.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-bunny-border bg-bunny-paper/60 text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">
+                      <th className="py-3 px-4 text-center w-16">LUGAR</th>
+                      <th className="py-3 px-4">CLIENTA</th>
+                      <th className="py-3 px-4">SELLOS DEL CICLO</th>
+                      <th className="py-3 px-4 text-center">TOTAL VISITAS</th>
+                      <th className="py-3 px-4 text-center">PREMIOS GANADOS</th>
+                      <th className="py-3 px-4 text-right">ACCIONES</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-bunny-border/30">
+                    {filteredRankedCustomers.map((customer, index) => {
+                      const stamps = customer.loyaltyStamps || 0;
+                      const visits = customer.totalCompletedVisits || 0;
+                      const rewardIndex = customer.currentRewardIndex || 0;
+                      const percent = Math.min(Math.round((stamps / 10) * 100), 100);
+                      const rawPhone = (customer.phone || '').replace(/\D/g, '');
+                      const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
+
+                      let rankDisplay: ReactNode = `#${index + 1}`;
+                      if (index === 0) rankDisplay = <span className="text-xl" title="1er Lugar">🥇</span>;
+                      else if (index === 1) rankDisplay = <span className="text-xl" title="2do Lugar">🥈</span>;
+                      else if (index === 2) rankDisplay = <span className="text-xl" title="3er Lugar">🥉</span>;
+
+                      return (
+                        <tr key={customer.id} className="hover:bg-bunny-paper/40 transition-colors">
+                          <td className="py-3 px-4 text-center font-bold text-bunny-text">
+                            {rankDisplay}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-bunny-text">
+                                  {customer.fullName}
+                                </span>
+                                {visits >= 5 && (
+                                  <Badge variant="warning">👑 VIP</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-bunny-text-muted mt-0.5">
+                                {customer.rut ? (
+                                  <span className="font-mono">
+                                    {formatRutWithDots(customer.rut)}
+                                  </span>
+                                ) : (
+                                  <span className="italic">Sin RUT</span>
+                                )}
+                                <span>&bull;</span>
+                                <span>📱 {customer.phone}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 min-w-[200px]">
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-semibold text-emerald-700">
+                                  ⭐ {stamps} / 10 sellos
+                                </span>
+                                <span className="text-bunny-text-muted">
+                                  {10 - stamps === 0 ? '¡Listo para canjear!' : `Faltan ${10 - stamps}`}
+                                </span>
+                              </div>
+                              <div className="w-full bg-[#f3e9e2] rounded-full h-2 overflow-hidden">
+                                <div
+                                  className={`h-full transition-all duration-300 ${
+                                    stamps === 10 ? 'bg-emerald-500' : 'bg-bunny-primary'
+                                  }`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <Badge variant="neutral">
+                              {visits} {visits === 1 ? 'visita' : 'visitas'}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <Badge variant={rewardIndex > 0 ? 'success' : 'neutral'}>
+                              🎁 {rewardIndex} {rewardIndex === 1 ? 'premio' : 'premios'}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              {rawPhone && (
+                                <a
+                                  href={`https://wa.me/${waPhone}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                  title="Enviar WhatsApp"
+                                >
+                                  <MessageCircle size={15} />
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                title="Ver Ficha de Clienta"
+                                onClick={() => navigate(`/customers/${customer.id}`)}
+                                className="p-1.5 rounded-lg border border-bunny-border text-bunny-primary hover:bg-bunny-paper transition-colors"
+                              >
+                                <ExternalLink size={15} />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {filteredRankedCustomers.map((customer, index) => {
-                          const stamps = customer.loyaltyStamps || 0;
-                          const visits = customer.totalCompletedVisits || 0;
-                          const rewardIndex = customer.currentRewardIndex || 0;
-                          const percent = Math.min(Math.round((stamps / 10) * 100), 100);
-                          const rawPhone = (customer.phone || '').replace(/\D/g, '');
-                          const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
-
-                          // Posición con medallas
-                          let rankDisplay: React.ReactNode = `#${index + 1}`;
-                          if (index === 0) rankDisplay = <span style={{ fontSize: '20px' }} title="1er Lugar">🥇</span>;
-                          else if (index === 1) rankDisplay = <span style={{ fontSize: '20px' }} title="2do Lugar">🥈</span>;
-                          else if (index === 2) rankDisplay = <span style={{ fontSize: '20px' }} title="3er Lugar">🥉</span>;
-
-                          return (
-                            <tr key={customer.id}>
-                              <td className="px-3 text-center fw-bold" style={{ color: '#422314' }}>
-                                {rankDisplay}
-                              </td>
-                              <td>
-                                <div className="d-flex flex-column">
-                                  <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold" style={{ color: '#422314', fontSize: '14px' }}>
-                                      {customer.fullName}
-                                    </span>
-                                    {visits >= 5 && (
-                                      <Badge bg="warning" text="dark" style={{ fontSize: '10px' }}>👑 VIP</Badge>
-                                    )}
-                                  </div>
-                                  <div className="d-flex align-items-center gap-2 small text-muted">
-                                    {customer.rut ? (
-                                      <span className="font-monospace" style={{ fontSize: '11px' }}>
-                                        {formatRutWithDots(customer.rut)}
-                                      </span>
-                                    ) : (
-                                      <span className="fst-italic" style={{ fontSize: '11px' }}>Sin RUT</span>
-                                    )}
-                                    &bull;
-                                    <span style={{ fontSize: '11px' }}>📱 {customer.phone}</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td style={{ minWidth: '200px' }}>
-                                <div className="d-flex flex-column gap-1">
-                                  <div className="d-flex justify-content-between align-items-center small">
-                                    <span className="fw-semibold" style={{ color: '#5a8f7b', fontSize: '12px' }}>
-                                      ⭐ {stamps} / 10 sellos
-                                    </span>
-                                    <span className="text-muted" style={{ fontSize: '11px' }}>
-                                      {10 - stamps === 0 ? '¡Listo para canjear!' : `Faltan ${10 - stamps}`}
-                                    </span>
-                                  </div>
-                                  <ProgressBar
-                                    now={percent}
-                                    style={{ height: '7px', borderRadius: '4px', background: '#f3e9e2' }}
-                                    variant={stamps === 10 ? 'success' : 'primary'}
-                                  />
-                                </div>
-                              </td>
-                              <td className="text-center">
-                                <Badge bg="light" text="dark" className="border px-2 py-1" style={{ fontSize: '12px' }}>
-                                  {visits} {visits === 1 ? 'visita' : 'visitas'}
-                                </Badge>
-                              </td>
-                              <td className="text-center">
-                                <Badge bg={rewardIndex > 0 ? 'success' : 'secondary'} style={{ fontSize: '11.5px' }}>
-                                  🎁 {rewardIndex} {rewardIndex === 1 ? 'premio' : 'premios'}
-                                </Badge>
-                              </td>
-                              <td className="px-3 text-end">
-                                <div className="d-inline-flex gap-1">
-                                  {rawPhone && (
-                                    <a
-                                      href={`https://wa.me/${waPhone}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-success"
-                                      title="Enviar WhatsApp"
-                                      style={{ borderRadius: '6px', padding: '4px 8px' }}
-                                    >
-                                      <MessageCircle size={14} />
-                                    </a>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="outline-primary"
-                                    title="Ver Ficha de Clienta"
-                                    onClick={() => navigate(`/customers/${customer.id}`)}
-                                    style={{ borderRadius: '6px', padding: '4px 8px' }}
-                                  >
-                                    <ExternalLink size={14} />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
+      </div>
     </DashboardLayout>
   );
 }

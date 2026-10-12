@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Modal, Button, Badge, Form, Row, Col, Card } from 'react-bootstrap';
+import { Modal, Button, Badge, Card } from '@/components/ui';
 import {
   FiDollarSign,
   FiPrinter,
@@ -78,345 +78,302 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="xl" centered scrollable dialogClassName="cash-closing-modal-dialog bunny-modal">
-      <Modal.Header closeButton style={{ background: '#fdf6f3', borderBottom: '1px solid var(--bc-border)' }}>
-        <div className="d-flex align-items-center gap-2">
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              background: '#c9897a',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px',
-            }}
-          >
+    <Modal show={show} onHide={onHide} size="xl" centered>
+      <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-bunny-primary text-white flex items-center justify-center text-xl shadow-xs">
             <FiDollarSign />
           </div>
           <div>
-            <Modal.Title style={{ color: '#422314', fontSize: '1.2rem', fontWeight: 700 }}>
-              Cierre de Caja & Finanzas del Salón
+            <Modal.Title>
+              <span className="text-bunny-dark text-lg font-bold">
+                Cierre de Caja & Finanzas del Salón
+              </span>
             </Modal.Title>
-            <small style={{ color: '#8c6052', fontSize: '0.85rem' }}>
+            <p className="text-xs text-slate-500 mb-0">
               Resumen contable de atenciones, métodos de pago, costos y boletas
-            </small>
+            </p>
           </div>
         </div>
       </Modal.Header>
 
-      <Modal.Body className="p-3 p-md-4" style={{ background: '#fff9f8' }}>
+      <Modal.Body className="p-4 sm:p-6 space-y-5 bg-slate-50/50 max-h-[80vh] overflow-y-auto">
         {/* Barra de Filtros y Tipo de Período */}
-        <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff' }}>
-          <Card.Body className="p-3">
-            <Row className="g-3 align-items-center">
-              <Col xs={12} md={5}>
-                <div className="d-flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={periodType === 'DAILY' ? 'primary' : 'outline-secondary'}
-                    onClick={() => setPeriodType('DAILY')}
-                    style={{
-                      background: periodType === 'DAILY' ? '#c9897a' : 'transparent',
-                      borderColor: '#c9897a',
-                      color: periodType === 'DAILY' ? '#fff' : '#7c3a2d',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <FiCalendar className="me-1" /> Cierre Diario
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={periodType === 'MONTHLY' ? 'primary' : 'outline-secondary'}
-                    onClick={() => setPeriodType('MONTHLY')}
-                    style={{
-                      background: periodType === 'MONTHLY' ? '#c9897a' : 'transparent',
-                      borderColor: '#c9897a',
-                      color: periodType === 'MONTHLY' ? '#fff' : '#7c3a2d',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <FiLayers className="me-1" /> Cierre Mensual
-                  </Button>
-                </div>
-              </Col>
+        <Card className="border border-slate-200/80 shadow-xs bg-white">
+          <Card.Body className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+              <div className="md:col-span-5 flex gap-2">
+                <Button
+                  size="sm"
+                  variant={periodType === 'DAILY' ? 'primary' : 'outline'}
+                  onClick={() => setPeriodType('DAILY')}
+                  className="flex items-center gap-1.5 text-xs font-semibold"
+                >
+                  <FiCalendar /> Cierre Diario
+                </Button>
+                <Button
+                  size="sm"
+                  variant={periodType === 'MONTHLY' ? 'primary' : 'outline'}
+                  onClick={() => setPeriodType('MONTHLY')}
+                  className="flex items-center gap-1.5 text-xs font-semibold"
+                >
+                  <FiLayers /> Cierre Mensual
+                </Button>
+              </div>
 
-              <Col xs={12} md={4}>
+              <div className="md:col-span-4">
                 {periodType === 'DAILY' ? (
-                  <Form.Control
+                  <input
                     type="date"
-                    size="sm"
                     value={selectedDateStr}
                     onChange={(e) => setSelectedDateStr(e.target.value)}
-                    style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
                   />
                 ) : (
-                  <Form.Control
+                  <input
                     type="month"
-                    size="sm"
                     value={selectedMonthStr}
                     onChange={(e) => setSelectedMonthStr(e.target.value)}
-                    style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
                   />
                 )}
-              </Col>
+              </div>
 
-              <Col xs={12} md={3} className="text-md-end">
-                <div className="d-flex gap-1 justify-content-md-end flex-wrap">
-                  {periodType === 'DAILY' ? (
-                    <>
-                      <Button size="sm" variant="light" onClick={setQuickToday} style={{ fontSize: '11px', border: '1px solid #eed0c5' }}>
-                        Hoy
-                      </Button>
-                      <Button size="sm" variant="light" onClick={setQuickYesterday} style={{ fontSize: '11px', border: '1px solid #eed0c5' }}>
-                        Ayer
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button size="sm" variant="light" onClick={setQuickThisMonth} style={{ fontSize: '11px', border: '1px solid #eed0c5' }}>
-                        Este Mes
-                      </Button>
-                      <Button size="sm" variant="light" onClick={setQuickLastMonth} style={{ fontSize: '11px', border: '1px solid #eed0c5' }}>
-                        Mes Anterior
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </Col>
-            </Row>
+              <div className="md:col-span-3 flex gap-1.5 md:justify-end flex-wrap">
+                {periodType === 'DAILY' ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={setQuickToday} className="py-1 px-2.5 text-xs">
+                      Hoy
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={setQuickYesterday} className="py-1 px-2.5 text-xs">
+                      Ayer
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button size="sm" variant="outline" onClick={setQuickThisMonth} className="py-1 px-2.5 text-xs">
+                      Este Mes
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={setQuickLastMonth} className="py-1 px-2.5 text-xs">
+                      Mes Anterior
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           </Card.Body>
         </Card>
 
         {/* Encabezado del Período */}
-        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <div>
-            <h5 className="mb-0 fw-bold" style={{ color: '#422314' }}>
+            <h5 className="font-bold text-slate-800 text-base mb-0">
               📊 Informe de {summary.dateFormattedLabel}
             </h5>
-            <small style={{ color: '#8c6052' }}>
+            <small className="text-slate-500 text-xs">
               {summary.completedAppointments} cita(s) completada(s) de {summary.totalAppointments} agendada(s)
             </small>
           </div>
-          <div className="d-flex gap-2">
+          <div className="flex gap-2">
             <Button
               size="sm"
-              variant="outline-secondary"
+              variant="outline"
               onClick={handlePrint}
-              style={{ fontWeight: 600 }}
+              className="flex items-center gap-1.5 text-xs font-semibold"
             >
-              <FiPrinter className="me-1" /> Imprimir / PDF
+              <FiPrinter /> Imprimir / PDF
             </Button>
             <Button
               size="sm"
               variant="success"
               onClick={handleExportCSV}
-              style={{ fontWeight: 600 }}
+              className="flex items-center gap-1.5 text-xs font-semibold"
             >
-              <FiDownload className="me-1" /> Exportar Excel (.csv)
+              <FiDownload /> Exportar Excel (.csv)
             </Button>
           </div>
         </div>
 
         {/* Tarjetas KPI de Resumen Financiero */}
-        <Row className="g-3 mb-4">
-          <Col xs={6} lg={3}>
-            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(140, 42, 62, 0.16)' }}>
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span style={{ fontSize: '12px', color: '#8c6052', fontWeight: 600 }}>INGRESOS TOTALES</span>
-                  <FiDollarSign style={{ color: '#8c2a3e' }} />
-                </div>
-                <h4 className="fw-bold mb-0" style={{ color: '#422314' }}>
-                  {formatCurrency(summary.grossRevenue)}
-                </h4>
-                <small className="text-success fw-bold" style={{ fontSize: '11px' }}>
-                  {summary.completedAppointments} citas pagadas
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="border border-bunny-accent/40 shadow-xs bg-white">
+            <Card.Body className="p-3.5">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-slate-500 font-semibold">INGRESOS TOTALES</span>
+                <FiDollarSign className="text-bunny-dark" />
+              </div>
+              <h4 className="font-bold text-lg sm:text-xl text-slate-800 mb-0">
+                {formatCurrency(summary.grossRevenue)}
+              </h4>
+              <small className="text-emerald-600 font-bold text-xs">
+                {summary.completedAppointments} citas pagadas
+              </small>
+            </Card.Body>
+          </Card>
 
-          <Col xs={6} lg={3}>
-            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(46, 125, 50, 0.18)' }}>
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span style={{ fontSize: '12px', color: '#2e7d32', fontWeight: 600 }}>UTILIDAD NETA ESTIMADA</span>
-                  <FiTrendingUp style={{ color: '#2e7d32' }} />
-                </div>
-                <h4 className="fw-bold mb-0" style={{ color: '#1b5e20' }}>
-                  {formatCurrency(summary.netProfit)}
-                </h4>
-                <small className="text-muted" style={{ fontSize: '11px' }}>
-                  Margen Bruto: <strong>{summary.grossMarginPercentage}%</strong>
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
+          <Card className="border border-emerald-200 shadow-xs bg-white">
+            <Card.Body className="p-3.5">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-emerald-700 font-semibold">UTILIDAD NETA ESTIMADA</span>
+                <FiTrendingUp className="text-emerald-600" />
+              </div>
+              <h4 className="font-bold text-lg sm:text-xl text-emerald-800 mb-0">
+                {formatCurrency(summary.netProfit)}
+              </h4>
+              <small className="text-slate-500 text-xs">
+                Margen Bruto: <strong className="text-slate-700">{summary.grossMarginPercentage}%</strong>
+              </small>
+            </Card.Body>
+          </Card>
 
-          <Col xs={6} lg={3}>
-            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(217, 119, 6, 0.18)' }}>
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span style={{ fontSize: '12px', color: '#d97706', fontWeight: 600 }}>COSTO DE INSUMOS</span>
-                  <FiPercent style={{ color: '#d97706' }} />
-                </div>
-                <h4 className="fw-bold mb-0" style={{ color: '#92400e' }}>
-                  {formatCurrency(summary.estimatedSuppliesCost)}
-                </h4>
-                <small className="text-muted" style={{ fontSize: '11px' }}>
-                  Deducido en recetas
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
+          <Card className="border border-amber-200 shadow-xs bg-white">
+            <Card.Body className="p-3.5">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-amber-700 font-semibold">COSTO DE INSUMOS</span>
+                <FiPercent className="text-amber-600" />
+              </div>
+              <h4 className="font-bold text-lg sm:text-xl text-amber-800 mb-0">
+                {formatCurrency(summary.estimatedSuppliesCost)}
+              </h4>
+              <small className="text-slate-500 text-xs">
+                Deducido en recetas
+              </small>
+            </Card.Body>
+          </Card>
 
-          <Col xs={6} lg={3}>
-            <Card className="h-100 border shadow-sm" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(2, 132, 199, 0.18)' }}>
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: 600 }}>BOLETAS EMITIDAS</span>
-                  <FiFileText style={{ color: '#0284c7' }} />
-                </div>
-                <h4 className="fw-bold mb-0" style={{ color: '#0369a1' }}>
-                  {summary.invoicesCount}{' '}
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748b' }}>
-                    / {summary.completedAppointments}
-                  </span>
-                </h4>
-                <small className="text-muted" style={{ fontSize: '11px' }}>
-                  Total: {formatCurrency(summary.invoicesTotalAmount)}
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+          <Card className="border border-sky-200 shadow-xs bg-white">
+            <Card.Body className="p-3.5">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-sky-700 font-semibold">BOLETAS EMITIDAS</span>
+                <FiFileText className="text-sky-600" />
+              </div>
+              <h4 className="font-bold text-lg sm:text-xl text-sky-800 mb-0">
+                {summary.invoicesCount}{' '}
+                <span className="text-xs font-normal text-slate-500">
+                  / {summary.completedAppointments}
+                </span>
+              </h4>
+              <small className="text-slate-500 text-xs">
+                Total: {formatCurrency(summary.invoicesTotalAmount)}
+              </small>
+            </Card.Body>
+          </Card>
+        </div>
 
         {/* Desglose de Métodos de Pago */}
-        <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff' }}>
-          <Card.Header className="py-2 px-3 bg-transparent border-0 d-flex align-items-center gap-2">
-            <FiCreditCard style={{ color: '#8c2a3e' }} />
-            <span className="fw-bold" style={{ color: '#422314', fontSize: '0.95rem' }}>
+        <Card className="border border-slate-200/80 shadow-xs bg-white">
+          <Card.Header className="py-3 px-4 bg-transparent border-b border-slate-100 flex items-center gap-2">
+            <FiCreditCard className="text-bunny-dark" />
+            <span className="font-bold text-slate-800 text-sm">
               Desglose por Método de Pago
             </span>
           </Card.Header>
-          <Card.Body className="p-3 pt-0">
+          <Card.Body className="p-4">
             {summary.paymentBreakdown.length === 0 ? (
-              <p className="text-muted mb-0 small">No hay transacciones registradas en este período.</p>
+              <p className="text-slate-400 mb-0 text-xs italic">No hay transacciones registradas en este período.</p>
             ) : (
-              <Row className="g-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {summary.paymentBreakdown.map((item) => (
-                  <Col xs={12} sm={6} md={3} key={item.methodName}>
-                    <div
-                      className="p-2.5 rounded-3"
-                      style={{
-                        background: '#fdf6f3',
-                        border: '1px solid #eed0c5',
-                        borderRadius: '10px',
-                        padding: '10px 12px',
-                      }}
-                    >
-                      <div className="d-flex justify-content-between align-items-center mb-1">
-                        <span className="fw-semibold" style={{ fontSize: '13px', color: '#422314' }}>
-                          {item.methodName}
-                        </span>
-                        <Badge bg="light" text="dark" style={{ border: '1px solid #eed0c5', fontSize: '10px' }}>
-                          {item.percentage}%
-                        </Badge>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-baseline">
-                        <span className="fw-bold" style={{ fontSize: '14px', color: '#8c2a3e' }}>
-                          {formatCurrency(item.totalAmount)}
-                        </span>
-                        <small style={{ color: '#8c6052', fontSize: '11px' }}>{item.count} cita(s)</small>
-                      </div>
+                  <div
+                    key={item.methodName}
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-200/80"
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-semibold text-xs text-slate-800">
+                        {item.methodName}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {item.percentage}%
+                      </Badge>
                     </div>
-                  </Col>
+                    <div className="flex justify-between items-baseline mt-1">
+                      <span className="font-bold text-sm text-bunny-dark">
+                        {formatCurrency(item.totalAmount)}
+                      </span>
+                      <small className="text-slate-500 text-xs">{item.count} cita(s)</small>
+                    </div>
+                  </div>
                 ))}
-              </Row>
+              </div>
             )}
           </Card.Body>
         </Card>
 
         {/* Tabla de Detalle de Citas del Cierre */}
-        <Card className="border-0 shadow-sm" style={{ borderRadius: '14px', background: '#fff', overflow: 'hidden' }}>
-          <Card.Header className="py-2.5 px-3 bg-transparent border-0 d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-2">
-              <FiClock style={{ color: '#8c2a3e' }} />
-              <span className="fw-bold" style={{ color: '#422314', fontSize: '0.95rem' }}>
+        <Card className="border border-slate-200/80 shadow-xs bg-white overflow-hidden">
+          <Card.Header className="py-3 px-4 bg-transparent border-b border-slate-100 flex justify-between items-center flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <FiClock className="text-bunny-dark" />
+              <span className="font-bold text-slate-800 text-sm">
                 Detalle de Citas Atendidas ({summary.transactions.length})
               </span>
             </div>
-            <span className="badge" style={{ background: '#fae6e2', color: '#8c2a3e', fontSize: '11px' }}>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-bunny-creamy/50 text-bunny-dark font-medium border border-bunny-accent/40">
               Ticket Promedio: {formatCurrency(summary.averageTicket)}
             </span>
           </Card.Header>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0" style={{ fontSize: '13px' }}>
-              <thead style={{ background: '#fdf4f2', color: '#8c6052', borderBottom: '1px solid #eed0c5' }}>
-                <tr>
-                  <th className="ps-3">Hora / Fecha</th>
-                  <th>Clienta</th>
-                  <th>Servicios</th>
-                  <th>Método de Pago</th>
-                  <th className="text-center">Boleta</th>
-                  <th className="text-end">Insumos ($)</th>
-                  <th className="text-end pe-3">Valor Cita ($)</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+                  <th className="px-3.5 py-2.5">Hora / Fecha</th>
+                  <th className="px-3.5 py-2.5">Clienta</th>
+                  <th className="px-3.5 py-2.5">Servicios</th>
+                  <th className="px-3.5 py-2.5">Método de Pago</th>
+                  <th className="px-3.5 py-2.5 text-center">Boleta</th>
+                  <th className="px-3.5 py-2.5 text-right">Insumos ($)</th>
+                  <th className="px-3.5 py-2.5 text-right">Valor Cita ($)</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {summary.transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-4 text-muted">
+                    <td colSpan={7} className="text-center py-6 text-slate-400 italic">
                       No hay citas completadas en el período seleccionado.
                     </td>
                   </tr>
                 ) : (
                   summary.transactions.map((tx) => (
-                    <tr key={tx.appointmentId}>
-                      <td className="ps-3 fw-semibold" style={{ color: '#422314', whiteSpace: 'nowrap' }}>
+                    <tr key={tx.appointmentId} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-3.5 py-2.5 font-semibold text-slate-800 whitespace-nowrap">
                         {tx.appointmentTime}
                         {periodType === 'MONTHLY' && (
-                          <div style={{ fontSize: '11px', color: '#8c6052' }}>{tx.appointmentDate}</div>
+                          <div className="text-slate-400 text-xs font-normal">{tx.appointmentDate}</div>
                         )}
                       </td>
-                      <td>
-                        <div className="fw-bold" style={{ color: '#422314' }}>
+                      <td className="px-3.5 py-2.5">
+                        <div className="font-bold text-slate-800">
                           {tx.customerName}
                         </div>
                         {tx.customerRut && (
-                          <small className="text-muted" style={{ fontSize: '11px' }}>
+                          <small className="text-slate-400 text-xs">
                             RUT: {tx.customerRut}
                           </small>
                         )}
                       </td>
-                      <td>
-                        <div style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {tx.serviceNames.join(' + ')}
-                        </div>
+                      <td className="px-3.5 py-2.5 text-slate-600 max-w-xs truncate" title={tx.serviceNames.join(' + ')}>
+                        {tx.serviceNames.join(' + ')}
                       </td>
-                      <td>
-                        <Badge bg="light" text="dark" style={{ border: '1px solid #eed0c5', fontWeight: 500 }}>
+                      <td className="px-3.5 py-2.5">
+                        <Badge variant="secondary" className="font-medium">
                           {tx.paymentMethod}
                         </Badge>
                       </td>
-                      <td className="text-center">
+                      <td className="px-3.5 py-2.5 text-center">
                         {tx.hasInvoice ? (
-                          <Badge bg="success" style={{ fontSize: '10px' }}>
-                            <FiCheckCircle className="me-1" /> SÍ
+                          <Badge variant="success" className="text-xs">
+                            <FiCheckCircle className="mr-1 inline" /> SÍ
                           </Badge>
                         ) : (
-                          <Badge bg="secondary" style={{ fontSize: '10px', opacity: 0.6 }}>
+                          <Badge variant="secondary" className="text-xs opacity-60">
                             NO
                           </Badge>
                         )}
                       </td>
-                      <td className="text-end text-muted" style={{ fontSize: '12px' }}>
+                      <td className="px-3.5 py-2.5 text-right text-slate-500">
                         {formatCurrency(tx.estimatedMaterialsCost)}
                       </td>
-                      <td className="text-end pe-3 fw-bold" style={{ color: '#8c2a3e' }}>
+                      <td className="px-3.5 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">
                         {formatCurrency(tx.totalPrice)}
                       </td>
                     </tr>
@@ -428,9 +385,9 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         </Card>
       </Modal.Body>
 
-      <Modal.Footer>
-        <div className="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
-          <small style={{ color: '#8c6052' }}>
+      <Modal.Footer className="border-t border-slate-100 p-4">
+        <div className="flex justify-between items-center w-full flex-wrap gap-2">
+          <small className="text-slate-400 text-xs">
             BunnyCure POS &copy; {new Date().getFullYear()} &bull; Todos los valores calculados con reglas de negocio oficiales.
           </small>
           <Button variant="secondary" onClick={onHide}>

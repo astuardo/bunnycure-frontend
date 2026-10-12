@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Table, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { customersApi } from '@/api/customers.api';
@@ -22,6 +21,11 @@ import {
   sendGiftCardWhatsApp,
   shareGiftCardPng,
 } from '@/utils/giftcardRenderer';
+import { Button } from '@/components/ui/Button';
+import { Badge, BadgeVariant } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { Spinner } from '@/components/ui/Spinner';
 
 const formatCurrency = (value: number) => `$${value.toLocaleString('es-CL')}`;
 const ADMIN_GIFTCARD_PINS_KEY = 'admin-giftcard-pins';
@@ -30,6 +34,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
   const err = error as ApiError;
   return err.response?.data?.error?.message || err.response?.data?.message || fallback;
 };
+
 const loadStoredPins = (): Record<number, string> => {
   if (typeof window === 'undefined') return {};
   try {
@@ -77,6 +82,23 @@ const defaultCreateState = {
   buyerEmail: '',
   expiresOn: getDefaultExpiryDate(),
   paymentMethod: 'EFECTIVO' as GiftCardPaymentMethod,
+};
+
+const getStatusBadgeVariant = (status: GiftCardStatus): BadgeVariant => {
+  switch (status) {
+    case 'ACTIVE':
+      return 'success';
+    case 'PARTIAL':
+      return 'primary';
+    case 'REDEEMED':
+      return 'secondary';
+    case 'EXPIRED':
+      return 'warning';
+    case 'CANCELLED':
+      return 'danger';
+    default:
+      return 'neutral';
+  }
 };
 
 export default function GiftCardsPage() {
@@ -522,121 +544,147 @@ export default function GiftCardsPage() {
 
   return (
     <DashboardLayout>
-      <div className="bunny-page">
-        <Row className="mb-4">
-          <Col>
-            <h1>🎁 GiftCards</h1>
-            <p className="text-muted">Crea, gestiona y canjea GiftCards por servicios.</p>
-          </Col>
-          <Col xs="auto">
-            <div className="d-flex gap-2">
-              <Button onClick={() => navigate('/giftcards/generar')} variant="outline-primary">
-                Generar GiftCard
-              </Button>
-              <Button onClick={openCreateModal}>+ Nueva GiftCard</Button>
-            </div>
-          </Col>
-        </Row>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+              <span>🎁</span> GiftCards
+            </h1>
+            <p className="text-sm text-bunny-text-muted mt-1">
+              Crea, gestiona y canjea GiftCards por servicios.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => navigate('/giftcards/generar')} variant="outline">
+              Generar GiftCard
+            </Button>
+            <Button onClick={openCreateModal}>+ Nueva GiftCard</Button>
+          </div>
+        </div>
 
         {error && (
-          <Alert variant="danger" onClose={clearError} dismissible>
-            {error}
-          </Alert>
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 flex items-center justify-between shadow-sm">
+            <span className="text-sm font-medium">{error}</span>
+            <button
+              type="button"
+              onClick={clearError}
+              className="text-rose-500 hover:text-rose-700 text-sm font-semibold ml-4"
+              aria-label="Cerrar alerta"
+            >
+              ✕
+            </button>
+          </div>
         )}
 
-        <Card className="mb-3">
+        <Card>
           <Card.Body>
-            <Row className="g-2">
-              <Col md={4}>
-                <Form.Control
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+              <div className="md:col-span-4">
+                <input
+                  type="text"
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text placeholder:text-bunny-cocoa-light/60 focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por código, nombre o teléfono"
                 />
-              </Col>
-              <Col md={3}>
-                <Form.Select value={status} onChange={(e) => setStatus(e.target.value as GiftCardStatus | '')}>
+              </div>
+              <div className="md:col-span-3">
+                <select
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as GiftCardStatus | '')}
+                >
                   <option value="">Todos los estados</option>
                   <option value="ACTIVE">ACTIVA</option>
                   <option value="PARTIAL">PARCIAL</option>
                   <option value="REDEEMED">CANJEADA</option>
                   <option value="EXPIRED">VENCIDA</option>
                   <option value="CANCELLED">ANULADA</option>
-                </Form.Select>
-              </Col>
-              <Col md={3}>
-                <Form.Control
+                </select>
+              </div>
+              <div className="md:col-span-3">
+                <input
                   type="date"
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                   value={expiringBefore}
                   onChange={(e) => setExpiringBefore(e.target.value)}
                 />
-              </Col>
-              <Col md={2} className="d-grid">
-                <Button variant="secondary" onClick={applyFilters}>
+              </div>
+              <div className="md:col-span-2">
+                <Button variant="secondary" fullWidth onClick={applyFilters}>
                   Filtrar
                 </Button>
-              </Col>
-            </Row>
+              </div>
+            </div>
           </Card.Body>
         </Card>
 
         <Card>
-          <Card.Body>
+          <Card.Body className="p-0">
             {loading ? (
-              <div className="text-center py-3">Cargando...</div>
+              <div className="text-center py-12 text-bunny-text-muted">
+                <Spinner size="md" className="mx-auto mb-2" />
+                Cargando GiftCards...
+              </div>
+            ) : giftCards.length === 0 ? (
+              <div className="text-center py-12 text-bunny-text-muted">
+                No se encontraron GiftCards registradas.
+              </div>
             ) : (
-              <div className="table-responsive">
-                <Table striped hover>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Beneficiaria</th>
-                      <th>Vence</th>
-                      <th>Total</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
+                    <tr className="border-b border-bunny-border bg-bunny-paper/60 text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">
+                      <th className="py-3 px-4">Código</th>
+                      <th className="py-3 px-4">Beneficiaria</th>
+                      <th className="py-3 px-4">Vence</th>
+                      <th className="py-3 px-4">Total</th>
+                      <th className="py-3 px-4">Estado</th>
+                      <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-bunny-border/40 text-sm">
                     {giftCards.map((giftCard) => {
                       const isBlank =
                         isBlankGiftCardBeneficiary(giftCard.beneficiaryName) ||
                         !giftCard.beneficiaryCustomerId ||
                         giftCard.beneficiaryPhone === '+56900000000';
                       return (
-                        <tr key={giftCard.id}>
-                          <td>{giftCard.code}</td>
-                          <td>
+                        <tr key={giftCard.id} className="hover:bg-bunny-paper/40 transition-colors">
+                          <td className="py-3 px-4 font-mono font-semibold text-bunny-primary">
+                            {giftCard.code}
+                          </td>
+                          <td className="py-3 px-4">
                             {isBlank ? (
-                              <>
-                                <strong>{giftCard.beneficiaryName || 'Al portador'}</strong>
-                                <Badge bg="light" text="dark" className="border ms-2">
-                                  Al portador
-                                </Badge>
-                                <br />
-                                <small className="text-muted">Por registrar en canje</small>
-                              </>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-bunny-text">
+                                    {giftCard.beneficiaryName || 'Al portador'}
+                                  </span>
+                                  <Badge variant="warning">Al portador</Badge>
+                                </div>
+                                <span className="text-xs text-bunny-text-muted">Por registrar en canje</span>
+                              </div>
                             ) : (
-                              <>
-                                {giftCard.beneficiaryName}
-                                <br />
-                                <small className="text-muted">{giftCard.beneficiaryPhone}</small>
-                              </>
+                              <div>
+                                <div className="font-semibold text-bunny-text">{giftCard.beneficiaryName}</div>
+                                <span className="text-xs text-bunny-text-muted">{giftCard.beneficiaryPhone}</span>
+                              </div>
                             )}
                           </td>
-                          <td>{giftCard.expiresOn}</td>
-                          <td>{formatCurrency(giftCard.totalAmount)}</td>
-                          <td>
-                            <Badge bg={giftCard.status === 'ACTIVE' ? 'primary' : 'secondary'}>{giftCard.status}</Badge>
+                          <td className="py-3 px-4 text-bunny-text font-mono text-xs">{giftCard.expiresOn}</td>
+                          <td className="py-3 px-4 font-bold text-bunny-text">{formatCurrency(giftCard.totalAmount)}</td>
+                          <td className="py-3 px-4">
+                            <Badge variant={getStatusBadgeVariant(giftCard.status)}>{giftCard.status}</Badge>
                           </td>
-                          <td>
-                            <div className="d-flex gap-2">
-                              <Button size="sm" variant="outline-primary" onClick={() => openDetails(giftCard)}>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button size="sm" variant="outline" onClick={() => openDetails(giftCard)}>
                                 Ver detalle
                               </Button>
                               <Button
                                 size="sm"
-                                variant="outline-danger"
+                                variant="danger"
                                 onClick={() => setGiftCardToCancelFromList(giftCard)}
                                 disabled={giftCard.status === 'CANCELLED'}
                               >
@@ -648,54 +696,56 @@ export default function GiftCardsPage() {
                       );
                     })}
                   </tbody>
-                </Table>
+                </table>
               </div>
             )}
           </Card.Body>
         </Card>
       </div>
 
+      {/* Modal Crear GiftCard */}
       <Modal
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
         size="lg"
-        scrollable
-        fullscreen="sm-down"
-        className="bunny-modal giftcard-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Crear GiftCard</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleCreate}>
-          <Modal.Body>
-            <div className="mb-4 p-3 rounded border bg-light-subtle">
-              <Form.Check
-                type="switch"
-                id="blank-create-switch"
-                label="🎁 GiftCard al portador / En blanco (para sorteos o regalo abierto)"
-                className="fw-semibold text-primary"
-                checked={isBlankCreate}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setIsBlankCreate(checked);
-                  if (checked) {
-                    setCreateData((prev) => ({
-                      ...prev,
-                      beneficiaryFullName: prev.beneficiaryFullName || 'Al portador',
-                      beneficiaryPhone: prev.beneficiaryPhone || '+56900000000',
-                    }));
-                  } else {
-                    setCreateData((prev) => ({
-                      ...prev,
-                      beneficiaryFullName: '',
-                      beneficiaryPhone: '',
-                      beneficiaryEmail: '',
-                    }));
-                    setLookupStatus('idle');
-                  }
-                }}
-              />
-              <small className="text-muted d-block mt-1">
+        <form onSubmit={handleCreate}>
+          <Modal.Body className="space-y-4">
+            <div className="p-4 rounded-xl border border-bunny-border bg-bunny-primary-light/20 flex flex-col gap-1.5">
+              <label htmlFor="blank-create-switch" className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="blank-create-switch"
+                  className="w-4 h-4 rounded text-bunny-primary focus:ring-bunny-primary/30 border-bunny-border accent-bunny-primary"
+                  checked={isBlankCreate}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsBlankCreate(checked);
+                    if (checked) {
+                      setCreateData((prev) => ({
+                        ...prev,
+                        beneficiaryFullName: prev.beneficiaryFullName || 'Al portador',
+                        beneficiaryPhone: prev.beneficiaryPhone || '+56900000000',
+                      }));
+                    } else {
+                      setCreateData((prev) => ({
+                        ...prev,
+                        beneficiaryFullName: '',
+                        beneficiaryPhone: '',
+                        beneficiaryEmail: '',
+                      }));
+                      setLookupStatus('idle');
+                    }
+                  }}
+                />
+                <span className="text-sm font-semibold text-bunny-primary">
+                  🎁 GiftCard al portador / En blanco (para sorteos o regalo abierto)
+                </span>
+              </label>
+              <small className="text-bunny-text-muted pl-7 block">
                 {isBlankCreate
                   ? 'No se requiere ingresar clienta ahora. Se registrará con todos sus datos (RUT, puntos, etc.) al cobrar la GiftCard.'
                   : 'Permite buscar o ingresar los datos de la clienta beneficiaria antes de emitir.'}
@@ -703,41 +753,45 @@ export default function GiftCardsPage() {
             </div>
 
             {isBlankCreate ? (
-              <Row>
-                <Col md={6} className="mb-3">
-                  <Form.Label>Identificador / Título en Tarjeta</Form.Label>
-                  <Form.Control
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    Identificador / Título en Tarjeta
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text placeholder:text-bunny-cocoa-light/60 focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     placeholder="Ej: Al portador, Ganadora Sorteo Instagram, etc."
                     value={createData.beneficiaryFullName}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
                   />
-                  <Form.Text className="text-muted">
+                  <small className="text-bunny-text-muted mt-1 block">
                     Se mostrará en la tarjeta PNG descargable y compartible.
-                  </Form.Text>
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label>Vencimiento *</Form.Label>
-                  <Form.Control
+                  </small>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    Vencimiento *
+                  </label>
+                  <input
                     type="date"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     value={createData.expiresOn}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
                   />
-                </Col>
-              </Row>
+                </div>
+              </div>
             ) : (
-              <Row>
-                <Col md={6} className="mb-3">
-                  <Form.Label>Beneficiaria - Nombre *</Form.Label>
-                  <Form.Control
-                    value={createData.beneficiaryFullName}
-                    onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
-                    disabled={lookupStatus === 'idle'}
-                  />
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label>Beneficiaria - Teléfono *</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    Beneficiaria - Teléfono *
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      placeholder="+569..."
+                      className="flex-1 rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                       value={createData.beneficiaryPhone}
                       onChange={(e) => {
                         setCreateData((prev) => ({ ...prev, beneficiaryPhone: e.target.value }));
@@ -746,112 +800,166 @@ export default function GiftCardsPage() {
                     />
                     <Button
                       type="button"
-                      variant="outline-primary"
+                      variant="outline"
                       onClick={handleLookupBeneficiary}
                       disabled={lookupLoading}
+                      isLoading={lookupLoading}
                     >
-                      {lookupLoading ? 'Buscando...' : 'Buscar'}
+                      Buscar
                     </Button>
                   </div>
-                  <Form.Text className={lookupStatus === 'found' ? 'text-success' : 'text-muted'}>
+                  <small className={`mt-1 block ${lookupStatus === 'found' ? 'text-emerald-600 font-medium' : lookupStatus === 'not_found' ? 'text-amber-600 font-medium' : 'text-bunny-text-muted'}`}>
                     {lookupStatus === 'found'
-                      ? 'Cliente existente detectado. Se usaran datos guardados.'
+                      ? '✓ Cliente existente detectado. Se usarán datos guardados.'
                       : lookupStatus === 'not_found'
-                        ? 'Telefono no registrado. Completa nombre/email manualmente.'
-                        : 'Primero busca por telefono antes de crear la GiftCard.'}
-                  </Form.Text>
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label>Beneficiaria - Email</Form.Label>
-                  <Form.Control
+                        ? 'ⓘ Teléfono no registrado. Completa nombre/email manualmente.'
+                        : 'Primero busca por teléfono antes de crear la GiftCard.'}
+                  </small>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    Beneficiaria - Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    disabled={lookupStatus === 'idle'}
+                    placeholder="Nombre completo"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                    value={createData.beneficiaryFullName}
+                    onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    Beneficiaria - Email
+                  </label>
+                  <input
                     type="email"
+                    disabled={lookupStatus === 'idle'}
+                    placeholder="correo@ejemplo.com"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                     value={createData.beneficiaryEmail}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryEmail: e.target.value }))}
-                    disabled={lookupStatus === 'idle'}
                   />
-                </Col>
-                <Col md={6} className="mb-3">
-                  <Form.Label>Vencimiento *</Form.Label>
-                  <Form.Control
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    Vencimiento *
+                  </label>
+                  <input
                     type="date"
+                    disabled={lookupStatus === 'idle'}
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                     value={createData.expiresOn}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
-                    disabled={lookupStatus === 'idle'}
                   />
-                </Col>
-              </Row>
+                </div>
+              </div>
             )}
 
-            <Row>
-              <Col md={4} className="mb-3">
-                <Form.Label>Compradora - Nombre</Form.Label>
-                <Form.Control
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-bunny-border/50">
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Compradora - Nombre
+                </label>
+                <input
+                  type="text"
+                  placeholder="Opcional"
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                   value={createData.buyerName}
                   onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
-                  disabled={!isBlankCreate && lookupStatus === 'idle'}
                 />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Compradora - Teléfono</Form.Label>
-                <Form.Control
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Compradora - Teléfono
+                </label>
+                <input
+                  type="tel"
+                  placeholder="Opcional"
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                   value={createData.buyerPhone}
                   onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
-                  disabled={!isBlankCreate && lookupStatus === 'idle'}
                 />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Compradora - Email</Form.Label>
-                <Form.Control
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Compradora - Email
+                </label>
+                <input
                   type="email"
+                  placeholder="Opcional"
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                   value={createData.buyerEmail}
                   onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
-                  disabled={!isBlankCreate && lookupStatus === 'idle'}
                 />
-              </Col>
-              <Col md={4} className="mb-3">
-                <Form.Label>Método de pago *</Form.Label>
-                <Form.Select
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Método de pago *
+                </label>
+                <select
+                  disabled={!isBlankCreate && lookupStatus === 'idle'}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                   value={createData.paymentMethod}
                   onChange={(e) =>
                     setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
                   }
-                  disabled={!isBlankCreate && lookupStatus === 'idle'}
                 >
                   <option value="EFECTIVO">EFECTIVO</option>
                   <option value="TRANSFERENCIA">TRANSFERENCIA</option>
-                </Form.Select>
-              </Col>
-              <Col md={8} className="mb-3 d-flex align-items-end">
-                <div className="fw-semibold">Total GiftCard: {formatCurrency(totalAmount)}</div>
-              </Col>
-            </Row>
-            <hr />
-            <h6>Servicios incluidos</h6>
-            <div className="d-flex flex-column gap-2">
-              {serviceSelections.map((selection) => (
-                <Row key={selection.serviceId} className="align-items-center">
-                  <Col md={7}>
-                    {selection.name} <small className="text-muted">{formatCurrency(selection.price)}</small>
-                  </Col>
-                  <Col md={5}>
-                    <Form.Control
-                      type="number"
-                      min={0}
-                      value={selection.quantity}
-                      disabled={!isBlankCreate && lookupStatus === 'idle'}
-                      onChange={(e) =>
-                        setServiceSelections((prev) =>
-                          prev.map((item) =>
-                            item.serviceId === selection.serviceId
-                              ? { ...item, quantity: Math.max(0, Number(e.target.value) || 0) }
-                              : item
+                </select>
+              </div>
+              <div className="md:col-span-2 flex items-center justify-end">
+                <div className="text-right">
+                  <span className="text-xs text-bunny-text-muted block">Total GiftCard</span>
+                  <span className="text-2xl font-black text-bunny-primary tracking-tight">
+                    {formatCurrency(totalAmount)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-bunny-border">
+              <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider mb-3">
+                Servicios incluidos
+              </h4>
+              <div className="divide-y divide-bunny-border/40 border border-bunny-border rounded-xl overflow-hidden bg-white max-h-60 overflow-y-auto">
+                {serviceSelections.map((selection) => (
+                  <div
+                    key={selection.serviceId}
+                    className="p-3 flex items-center justify-between gap-3 hover:bg-bunny-paper/40 transition-colors"
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-bunny-text">{selection.name}</span>
+                      <span className="text-xs text-bunny-text-muted ml-2 font-mono">
+                        {formatCurrency(selection.price)}
+                      </span>
+                    </div>
+                    <div className="w-28">
+                      <input
+                        type="number"
+                        min={0}
+                        className="w-full rounded-lg border border-bunny-border bg-white px-2.5 py-1.5 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                        value={selection.quantity}
+                        disabled={!isBlankCreate && lookupStatus === 'idle'}
+                        onChange={(e) =>
+                          setServiceSelections((prev) =>
+                            prev.map((item) =>
+                              item.serviceId === selection.serviceId
+                                ? { ...item, quantity: Math.max(0, Number(e.target.value) || 0) }
+                                : item
+                            )
                           )
-                        )
-                      }
-                    />
-                  </Col>
-                </Row>
-              ))}
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </Modal.Body>
           <Modal.Footer>
@@ -862,23 +970,21 @@ export default function GiftCardsPage() {
               Crear GiftCard
             </Button>
           </Modal.Footer>
-        </Form>
+        </form>
       </Modal>
 
+      {/* Modal Detalle GiftCard */}
       <Modal
         show={showDetailModal}
         onHide={() => setShowDetailModal(false)}
         size="xl"
-        scrollable
-        fullscreen="sm-down"
-        className="bunny-modal giftcard-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Detalle GiftCard</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="space-y-4">
           {!currentGiftCard ? (
-            <div>Cargando...</div>
+            <div className="text-center py-8 text-bunny-text-muted">Cargando...</div>
           ) : (
             <>
               {(() => {
@@ -890,14 +996,13 @@ export default function GiftCardsPage() {
                 return (
                   <>
                     {isBlankBeneficiary && (
-                      <Alert variant="warning" className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 shadow-sm border-warning">
-                        <div>
-                          <strong>🎁 GiftCard al Portador / En blanco:</strong> Esta tarjeta no tiene clienta asignada. Para canjear servicios y registrar sus visitas/sellos, debes asociar los datos de la clienta.
+                      <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                        <div className="text-xs">
+                          <strong className="text-sm">🎁 GiftCard al Portador / En blanco:</strong> Esta tarjeta no tiene clienta asignada. Para canjear servicios y registrar sus visitas/sellos, debes asociar los datos de la clienta.
                         </div>
                         <Button
                           variant="warning"
                           size="sm"
-                          className="fw-semibold"
                           onClick={() => {
                             loadStoreCustomers();
                             setShowAssignModal(true);
@@ -905,10 +1010,10 @@ export default function GiftCardsPage() {
                         >
                           ➕ Asignar / Registrar Clienta
                         </Button>
-                      </Alert>
+                      </div>
                     )}
 
-                    <div className="giftcard-admin-preview mb-3">
+                    <div className="giftcard-admin-preview mb-4">
                       <img
                         src={GIFTCARD_BACKGROUND_TEMPLATE}
                         alt="Plantilla GiftCard BunnyCure"
@@ -939,21 +1044,22 @@ export default function GiftCardsPage() {
                         </div>
                       </div>
                     </div>
-                    <Row className="mb-3">
-                      <Col md={4}>
-                        <div><strong>Código:</strong> {currentGiftCard.code}</div>
-                        <div><strong>Estado:</strong> {currentGiftCard.status}</div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border border-bunny-border bg-bunny-paper/40 text-sm">
+                      <div className="space-y-1">
+                        <div><strong>Código:</strong> <span className="font-mono">{currentGiftCard.code}</span></div>
+                        <div><strong>Estado:</strong> <Badge variant={getStatusBadgeVariant(currentGiftCard.status)}>{currentGiftCard.status}</Badge></div>
                         <div><strong>Vence:</strong> {currentGiftCard.expiresOn}</div>
-                      </Col>
-                      <Col md={4}>
+                      </div>
+                      <div>
                         {isBlankBeneficiary ? (
-                          <div className="p-2 rounded bg-light border">
-                            <Badge bg="warning" text="dark" className="mb-1">Al portador (sin asignar)</Badge>
-                            <div><strong>Nombre:</strong> {currentGiftCard.beneficiaryName || 'Al portador'}</div>
+                          <div className="p-3 rounded-lg bg-amber-50/80 border border-amber-200">
+                            <Badge variant="warning" className="mb-1">Al portador (sin asignar)</Badge>
+                            <div className="text-xs"><strong>Nombre:</strong> {currentGiftCard.beneficiaryName || 'Al portador'}</div>
                             <Button
-                              variant="outline-primary"
+                              variant="outline"
                               size="sm"
-                              className="mt-2"
+                              className="mt-2 text-xs"
                               onClick={() => {
                                 loadStoreCustomers();
                                 setShowAssignModal(true);
@@ -963,132 +1069,154 @@ export default function GiftCardsPage() {
                             </Button>
                           </div>
                         ) : (
-                          <div>
+                          <div className="space-y-1">
                             <div><strong>Beneficiaria:</strong> {currentGiftCard.beneficiaryName}</div>
                             <div><strong>Teléfono:</strong> {currentGiftCard.beneficiaryPhone}</div>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="p-0 text-decoration-none mt-1"
+                            <button
+                              type="button"
+                              className="text-xs text-bunny-primary hover:underline font-semibold block mt-1"
                               onClick={() => {
                                 loadStoreCustomers();
                                 setShowAssignModal(true);
                               }}
                             >
                               ✏️ Cambiar clienta asignada
-                            </Button>
+                            </button>
                           </div>
                         )}
-                      </Col>
-                      <Col md={4}>
+                      </div>
+                      <div className="space-y-1">
                         <div><strong>Total:</strong> {formatCurrency(currentGiftCard.totalAmount)}</div>
                         <div><strong>Pagado:</strong> {formatCurrency(currentGiftCard.paidAmount)}</div>
-                        <div className="text-danger">
-                          <strong>PIN:</strong> {currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}
+                        <div className="text-rose-600 font-medium">
+                          <strong>PIN:</strong> <span className="font-mono">{currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible'}</span>
                         </div>
-                      </Col>
-                    </Row>
+                      </div>
+                    </div>
                   </>
                 );
               })()}
 
-              <h6>Servicios</h6>
-              <Table size="sm" bordered>
-                <thead>
-                  <tr>
-                    <th>Servicio</th>
-                    <th>Total</th>
-                    <th>Canjeado</th>
-                    <th>Disponible</th>
-                    <th>Canjear</th>
-                    <th>Revertir</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentGiftCard.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.serviceName}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.redeemedQuantity}</td>
-                      <td>{item.remainingQuantity}</td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          min={0}
-                          max={item.remainingQuantity}
-                          value={redeemQuantities[item.id] || 0}
-                          onChange={(e) =>
-                            setRedeemQuantities((prev) => ({
-                              ...prev,
-                              [item.id]: Math.max(0, Number(e.target.value) || 0),
-                            }))
-                          }
-                        />
-                      </td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          min={0}
-                          max={item.redeemedQuantity}
-                          value={revertQuantities[item.id] || 0}
-                          onChange={(e) =>
-                            setRevertQuantities((prev) => ({
-                              ...prev,
-                              [item.id]: Math.max(0, Number(e.target.value) || 0),
-                            }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+              <div className="pt-2">
+                <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider mb-2">Servicios</h4>
+                <div className="overflow-x-auto border border-bunny-border rounded-xl">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-bunny-paper/60 text-xs text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
+                      <tr>
+                        <th className="py-2.5 px-3">Servicio</th>
+                        <th className="py-2.5 px-3">Total</th>
+                        <th className="py-2.5 px-3">Canjeado</th>
+                        <th className="py-2.5 px-3">Disponible</th>
+                        <th className="py-2.5 px-3">Canjear</th>
+                        <th className="py-2.5 px-3">Revertir</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-bunny-border/30">
+                      {currentGiftCard.items.map((item) => (
+                        <tr key={item.id} className="hover:bg-bunny-paper/30">
+                          <td className="py-2.5 px-3 font-medium text-bunny-text">{item.serviceName}</td>
+                          <td className="py-2.5 px-3">{item.quantity}</td>
+                          <td className="py-2.5 px-3 text-emerald-700 font-semibold">{item.redeemedQuantity}</td>
+                          <td className="py-2.5 px-3 text-bunny-primary font-semibold">{item.remainingQuantity}</td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="number"
+                              min={0}
+                              max={item.remainingQuantity}
+                              className="w-20 rounded-lg border border-bunny-border bg-white px-2 py-1 text-xs text-right font-medium focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                              value={redeemQuantities[item.id] || 0}
+                              onChange={(e) =>
+                                setRedeemQuantities((prev) => ({
+                                  ...prev,
+                                  [item.id]: Math.max(0, Number(e.target.value) || 0),
+                                }))
+                              }
+                            />
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="number"
+                              min={0}
+                              max={item.redeemedQuantity}
+                              className="w-20 rounded-lg border border-bunny-border bg-white px-2 py-1 text-xs text-right font-medium focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                              value={revertQuantities[item.id] || 0}
+                              onChange={(e) =>
+                                setRevertQuantities((prev) => ({
+                                  ...prev,
+                                  [item.id]: Math.max(0, Number(e.target.value) || 0),
+                                }))
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-              <Row className="g-2 mb-2">
-                <Col md={6}>
-                  <Form.Label>Nota de canje *</Form.Label>
-                  <Form.Control value={redeemNote} onChange={(e) => setRedeemNote(e.target.value)} />
-                </Col>
-                <Col md={6}>
-                  <Form.Label>Override por vencimiento</Form.Label>
-                  <Form.Check
-                    type="checkbox"
-                    label="Permitir canje vencido (admin)"
-                    checked={overrideExpired}
-                    onChange={(e) => setOverrideExpired(e.target.checked)}
-                  />
-                  {overrideExpired && (
-                    <Form.Control
-                      className="mt-2"
-                      placeholder="Motivo override"
-                      value={overrideReason}
-                      onChange={(e) => setOverrideReason(e.target.value)}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-bunny-border bg-bunny-paper/30">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      Nota de canje *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      value={redeemNote}
+                      onChange={(e) => setRedeemNote(e.target.value)}
                     />
-                  )}
-                </Col>
-              </Row>
-
-              <Row className="g-2 mb-3">
-                <Col md={6}>
-                  <Button className="w-100" onClick={handleRedeem}>
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-bunny-text">
+                      <input
+                        type="checkbox"
+                        className="rounded border-bunny-border text-bunny-primary focus:ring-bunny-primary/30"
+                        checked={overrideExpired}
+                        onChange={(e) => setOverrideExpired(e.target.checked)}
+                      />
+                      Permitir canje vencido (override admin)
+                    </label>
+                    {overrideExpired && (
+                      <input
+                        type="text"
+                        className="w-full mt-2 rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                        placeholder="Motivo override..."
+                        value={overrideReason}
+                        onChange={(e) => setOverrideReason(e.target.value)}
+                      />
+                    )}
+                  </div>
+                  <Button fullWidth onClick={handleRedeem}>
                     Canjear seleccionados
                   </Button>
-                </Col>
-                <Col md={6}>
-                  <Form.Label>Nota de reversa *</Form.Label>
-                  <Form.Control value={revertNote} onChange={(e) => setRevertNote(e.target.value)} />
-                  <Button className="w-100 mt-2" variant="outline-warning" onClick={handleRevert}>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      Nota de reversa *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      value={revertNote}
+                      onChange={(e) => setRevertNote(e.target.value)}
+                    />
+                  </div>
+                  <Button fullWidth variant="warning" onClick={handleRevert}>
                     Revertir seleccionados
                   </Button>
-                </Col>
-              </Row>
+                </div>
+              </div>
 
-              <div className="d-flex flex-wrap gap-2 mb-3">
-                <Button variant="outline-danger" onClick={handleCancel}>
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-bunny-border">
+                <Button variant="danger" size="sm" onClick={handleCancel}>
                   Anular GiftCard
                 </Button>
                 <a
-                  className="btn btn-outline-primary"
+                  className="inline-flex items-center text-xs px-3 py-1.5 rounded-lg border border-bunny-primary text-bunny-primary hover:bg-bunny-primary hover:text-white font-medium transition-colors"
                   href={normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code)}
                   target="_blank"
                   rel="noreferrer"
@@ -1096,55 +1224,64 @@ export default function GiftCardsPage() {
                   🌐 Abrir URL pública
                 </a>
                 <Button
-                  variant="outline-success"
+                  variant="outline"
+                  size="sm"
                   onClick={handleShareGiftCard}
                   disabled={sharingGiftCard}
+                  isLoading={sharingGiftCard}
                 >
-                  {sharingGiftCard ? (
-                    <>
-                      <Spinner size="sm" animation="border" className="me-1" />
-                      Generando...
-                    </>
-                  ) : (
-                    '🎁 Generar y compartir PNG'
-                  )}
+                  🎁 Generar y compartir PNG
                 </Button>
                 <Button
-                  variant="outline-secondary"
+                  variant="outline"
+                  size="sm"
                   onClick={handleDownloadPng}
                   disabled={downloadingPng}
+                  isLoading={downloadingPng}
                 >
-                  {downloadingPng ? 'Descargando...' : '📥 Descargar PNG'}
+                  📥 Descargar PNG
                 </Button>
-                <Button variant="outline-dark" onClick={handleDownloadPdf}>
+                <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
                   📄 Imprimir / PDF
                 </Button>
-                <Button variant="success" onClick={handleSendWhatsAppBeneficiary}>
+                <Button variant="success" size="sm" onClick={handleSendWhatsAppBeneficiary}>
                   📱 Enviar WhatsApp
                 </Button>
               </div>
 
-              <h6>Historial</h6>
-              <Table size="sm" striped>
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Evento</th>
-                    <th>Actor</th>
-                    <th>Nota</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(currentGiftCard.events || []).map((event) => (
-                    <tr key={event.id}>
-                      <td>{new Date(event.createdAt).toLocaleString('es-CL')}</td>
-                      <td>{event.eventType}</td>
-                      <td>{event.actorUsername || event.actor}</td>
-                      <td>{event.note || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+              <div className="pt-2">
+                <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider mb-2">Historial</h4>
+                <div className="overflow-x-auto border border-bunny-border rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
+                      <tr>
+                        <th className="py-2 px-3">Fecha</th>
+                        <th className="py-2 px-3">Evento</th>
+                        <th className="py-2 px-3">Actor</th>
+                        <th className="py-2 px-3">Nota</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-bunny-border/30">
+                      {(currentGiftCard.events || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-3 px-3 text-center text-bunny-text-muted">
+                            Sin eventos registrados
+                          </td>
+                        </tr>
+                      ) : (
+                        (currentGiftCard.events || []).map((event) => (
+                          <tr key={event.id} className="hover:bg-bunny-paper/30">
+                            <td className="py-2 px-3 font-mono">{new Date(event.createdAt).toLocaleString('es-CL')}</td>
+                            <td className="py-2 px-3 font-semibold">{event.eventType}</td>
+                            <td className="py-2 px-3">{event.actorUsername || event.actor}</td>
+                            <td className="py-2 px-3">{event.note || '-'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </>
           )}
         </Modal.Body>
@@ -1155,19 +1292,19 @@ export default function GiftCardsPage() {
         show={showAssignModal}
         onHide={() => setShowAssignModal(false)}
         size="lg"
-        centered
-        className="bunny-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Asignar Clienta a GiftCard {currentGiftCard?.code}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Alert variant="info" className="mb-3">
+        <Modal.Body className="space-y-4">
+          <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50 text-purple-900 text-xs">
             Para registrar los servicios canjeados en el historial, puntos/sellos de fidelidad y ficha de cliente, vincula esta GiftCard a una clienta existente o regístrala como clienta regular nueva.
-          </Alert>
+          </div>
 
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h6 className="mb-0">Buscar Clienta Existente</h6>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider">
+              Buscar Clienta Existente
+            </h4>
             <Button
               variant="primary"
               size="sm"
@@ -1177,37 +1314,39 @@ export default function GiftCardsPage() {
             </Button>
           </div>
 
-          <Form.Control
+          <input
             type="text"
             placeholder="Buscar por nombre, teléfono (+569...) o RUT"
             value={assignSearch}
             onChange={(e) => setAssignSearch(e.target.value)}
-            className="mb-3"
+            className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
           />
 
-          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+          <div className="max-h-72 overflow-y-auto border border-bunny-border rounded-xl">
             {assignSearchResults.length === 0 ? (
-              <p className="text-muted text-center py-3">No se encontraron clientas coincidentes.</p>
+              <p className="text-bunny-text-muted text-center py-6 text-sm">
+                No se encontraron clientas coincidentes.
+              </p>
             ) : (
-              <Table size="sm" hover className="align-middle">
-                <thead>
+              <table className="w-full text-left text-sm">
+                <thead className="bg-bunny-paper/60 text-xs text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                   <tr>
-                    <th>Nombre</th>
-                    <th>Teléfono</th>
-                    <th>RUT</th>
-                    <th>Acción</th>
+                    <th className="py-2.5 px-3">Nombre</th>
+                    <th className="py-2.5 px-3">Teléfono</th>
+                    <th className="py-2.5 px-3">RUT</th>
+                    <th className="py-2.5 px-3 text-right">Acción</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-bunny-border/30">
                   {assignSearchResults.map((cust) => (
-                    <tr key={cust.id}>
-                      <td className="fw-semibold">{cust.fullName}</td>
-                      <td>{cust.phone}</td>
-                      <td>{cust.rut || '-'}</td>
-                      <td>
+                    <tr key={cust.id} className="hover:bg-bunny-paper/30">
+                      <td className="py-2.5 px-3 font-semibold text-bunny-text">{cust.fullName}</td>
+                      <td className="py-2.5 px-3">{cust.phone}</td>
+                      <td className="py-2.5 px-3 font-mono text-xs">{cust.rut || '-'}</td>
+                      <td className="py-2.5 px-3 text-right">
                         <Button
                           size="sm"
-                          variant="outline-success"
+                          variant="success"
                           disabled={assignLoading}
                           onClick={() => handleBindCustomerToGiftCard(cust)}
                         >
@@ -1217,7 +1356,7 @@ export default function GiftCardsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </Table>
+              </table>
             )}
           </div>
         </Modal.Body>

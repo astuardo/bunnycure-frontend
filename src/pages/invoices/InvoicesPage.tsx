@@ -1,20 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  Badge,
-  Button,
-  ButtonGroup,
-  Card,
-  Col,
-  Form,
-  InputGroup,
-  Modal,
-  Nav,
-  Row,
-  Spinner,
-  Table,
-} from 'react-bootstrap';
-import {
   FiAlertTriangle,
   FiCheckCircle,
   FiClock,
@@ -44,6 +29,11 @@ import {
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { formatRutWithDots, isValidRutDv, isValidRutFormat } from '@/utils/rutUtils';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { Spinner } from '@/components/ui/Spinner';
 
 // Format period for display (e.g. 202609 -> Septiembre 2026)
 const formatPeriodDisplay = (periodStr: string) => {
@@ -229,11 +219,9 @@ export default function InvoicesPage() {
 
   const filteredPending = useMemo(() => {
     return pendingList.filter((item) => {
-      // Filter type
       if (pendingFilter === 'ERRORS' && item.invoiceStatus !== 'FAILED') return false;
       if (pendingFilter === 'NO_RUT' && item.rutStatus === 'VALID') return false;
 
-      // Search
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const matchesName = item.customerName?.toLowerCase().includes(term);
@@ -480,34 +468,30 @@ export default function InvoicesPage() {
     }
   };
 
-
-
   const isAllFilteredSelected =
     filteredPending.length > 0 &&
     filteredPending.every((item) => selectedAppointmentIds.includes(item.appointmentId));
 
   return (
     <DashboardLayout>
-      <div className="bunny-page container-fluid py-3 px-md-4">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="h3 mb-1 fw-bold text-dark d-flex align-items-center gap-2">
-              <span style={{ fontSize: '1.4rem' }}>🧾</span> Boletas SII (BHE)
+            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+              <span>🧾</span> Boletas SII (BHE)
             </h1>
-            <p className="text-muted small mb-0">
+            <p className="text-sm text-bunny-text-muted mt-1">
               Trazabilidad de boletas por emitir, selección múltiple, emisión manual y contraste oficial con el SII.
             </p>
           </div>
 
-          <div className="d-flex flex-wrap align-items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Period selector */}
-            <div className="d-flex align-items-center gap-1 bg-white border rounded px-2 py-1 shadow-xs">
-              <small className="text-muted fw-bold">Período:</small>
-              <Form.Select
-                size="sm"
-                className="border-0 bg-transparent fw-semibold shadow-none text-dark"
-                style={{ width: '165px', cursor: 'pointer' }}
+            <div className="flex items-center gap-1.5 bg-white border border-bunny-border rounded-xl px-3 py-1.5 shadow-sm text-xs">
+              <span className="text-bunny-text-muted font-bold">Período:</span>
+              <select
+                className="border-0 bg-transparent font-semibold text-bunny-text focus:outline-none cursor-pointer"
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
               >
@@ -516,26 +500,25 @@ export default function InvoicesPage() {
                     {p.label}
                   </option>
                 ))}
-              </Form.Select>
+              </select>
             </div>
 
             <Button
-              variant="outline-secondary"
+              variant="outline"
               size="sm"
-              className="d-flex align-items-center gap-1 bg-white"
               onClick={handleRefreshAll}
               disabled={loadingSummary || loadingPending || loadingIssued || loadingContrast}
+              leftIcon={<FiRefreshCw className={loadingSummary || loadingPending ? 'animate-spin' : ''} />}
             >
-              <FiRefreshCw className={loadingSummary || loadingPending ? 'spin' : ''} />
-              <span>Actualizar</span>
+              Actualizar
             </Button>
 
             {summary?.apiGatewayConfigured ? (
-              <Badge bg="success" className="px-2 py-2 d-flex align-items-center gap-1 shadow-xs">
+              <Badge variant="success" className="px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
                 <FiCheckCircle /> SII Conectado
               </Badge>
             ) : (
-              <Badge bg="warning" text="dark" className="px-2 py-2 d-flex align-items-center gap-1 shadow-xs">
+              <Badge variant="warning" className="px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
                 <FiAlertTriangle /> Modo Pruebas (Dry-Run)
               </Badge>
             )}
@@ -543,552 +526,526 @@ export default function InvoicesPage() {
         </div>
 
         {/* Top Metric Cards */}
-        <Row className="g-3 mb-4">
-          <Col xs={12} sm={6} lg={3}>
-            <Card className="border-0 shadow-xs rounded-3 h-100 bg-white">
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <span className="text-muted small fw-bold text-uppercase">Boletas Emitidas (Mes)</span>
-                  <div className="p-2 rounded-2 bg-success bg-opacity-10 text-success">
-                    <FiFileText size={18} />
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <Card.Body className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-bunny-text-muted font-bold uppercase tracking-wider">
+                  Boletas Emitidas (Mes)
+                </span>
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                  <FiFileText size={18} />
                 </div>
-                <h3 className="h4 fw-bold mb-1 text-dark">
-                  {summary ? summary.generatedThisMonth : <Spinner size="sm" animation="border" />}
-                </h3>
-                <small className="text-success fw-semibold">
-                  Total facturado: {summary ? formatCurrencyCLP(summary.totalAmountMonth) : '$0'}
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
+              </div>
+              <h3 className="text-2xl font-bold text-bunny-text mb-1">
+                {summary ? summary.generatedThisMonth : <Spinner size="sm" />}
+              </h3>
+              <p className="text-xs text-emerald-700 font-semibold">
+                Total facturado: {summary ? formatCurrencyCLP(summary.totalAmountMonth) : '$0'}
+              </p>
+            </Card.Body>
+          </Card>
 
-          <Col xs={12} sm={6} lg={3}>
-            <Card
-              className={`border-0 shadow-xs rounded-3 h-100 bg-white ${
-                summary && summary.pendingInvoicesCount > 0 ? 'border-start border-4 border-warning' : ''
-              }`}
-            >
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <span className="text-muted small fw-bold text-uppercase">Por Emitir / Faltantes</span>
-                  <div
-                    className={`p-2 rounded-2 ${
-                      summary && summary.pendingInvoicesCount > 0
-                        ? 'bg-warning bg-opacity-10 text-warning'
-                        : 'bg-light text-muted'
-                    }`}
-                  >
-                    <FiAlertTriangle size={18} />
-                  </div>
-                </div>
-                <h3
-                  className={`h4 fw-bold mb-1 ${
-                    summary && summary.pendingInvoicesCount > 0 ? 'text-warning' : 'text-dark'
+          <Card className={summary && summary.pendingInvoicesCount > 0 ? 'border-amber-300 ring-1 ring-amber-300' : ''}>
+            <Card.Body className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-bunny-text-muted font-bold uppercase tracking-wider">
+                  Por Emitir / Faltantes
+                </span>
+                <div
+                  className={`p-2 rounded-xl ${
+                    summary && summary.pendingInvoicesCount > 0
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-slate-100 text-slate-500'
                   }`}
                 >
-                  {summary ? summary.pendingInvoicesCount : <Spinner size="sm" animation="border" />}
-                </h3>
-                <small className="text-muted">
-                  {summary && summary.failedInvoicesCount > 0
-                    ? `${summary.failedInvoicesCount} con error previo`
-                    : 'Citas completadas'}
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col xs={12} sm={6} lg={3}>
-            <Card className="border-0 shadow-xs rounded-3 h-100 bg-white">
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <span className="text-muted small fw-bold text-uppercase">Envío Automático Email</span>
-                  <div className="p-2 rounded-2 bg-secondary bg-opacity-10 text-secondary">
-                    <FiMail size={18} />
-                  </div>
+                  <FiAlertTriangle size={18} />
                 </div>
-                <h3 className="h5 fw-bold mb-1 text-dark">
-                  {summary?.sendEmailEnabled ? 'Habilitado' : 'Desactivado (Manual)'}
-                </h3>
-                <small className="text-muted">
-                  {summary?.sendEmailEnabled ? 'Despacho automático' : 'Emisión sin correo automático'}
-                </small>
-              </Card.Body>
-            </Card>
-          </Col>
+              </div>
+              <h3
+                className={`text-2xl font-bold mb-1 ${
+                  summary && summary.pendingInvoicesCount > 0 ? 'text-amber-800' : 'text-bunny-text'
+                }`}
+              >
+                {summary ? summary.pendingInvoicesCount : <Spinner size="sm" />}
+              </h3>
+              <p className="text-xs text-bunny-text-muted">
+                {summary && summary.failedInvoicesCount > 0
+                  ? `${summary.failedInvoicesCount} con error previo`
+                  : 'Citas completadas'}
+              </p>
+            </Card.Body>
+          </Card>
 
-          <Col xs={12} sm={6} lg={3}>
-            <Card className="border-0 shadow-xs rounded-3 h-100 bg-white">
-              <Card.Body className="p-3">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <span className="text-muted small fw-bold text-uppercase">RUT Emisor SII</span>
-                  <div className="p-2 rounded-2 bg-secondary bg-opacity-10 text-secondary">
-                    <FiShield size={18} />
-                  </div>
+          <Card>
+            <Card.Body className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-bunny-text-muted font-bold uppercase tracking-wider">
+                  Envío Automático Email
+                </span>
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                  <FiMail size={18} />
                 </div>
-                <h3 className="h5 fw-bold mb-1 text-dark text-truncate">
-                  {summary?.emisorRut ? formatRutWithDots(summary.emisorRut) : 'No configurado'}
-                </h3>
-                <small className="text-muted">2da Categoría - Retención Emisor</small>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+              </div>
+              <h3 className="text-lg font-bold text-bunny-text mb-1">
+                {summary?.sendEmailEnabled ? 'Habilitado' : 'Desactivado (Manual)'}
+              </h3>
+              <p className="text-xs text-bunny-text-muted">
+                {summary?.sendEmailEnabled ? 'Despacho automático' : 'Emisión sin correo automático'}
+              </p>
+            </Card.Body>
+          </Card>
+
+          <Card>
+            <Card.Body className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-bunny-text-muted font-bold uppercase tracking-wider">
+                  RUT Emisor SII
+                </span>
+                <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
+                  <FiShield size={18} />
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-bunny-text mb-1 truncate">
+                {summary?.emisorRut ? formatRutWithDots(summary.emisorRut) : 'No configurado'}
+              </h3>
+              <p className="text-xs text-bunny-text-muted">2da Categoría - Retención Emisor</p>
+            </Card.Body>
+          </Card>
+        </div>
 
         {/* Navigation Tabs */}
-        <Card className="border-0 shadow-xs rounded-3 bg-white mb-4">
-          <Card.Header className="bg-white border-bottom p-2 p-md-3">
-            <Nav variant="pills" className="gap-2">
-              <Nav.Item>
-                <Nav.Link
-                  active={activeTab === 'pending'}
-                  onClick={() => setActiveTab('pending')}
-                  className="d-flex align-items-center gap-2 px-3 py-2 fw-semibold rounded-2"
-                  style={{
-                    backgroundColor: activeTab === 'pending' ? '#c9897a' : 'transparent',
-                    color: activeTab === 'pending' ? '#fff' : '#5c3d2e',
-                  }}
-                >
-                  <FiAlertTriangle />
-                  <span>Boletas por Emitir</span>
-                  {pendingList.length > 0 && (
-                    <Badge
-                      bg={activeTab === 'pending' ? 'light' : 'warning'}
-                      text={activeTab === 'pending' ? 'dark' : 'dark'}
-                      pill
-                    >
-                      {pendingList.length}
-                    </Badge>
-                  )}
-                </Nav.Link>
-              </Nav.Item>
+        <Card>
+          <Card.Header className="p-3 bg-white">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('pending')}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
+                  activeTab === 'pending'
+                    ? 'bg-bunny-primary text-white shadow-sm'
+                    : 'text-bunny-text hover:bg-bunny-paper'
+                }`}
+              >
+                <FiAlertTriangle />
+                <span>Boletas por Emitir</span>
+                {pendingList.length > 0 && (
+                  <Badge variant={activeTab === 'pending' ? 'neutral' : 'warning'}>
+                    {pendingList.length}
+                  </Badge>
+                )}
+              </button>
 
-              <Nav.Item>
-                <Nav.Link
-                  active={activeTab === 'issued'}
-                  onClick={() => setActiveTab('issued')}
-                  className="d-flex align-items-center gap-2 px-3 py-2 fw-semibold rounded-2"
-                  style={{
-                    backgroundColor: activeTab === 'issued' ? '#c9897a' : 'transparent',
-                    color: activeTab === 'issued' ? '#fff' : '#5c3d2e',
-                  }}
-                >
-                  <FiFileText />
-                  <span>Boletas Emitidas</span>
-                </Nav.Link>
-              </Nav.Item>
+              <button
+                type="button"
+                onClick={() => setActiveTab('issued')}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
+                  activeTab === 'issued'
+                    ? 'bg-bunny-primary text-white shadow-sm'
+                    : 'text-bunny-text hover:bg-bunny-paper'
+                }`}
+              >
+                <FiFileText />
+                <span>Boletas Emitidas</span>
+              </button>
 
-              <Nav.Item>
-                <Nav.Link
-                  active={activeTab === 'contrast'}
-                  onClick={() => setActiveTab('contrast')}
-                  className="d-flex align-items-center gap-2 px-3 py-2 fw-semibold rounded-2"
-                  style={{
-                    backgroundColor: activeTab === 'contrast' ? '#c9897a' : 'transparent',
-                    color: activeTab === 'contrast' ? '#fff' : '#5c3d2e',
-                  }}
-                >
-                  <FiRefreshCw />
-                  <span>Contraste con el SII</span>
-                </Nav.Link>
-              </Nav.Item>
-            </Nav>
+              <button
+                type="button"
+                onClick={() => setActiveTab('contrast')}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
+                  activeTab === 'contrast'
+                    ? 'bg-bunny-primary text-white shadow-sm'
+                    : 'text-bunny-text hover:bg-bunny-paper'
+                }`}
+              >
+                <FiRefreshCw />
+                <span>Contraste con el SII</span>
+              </button>
+            </div>
           </Card.Header>
 
-          <Card.Body className="p-3 p-md-4">
-            {/* ─────────────────────────────────────────────────────────────────
-                TAB 1: BOLETAS PENDIENTES / POR EMITIR (0 Créditos)
-            ───────────────────────────────────────────────────────────────── */}
+          <Card.Body className="p-4">
+            {/* TAB 1: BOLETAS PENDIENTES */}
             {activeTab === 'pending' && (
-              <div>
-                {/* Floating/Sticky Batch Action Banner */}
+              <div className="space-y-4">
+                {/* Floating Batch Action Banner */}
                 {selectedAppointmentIds.length > 0 && (
-                  <div className="p-3 bg-dark text-white rounded-3 mb-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 shadow">
-                    <div className="d-flex align-items-center gap-2">
-                      <Badge bg="warning" text="dark" pill className="fs-6 px-3 py-2">
+                  <div className="p-4 bg-slate-900 text-white rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="warning" className="text-sm px-3 py-1 font-bold">
                         {selectedAppointmentIds.length} seleccionadas
                       </Badge>
-                      <span className="small text-light">
-                        Monto total: <strong>{formatCurrencyCLP(selectedTotalAmount)}</strong> | RUTs válidos:{' '}
-                        <strong>
+                      <span className="text-xs text-slate-300">
+                        Monto total: <strong className="text-white">{formatCurrencyCLP(selectedTotalAmount)}</strong> | RUTs válidos:{' '}
+                        <strong className="text-white">
                           {selectedValidRutsCount}/{selectedAppointmentIds.length}
                         </strong>
                       </span>
                     </div>
 
-                    <div className="d-flex flex-wrap align-items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="success"
-                        className="d-flex align-items-center gap-1 shadow-sm"
+                        leftIcon={<FiEdit3 />}
                         onClick={handleOpenBatchManualModal}
                       >
-                        <FiEdit3 />
-                        <span>Marcar como Emitidas a Mano ({selectedAppointmentIds.length})</span>
+                        Marcar a Mano ({selectedAppointmentIds.length})
                       </Button>
 
                       <Button
                         size="sm"
                         variant="primary"
-                        style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-                        className="d-flex align-items-center gap-1 shadow-sm"
+                        leftIcon={<FiSend />}
                         onClick={handleOpenBatchEmitModal}
                       >
-                        <FiSend />
-                        <span>Emitir al SII ({selectedAppointmentIds.length})</span>
+                        Emitir al SII ({selectedAppointmentIds.length})
                       </Button>
 
-                      <Button
-                        size="sm"
-                        variant="outline-light"
+                      <button
+                        type="button"
                         onClick={() => setSelectedAppointmentIds([])}
                         title="Deseleccionar todo"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                       >
-                        <FiX />
-                      </Button>
+                        <FiX size={18} />
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {/* Filters and search */}
-                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                  <div className="d-flex flex-wrap gap-2 align-items-center">
-                    <span className="text-muted small fw-bold">Filtro:</span>
-                    <Button
-                      size="sm"
-                      variant={pendingFilter === 'ALL' ? 'dark' : 'outline-secondary'}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs text-bunny-text-muted font-bold uppercase">Filtro:</span>
+                    <button
+                      type="button"
                       onClick={() => setPendingFilter('ALL')}
-                      className="rounded-pill"
+                      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                        pendingFilter === 'ALL'
+                          ? 'bg-bunny-text text-white'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
                     >
                       Todas ({pendingList.length})
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={pendingFilter === 'ERRORS' ? 'danger' : 'outline-danger'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setPendingFilter('ERRORS')}
-                      className="rounded-pill"
+                      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                        pendingFilter === 'ERRORS'
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                      }`}
                     >
                       Con Error ({pendingList.filter((i) => i.invoiceStatus === 'FAILED').length})
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={pendingFilter === 'NO_RUT' ? 'warning' : 'outline-warning'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setPendingFilter('NO_RUT')}
-                      className="rounded-pill text-dark"
+                      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                        pendingFilter === 'NO_RUT'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+                      }`}
                     >
                       Sin RUT o Inválido ({pendingList.filter((i) => i.rutStatus !== 'VALID').length})
-                    </Button>
+                    </button>
                   </div>
 
-                  <InputGroup style={{ maxWidth: '320px' }}>
-                    <InputGroup.Text className="bg-light border-end-0">
-                      <FiSearch className="text-muted" />
-                    </InputGroup.Text>
-                    <Form.Control
+                  <div className="relative w-full md:w-72">
+                    <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
+                    <input
+                      type="text"
                       placeholder="Buscar por cliente, RUT o ID..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="border-start-0 bg-light"
-                      size="sm"
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-bunny-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     />
-                  </InputGroup>
+                  </div>
                 </div>
 
                 {loadingPending ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" style={{ color: '#c9897a' }} />
-                    <p className="text-muted mt-2 small">Cargando citas por emitir...</p>
+                  <div className="text-center py-12 text-bunny-text-muted">
+                    <Spinner size="md" className="mx-auto mb-2" />
+                    <p className="text-xs">Cargando citas por emitir...</p>
                   </div>
                 ) : filteredPending.length === 0 ? (
-                  <div className="text-center py-5 border rounded-3 bg-light bg-opacity-50">
-                    <span style={{ fontSize: '2.5rem' }}>✨</span>
-                    <h5 className="mt-2 fw-bold text-dark">¡Todo al día!</h5>
-                    <p className="text-muted small mb-0">
+                  <div className="text-center py-12 border border-bunny-border rounded-2xl bg-bunny-paper/30">
+                    <span className="text-3xl">✨</span>
+                    <h4 className="mt-2 text-sm font-bold text-bunny-text">¡Todo al día!</h4>
+                    <p className="text-xs text-bunny-text-muted mt-0.5">
                       No hay citas completadas pendientes de emisión de boleta que coincidan con el filtro.
                     </p>
                   </div>
                 ) : (
-                  <div className="table-responsive">
-                    <Table hover className="align-middle mb-0 border-top">
-                      <thead className="table-light small text-muted text-uppercase">
+                  <div className="overflow-x-auto border border-bunny-border rounded-xl">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                         <tr>
-                          <th style={{ width: '40px' }} className="text-center">
-                            <Form.Check
+                          <th className="py-3 px-3 text-center w-10">
+                            <input
                               type="checkbox"
+                              className="rounded border-bunny-border text-bunny-primary focus:ring-bunny-primary/30"
                               checked={isAllFilteredSelected}
                               onChange={(e) => handleSelectAll(e.target.checked)}
                               title="Seleccionar todas las visibles"
                             />
                           </th>
-                          <th>Cita #</th>
-                          <th>Fecha / Hora</th>
-                          <th>Cliente</th>
-                          <th>RUT Cliente</th>
-                          <th>Servicios</th>
-                          <th>Monto</th>
-                          <th>Diagnóstico / Estado</th>
-                          <th className="text-end">Acciones</th>
+                          <th className="py-3 px-3">Cita #</th>
+                          <th className="py-3 px-3">Fecha / Hora</th>
+                          <th className="py-3 px-3">Cliente</th>
+                          <th className="py-3 px-3">RUT Cliente</th>
+                          <th className="py-3 px-3">Servicios</th>
+                          <th className="py-3 px-3">Monto</th>
+                          <th className="py-3 px-3">Diagnóstico / Estado</th>
+                          <th className="py-3 px-3 text-right">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-bunny-border/30">
                         {filteredPending.map((item) => {
                           const isSelected = selectedAppointmentIds.includes(item.appointmentId);
                           return (
-                            <tr key={item.appointmentId} className={isSelected ? 'table-active' : ''}>
-                              <td className="text-center">
-                                <Form.Check
+                            <tr key={item.appointmentId} className={`hover:bg-bunny-paper/40 transition-colors ${isSelected ? 'bg-bunny-primary-light/30' : ''}`}>
+                              <td className="py-3 px-3 text-center">
+                                <input
                                   type="checkbox"
+                                  className="rounded border-bunny-border text-bunny-primary focus:ring-bunny-primary/30"
                                   checked={isSelected}
                                   onChange={() => handleToggleSelectOne(item.appointmentId)}
                                 />
                               </td>
-                              <td className="fw-bold text-dark">#{item.appointmentId}</td>
-                              <td>
+                              <td className="py-3 px-3 font-bold text-bunny-text">#{item.appointmentId}</td>
+                              <td className="py-3 px-3">
                                 <div>{item.appointmentDate}</div>
-                                <small className="text-muted">{item.appointmentTime?.substring(0, 5)}</small>
+                                <span className="text-bunny-text-muted">{item.appointmentTime?.substring(0, 5)}</span>
                               </td>
-                              <td>
-                                <div className="fw-semibold text-dark">{item.customerName}</div>
-                                <small className="text-muted">{item.customerEmail || 'Sin correo'}</small>
+                              <td className="py-3 px-3">
+                                <div className="font-semibold text-bunny-text">{item.customerName}</div>
+                                <span className="text-bunny-text-muted">{item.customerEmail || 'Sin correo'}</span>
                               </td>
-                              <td>
+                              <td className="py-3 px-3">
                                 {item.customerRut ? (
                                   <Badge
-                                    bg={item.rutStatus === 'VALID' ? 'success' : 'danger'}
-                                    className="font-monospace"
+                                    variant={item.rutStatus === 'VALID' ? 'success' : 'danger'}
+                                    className="font-mono text-xs"
                                   >
                                     {formatRutWithDots(item.customerRut)}
                                   </Badge>
                                 ) : (
-                                  <Badge bg="warning" text="dark">
+                                  <Badge variant="warning">
                                     Falta RUT
                                   </Badge>
                                 )}
                               </td>
-                              <td>
-                                <small className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
-                                  {item.servicesSummary}
-                                </small>
+                              <td className="py-3 px-3 max-w-[200px] truncate" title={item.servicesSummary}>
+                                {item.servicesSummary}
                               </td>
-                              <td className="fw-bold text-dark">{formatCurrencyCLP(item.totalAmount)}</td>
-                              <td>
+                              <td className="py-3 px-3 font-bold text-bunny-text">{formatCurrencyCLP(item.totalAmount)}</td>
+                              <td className="py-3 px-3">
                                 {item.invoiceStatus === 'FAILED' ? (
-                                  <div className="text-danger small">
-                                    <Badge bg="danger" className="mb-1">
+                                  <div className="space-y-0.5">
+                                    <Badge variant="danger" className="flex items-center gap-1 w-fit">
                                       <FiXCircle /> Error al emitir
                                     </Badge>
                                     <div
-                                      className="text-truncate"
-                                      style={{ maxWidth: '220px', fontSize: '11px' }}
+                                      className="text-rose-600 truncate max-w-[200px]"
                                       title={item.errorMessage || ''}
                                     >
                                       {item.errorMessage || 'Error en comunicación con SII'}
                                     </div>
                                   </div>
                                 ) : item.rutStatus !== 'VALID' ? (
-                                  <Badge bg="warning" text="dark">
+                                  <Badge variant="warning">
                                     Requiere RUT válido
                                   </Badge>
                                 ) : (
-                                  <Badge bg="secondary">
+                                  <Badge variant="neutral" className="flex items-center gap-1 w-fit">
                                     <FiClock /> Sin emitir
                                   </Badge>
                                 )}
                               </td>
-                              <td className="text-end">
-                                <ButtonGroup size="sm">
+                              <td className="py-3 px-3 text-right">
+                                <div className="inline-flex items-center gap-1">
                                   <Button
-                                    variant="primary"
-                                    style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-                                    className="d-inline-flex align-items-center gap-1 shadow-xs"
+                                    size="sm"
                                     onClick={() => handleOpenEmitModal(item)}
-                                    title="Emitir boleta en el SII"
+                                    leftIcon={<FiSend size={12} />}
                                   >
-                                    <FiSend size={12} />
-                                    <span>Emitir</span>
+                                    Emitir
                                   </Button>
-
                                   <Button
-                                    variant="outline-secondary"
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleOpenManualModal(item)}
-                                    title="Marcar como emitida a mano (sin enviar al SII, 0 créditos)"
+                                    title="Marcar como emitida a mano (0 créditos)"
+                                    leftIcon={<FiEdit3 size={12} />}
                                   >
-                                    <FiEdit3 size={12} />
-                                    <span className="d-none d-lg-inline ms-1">A Mano</span>
+                                    A Mano
                                   </Button>
-                                </ButtonGroup>
+                                </div>
                               </td>
                             </tr>
                           );
                         })}
                       </tbody>
-                    </Table>
+                    </table>
                   </div>
                 )}
               </div>
             )}
 
-            {/* ─────────────────────────────────────────────────────────────────
-                TAB 2: BOLETAS EMITIDAS (0 Créditos)
-            ───────────────────────────────────────────────────────────────── */}
+            {/* TAB 2: BOLETAS EMITIDAS */}
             {activeTab === 'issued' && (
-              <div>
-                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                   <div>
-                    <h6 className="fw-bold mb-0 text-dark">
+                    <h3 className="text-sm font-bold text-bunny-text">
                       Boletas Registradas en {formatPeriodDisplay(selectedPeriod)}
-                    </h6>
-                    <small className="text-muted">Listado local de documentos BHE emitidos con éxito.</small>
+                    </h3>
+                    <p className="text-xs text-bunny-text-muted mt-0.5">
+                      Listado local de documentos BHE emitidos con éxito.
+                    </p>
                   </div>
 
-                  <InputGroup style={{ maxWidth: '320px' }}>
-                    <InputGroup.Text className="bg-light border-end-0">
-                      <FiSearch className="text-muted" />
-                    </InputGroup.Text>
-                    <Form.Control
+                  <div className="relative w-full md:w-72">
+                    <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
+                    <input
+                      type="text"
                       placeholder="Buscar por folio, cliente, RUT..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="border-start-0 bg-light"
-                      size="sm"
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-bunny-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     />
-                  </InputGroup>
+                  </div>
                 </div>
 
                 {loadingIssued ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" style={{ color: '#c9897a' }} />
-                    <p className="text-muted mt-2 small">Cargando boletas emitidas...</p>
+                  <div className="text-center py-12 text-bunny-text-muted">
+                    <Spinner size="md" className="mx-auto mb-2" />
+                    <p className="text-xs">Cargando boletas emitidas...</p>
                   </div>
                 ) : filteredIssued.length === 0 ? (
-                  <div className="text-center py-5 border rounded-3 bg-light bg-opacity-50">
-                    <span style={{ fontSize: '2.5rem' }}>📄</span>
-                    <h5 className="mt-2 fw-bold text-dark">Sin boletas emitidas en este período</h5>
-                    <p className="text-muted small mb-0">
+                  <div className="text-center py-12 border border-bunny-border rounded-2xl bg-bunny-paper/30">
+                    <span className="text-3xl">📄</span>
+                    <h4 className="mt-2 text-sm font-bold text-bunny-text">Sin boletas emitidas en este período</h4>
+                    <p className="text-xs text-bunny-text-muted mt-0.5">
                       No se registraron emisiones locales para {formatPeriodDisplay(selectedPeriod)}.
                     </p>
                   </div>
                 ) : (
-                  <div className="table-responsive">
-                    <Table hover className="align-middle mb-0 border-top">
-                      <thead className="table-light small text-muted text-uppercase">
+                  <div className="overflow-x-auto border border-bunny-border rounded-xl">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                         <tr>
-                          <th>Folio</th>
-                          <th>Cita</th>
-                          <th>Fecha Emisión</th>
-                          <th>Cliente</th>
-                          <th>RUT</th>
-                          <th>Monto</th>
-                          <th>Origen / Correo SII</th>
-                          <th className="text-end">Acciones</th>
+                          <th className="py-3 px-3">Folio</th>
+                          <th className="py-3 px-3">Cita</th>
+                          <th className="py-3 px-3">Fecha Emisión</th>
+                          <th className="py-3 px-3">Cliente</th>
+                          <th className="py-3 px-3">RUT</th>
+                          <th className="py-3 px-3">Monto</th>
+                          <th className="py-3 px-3">Origen / Correo SII</th>
+                          <th className="py-3 px-3 text-right">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-bunny-border/30">
                         {filteredIssued.map((item) => (
-                          <tr key={item.id}>
-                            <td>
+                          <tr key={item.id} className="hover:bg-bunny-paper/40 transition-colors">
+                            <td className="py-3 px-3">
                               <Badge
-                                bg={item.siiCode === 'MANUAL' ? 'secondary' : 'dark'}
-                                className="font-monospace px-2 py-1"
+                                variant={item.siiCode === 'MANUAL' ? 'neutral' : 'primary'}
+                                className="font-mono text-xs"
                               >
                                 Folio #{item.invoiceNumber}
                               </Badge>
                               {item.siiCode && item.siiCode !== 'MANUAL' && (
-                                <div className="text-muted" style={{ fontSize: '10px' }}>
-                                  {item.siiCode}
-                                </div>
+                                <div className="text-bunny-text-muted text-[10px] mt-0.5">{item.siiCode}</div>
                               )}
                             </td>
-                            <td>
+                            <td className="py-3 px-3">
                               {item.appointmentId ? (
-                                <span className="fw-semibold text-primary">#{item.appointmentId}</span>
+                                <span className="font-semibold text-bunny-primary">#{item.appointmentId}</span>
                               ) : (
-                                <span className="text-muted">-</span>
+                                <span className="text-bunny-text-muted">-</span>
                               )}
                             </td>
-                            <td>
-                              <small className="text-dark">
-                                {item.createdAt ? item.createdAt.substring(0, 10) : item.appointmentDate}
-                              </small>
+                            <td className="py-3 px-3">
+                              {item.createdAt ? item.createdAt.substring(0, 10) : item.appointmentDate}
                             </td>
-                            <td>
-                              <div className="fw-semibold text-dark">{item.customerName}</div>
-                              <small className="text-muted">{item.customerEmail || 'Sin email'}</small>
+                            <td className="py-3 px-3">
+                              <div className="font-semibold text-bunny-text">{item.customerName}</div>
+                              <span className="text-bunny-text-muted">{item.customerEmail || 'Sin email'}</span>
                             </td>
-                            <td className="font-monospace small">
+                            <td className="py-3 px-3 font-mono">
                               {item.customerRut ? formatRutWithDots(item.customerRut) : '-'}
                             </td>
-                            <td className="fw-bold text-dark">{formatCurrencyCLP(item.amountInClp)}</td>
-                            <td>
+                            <td className="py-3 px-3 font-bold text-bunny-text">{formatCurrencyCLP(item.amountInClp)}</td>
+                            <td className="py-3 px-3">
                               {item.siiCode === 'MANUAL' ? (
-                                <Badge bg="light" text="dark" className="border">
+                                <Badge variant="neutral" className="flex items-center gap-1 w-fit">
                                   <FiEdit3 /> Emitida a Mano
                                 </Badge>
                               ) : item.emailSent ? (
-                                <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                                <Badge variant="success" className="flex items-center gap-1 w-fit">
                                   <FiCheckCircle /> Enviado
                                 </Badge>
                               ) : (
-                                <Badge bg="light" text="dark" className="border">
+                                <Badge variant="neutral">
                                   SII (Sin email)
                                 </Badge>
                               )}
                             </td>
-                            <td className="text-end">
-                              <div className="d-flex justify-content-end gap-1">
+                            <td className="py-3 px-3 text-right">
+                              <div className="inline-flex items-center gap-1">
                                 {item.siiCode !== 'MANUAL' && (
                                   <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline-secondary"
+                                    <button
+                                      type="button"
+                                      className="p-1.5 rounded-lg border border-bunny-border text-bunny-text hover:bg-bunny-paper transition-colors disabled:opacity-50"
                                       title="Descargar PDF oficial SII"
                                       onClick={() => handleDownloadPdf(item.siiCode || item.invoiceNumber, item.invoiceNumber)}
                                       disabled={actionLoading || (!item.siiCode && !item.invoiceNumber)}
                                     >
-                                      <FiDownload />
-                                    </Button>
-
-                                    <Button
-                                      size="sm"
-                                      variant="outline-info"
+                                      <FiDownload size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="p-1.5 rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50 transition-colors disabled:opacity-50"
                                       title="Reenviar correo oficial SII"
                                       onClick={() => handleOpenResendModal(item)}
                                       disabled={actionLoading || (!item.siiCode && !item.invoiceNumber)}
                                     >
-                                      <FiMail />
-                                    </Button>
+                                      <FiMail size={14} />
+                                    </button>
                                   </>
                                 )}
-
-                                <Button
-                                  size="sm"
-                                  variant="outline-danger"
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
                                   title="Anular en el SII"
                                   onClick={() => handleOpenCancelModal(item.invoiceNumber)}
                                   disabled={actionLoading}
                                 >
-                                  <FiTrash2 />
-                                </Button>
+                                  <FiTrash2 size={14} />
+                                </button>
                               </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
-                    </Table>
+                    </table>
                   </div>
                 )}
               </div>
             )}
 
-            {/* ─────────────────────────────────────────────────────────────────
-                TAB 3: CONTRASTE CON EL SII (Bajo Demanda - Ahorro de Créditos)
-            ───────────────────────────────────────────────────────────────── */}
+            {/* TAB 3: CONTRASTE CON EL SII */}
             {activeTab === 'contrast' && (
-              <div>
-                <Alert variant="light" className="border d-flex align-items-start gap-3 mb-4 bg-light bg-opacity-75">
-                  <span style={{ fontSize: '1.5rem' }}>💡</span>
-                  <div className="small">
-                    <strong className="d-block text-dark mb-1">
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl border border-bunny-border bg-bunny-paper/40 flex items-start gap-3">
+                  <span className="text-xl">💡</span>
+                  <div className="text-xs text-bunny-text">
+                    <strong className="block text-bunny-text-title mb-1 font-bold">
                       Conciliación Oficial Bajo Demanda (Cuidado de Créditos de API)
                     </strong>
                     Esta vista cruza las boletas registradas en BunnyCure contra los documentos oficiales emitidos
@@ -1096,218 +1053,190 @@ export default function InvoicesPage() {
                     Para no consumir créditos de tu cuenta en cada navegación, la consulta externa se realiza únicamente
                     cuando presionas el botón y se almacena en caché durante 15 minutos.
                   </div>
-                </Alert>
+                </div>
 
-                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
-                  <div className="d-flex align-items-center gap-2">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Button
-                      variant="primary"
-                      style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-                      className="d-flex align-items-center gap-2 shadow-xs fw-semibold"
                       onClick={() => loadContrast(false)}
                       disabled={loadingContrast}
+                      isLoading={loadingContrast}
+                      leftIcon={<FiSearch />}
                     >
-                      {loadingContrast ? (
-                        <>
-                          <Spinner size="sm" animation="border" />
-                          <span>Consultando SII...</span>
-                        </>
-                      ) : (
-                        <>
-                          <FiSearch />
-                          <span>Consultar y Contrastar con SII</span>
-                        </>
-                      )}
+                      Consultar y Contrastar con SII
                     </Button>
 
                     <Button
-                      variant="outline-secondary"
+                      variant="outline"
                       size="sm"
                       onClick={() => loadContrast(true)}
                       disabled={loadingContrast}
                       title="Fuerza una nueva llamada al SII ignorando la caché (consume 1 crédito de consulta)"
+                      leftIcon={<FiRefreshCw className={loadingContrast ? 'animate-spin' : ''} />}
                     >
-                      <FiRefreshCw className={loadingContrast ? 'spin' : ''} /> Forzar Recarga Externa
+                      Forzar Recarga Externa
                     </Button>
                   </div>
 
                   {contrastResult && (
-                    <small className="text-muted">
+                    <div className="text-xs text-bunny-text-muted">
                       Última consulta:{' '}
-                      <strong>{new Date(contrastResult.queriedAt).toLocaleTimeString()}</strong>
+                      <strong className="font-mono text-bunny-text">
+                        {new Date(contrastResult.queriedAt).toLocaleTimeString()}
+                      </strong>
                       {contrastResult.fromCache && (
-                        <Badge bg="light" text="dark" className="ms-2 border">
+                        <Badge variant="neutral" className="ml-2">
                           Desde Caché (0 créditos)
                         </Badge>
                       )}
-                    </small>
+                    </div>
                   )}
                 </div>
 
                 {loadingContrast ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" style={{ color: '#c9897a' }} />
-                    <p className="text-muted mt-2 small">Cruzando información con los servidores del SII...</p>
+                  <div className="text-center py-12 text-bunny-text-muted">
+                    <Spinner size="md" className="mx-auto mb-2" />
+                    <p className="text-xs">Cruzando información con los servidores del SII...</p>
                   </div>
                 ) : !contrastResult ? (
-                  <div className="text-center py-5 border rounded-3 bg-light bg-opacity-50">
-                    <span style={{ fontSize: '2.5rem' }}>🔍</span>
-                    <h5 className="mt-2 fw-bold text-dark">Consulta de Contraste no realizada</h5>
-                    <p className="text-muted small mb-3">
+                  <div className="text-center py-12 border border-bunny-border rounded-2xl bg-bunny-paper/30">
+                    <span className="text-3xl">🔍</span>
+                    <h4 className="mt-2 text-sm font-bold text-bunny-text">Consulta de Contraste no realizada</h4>
+                    <p className="text-xs text-bunny-text-muted mt-0.5">
                       Presiona el botón superior para contrastar las boletas de BunnyCure contra el SII en{' '}
                       {formatPeriodDisplay(selectedPeriod)}.
                     </p>
                   </div>
                 ) : (
-                  <div>
+                  <div className="space-y-6">
                     {/* Contrast KPIs */}
-                    <Row className="g-3 mb-4">
-                      <Col xs={6} md={3}>
-                        <div className="p-3 border rounded-3 bg-white text-center shadow-xs">
-                          <small className="text-muted text-uppercase fw-bold">Reportadas en SII</small>
-                          <h4 className="fw-bold mb-0 text-primary mt-1">{contrastResult.siiTotalCount}</h4>
-                          <small className="text-muted">{formatCurrencyCLP(contrastResult.siiTotalAmount)}</small>
-                        </div>
-                      </Col>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 border border-bunny-border rounded-xl bg-white text-center shadow-sm">
+                        <span className="text-xs text-bunny-text-muted uppercase font-bold block">Reportadas en SII</span>
+                        <h4 className="text-2xl font-bold text-bunny-primary mt-1">{contrastResult.siiTotalCount}</h4>
+                        <span className="text-xs text-bunny-text-muted">{formatCurrencyCLP(contrastResult.siiTotalAmount)}</span>
+                      </div>
 
-                      <Col xs={6} md={3}>
-                        <div className="p-3 border rounded-3 bg-white text-center shadow-xs">
-                          <small className="text-muted text-uppercase fw-bold">Emitidas en BunnyCure</small>
-                          <h4 className="fw-bold mb-0 text-dark mt-1">{contrastResult.localTotalCount}</h4>
-                          <small className="text-muted">{formatCurrencyCLP(contrastResult.localTotalAmount)}</small>
-                        </div>
-                      </Col>
+                      <div className="p-4 border border-bunny-border rounded-xl bg-white text-center shadow-sm">
+                        <span className="text-xs text-bunny-text-muted uppercase font-bold block">Emitidas en BunnyCure</span>
+                        <h4 className="text-2xl font-bold text-bunny-text mt-1">{contrastResult.localTotalCount}</h4>
+                        <span className="text-xs text-bunny-text-muted">{formatCurrencyCLP(contrastResult.localTotalAmount)}</span>
+                      </div>
 
-                      <Col xs={6} md={3}>
-                        <div className="p-3 border rounded-3 bg-white text-center shadow-xs">
-                          <small className="text-muted text-uppercase fw-bold">Conciliadas Exactas</small>
-                          <h4 className="fw-bold mb-0 text-success mt-1">{contrastResult.matchedCount}</h4>
-                          <small className="text-success">Coinciden en SII y App</small>
-                        </div>
-                      </Col>
+                      <div className="p-4 border border-bunny-border rounded-xl bg-white text-center shadow-sm">
+                        <span className="text-xs text-bunny-text-muted uppercase font-bold block">Conciliadas Exactas</span>
+                        <h4 className="text-2xl font-bold text-emerald-700 mt-1">{contrastResult.matchedCount}</h4>
+                        <span className="text-xs text-emerald-700 font-semibold">Coinciden en SII y App</span>
+                      </div>
 
-                      <Col xs={6} md={3}>
-                        <div className="p-3 border rounded-3 bg-white text-center shadow-xs">
-                          <small className="text-muted text-uppercase fw-bold">Citas Sin Boleta</small>
-                          <h4
-                            className={`fw-bold mb-0 mt-1 ${
-                              contrastResult.pendingEmitCount > 0 ? 'text-danger' : 'text-success'
-                            }`}
-                          >
-                            {contrastResult.pendingEmitCount}
-                          </h4>
-                          <small className="text-muted">Faltantes por emitir</small>
-                        </div>
-                      </Col>
-                    </Row>
+                      <div className="p-4 border border-bunny-border rounded-xl bg-white text-center shadow-sm">
+                        <span className="text-xs text-bunny-text-muted uppercase font-bold block">Citas Sin Boleta</span>
+                        <h4
+                          className={`text-2xl font-bold mt-1 ${
+                            contrastResult.pendingEmitCount > 0 ? 'text-rose-600' : 'text-emerald-700'
+                          }`}
+                        >
+                          {contrastResult.pendingEmitCount}
+                        </h4>
+                        <span className="text-xs text-bunny-text-muted">Faltantes por emitir</span>
+                      </div>
+                    </div>
 
-                    {/* Pending appointments missing in period */}
+                    {/* Pending appointments in contrast */}
                     {contrastResult.pendingAppointments.length > 0 && (
-                      <div className="mb-4">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
-                          <h6 className="fw-bold text-danger mb-0 d-flex align-items-center gap-1">
-                            <FiAlertTriangle /> Citas completadas de {formatPeriodDisplay(selectedPeriod)} sin boleta emitida ({contrastResult.pendingAppointments.length})
-                          </h6>
-                        </div>
-                        <div className="table-responsive border rounded-3">
-                          <Table hover className="align-middle mb-0">
-                            <thead className="table-light small text-muted">
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+                          <FiAlertTriangle /> Citas completadas de {formatPeriodDisplay(selectedPeriod)} sin boleta emitida ({contrastResult.pendingAppointments.length})
+                        </h4>
+                        <div className="overflow-x-auto border border-bunny-border rounded-xl">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                               <tr>
-                                <th>Cita #</th>
-                                <th>Fecha</th>
-                                <th>Cliente</th>
-                                <th>RUT</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                                <th className="text-end">Acción</th>
+                                <th className="py-2.5 px-3">Cita #</th>
+                                <th className="py-2.5 px-3">Fecha</th>
+                                <th className="py-2.5 px-3">Cliente</th>
+                                <th className="py-2.5 px-3">RUT</th>
+                                <th className="py-2.5 px-3">Monto</th>
+                                <th className="py-2.5 px-3">Estado</th>
+                                <th className="py-2.5 px-3 text-right">Acción</th>
                               </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-bunny-border/30">
                               {contrastResult.pendingAppointments.map((p) => (
-                                <tr key={p.appointmentId}>
-                                  <td className="fw-bold">#{p.appointmentId}</td>
-                                  <td>{p.appointmentDate}</td>
-                                  <td>{p.customerName}</td>
-                                  <td>
-                                    {p.customerRut ? (
-                                      formatRutWithDots(p.customerRut)
-                                    ) : (
-                                      <Badge bg="warning" text="dark">
-                                        Sin RUT
-                                      </Badge>
-                                    )}
+                                <tr key={p.appointmentId} className="hover:bg-bunny-paper/40">
+                                  <td className="py-2.5 px-3 font-bold text-bunny-text">#{p.appointmentId}</td>
+                                  <td className="py-2.5 px-3">{p.appointmentDate}</td>
+                                  <td className="py-2.5 px-3 font-semibold text-bunny-text">{p.customerName}</td>
+                                  <td className="py-2.5 px-3 font-mono">
+                                    {p.customerRut ? formatRutWithDots(p.customerRut) : <Badge variant="warning">Sin RUT</Badge>}
                                   </td>
-                                  <td className="fw-bold">{formatCurrencyCLP(p.totalAmount)}</td>
-                                  <td>
+                                  <td className="py-2.5 px-3 font-bold text-bunny-text">{formatCurrencyCLP(p.totalAmount)}</td>
+                                  <td className="py-2.5 px-3">
                                     {p.invoiceStatus === 'FAILED' ? (
-                                      <Badge bg="danger">Error previo</Badge>
+                                      <Badge variant="danger">Error previo</Badge>
                                     ) : (
-                                      <Badge bg="secondary">Sin emitir</Badge>
+                                      <Badge variant="neutral">Sin emitir</Badge>
                                     )}
                                   </td>
-                                  <td className="text-end">
-                                    <Button
-                                      size="sm"
-                                      variant="primary"
-                                      style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-                                      onClick={() => handleOpenEmitModal(p)}
-                                    >
+                                  <td className="py-2.5 px-3 text-right">
+                                    <Button size="sm" onClick={() => handleOpenEmitModal(p)}>
                                       Emitir Ahora
                                     </Button>
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
-                          </Table>
+                          </table>
                         </div>
                       </div>
                     )}
 
                     {/* Local Invoices Reconciliation Status */}
-                    <div>
-                      <h6 className="fw-bold text-dark mb-2">
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider">
                         Estado de Conciliación de Boletas Locales vs SII
-                      </h6>
-                      <div className="table-responsive border rounded-3">
-                        <Table hover className="align-middle mb-0">
-                          <thead className="table-light small text-muted">
+                      </h4>
+                      <div className="overflow-x-auto border border-bunny-border rounded-xl">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead className="bg-bunny-paper/60 text-bunny-text-muted font-semibold border-b border-bunny-border uppercase tracking-wider">
                             <tr>
-                              <th>Folio</th>
-                              <th>Fecha</th>
-                              <th>Cliente</th>
-                              <th>Monto</th>
-                              <th>Estado en SII</th>
-                              <th className="text-end">Acciones</th>
+                              <th className="py-2.5 px-3">Folio</th>
+                              <th className="py-2.5 px-3">Fecha</th>
+                              <th className="py-2.5 px-3">Cliente</th>
+                              <th className="py-2.5 px-3">Monto</th>
+                              <th className="py-2.5 px-3">Estado en SII</th>
+                              <th className="py-2.5 px-3 text-right">Acciones</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="divide-y divide-bunny-border/30">
                             {contrastResult.localInvoices.map((inv) => (
-                              <tr key={inv.id}>
-                                <td className="fw-bold">Folio #{inv.invoiceNumber}</td>
-                                <td>{inv.createdAt ? inv.createdAt.substring(0, 10) : inv.appointmentDate}</td>
-                                <td>{inv.customerName}</td>
-                                <td className="fw-bold">{formatCurrencyCLP(inv.amountInClp)}</td>
-                                <td>
-                                  <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                              <tr key={inv.id} className="hover:bg-bunny-paper/40">
+                                <td className="py-2.5 px-3 font-mono font-bold text-bunny-text">Folio #{inv.invoiceNumber}</td>
+                                <td className="py-2.5 px-3">{inv.createdAt ? inv.createdAt.substring(0, 10) : inv.appointmentDate}</td>
+                                <td className="py-2.5 px-3 font-semibold text-bunny-text">{inv.customerName}</td>
+                                <td className="py-2.5 px-3 font-bold text-bunny-text">{formatCurrencyCLP(inv.amountInClp)}</td>
+                                <td className="py-2.5 px-3">
+                                  <Badge variant="success" className="flex items-center gap-1 w-fit">
                                     <FiCheckCircle /> Registrada en SII
                                   </Badge>
                                 </td>
-                                <td className="text-end">
+                                <td className="py-2.5 px-3 text-right">
                                   {inv.siiCode !== 'MANUAL' && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline-secondary"
+                                    <button
+                                      type="button"
+                                      className="p-1.5 rounded-lg border border-bunny-border text-bunny-text hover:bg-bunny-paper transition-colors disabled:opacity-50"
                                       onClick={() => handleDownloadPdf(inv.siiCode, inv.invoiceNumber)}
                                       disabled={!inv.siiCode}
+                                      title="Descargar PDF"
                                     >
-                                      <FiDownload /> PDF
-                                    </Button>
+                                      <FiDownload size={14} />
+                                    </button>
                                   )}
                                 </td>
                               </tr>
                             ))}
                           </tbody>
-                        </Table>
+                        </table>
                       </div>
                     </div>
                   </div>
@@ -1318,372 +1247,349 @@ export default function InvoicesPage() {
         </Card>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          MODAL: EMITIR BOLETA INDIVIDUAL AL SII
-      ───────────────────────────────────────────────────────────────── */}
-      <Modal show={emitModalOpen} onHide={() => setEmitModalOpen(false)} centered>
+      {/* MODAL: EMITIR BOLETA INDIVIDUAL AL SII */}
+      <Modal show={emitModalOpen} onHide={() => setEmitModalOpen(false)}>
         <Modal.Header closeButton>
-          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
-            <FiPlusCircle style={{ color: '#c9897a' }} />
+          <Modal.Title className="flex items-center gap-2">
+            <FiPlusCircle className="text-bunny-primary" />
             Emitir Boleta de Honorarios en SII
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="space-y-4">
           {selectedPending && (
-            <div>
-              <div className="p-3 bg-light rounded-3 mb-3 border">
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted small">Cita:</span>
-                  <span className="fw-bold text-dark">#{selectedPending.appointmentId}</span>
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-bunny-text-muted">Cita:</span>
+                  <span className="font-bold text-bunny-text">#{selectedPending.appointmentId}</span>
                 </div>
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted small">Fecha:</span>
-                  <span className="text-dark">
+                <div className="flex justify-between">
+                  <span className="text-bunny-text-muted">Fecha:</span>
+                  <span className="text-bunny-text">
                     {selectedPending.appointmentDate} {selectedPending.appointmentTime?.substring(0, 5)}
                   </span>
                 </div>
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted small">Servicios:</span>
-                  <span className="text-dark text-truncate" style={{ maxWidth: '220px' }}>
-                    {selectedPending.servicesSummary}
-                  </span>
+                <div className="flex justify-between">
+                  <span className="text-bunny-text-muted">Servicios:</span>
+                  <span className="text-bunny-text truncate max-w-[200px]">{selectedPending.servicesSummary}</span>
                 </div>
-                <div className="d-flex justify-content-between border-top pt-2 mt-2">
-                  <span className="fw-bold text-dark">Total a Facturar:</span>
-                  <span className="fw-bold text-dark fs-5">
+                <div className="flex justify-between border-t border-bunny-border pt-2">
+                  <span className="font-bold text-bunny-text">Total a Facturar:</span>
+                  <span className="font-bold text-bunny-primary text-base">
                     {formatCurrencyCLP(selectedPending.totalAmount)}
                   </span>
                 </div>
               </div>
 
               {selectedPending.errorMessage && (
-                <Alert variant="danger" className="small py-2 mb-3">
+                <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs">
                   <strong>Error anterior:</strong> {selectedPending.errorMessage}
-                </Alert>
+                </div>
               )}
 
-              <Form.Group className="mb-3">
-                <Form.Label className="small fw-bold text-dark">
-                  RUT del Cliente <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  RUT del Cliente <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="text"
                   placeholder="Ej: 18.664.589-8"
                   value={editRut}
                   onChange={(e) => setEditRut(e.target.value)}
                   onBlur={() => setEditRut(formatRutWithDots(editRut))}
-                  isInvalid={editRut.trim().length > 0 && !isValidRutFormat(formatRutWithDots(editRut))}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                 />
-                <Form.Control.Feedback type="invalid">
-                  Por favor ingresa un RUT válido con dígito verificador.
-                </Form.Control.Feedback>
-                <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
+                <small className="text-bunny-text-muted mt-1 block">
                   Si el cliente no tenía RUT o estaba mal escrito, puedes corregirlo aquí y se actualizará en su ficha.
-                </Form.Text>
-              </Form.Group>
+                </small>
+              </div>
 
-              <Form.Group className="mb-2">
-                <Form.Label className="small fw-bold text-dark">Correo Oficial del Cliente (Opcional)</Form.Label>
-                <Form.Control
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Correo Oficial del Cliente (Opcional)
+                </label>
+                <input
                   type="email"
                   placeholder="cliente@ejemplo.com"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                 />
-              </Form.Group>
+              </div>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setEmitModalOpen(false)} disabled={actionLoading}>
+          <Button variant="outline" onClick={() => setEmitModalOpen(false)} disabled={actionLoading}>
             Cancelar
           </Button>
           <Button
-            variant="primary"
-            style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
             onClick={handleConfirmEmit}
             disabled={actionLoading || !editRut.trim()}
+            isLoading={actionLoading}
           >
-            {actionLoading ? (
-              <>
-                <Spinner size="sm" animation="border" className="me-1" /> Emitiendo en SII...
-              </>
-            ) : (
-              'Confirmar y Emitir BHE'
-            )}
+            Confirmar y Emitir BHE
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          MODAL: MARCAR INDIVIDUAL COMO EMITIDA A MANO (0 Créditos)
-      ───────────────────────────────────────────────────────────────── */}
-      <Modal show={manualModalOpen} onHide={() => setManualModalOpen(false)} centered>
+      {/* MODAL: MARCAR INDIVIDUAL COMO EMITIDA A MANO */}
+      <Modal show={manualModalOpen} onHide={() => setManualModalOpen(false)}>
         <Modal.Header closeButton>
-          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
-            <FiEdit3 style={{ color: '#c9897a' }} />
+          <Modal.Title className="flex items-center gap-2">
+            <FiEdit3 className="text-bunny-primary" />
             Marcar Boleta como Emitida a Mano
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="space-y-4">
           {manualPendingItem && (
-            <div>
-              <Alert variant="info" className="small mb-3">
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl border border-purple-200 bg-purple-50 text-purple-900 text-xs">
                 <strong>Sin llamada al SII (0 créditos):</strong> Esta opción marca la cita como facturada en el
                 sistema registrando el folio que emitiste a mano directamente en el portal del SII.
-              </Alert>
+              </div>
 
-              <div className="p-3 bg-light rounded-3 mb-3 border">
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted small">Cita:</span>
-                  <span className="fw-bold text-dark">#{manualPendingItem.appointmentId}</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-bunny-border space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-bunny-text-muted">Cita:</span>
+                  <span className="font-bold text-bunny-text">#{manualPendingItem.appointmentId}</span>
                 </div>
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted small">Cliente:</span>
-                  <span className="text-dark fw-semibold">{manualPendingItem.customerName}</span>
+                <div className="flex justify-between">
+                  <span className="text-bunny-text-muted">Cliente:</span>
+                  <span className="font-semibold text-bunny-text">{manualPendingItem.customerName}</span>
                 </div>
-                <div className="d-flex justify-content-between">
-                  <span className="text-muted small">Monto Total:</span>
-                  <span className="text-dark fw-bold">{formatCurrencyCLP(manualPendingItem.totalAmount)}</span>
+                <div className="flex justify-between">
+                  <span className="text-bunny-text-muted">Monto Total:</span>
+                  <span className="font-bold text-bunny-text">{formatCurrencyCLP(manualPendingItem.totalAmount)}</span>
                 </div>
               </div>
 
-              <Form.Group className="mb-3">
-                <Form.Label className="small fw-bold text-dark">Número de Folio Manual (Opcional)</Form.Label>
-                <Form.Control
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Número de Folio Manual (Opcional)
+                </label>
+                <input
+                  type="text"
                   placeholder="Ej: 1420 (Si lo dejas vacío, se guardará como MANUAL-ID)"
                   value={manualFolio}
                   onChange={(e) => setManualFolio(e.target.value)}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                 />
-                <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
-                  Ingresa el número de folio oficial generado a mano en sii.cl.
-                </Form.Text>
-              </Form.Group>
+              </div>
 
-              <Form.Group className="mb-2">
-                <Form.Label className="small fw-bold text-dark">Observación / Nota</Form.Label>
-                <Form.Control
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Observación / Nota
+                </label>
+                <input
+                  type="text"
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
                   placeholder="Nota interna de la emisión manual..."
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                 />
-              </Form.Group>
+              </div>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setManualModalOpen(false)} disabled={actionLoading}>
+          <Button variant="outline" onClick={() => setManualModalOpen(false)} disabled={actionLoading}>
             Cancelar
           </Button>
-          <Button variant="success" onClick={handleConfirmManual} disabled={actionLoading}>
-            {actionLoading ? <Spinner size="sm" animation="border" /> : 'Confirmar Registro Manual'}
+          <Button variant="success" onClick={handleConfirmManual} disabled={actionLoading} isLoading={actionLoading}>
+            Confirmar Registro Manual
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          MODAL: MARCAR LOTE COMO EMITIDAS A MANO (Batch 0 Créditos)
-      ───────────────────────────────────────────────────────────────── */}
-      <Modal show={batchManualModalOpen} onHide={() => setBatchManualModalOpen(false)} centered size="lg">
+      {/* MODAL: MARCAR LOTE COMO EMITIDAS A MANO */}
+      <Modal show={batchManualModalOpen} onHide={() => setBatchManualModalOpen(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
-            <FiLayers style={{ color: '#28a745' }} />
+          <Modal.Title className="flex items-center gap-2">
+            <FiLayers className="text-emerald-600" />
             Marcar {selectedAppointmentIds.length} Citas como Emitidas a Mano
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Alert variant="success" className="small mb-3">
+        <Modal.Body className="space-y-4">
+          <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs">
             <strong>Registro Masivo Local (0 créditos):</strong> Se registrarán las{' '}
             <strong>{selectedAppointmentIds.length} citas</strong> seleccionadas como emitidas con éxito en la base de
             datos de BunnyCure.
-          </Alert>
+          </div>
 
-          <div className="p-3 bg-light rounded-3 mb-3 border">
-            <div className="d-flex justify-content-between mb-1">
-              <span className="text-muted small">Citas seleccionadas:</span>
-              <span className="fw-bold text-dark">{selectedAppointmentIds.length} citas</span>
+          <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-bunny-text-muted">Citas seleccionadas:</span>
+              <span className="font-bold text-bunny-text">{selectedAppointmentIds.length} citas</span>
             </div>
-            <div className="d-flex justify-content-between">
-              <span className="text-muted small">Monto acumulado total:</span>
-              <span className="fw-bold text-success fs-5">{formatCurrencyCLP(selectedTotalAmount)}</span>
+            <div className="flex justify-between">
+              <span className="text-bunny-text-muted">Monto acumulado total:</span>
+              <span className="font-bold text-emerald-700 text-base">{formatCurrencyCLP(selectedTotalAmount)}</span>
             </div>
           </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-dark">
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
               Folio Inicial Consecutivo (Opcional)
-            </Form.Label>
-            <Form.Control
+            </label>
+            <input
+              type="text"
               placeholder="Ej: 1400 (Asignará 1400, 1401, 1402... correlativamente)"
               value={batchInitialFolio}
               onChange={(e) => setBatchInitialFolio(e.target.value)}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             />
-            <Form.Text className="text-muted" style={{ fontSize: '11px' }}>
-              Si dejas este campo vacío, cada cita se guardará con identificador MANUAL-ID.
-            </Form.Text>
-          </Form.Group>
+          </div>
 
-          <Form.Group className="mb-2">
-            <Form.Label className="small fw-bold text-dark">Nota General del Lote</Form.Label>
-            <Form.Control
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+              Nota General del Lote
+            </label>
+            <input
+              type="text"
               value={batchManualNotes}
               onChange={(e) => setBatchManualNotes(e.target.value)}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
             />
-          </Form.Group>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setBatchManualModalOpen(false)} disabled={actionLoading}>
+          <Button variant="outline" onClick={() => setBatchManualModalOpen(false)} disabled={actionLoading}>
             Cancelar
           </Button>
-          <Button variant="success" onClick={handleConfirmBatchManual} disabled={actionLoading}>
-            {actionLoading ? (
-              <>
-                <Spinner size="sm" animation="border" className="me-1" /> Procesando {selectedAppointmentIds.length} citas...
-              </>
-            ) : (
-              `Confirmar Marcado de ${selectedAppointmentIds.length} Boletas`
-            )}
+          <Button variant="success" onClick={handleConfirmBatchManual} disabled={actionLoading} isLoading={actionLoading}>
+            Confirmar Marcado de {selectedAppointmentIds.length} Boletas
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          MODAL: EMISIÓN MASIVA AL SII (Batch Emit)
-      ───────────────────────────────────────────────────────────────── */}
-      <Modal show={batchEmitModalOpen} onHide={() => setBatchEmitModalOpen(false)} centered size="lg">
+      {/* MODAL: EMISIÓN MASIVA AL SII */}
+      <Modal show={batchEmitModalOpen} onHide={() => setBatchEmitModalOpen(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
-            <FiSend style={{ color: '#c9897a' }} />
+          <Modal.Title className="flex items-center gap-2">
+            <FiSend className="text-bunny-primary" />
             Emitir {selectedAppointmentIds.length} Boletas en el SII
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Alert variant="warning" className="small mb-3">
+        <Modal.Body className="space-y-4">
+          <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs">
             <strong>Atención:</strong> Esta acción enviará secuencialmente cada una de las{' '}
             <strong>{selectedAppointmentIds.length} citas seleccionadas</strong> al servicio de emisión de BHE del SII.
-          </Alert>
+          </div>
 
-          <div className="p-3 bg-light rounded-3 mb-3 border">
-            <div className="d-flex justify-content-between mb-1">
-              <span className="text-muted small">Total Citas a Emitir:</span>
-              <span className="fw-bold text-dark">{selectedAppointmentIds.length}</span>
+          <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-bunny-text-muted">Total Citas a Emitir:</span>
+              <span className="font-bold text-bunny-text">{selectedAppointmentIds.length}</span>
             </div>
-            <div className="d-flex justify-content-between mb-1">
-              <span className="text-muted small">Citas con RUT Válido:</span>
-              <span className="fw-bold text-success">
+            <div className="flex justify-between">
+              <span className="text-bunny-text-muted">Citas con RUT Válido:</span>
+              <span className="font-bold text-emerald-700">
                 {selectedValidRutsCount} de {selectedAppointmentIds.length}
               </span>
             </div>
-            <div className="d-flex justify-content-between border-top pt-2 mt-2">
-              <span className="fw-bold text-dark">Monto Total a Facturar:</span>
-              <span className="fw-bold text-dark fs-5">{formatCurrencyCLP(selectedTotalAmount)}</span>
+            <div className="flex justify-between border-t border-bunny-border pt-2 mt-2">
+              <span className="font-bold text-bunny-text">Monto Total a Facturar:</span>
+              <span className="font-bold text-bunny-primary text-base">{formatCurrencyCLP(selectedTotalAmount)}</span>
             </div>
           </div>
 
           {selectedValidRutsCount < selectedAppointmentIds.length && (
-            <Alert variant="danger" className="small py-2 mb-0">
+            <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs">
               <strong>Advertencia:</strong> Hay {selectedAppointmentIds.length - selectedValidRutsCount} citas sin RUT
               válido. Esas citas no podrán emitirse en el SII y reportarán error. Te recomendamos editarlas individualmente o deseleccionarlas antes de emitir en lote.
-            </Alert>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setBatchEmitModalOpen(false)} disabled={actionLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-            onClick={handleConfirmBatchEmit}
-            disabled={actionLoading || selectedAppointmentIds.length === 0}
-          >
-            {actionLoading ? (
-              <>
-                <Spinner size="sm" animation="border" className="me-1" /> Emitiendo en SII...
-              </>
-            ) : (
-              `Comenzar Emisión en SII (${selectedAppointmentIds.length})`
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* ─────────────────────────────────────────────────────────────────
-          MODAL: REENVIAR CORREO SII
-      ───────────────────────────────────────────────────────────────── */}
-      <Modal show={resendModalOpen} onHide={() => setResendModalOpen(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title className="h5 fw-bold text-dark d-flex align-items-center gap-2">
-            <FiMail style={{ color: '#c9897a' }} />
-            Reenviar Correo Oficial SII
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedIssued && (
-            <div>
-              <p className="small text-muted mb-3">
-                Se solicitará al servidor del SII que despache nuevamente el correo electrónico oficial con el PDF y
-                XML adjuntos para la boleta <strong>Folio #{selectedIssued.invoiceNumber}</strong>.
-              </p>
-
-              <Form.Group>
-                <Form.Label className="small fw-bold text-dark">Destinatario:</Form.Label>
-                <Form.Control
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  value={resendEmailTarget}
-                  onChange={(e) => setResendEmailTarget(e.target.value)}
-                />
-              </Form.Group>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setResendModalOpen(false)} disabled={actionLoading}>
+          <Button variant="outline" onClick={() => setBatchEmitModalOpen(false)} disabled={actionLoading}>
             Cancelar
           </Button>
           <Button
-            variant="primary"
-            style={{ backgroundColor: '#c9897a', borderColor: '#c9897a' }}
-            onClick={handleConfirmResend}
-            disabled={actionLoading}
+            onClick={handleConfirmBatchEmit}
+            disabled={actionLoading || selectedAppointmentIds.length === 0}
+            isLoading={actionLoading}
           >
-            {actionLoading ? <Spinner size="sm" animation="border" /> : 'Reenviar Correo'}
+            Comenzar Emisión en SII ({selectedAppointmentIds.length})
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          MODAL: ANULAR BOLETA EN EL SII
-      ───────────────────────────────────────────────────────────────── */}
-      <Modal show={cancelModalOpen} onHide={() => setCancelModalOpen(false)} centered>
-        <Modal.Header closeButton className="border-danger">
-          <Modal.Title className="h5 fw-bold text-danger d-flex align-items-center gap-2">
+      {/* MODAL: REENVIAR CORREO SII */}
+      <Modal show={resendModalOpen} onHide={() => setResendModalOpen(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title className="flex items-center gap-2">
+            <FiMail className="text-bunny-primary" />
+            Reenviar Correo Oficial SII
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="space-y-4">
+          {selectedIssued && (
+            <div className="space-y-3">
+              <p className="text-xs text-bunny-text-muted">
+                Se solicitará al servidor del SII que despache nuevamente el correo electrónico oficial con el PDF y
+                XML adjuntos para la boleta <strong>Folio #{selectedIssued.invoiceNumber}</strong>.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  Destinatario:
+                </label>
+                <input
+                  type="email"
+                  placeholder="correo@ejemplo.com"
+                  value={resendEmailTarget}
+                  onChange={(e) => setResendEmailTarget(e.target.value)}
+                  className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                />
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline" onClick={() => setResendModalOpen(false)} disabled={actionLoading}>
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmResend} disabled={actionLoading} isLoading={actionLoading}>
+            Reenviar Correo
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* MODAL: ANULAR BOLETA EN EL SII */}
+      <Modal show={cancelModalOpen} onHide={() => setCancelModalOpen(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title className="flex items-center gap-2 text-rose-600">
             <FiAlertTriangle />
             Anular Boleta de Honorarios en el SII
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Alert variant="warning" className="small">
+        <Modal.Body className="space-y-4">
+          <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs">
             <strong>Atención:</strong> Esta acción anulará definitivamente la boleta <strong>Folio #{cancelFolio}</strong> directamente en la plataforma del SII.
-          </Alert>
-
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-dark">Causa de Anulación:</Form.Label>
-            <Form.Select value={cancelCause} onChange={(e) => setCancelCause(e.target.value)}>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+              Causa de Anulación:
+            </label>
+            <select
+              value={cancelCause}
+              onChange={(e) => setCancelCause(e.target.value)}
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+            >
               {SII_CANCEL_CAUSES.map((cause) => (
                 <option key={cause.value} value={cause.value}>
                   {cause.label}
                 </option>
               ))}
-            </Form.Select>
-          </Form.Group>
+            </select>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setCancelModalOpen(false)} disabled={actionLoading}>
+          <Button variant="outline" onClick={() => setCancelModalOpen(false)} disabled={actionLoading}>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={handleConfirmCancel} disabled={actionLoading}>
-            {actionLoading ? <Spinner size="sm" animation="border" /> : 'Confirmar Anulación en SII'}
+          <Button variant="danger" onClick={handleConfirmCancel} disabled={actionLoading} isLoading={actionLoading}>
+            Confirmar Anulación en SII
           </Button>
         </Modal.Footer>
       </Modal>
