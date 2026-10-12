@@ -3,9 +3,9 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
 import { APP_BUILD_ID_SHORT } from '../../config/buildInfo';
+import { Card, CardBody, CardFooter, Button, Input, Alert } from '../../components/ui';
 
 const loginSchema = yup.object({
     username: yup.string().required('El usuario es requerido'),
@@ -72,123 +72,104 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="bunny-auth-page d-flex align-items-center justify-content-center min-vh-100">
-            <Container fluid>
-                <Row className="w-100 mx-0">
-                    <Col xs={12} sm={10} md={6} lg={4} className="mx-auto">
-                        <Card>
-                        <Card.Body className="p-4">
-                            <div className="text-center mb-4">
-                                <h2 className="fw-bold text-primary">💅 BunnyCure</h2>
-                                <p className="text-muted">Sistema de Gestión</p>
+        <div className="min-h-screen min-h-[100dvh] bg-bunny-primary-light flex items-center justify-center p-4 selection:bg-bunny-primary selection:text-white">
+            <div className="w-full max-w-md mx-auto">
+                <Card className="shadow-bunny-lg border-bunny-border">
+                    <CardBody className="p-6 sm:p-8">
+                        <div className="text-center mb-6">
+                            <h2 className="text-3xl font-extrabold text-bunny-primary tracking-tight">💅 BunnyCure</h2>
+                            <p className="text-sm font-medium text-bunny-text-muted mt-1">Sistema de Gestión y Citas</p>
+                        </div>
+
+                        {sessionExpired && !dismissedSessionExpired && (
+                            <Alert
+                                variant="warning"
+                                dismissible
+                                onClose={() => setDismissedSessionExpired(true)}
+                                className="mb-4"
+                            >
+                                Tu sesión ha expirado. Por favor, inicia sesión nuevamente.
+                            </Alert>
+                        )}
+
+                        {versionChanged && !dismissedVersionChanged && (
+                            <Alert
+                                variant="info"
+                                dismissible
+                                onClose={() => setDismissedVersionChanged(true)}
+                                className="mb-4"
+                            >
+                                Se detectó una nueva versión de la app. Inicia sesión para continuar.
+                            </Alert>
+                        )}
+
+                        {shouldShowError && error && (
+                            <Alert
+                                variant="danger"
+                                title="Error de autenticación"
+                                dismissible
+                                onClose={() => {
+                                    setDismissedErrorMessage(error);
+                                    clearError();
+                                }}
+                                className="mb-4"
+                            >
+                                {error}
+                            </Alert>
+                        )}
+
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <Input
+                                id="username"
+                                label="Usuario"
+                                placeholder="Ingresa tu usuario"
+                                error={errors.username?.message}
+                                disabled={isSubmitting || isLoading}
+                                autoFocus
+                                {...register('username')}
+                            />
+
+                            <Input
+                                id="password"
+                                type="password"
+                                label="Contraseña"
+                                placeholder="Ingresa tu contraseña"
+                                error={errors.password?.message}
+                                disabled={isSubmitting || isLoading}
+                                {...register('password')}
+                            />
+
+                            <div className="pt-2">
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    size="lg"
+                                    fullWidth
+                                    isLoading={isSubmitting || isLoading}
+                                    loadingText="Iniciando sesión..."
+                                >
+                                    Iniciar Sesión
+                                </Button>
                             </div>
 
-                            {sessionExpired && !dismissedSessionExpired && (
-                                <Alert 
-                                    variant="warning" 
-                                    dismissible 
-                                    onClose={() => setDismissedSessionExpired(true)}
-                                    className="mb-3"
+                            <div className="text-center pt-2">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-xs font-medium text-bunny-text-muted hover:text-bunny-primary transition-colors underline-offset-4 hover:underline"
                                 >
-                                    <i className="bi bi-clock-history me-2"></i>
-                                    Tu sesión ha expirado. Por favor, inicia sesión nuevamente.
-                                </Alert>
-                            )}
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
+                            </div>
+                        </form>
+                    </CardBody>
 
-                            {versionChanged && !dismissedVersionChanged && (
-                                <Alert
-                                    variant="info"
-                                    dismissible
-                                    onClose={() => setDismissedVersionChanged(true)}
-                                    className="mb-3"
-                                >
-                                    <i className="bi bi-arrow-repeat me-2"></i>
-                                    Se detectó una nueva versión de la app. Inicia sesión para continuar.
-                                </Alert>
-                            )}
-
-                            {shouldShowError && error && (
-                                <Alert
-                                    variant="danger"
-                                    dismissible
-                                    onClose={() => {
-                                        setDismissedErrorMessage(error);
-                                        clearError();
-                                    }}
-                                >
-                                    <Alert.Heading>Error de autenticación</Alert.Heading>
-                                    <p className="mb-0">{error}</p>
-                                </Alert>
-                            )}
-
-                            <Form onSubmit={handleSubmit(onSubmit)}>
-                                <Form.Group className="mb-3" controlId="username">
-                                    <Form.Label>Usuario</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Ingresa tu usuario"
-                                        {...register('username')}
-                                        isInvalid={!!errors.username}
-                                        disabled={isSubmitting || isLoading}
-                                        autoFocus
-                                    />
-                                    <Form.Control.Feedback type="invalid">
-                                        {errors.username?.message}
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group className="mb-3" controlId="password">
-                                    <Form.Label>Contraseña</Form.Label>
-                                    <Form.Control
-                                        type="password"
-                                        placeholder="Ingresa tu contraseña"
-                                        {...register('password')}
-                                        isInvalid={!!errors.password}
-                                        disabled={isSubmitting || isLoading}
-                                    />
-                                    <Form.Control.Feedback type="invalid">
-                                        {errors.password?.message}
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Button
-                                    variant="primary"
-                                    type="submit"
-                                    className="w-100 mb-3"
-                                    disabled={isSubmitting || isLoading}
-                                >
-                                    {isSubmitting || isLoading ? (
-                                        <>
-                                            <Spinner
-                                                as="span"
-                                                animation="border"
-                                                size="sm"
-                                                role="status"
-                                                aria-hidden="true"
-                                                className="me-2"
-                                            />
-                                            Iniciando sesión...
-                                        </>
-                                    ) : (
-                                        'Iniciar Sesión'
-                                    )}
-                                </Button>
-
-                                <div className="text-center">
-                                    <Link to="/forgot-password" className="text-muted small text-decoration-none">
-                                        ¿Olvidaste tu contraseña?
-                                    </Link>
-                                </div>
-                            </Form>
-                        </Card.Body>
-
-                        <Card.Footer className="text-center text-muted small">
-                            <p className="mb-0">BunnyCure v1.0 - PWA | Build {APP_BUILD_ID_SHORT}</p>
-                        </Card.Footer>
-                        </Card>
-                    </Col>
-                </Row>
-            </Container>
+                    <CardFooter className="text-center py-3.5 bg-bunny-paper/80 border-t border-bunny-border">
+                        <p className="mb-0 text-xs text-bunny-text-muted font-medium">
+                            BunnyCure v1.0 - PWA | Build {APP_BUILD_ID_SHORT}
+                        </p>
+                    </CardFooter>
+                </Card>
+            </div>
         </div>
     );
 }

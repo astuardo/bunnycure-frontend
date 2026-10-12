@@ -1,13 +1,13 @@
 /**
  * Página de Reset de Contraseña
- * Permite establecer una nueva contraseña usando un token válido
+ * Permite establecer una nueva contraseña usando un token válido (Migrada a Tailwind CSS)
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { FaKey, FaCheckCircle } from 'react-icons/fa';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { passwordApi } from '../../api/password.api';
+import { Card, CardBody, Button, Input, Alert, Spinner } from '../../components/ui';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -76,10 +76,10 @@ export default function ResetPasswordPage() {
 
   if (validatingToken) {
     return (
-      <div className="bunny-auth-page d-flex align-items-center justify-content-center min-vh-100">
-        <div className="text-center">
-          <Spinner animation="border" />
-          <p className="mt-3">Validando enlace...</p>
+      <div className="min-h-screen min-h-[100dvh] bg-bunny-primary-light flex items-center justify-center p-4">
+        <div className="text-center flex flex-col items-center gap-3">
+          <Spinner size="lg" variant="primary" />
+          <p className="text-sm font-medium text-bunny-text-muted">Validando enlace de recuperación...</p>
         </div>
       </div>
     );
@@ -87,131 +87,122 @@ export default function ResetPasswordPage() {
 
   if (!tokenValid) {
     return (
-      <div className="bunny-auth-page d-flex align-items-center min-vh-100">
-        <Container>
-          <Row className="justify-content-center">
-            <Col md={6} lg={5}>
-              <Card>
-                <Card.Body className="p-5 text-center">
-                  <div className="text-danger mb-3">
-                    <FaKey size={60} />
-                  </div>
-                  <h3 className="fw-bold mb-3">Enlace Inválido o Expirado</h3>
-                  <p className="text-muted mb-4">
-                    El enlace de recuperación de contraseña es inválido o ha expirado.
-                    Por favor, solicita uno nuevo.
-                  </p>
-                  <div className="d-grid gap-2">
-                    <Link to="/forgot-password" className="btn btn-primary">
-                      Solicitar Nuevo Enlace
-                    </Link>
-                    <Link to="/login" className="btn btn-outline-secondary">
-                      Volver al Login
-                    </Link>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
+      <div className="min-h-screen min-h-[100dvh] bg-bunny-primary-light flex items-center justify-center p-4 selection:bg-bunny-primary selection:text-white">
+        <div className="w-full max-w-md mx-auto">
+          <Card className="shadow-bunny-lg border-bunny-border">
+            <CardBody className="p-6 sm:p-8 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-rose-50 flex items-center justify-center mb-4 text-bunny-danger shadow-sm">
+                <FaKey size={28} />
+              </div>
+              <h3 className="text-2xl font-bold text-bunny-text tracking-tight mb-2">Enlace Inválido o Expirado</h3>
+              <p className="text-sm font-medium text-bunny-text-muted mb-6">
+                El enlace de recuperación de contraseña es inválido o ha expirado. Por favor, solicita uno nuevo.
+              </p>
+              <div className="space-y-3">
+                <Link to="/forgot-password" className="block w-full">
+                  <Button variant="primary" size="lg" fullWidth>
+                    Solicitar Nuevo Enlace
+                  </Button>
+                </Link>
+                <Link to="/login" className="block w-full">
+                  <Button variant="outline" size="md" fullWidth>
+                    Volver al Login
+                  </Button>
+                </Link>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bunny-auth-page d-flex align-items-center min-vh-100">
-      <Container>
-        <Row className="justify-content-center">
-          <Col md={6} lg={5}>
-            <Card>
-              <Card.Body className="p-5">
-                <div className="text-center mb-4">
-                  <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                    <FaKey size={40} className="text-primary" />
+    <div className="min-h-screen min-h-[100dvh] bg-bunny-primary-light flex items-center justify-center p-4 selection:bg-bunny-primary selection:text-white">
+      <div className="w-full max-w-md mx-auto">
+        <Card className="shadow-bunny-lg border-bunny-border">
+          <CardBody className="p-6 sm:p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto rounded-full bg-bunny-primary/15 flex items-center justify-center mb-4 text-bunny-primary shadow-sm">
+                <FaKey size={28} />
+              </div>
+              <h3 className="text-2xl font-bold text-bunny-text tracking-tight">Restablecer Contraseña</h3>
+              <p className="text-sm font-medium text-bunny-text-muted mt-1">
+                Ingresa tu nueva contraseña para acceder al sistema
+              </p>
+            </div>
+
+            {error && (
+              <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-4">
+                {error}
+              </Alert>
+            )}
+
+            {success ? (
+              <div className="space-y-4">
+                <Alert variant="success" className="text-center">
+                  <div className="flex flex-col items-center text-center p-2">
+                    <FaCheckCircle size={44} className="mb-3 text-emerald-600" />
+                    <h5 className="font-bold text-base mb-1">¡Contraseña Actualizada!</h5>
+                    <p className="text-sm mb-0">
+                      Tu contraseña ha sido restablecida exitosamente. Serás redirigido al login...
+                    </p>
                   </div>
-                  <h3 className="fw-bold">Restablecer Contraseña</h3>
-                  <p className="text-muted">
-                    Ingresa tu nueva contraseña
-                  </p>
+                </Alert>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  id="newPassword"
+                  type="password"
+                  label="Nueva Contraseña"
+                  placeholder="Mínimo 8 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoFocus
+                />
+
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  label="Confirmar Contraseña"
+                  placeholder="Repite la contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    disabled={loading || !newPassword || !confirmPassword}
+                    isLoading={loading}
+                    loadingText="Restableciendo..."
+                    leftIcon={!loading ? <FaCheckCircle className="mr-2" /> : undefined}
+                  >
+                    Restablecer Contraseña
+                  </Button>
                 </div>
 
-                {error && (
-                  <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                    {error}
-                  </Alert>
-                )}
-
-                {success ? (
-                  <div>
-                    <Alert variant="success" className="text-center">
-                      <FaCheckCircle size={50} className="mb-3" />
-                      <h5 className="fw-bold">¡Contraseña Actualizada!</h5>
-                      <p className="mb-0">
-                        Tu contraseña ha sido restablecida exitosamente.
-                        Serás redirigido al login...
-                      </p>
-                    </Alert>
-                  </div>
-                ) : (
-                  <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Nueva Contraseña</Form.Label>
-                      <Form.Control
-                        type="password"
-                        placeholder="Mínimo 8 caracteres"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                        disabled={loading}
-                        autoFocus
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-4">
-                      <Form.Label>Confirmar Contraseña</Form.Label>
-                      <Form.Control
-                        type="password"
-                        placeholder="Repite la contraseña"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        disabled={loading}
-                      />
-                    </Form.Group>
-
-                    <div className="d-grid gap-2">
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        size="lg"
-                        disabled={loading || !newPassword || !confirmPassword}
-                      >
-                        {loading ? (
-                          <>
-                            <Spinner animation="border" size="sm" className="me-2" />
-                            Restableciendo...
-                          </>
-                        ) : (
-                          <>
-                            <FaCheckCircle className="me-2" />
-                            Restablecer Contraseña
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </Form>
-                )}
-              </Card.Body>
-            </Card>
-
-            <div className="text-center mt-3">
-              <Link to="/login" className="text-decoration-none">
-                <small>← Volver al login</small>
-              </Link>
-            </div>
-          </Col>
-        </Row>
-      </Container>
+                <div className="text-center pt-2">
+                  <Link
+                    to="/login"
+                    className="text-xs font-medium text-bunny-text-muted hover:text-bunny-primary transition-colors underline-offset-4 hover:underline"
+                  >
+                    ← Volver al login
+                  </Link>
+                </div>
+              </form>
+            )}
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }
