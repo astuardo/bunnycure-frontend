@@ -149,7 +149,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['react-bootstrap', 'bootstrap'],
           'vendor-charts': ['recharts'],
           'vendor-icons': ['lucide-react', 'react-icons'],
           'vendor-utils': ['date-fns', 'axios', 'zustand', 'yup'],

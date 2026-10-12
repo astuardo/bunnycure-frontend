@@ -7,28 +7,31 @@ import 'react-toastify/dist/ReactToastify.css'
 import './styles/mobile.css'
 import BuildVersionGuard from './components/BuildVersionGuard'
 import { TenantProvider } from './context/TenantContext'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 
 function App() {
   return (
-    <TenantProvider>
-      <BuildVersionGuard>
-        <OfflineIndicator />
-        <AppRouter />
-      </BuildVersionGuard>
-      <PWAUpdatePrompt />
-      <InstallPWA />
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-    </TenantProvider>
+    <ErrorBoundary>
+      <TenantProvider>
+        <BuildVersionGuard>
+          <OfflineIndicator />
+          <AppRouter />
+        </BuildVersionGuard>
+        <PWAUpdatePrompt />
+        <InstallPWA />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
+      </TenantProvider>
+    </ErrorBoundary>
   )
 }
 
