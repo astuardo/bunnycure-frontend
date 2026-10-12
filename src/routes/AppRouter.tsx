@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import { usePageViewTracking } from '../hooks/usePageViewTracking';
+import { useAuthStore } from '../stores/authStore';
 
 // ─── Carga Perezosa (Lazy Loading) de Páginas ──────────────────────────────
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
@@ -71,6 +72,32 @@ function BunnyRouteLoading() {
 }
 
 /**
+ * Redirección inteligente en la raíz (/):
+ * - Si el usuario ya tiene sesión activa o es personal del salón: va a /dashboard
+ * - Si es una clienta que escaneó/guardó su tarjeta Bunny Pass en este dispositivo: va a /mi-tarjeta/:publicId
+ * - Si no: va a /dashboard (que redirige ordenadamente a /login para el personal)
+ */
+function RootRedirect() {
+    const { isAuthenticated, user } = useAuthStore();
+
+    if (isAuthenticated && user) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    const hasStaffSession = typeof window !== 'undefined' && Boolean(localStorage.getItem('bunnycure-auth-build-id'));
+    if (hasStaffSession) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    const savedPassId = typeof window !== 'undefined' ? localStorage.getItem('bunny_my_loyalty_public_id') : null;
+    if (savedPassId) {
+        return <Navigate to={`/mi-tarjeta/${savedPassId}`} replace />;
+    }
+
+    return <Navigate to="/dashboard" replace />;
+}
+
+/**
  * Componente interno que usa usePageViewTracking dentro de BrowserRouter
  */
 function RoutesWithTracking() {
@@ -80,7 +107,7 @@ function RoutesWithTracking() {
         <Suspense fallback={<BunnyRouteLoading />}>
             <Routes>
                 {/* Rutas Públicas */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />

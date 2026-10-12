@@ -32,8 +32,108 @@ export default function PublicLoyaltyCardPage() {
 
   const [loading, setLoading] = useState<boolean>(!card);
   const [error, setError] = useState<string | null>(null);
-  const [showIosInstructions, setShowIosInstructions] = useState<boolean>(false);
+  const [showInstructions, setShowInstructions] = useState<boolean>(false);
+  const [instructionsTab, setInstructionsTab] = useState<'ios' | 'android'>('ios');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [copied, setCopied] = useState<boolean>(false);
+
+  // Detectar plataforma (iOS vs Android) y capturar evento nativo de instalación PWA
+  useEffect(() => {
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    setInstructionsTab(isIos ? 'ios' : 'android');
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  // Persistir el ID de la tarjeta en localStorage para accesos directos desde la pantalla de inicio
+  useEffect(() => {
+    if (!publicId) return;
+    localStorage.setItem('bunny_my_loyalty_public_id', publicId);
+  }, [publicId]);
+
+  // Sincronizar título, meta tag Apple y PWA Manifest dinámico con start_url directo a la tarjeta
+  useEffect(() => {
+    if (!card) return;
+
+    localStorage.setItem('bunny_my_loyalty_public_id', card.publicId);
+
+    const prevTitle = document.title;
+    document.title = `Bunny Pass - ${card.firstName}`;
+
+    let appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]') as HTMLMetaElement | null;
+    const prevAppleTitle = appleTitleMeta?.content;
+    if (!appleTitleMeta) {
+      appleTitleMeta = document.createElement('meta');
+      appleTitleMeta.name = 'apple-mobile-web-app-title';
+      document.head.appendChild(appleTitleMeta);
+    }
+    appleTitleMeta.content = 'Bunny Pass';
+
+    // Manifest dinámico específico para que al "Agregar a inicio" se abra directo la tarjeta
+    const cardManifest = {
+      name: `Bunny Pass - ${card.firstName}`,
+      short_name: 'Bunny Pass',
+      description: `Tarjeta de fidelización digital BunnyCure Club de ${card.firstName}`,
+      theme_color: '#FDFCF8',
+      background_color: '#FDFCF8',
+      display: 'standalone',
+      scope: '/',
+      start_url: `/mi-tarjeta/${card.publicId}`,
+      orientation: 'portrait',
+      icons: [
+        {
+          src: '/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/icon-maskable-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
+    };
+
+    const blob = new Blob([JSON.stringify(cardManifest)], { type: 'application/manifest+json' });
+    const manifestBlobUrl = URL.createObjectURL(blob);
+
+    let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    const prevManifestHref = manifestLink?.href || '/manifest.json';
+
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      document.head.appendChild(manifestLink);
+    }
+    manifestLink.href = manifestBlobUrl;
+
+    return () => {
+      document.title = prevTitle;
+      if (appleTitleMeta && prevAppleTitle !== undefined) {
+        appleTitleMeta.content = prevAppleTitle;
+      }
+      if (manifestLink) {
+        manifestLink.href = prevManifestHref;
+      }
+      URL.revokeObjectURL(manifestBlobUrl);
+    };
+  }, [card]);
 
   const fetchCard = async (isRefresh = false) => {
     if (!publicId) {
@@ -66,6 +166,23 @@ export default function PublicLoyaltyCardPage() {
     fetchCard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicId]);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          toast.success('¡Tarjeta agregada a tu pantalla de inicio!');
+          setDeferredPrompt(null);
+          return;
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
+      }
+    }
+    setShowInstructions(true);
+  };
 
   const handleCopyLink = async () => {
     const url = window.location.href;
@@ -332,9 +449,9 @@ export default function PublicLoyaltyCardPage() {
 
         {/* Action Buttons: Add to Home Screen (A2HS) + Google Wallet */}
         <div className="space-y-3">
-          {/* iOS / Safari Add to Home Button */}
+          {/* Add to Home Button (Cross-platform PWA) */}
           <button
-            onClick={() => setShowIosInstructions(true)}
+            onClick={handleInstallClick}
             className="w-full flex items-center justify-between p-4 rounded-2xl bg-white border border-[#F0E0D8] shadow-sm hover:border-[#C9897A] transition-all group"
           >
             <div className="flex items-center gap-3">
@@ -342,7 +459,7 @@ export default function PublicLoyaltyCardPage() {
                 <Smartphone className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-bold text-[#5C3D2E]">Guardar en iPhone</p>
+                <p className="text-sm font-bold text-[#5C3D2E]">Guardar en mi Móvil</p>
                 <p className="text-xs text-[#9E7B6E]">Acceso directo en tu pantalla de inicio</p>
               </div>
             </div>
@@ -389,70 +506,133 @@ export default function PublicLoyaltyCardPage() {
           <p className="pt-2 text-[11px] text-[#9E7B6E]/80">
             Instagram: <a href="https://instagram.com/bunnycure.cl" target="_blank" rel="noreferrer" className="text-[#C9897A] hover:underline">@bunnycure.cl</a>
           </p>
+          <div className="pt-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1 text-[11px] text-[#9E7B6E]/70 hover:text-[#5C3D2E] underline transition-colors"
+            >
+              Acceso Personal BunnyCure
+            </Link>
+          </div>
         </div>
       </main>
 
-      {/* Safari Add-to-Home Modal */}
-      {showIosInstructions && (
+      {/* Modal de instrucciones para Guardar en Pantalla de Inicio */}
+      {showInstructions && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-[#F0E0D8] space-y-5 animate-in slide-in-from-bottom duration-200">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-[#F0E0D8] space-y-4 animate-in slide-in-from-bottom duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-[#FDF0EC] text-[#C9897A]">
                   <Smartphone className="w-5 h-5" />
                 </div>
-                <h3 className="font-bold text-[#5C3D2E]">Guardar en tu iPhone</h3>
+                <h3 className="font-bold text-[#5C3D2E]">Guardar en tu Teléfono</h3>
               </div>
               <button
-                onClick={() => setShowIosInstructions(false)}
+                onClick={() => setShowInstructions(false)}
                 className="text-[#9E7B6E] hover:text-[#5C3D2E] text-sm font-semibold p-1"
               >
                 Cerrar
               </button>
             </div>
 
-            <p className="text-xs text-[#9E7B6E] leading-relaxed">
-              Agrega tu tarjeta BunnyCure como una app a tu pantalla de inicio en solo 3 pasos:
-            </p>
-
-            <div className="space-y-3.5 text-xs text-[#5C3D2E]">
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
-                <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
-                  1
-                </span>
-                <p>
-                  En <strong>Safari</strong>, presiona el botón <strong>Compartir</strong>{' '}
-                  <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">
-                    (⎋)
-                  </span>{' '}
-                  en la barra inferior.
-                </p>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
-                <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
-                  2
-                </span>
-                <p>
-                  Baja en el menú y toca <strong>"Agregar a pantalla de inicio"</strong>{' '}
-                  <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">
-                    (⊞)
-                  </span>.
-                </p>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
-                <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
-                  3
-                </span>
-                <p>
-                  Presiona <strong>"Agregar"</strong> arriba a la derecha. ¡Tu tarjeta quedará guardada como una app lista para usar!
-                </p>
-              </div>
+            {/* Selector de plataforma */}
+            <div className="flex rounded-xl bg-[#F7F4F0] p-1 text-xs font-semibold">
+              <button
+                onClick={() => setInstructionsTab('ios')}
+                className={`flex-1 py-1.5 rounded-lg transition-all ${
+                  instructionsTab === 'ios'
+                    ? 'bg-white text-[#5C3D2E] shadow-sm'
+                    : 'text-[#9E7B6E] hover:text-[#5C3D2E]'
+                }`}
+              >
+                iPhone (Safari)
+              </button>
+              <button
+                onClick={() => setInstructionsTab('android')}
+                className={`flex-1 py-1.5 rounded-lg transition-all ${
+                  instructionsTab === 'android'
+                    ? 'bg-white text-[#5C3D2E] shadow-sm'
+                    : 'text-[#9E7B6E] hover:text-[#5C3D2E]'
+                }`}
+              >
+                Android (Chrome)
+              </button>
             </div>
 
+            <p className="text-xs text-[#9E7B6E] leading-relaxed">
+              Agrega tu Bunny Pass a tu pantalla de inicio en 3 simples pasos:
+            </p>
+
+            {instructionsTab === 'ios' ? (
+              <div className="space-y-3 text-xs text-[#5C3D2E]">
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
+                  <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
+                    1
+                  </span>
+                  <p>
+                    En <strong>Safari</strong>, presiona el botón <strong>Compartir</strong>{' '}
+                    <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">
+                      (⎋ / ↑)
+                    </span>{' '}
+                    en la barra inferior.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
+                  <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
+                    2
+                  </span>
+                  <p>
+                    Baja en el menú y selecciona <strong>"Agregar a pantalla de inicio"</strong>{' '}
+                    <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">
+                      (⊞)
+                    </span>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
+                  <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
+                    3
+                  </span>
+                  <p>
+                    Presiona <strong>"Agregar"</strong> arriba a la derecha. ¡Tu tarjeta quedará guardada como una app lista para usar!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-xs text-[#5C3D2E]">
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
+                  <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
+                    1
+                  </span>
+                  <p>
+                    En <strong>Chrome</strong>, presiona los <strong>tres puntos (⋮)</strong> en la esquina superior derecha.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
+                  <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
+                    2
+                  </span>
+                  <p>
+                    Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#FDFCF8] border border-[#F0E0D8]">
+                  <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
+                    3
+                  </span>
+                  <p>
+                    Confirma <strong>"Instalar"</strong> o <strong>"Agregar"</strong>. ¡Tu Bunny Pass quedará en tu inicio con acceso directo!
+                  </p>
+                </div>
+              </div>
+            )}
+
             <button
-              onClick={() => setShowIosInstructions(false)}
+              onClick={() => setShowInstructions(false)}
               className="w-full py-3 rounded-2xl bg-[#C9897A] text-white font-bold text-xs hover:bg-[#B77768] transition-colors"
             >
               ¡Entendido!
