@@ -4,7 +4,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .calendar-time-legend {
@@ -303,30 +305,76 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .calendar-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .month-navigation {
+    gap: 0.5rem;
+  }
+
+  .month-title {
+    font-size: 1.15rem;
+    min-width: auto;
+  }
+
   .month-grid {
     gap: 0.25rem;
   }
 
   .month-day-card {
-    min-height: 60px;
-    padding: 0.35rem;
+    min-height: 56px;
+    padding: 0.3rem;
   }
 
   .month-day-number {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
 
   .month-day-mini-label {
     font-size: 0.55rem;
   }
 
-  .month-title {
-    font-size: 1.25rem;
-    min-width: 150px;
+  .nav-button {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
   }
 
-  .nav-button {
-    padding: 0.35rem 0.75rem;
-    font-size: 0.875rem;
+  .month-navigation {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .month-title {
+    font-size: 1.05rem;
+  }
+
+  .month-week-header div {
+    font-size: 0.72rem;
+    padding: 0.2rem 0;
+  }
+
+  .month-day-card {
+    min-height: 48px;
+    padding: 0.2rem;
+    border-radius: 8px;
+  }
+
+  .calendar-time-legend {
+    gap: 0.35rem;
+    font-size: 0.7rem;
+  }
+
+  .calendar-time-legend span {
+    padding: 0.15rem 0.35rem;
   }
 }

@@ -209,7 +209,7 @@ export default function CustomerDetailsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto">
         {/* Encabezado */}
         <div className="flex justify-between items-center gap-3">
           <div className="min-w-0">

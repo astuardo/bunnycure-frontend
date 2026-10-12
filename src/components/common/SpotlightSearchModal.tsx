@@ -386,7 +386,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
                       marginBottom: '2px',
                     }}
                   >
-                    <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                    <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
                       <div
                         style={{
                           width: '34px',
@@ -432,7 +432,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
                       {item.badge && (
                         <Badge variant="neutral" className="text-[10px] font-medium">
                           {item.badge}
@@ -460,7 +460,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
             color: '#8c6052',
           }}
         >
-          <div className="d-flex gap-3">
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
             <span>
               <kbd style={{ background: '#fff', color: '#422314', border: '1px solid #eed0c5' }}>↑</kbd>{' '}
               <kbd style={{ background: '#fff', color: '#422314', border: '1px solid #eed0c5' }}>↓</kbd> Navegar
@@ -473,7 +473,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
             </span>
           </div>
 
-          <div className="d-none d-md-block fw-semibold" style={{ color: '#8c2a3e' }}>
+          <div className="hidden md:block font-semibold" style={{ color: '#8c2a3e' }}>
             🐰 BunnyCure Spotlight
           </div>
         </div>

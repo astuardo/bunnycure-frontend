@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react';
-import { FiX, FiMenu } from 'react-icons/fi';
+import { FiX } from 'react-icons/fi';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SpotlightSearchModal } from './SpotlightSearchModal';
@@ -40,19 +40,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Navbar
         onOpenSpotlight={() => setShowSpotlight(true)}
         onOpenCamiLoveModal={() => setShowCamiLove(true)}
+        onOpenSidebar={handleShowSidebar}
       />
-
-      {/* ── Botón hamburguesa móvil — estilo BunnyCure ── */}
-      <div className="md:hidden px-4 py-2.5 bg-bunny-paper/60 border-b border-bunny-border/70 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleShowSidebar}
-          className="flex items-center gap-2 bg-white border border-bunny-border rounded-xl px-3.5 py-1.5 text-sm font-semibold text-bunny-cocoa shadow-xs hover:bg-bunny-blush/40 transition-colors cursor-pointer"
-        >
-          <FiMenu className="text-lg leading-none" />
-          <span>Menú</span>
-        </button>
-      </div>
 
       {/* ── Drawer móvil de navegación (Tailwind) ── */}
       {showSidebar && (

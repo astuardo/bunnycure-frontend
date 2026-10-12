@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiMenu } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { isCamiUser } from '../../services/loveNotes.service';
 
 interface NavbarProps {
     onOpenSpotlight?: () => void;
     onOpenCamiLoveModal?: () => void;
+    onOpenSidebar?: () => void;
 }
 
-export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarProps) {
+export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal, onOpenSidebar }: NavbarProps) {
     const { user, logout } = useAuth();
     const [open, setOpen] = useState(false);
     const dropRef = useRef<HTMLDivElement>(null);
@@ -36,23 +37,37 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
             backdropFilter: 'blur(8px)',
             borderBottom: '1px solid #f0e0d8',
             boxShadow: '0 1px 8px rgba(180,120,100,0.08)',
-            padding: '0 16px',
+            padding: '0 12px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             height: '56px',
-            gap: '12px',
+            gap: '8px',
         }}>
-            {/* Brand */}
-            <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', flexShrink: 0 }}>
-                <span style={{ fontSize: '22px' }}>🐰</span>
-                <span style={{ fontWeight: 700, fontSize: '18px', color: '#5c3d2e', letterSpacing: '-0.3px' }}>
-                    BunnyCure
-                </span>
-            </a>
+            {/* Brand + Hamburguesa Móvil */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                {onOpenSidebar && (
+                    <button
+                        type="button"
+                        onClick={onOpenSidebar}
+                        className="md:hidden flex items-center justify-center p-1.5 rounded-xl border border-[#f0e0d8] bg-white text-[#5c3d2e] hover:bg-[#fdf6f3] transition-colors cursor-pointer"
+                        aria-label="Abrir menú"
+                        title="Menú"
+                    >
+                        <FiMenu style={{ fontSize: '18px' }} />
+                    </button>
+                )}
+                <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', flexShrink: 0 }}>
+                    <span style={{ fontSize: '22px' }}>🐰</span>
+                    <span style={{ fontWeight: 700, fontSize: '18px', color: '#5c3d2e', letterSpacing: '-0.3px' }} className="hidden sm:inline">
+                        BunnyCure
+                    </span>
+                </a>
+            </div>
 
             {/* Buscador Universal Spotlight (Ctrl+K) */}
             {onOpenSpotlight && (
                 <button
                     onClick={onOpenSpotlight}
+                    type="button"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -60,7 +75,7 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                         background: '#fdf6f3',
                         border: '1px solid #eed0c5',
                         borderRadius: '10px',
-                        padding: '6px 14px',
+                        padding: '6px 10px',
                         cursor: 'pointer',
                         color: '#8c6052',
                         fontSize: '13px',
@@ -68,17 +83,21 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                         transition: 'all 0.15s ease',
                         maxWidth: '360px',
                         flex: '1 1 auto',
+                        minWidth: 0,
                         justifyContent: 'space-between',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#fce8e4')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '#fdf6f3')}
+                    title="Buscar (Ctrl+K)"
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FiSearch style={{ color: '#8c2a3e', fontSize: '15px' }} />
-                        <span className="d-none d-sm-inline">Buscar clientas, citas...</span>
-                        <span className="d-sm-none">Buscar...</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                        <FiSearch style={{ color: '#8c2a3e', fontSize: '15px', flexShrink: 0 }} />
+                        <span className="hidden md:inline truncate">Buscar clientas, citas...</span>
+                        <span className="hidden sm:inline md:hidden truncate">Buscar...</span>
+                        <span className="sm:hidden text-xs truncate">Buscar</span>
                     </div>
                     <kbd
+                        className="hidden sm:inline-block"
                         style={{
                             background: '#fff',
                             color: '#8c2a3e',
@@ -86,6 +105,7 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                             fontSize: '10.5px',
                             padding: '2px 6px',
                             borderRadius: '5px',
+                            flexShrink: 0,
                         }}
                     >
                         Ctrl+K
@@ -93,8 +113,8 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                 </button>
             )}
 
-            {/* User dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* User dropdown & Cami button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                 {isCamiUser(user?.username) && onOpenCamiLoveModal && (
                     <button
                         onClick={onOpenCamiLoveModal}
@@ -112,12 +132,13 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                             gap: '4px',
                             boxShadow: '0 2px 8px rgba(255, 117, 140, 0.35)',
                             transition: 'transform 0.15s ease',
+                            flexShrink: 0,
                         }}
                         onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
                         onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                     >
                         <span>💖</span>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }} className="d-none d-sm-inline">
+                        <span style={{ fontSize: '12px', fontWeight: 600 }} className="hidden sm:inline">
                             Para ti
                         </span>
                     </button>
@@ -127,11 +148,11 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                     <button
                         onClick={() => setOpen(o => !o)}
                         style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
+                            display: 'flex', alignItems: 'center', gap: '6px',
                             background: open ? '#fce8e4' : '#fdf6f3',
                             border: '1px solid #f0d8d0',
                             borderRadius: '10px',
-                            padding: '6px 12px',
+                            padding: '6px 10px',
                             cursor: 'pointer',
                             fontSize: '14px',
                             color: '#5c3d2e',
@@ -140,9 +161,10 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal }: NavbarP
                         }}
                         onMouseEnter={e => { if (!open) e.currentTarget.style.background = '#fce8e4'; }}
                         onMouseLeave={e => { if (!open) e.currentTarget.style.background = '#fdf6f3'; }}
+                        title={user?.fullName || user?.username || 'Usuario'}
                     >
-                        <span style={{ fontSize: '18px' }}>👤</span>
-                        <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '16px' }}>👤</span>
+                        <span className="hidden sm:inline" style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {user?.fullName || user?.username || 'Usuario'}
                         </span>
                         <span style={{ fontSize: '10px', color: '#9e7b6e', marginLeft: '2px' }}>▼</span>

@@ -451,7 +451,7 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 pb-12">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-12 max-w-7xl mx-auto">
         {/* Encabezado y Barra de Guardado */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
