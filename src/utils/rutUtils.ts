@@ -45,7 +45,9 @@ export const isValidRutDv = (cleanRutStr: string): boolean => {
  */
 export const isValidRutFormat = (value?: string | null): boolean => {
   if (!value) return false;
-  const cleaned = cleanRut(value);
+  const trimmed = value.trim();
+  if (!/^[\d.\-kK\s]+$/.test(trimmed)) return false;
+  const cleaned = cleanRut(trimmed);
   if (cleaned.length < 7 || cleaned.length > 9) return false;
 
   const body = cleaned.slice(0, -1);
