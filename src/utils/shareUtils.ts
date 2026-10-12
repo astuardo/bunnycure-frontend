@@ -67,23 +67,31 @@ export function buildWhatsAppUrl(phone?: string, text?: string): string {
 }
 
 /**
- * Abre WhatsApp de manera compatible con móviles, PWAs y navegadores de escritorio.
- * En móviles y PWAs standalone, `window.open(..., '_blank')` es bloqueado por el navegador;
- * la asignación a `window.location.href` o navegación directa abre la app nativa de WhatsApp sin bloqueos.
+ * Abre WhatsApp de manera 100% compatible con móviles, PWAs y navegadores de escritorio.
+ * Usa un elemento <a> dinámico con click directo para evitar bloqueos de popup y de webview standalone.
  */
 export function openWhatsApp(phone?: string, text?: string): void {
   const waUrl = buildWhatsAppUrl(phone, text);
 
-  const isMobileOrPwa =
-    typeof navigator !== 'undefined' &&
-    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true);
-
-  if (isMobileOrPwa) {
+  try {
+    const link = document.createElement('a');
+    link.href = waUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+      } catch {
+        // Ignorar
+      }
+    }, 300);
+  } catch (err) {
+    console.warn('[openWhatsApp] Fallback a navegación directa:', err);
     window.location.href = waUrl;
-  } else {
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
   }
 }
 
@@ -93,15 +101,25 @@ export function openWhatsApp(phone?: string, text?: string): void {
 export function openExternalUrl(url: string): void {
   if (!url) return;
 
-  const isStandalone =
-    typeof window !== 'undefined' &&
-    (window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true);
-
-  if (isStandalone) {
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+      } catch {
+        // Ignorar
+      }
+    }, 300);
+  } catch (err) {
+    console.warn('[openExternalUrl] Fallback a navegación directa:', err);
     window.location.href = url;
-  } else {
-    window.open(url, '_blank', 'noopener,noreferrer');
   }
 }
 
@@ -109,10 +127,20 @@ export function openExternalUrl(url: string): void {
  * Intenta invocar el menú nativo para compartir (Web Share API) en iPhone / Android
  */
 export async function shareNative(data: { title: string; text?: string; url: string }): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && navigator.share) {
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
-      await navigator.share(data);
-      return true;
+      if (typeof navigator.canShare === 'function') {
+        if (navigator.canShare(data)) {
+          await navigator.share(data);
+          return true;
+        } else if (navigator.canShare({ text: data.text || data.url })) {
+          await navigator.share({ title: data.title, text: data.text || data.url });
+          return true;
+        }
+      } else {
+        await navigator.share(data);
+        return true;
+      }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Usuario canceló el modal nativo

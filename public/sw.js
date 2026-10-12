@@ -4,7 +4,7 @@
  * Incluye chequeo automÃ¡tico de citas prÃ³ximas para notificaciones
  */
 
-const CACHE_NAME = 'bunnycure-v1';
+const CACHE_NAME = 'bunnycure-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -68,34 +68,52 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Estrategia de cache: Network First, fallback a Cache
+// Estrategia de cache: Network First, fallback a Cache (solo para GET del mismo origen)
 self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
-  const isApiRequest = requestUrl.pathname.startsWith('/api/');
-  const hasAuthHeader = event.request.headers.has('authorization');
-
-  if (isApiRequest || hasAuthHeader) {
-    event.respondWith(fetch(event.request));
+  // Ignorar cualquier petición que no sea GET (ej. POST de GA4, API calls, etc.)
+  if (event.request.method !== 'GET') {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clonar la respuesta para guardar en cache
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      })
-      .catch(() => {
-        // Si falla el fetch, intentar servir desde cache
-        return caches.match(event.request).then((response) => {
-          return response || new Response('Offline - Recurso no disponible');
-        });
-      })
-  );
+  let requestUrl;
+  try {
+    requestUrl = new URL(event.request.url);
+  } catch {
+    return;
+  }
+
+  // Ignorar esquemas no soportados por Cache API (chrome-extension, data:, etc.)
+  if (!requestUrl.protocol.startsWith('http')) {
+    return;
+  }
+
+  // No interceptar llamadas API ni peticiones autenticadas
+  const isApiRequest = requestUrl.pathname.startsWith('/api/');
+  const hasAuthHeader = event.request.headers.has('authorization');
+  if (isApiRequest || hasAuthHeader) {
+    return;
+  }
+
+  // Solo cachear recursos estáticos del mismo dominio
+  if (requestUrl.origin === self.location.origin) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache).catch(() => {});
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((response) => {
+            return response || new Response('Offline - Recurso no disponible', { status: 503 });
+          });
+        })
+    );
+  }
 });
 
 // Manejo de notificaciones push

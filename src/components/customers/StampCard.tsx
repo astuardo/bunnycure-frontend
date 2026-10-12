@@ -42,14 +42,18 @@ export default function StampCard({
   const [copiedPass, setCopiedPass] = useState(false);
   const walletUrlLikelyTooLongForQr = walletQrUrl.length > 2900;
 
-  const passUrl = publicId
-    ? `${window.location.origin}/mi-tarjeta/${publicId}`
+  const effectivePublicId = publicId || (customerId ? String(customerId) : '');
+  const passUrl = effectivePublicId
+    ? `${window.location.origin}/mi-tarjeta/${effectivePublicId}`
     : '';
 
   const canShareNatively = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const handleCopyPassLink = async () => {
-    if (!passUrl) return;
+    if (!passUrl) {
+      toast.error('Identificador de tarjeta no disponible');
+      return;
+    }
     const ok = await copyToClipboard(passUrl);
     if (ok) {
       setCopiedPass(true);
@@ -61,14 +65,20 @@ export default function StampCard({
   };
 
   const handleSendWhatsApp = () => {
-    if (!passUrl) return;
+    if (!passUrl) {
+      toast.error('Identificador de tarjeta no disponible');
+      return;
+    }
     const name = customerName ? customerName.split(' ')[0] : 'Clienta';
     const message = `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass con tus sellos actualizados (${loyaltyStamps}/10): ${passUrl}`;
     openWhatsApp(customerPhone, message);
   };
 
   const handleShareNative = async () => {
-    if (!passUrl) return;
+    if (!passUrl) {
+      toast.error('Identificador de tarjeta no disponible');
+      return;
+    }
     const name = customerName ? customerName.split(' ')[0] : 'Clienta';
     const message = `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass: ${passUrl}`;
     const shared = await shareNative({
@@ -82,9 +92,9 @@ export default function StampCard({
   };
 
   const handleOpenCard = () => {
-    if (!publicId) return;
+    if (!effectivePublicId) return;
     setShowPassModal(false);
-    navigate(`/mi-tarjeta/${publicId}`);
+    navigate(`/mi-tarjeta/${effectivePublicId}`);
   };
 
   const handleOpenBrowser = () => {

@@ -89,8 +89,10 @@ export default function CustomerDetailsPage() {
   }, [customers, customerId]);
 
   const customer = useMemo<Customer | null>(() => {
-    if (storeCustomer) return storeCustomer;
+    if (directCustomer && directCustomer.publicId) return directCustomer;
+    if (storeCustomer && storeCustomer.publicId) return storeCustomer;
     if (directCustomer) return directCustomer;
+    if (storeCustomer) return storeCustomer;
     return null;
   }, [storeCustomer, directCustomer]);
 
