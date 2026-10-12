@@ -1,0 +1,102 @@
+name: Frontend Staging - Build & Deploy
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'URL base del API de Staging'
+        required: false
+        default: 'https://staging-api.bunnycure.cl'
+
+concurrency:
+  group: frontend-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-build:
+    name: 🧪 Typecheck & Build Staging
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_ready: ${{ steps.build_step.outcome }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies (Clean Install)
+        run: npm ci
+
+      - name: TypeScript Typecheck & Staging Build
+        id: build_step
+        env:
+          VITE_API_BASE_URL: ${{ github.event.inputs.api_base_url || vars.STAGING_VITE_API_BASE_URL || 'https://staging-api.bunnycure.cl' }}
+          VITE_APP_NAME: 'BunnyCure (Staging)'
+          VITE_APP_BUILD_ID: 'staging-${{ github.sha }}'
+        run: |
+          echo "Building BunnyCure Frontend for Staging environment..."
+          npm run build
+
+      - name: Archive Production/Staging Dist Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-staging-dist
+          path: dist/
+          retention-days: 7
+
+      - name: Validate Docker Nginx Image Build
+        run: |
+          docker build -t bunnycure-frontend:staging-${{ github.sha }} .
+
+  deploy-staging:
+    name: 🚀 Deploy to Staging (Vercel / Preview)
+    needs: validate-and-build
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Staging Dist Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-staging-dist
+          path: dist
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy to Vercel (Staging)
+        id: vercel_deploy
+        if: ${{ env.VERCEL_TOKEN != '' }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || 'team_cEonHxkHQlmkR1cHOX3l4GPa' }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || 'prj_MoAh68e9uqn4vulWtFwpuTeKBiI9' }}
+        run: |
+          npm install -g vercel@latest
+          echo "Deploying prebuilt staging artifacts to Vercel..."
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN || vercel deploy --token=$VERCEL_TOKEN)
+          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV
+          echo "### 🚀 Frontend Staging Desplegado Exitosamente!" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Preview URL:** $DEPLOYMENT_URL" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fallback Notification (Vercel Token not configured)
+        if: ${{ env.VERCEL_TOKEN == '' }}
+        run: |
+          echo "### ℹ️ Build de Staging Completado Exitosamente" >> $GITHUB_STEP_SUMMARY
+          echo "- **Compilación:** 100% exitosa (TypeScript + Vite + Tailwind)." >> $GITHUB_STEP_SUMMARY
+          echo "- **Artefacto:** \`frontend-staging-dist\` archivado en este workflow." >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Image:** \`bunnycure-frontend:staging-${{ github.sha }}\` validada." >> $GITHUB_STEP_SUMMARY
+          echo "- **Nota:** Para activar despliegue automático 1-clic a Vercel, agrega el secret \`VERCEL_TOKEN\` en Settings > Secrets del repositorio." >> $GITHUB_STEP_SUMMARY
