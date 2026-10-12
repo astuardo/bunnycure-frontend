@@ -1780,38 +1780,62 @@ export default function DashboardPage() {
                                                             <span>WhatsApp</span>
                                                         </a>
                                                     )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => navigate(`/appointments?edit=${apt.id}&returnTo=/dashboard`)}
-                                                        style={{
-                                                            border: '1px solid #d4a89a',
-                                                            background: '#fff8f5',
-                                                            color: '#7c3a2d',
-                                                            borderRadius: '999px',
-                                                            padding: '4px 10px',
-                                                            fontSize: '12px',
-                                                            fontWeight: 600,
-                                                            cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        Editar
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => navigate(`/appointments?reschedule=${apt.id}&returnTo=/dashboard`)}
-                                                        style={{
-                                                            border: '1px solid #b6d8cb',
-                                                            background: '#eaf7f2',
-                                                            color: '#1f6b52',
-                                                            borderRadius: '999px',
-                                                            padding: '4px 10px',
-                                                            fontSize: '12px',
-                                                            fontWeight: 600,
-                                                            cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        Reagendar
-                                                    </button>
+                                                    {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => navigate(`/appointments?reschedule=${apt.id}&returnTo=/dashboard`)}
+                                                            title="Reagendar esta cita (actualiza fecha y hora del mismo ID)"
+                                                            style={{
+                                                                border: '1px solid #d9480f',
+                                                                background: '#ffe8cc',
+                                                                color: '#d9480f',
+                                                                borderRadius: '999px',
+                                                                padding: '4px 12px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 700,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            🔄 Reagendar
+                                                        </button>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => navigate(`/appointments?edit=${apt.id}&returnTo=/dashboard`)}
+                                                                title="Editar detalles de esta cita (mismo ID)"
+                                                                style={{
+                                                                    border: '1px solid #d4a89a',
+                                                                    background: '#fff8f5',
+                                                                    color: '#7c3a2d',
+                                                                    borderRadius: '999px',
+                                                                    padding: '4px 10px',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 600,
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => navigate(`/appointments?nextAppointment=${apt.id}&returnTo=/dashboard`)}
+                                                                title="Agendar una nueva cita futura para esta clienta (mantiene cliente y servicio, crea nuevo ID)"
+                                                                style={{
+                                                                    border: '1px solid #b6d8cb',
+                                                                    background: '#eaf7f2',
+                                                                    color: '#1f6b52',
+                                                                    borderRadius: '999px',
+                                                                    padding: '4px 10px',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 600,
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            >
+                                                                ➕ Próxima Cita
+                                                            </button>
+                                                        </>
+                                                    )}
                                                     {apt.status !== AppointmentStatus.COMPLETED && (
                                                         <button
                                                             type="button"

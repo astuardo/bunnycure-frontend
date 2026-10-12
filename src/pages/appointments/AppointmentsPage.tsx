@@ -175,12 +175,14 @@ export default function AppointmentsPage() {
     }).catch((err) => console.error('Error fetching unavailabilities in AppointmentsPage:', err));
   }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards]);
 
-  // Efecto para abrir el modal de edición automáticamente si viene el ID en la URL
+  // Efecto para abrir el modal de edición o agendar próxima cita automáticamente si viene el ID en la URL
   useEffect(() => {
     const rescheduleId = searchParams.get('reschedule');
     const editId = searchParams.get('edit');
+    const nextAptId = searchParams.get('nextAppointment');
     const mode: EditMode | null = rescheduleId ? 'reschedule' : editId ? 'edit' : null;
     const targetId = Number(rescheduleId ?? editId);
+
     if (mode && appointments.length > 0) {
       const apt = appointments.find((a) => a.id === targetId);
       if (apt) {
@@ -193,6 +195,15 @@ export default function AppointmentsPage() {
         setSearchParams((prev) => {
           prev.delete('edit');
           prev.delete('reschedule');
+          return prev;
+        }, { replace: true });
+      }
+    } else if (nextAptId && appointments.length > 0) {
+      const apt = appointments.find((a) => a.id === Number(nextAptId));
+      if (apt) {
+        openNextAppointmentModal(apt);
+        setSearchParams((prev) => {
+          prev.delete('nextAppointment');
           return prev;
         }, { replace: true });
       }
@@ -624,13 +635,33 @@ export default function AppointmentsPage() {
     setShowCreateModal(true);
   };
 
+  const openNextAppointmentModal = (appointment: Appointment) => {
+    resetForm();
+    const serviceIds = getAppointmentServices(appointment).map((s) => s.id);
+    setFormData({
+      customerId: appointment.customer.id,
+      serviceIds: serviceIds.length > 0 ? serviceIds : (appointment.service ? [appointment.service.id] : []),
+      appointmentDate: '',
+      appointmentTime: appointment.appointmentTime || '',
+      notes: appointment.notes?.split('Extras personalizados:')[0].trim() || '',
+    });
+    setCustomChargeItems([]);
+    setSummaryServiceSearch('');
+    setIsCustomerListCollapsed(true);
+    setCreateStep('form');
+    setShowCreateModal(true);
+  };
+
   const closeCreateModal = () => {
     setShowCreateModal(false);
     setCreateStep('form');
     resetForm();
     setCustomChargeItems([]);
     setSummaryServiceSearch('');
-    if (searchParams.get('create') === '1') {
+    const returnTo = searchParams.get('returnTo');
+    if (returnTo) {
+      navigate(returnTo, { replace: true });
+    } else if (searchParams.get('create') === '1' || searchParams.get('nextAppointment')) {
       setSearchParams({}, { replace: true });
     }
   };
@@ -812,6 +843,11 @@ export default function AppointmentsPage() {
   const openRescheduleModal = (appointment: Appointment) => {
     setEditMode('reschedule');
     initializeEditForm(appointment);
+    // Al reagendar una cita, su nuevo estado tras fijar la hora pasa a CONFIRMED
+    setEditFormData((prev) => ({
+      ...prev,
+      status: AppointmentStatus.CONFIRMED,
+    }));
   };
 
   const closeEditModal = () => {
@@ -826,7 +862,7 @@ export default function AppointmentsPage() {
 
   const handleEditAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editMode === 'edit' && !editingAppointmentId) return;
+    if (!editingAppointmentId) return;
     if (!validateForm(editFormData.customerId, editFormData.serviceIds)) return;
 
     if (!editFormData.appointmentDate) {
@@ -870,25 +906,19 @@ export default function AppointmentsPage() {
     const finalTotal = editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0);
 
     try {
-      if (editMode === 'reschedule') {
-        await createAppointment({
-          customerId: editFormData.customerId,
-          serviceId: editFormData.serviceIds[0],
-          serviceIds: editFormData.serviceIds,
-          appointmentDate: editFormData.appointmentDate,
-          appointmentTime: editFormData.appointmentTime,
-          notes: finalNotes,
-          totalPrice: finalTotal,
-        });
-        toast.success('Cita reagendada: se creó una nueva cita');
-      } else {
-        await updateAppointment(editingAppointmentId!, {
-          ...buildEditPayload(),
-          notes: finalNotes,
-          totalPrice: finalTotal,
-        });
-        toast.success('Cita actualizada exitosamente');
-      }
+      // Si se está reagendando y el estado era 'RESCHEDULE_REQUESTED', pasa a 'CONFIRMED'
+      const targetStatus = (editMode === 'reschedule' && editFormData.status === AppointmentStatus.RESCHEDULE_REQUESTED)
+        ? AppointmentStatus.CONFIRMED
+        : editFormData.status;
+
+      await updateAppointment(editingAppointmentId, {
+        ...buildEditPayload(),
+        status: targetStatus,
+        notes: finalNotes,
+        totalPrice: finalTotal,
+      });
+
+      toast.success(editMode === 'reschedule' ? `Cita #${editingAppointmentId} reagendada exitosamente` : 'Cita actualizada exitosamente');
       closeEditModal();
       fetchAppointments();
     } catch (err: unknown) {
@@ -1340,13 +1370,35 @@ export default function AppointmentsPage() {
                           <td>{getStatusBadge(apt.status)}</td>
                           <td>
                             <div className="d-flex gap-1 flex-wrap">
-                              <Button
-                                size="sm"
-                                variant="outline-primary"
-                                onClick={() => openEditModal(apt)}
-                              >
-                                Editar
-                              </Button>
+                              {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED ? (
+                                <Button
+                                  size="sm"
+                                  variant="warning"
+                                  onClick={() => openRescheduleModal(apt)}
+                                  title="Reagendar esta cita con nueva fecha y hora (mismo ID)"
+                                >
+                                  🔄 Reagendar
+                                </Button>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-primary"
+                                    onClick={() => openEditModal(apt)}
+                                    title="Editar detalles de esta cita (mismo ID)"
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-success"
+                                    onClick={() => openNextAppointmentModal(apt)}
+                                    title="Agendar próxima cita futura para esta clienta (mantiene cliente y servicios, crea nuevo ID)"
+                                  >
+                                    ➕ Próxima
+                                  </Button>
+                                </>
+                              )}
                               {apt.status === AppointmentStatus.PENDING && (
                                 <Button
                                   size="sm"
@@ -1472,7 +1524,20 @@ export default function AppointmentsPage() {
                         </div>
 
                         <div className="d-flex gap-2 flex-wrap">
-                          <Button size="sm" variant="outline-secondary" className="flex-fill" onClick={() => openEditModal(apt)}>Editar</Button>
+                          {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED ? (
+                            <Button size="sm" variant="warning" className="flex-fill" onClick={() => openRescheduleModal(apt)} title="Reagendar esta cita (mismo ID)">
+                              🔄 Reagendar
+                            </Button>
+                          ) : (
+                            <>
+                              <Button size="sm" variant="outline-secondary" className="flex-fill" onClick={() => openEditModal(apt)}>
+                                Editar
+                              </Button>
+                              <Button size="sm" variant="outline-success" className="flex-fill" onClick={() => openNextAppointmentModal(apt)} title="Agendar próxima cita futura (nuevo ID)">
+                                ➕ Próxima
+                              </Button>
+                            </>
+                          )}
                           {apt.status === AppointmentStatus.PENDING && (<Button size="sm" variant="success" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}>Confirmar</Button>)}
                           {apt.status === AppointmentStatus.CONFIRMED && (<Button size="sm" variant="primary" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}>Completar</Button>)}
                           {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
@@ -2060,7 +2125,7 @@ export default function AppointmentsPage() {
         scrollable
       >
         <Modal.Header closeButton>
-          <Modal.Title>{editMode === 'reschedule' ? 'Reagendar Cita' : 'Editar Cita'}</Modal.Title>
+          <Modal.Title>{editMode === 'reschedule' ? `Reagendar Cita #${editingAppointmentId}` : `Editar Cita #${editingAppointmentId}`}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleEditAppointment}>
           <Modal.Body>
@@ -2178,8 +2243,8 @@ export default function AppointmentsPage() {
                 </Col>
               </Row>
             ) : (
-              <div className="mb-3 text-muted small">
-                Reagendado para la misma clienta. Puedes ajustar fecha, hora, servicios y extras.
+              <div className="mb-3 p-2 bg-warning-subtle text-warning-emphasis rounded border border-warning-subtle small">
+                🔄 Reagendando cita <strong>#{editingAppointmentId}</strong> de <strong>{selectedEditCustomer?.fullName}</strong>. Selecciona la nueva fecha y hora. La cita mantendrá su ID y pasará a estado <strong>Confirmada</strong>.
               </div>
             )}
             <Form.Group className="mb-3">
