@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiSearch, FiMenu } from 'react-icons/fi';
+import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { isCamiUser } from '../../services/loveNotes.service';
 
@@ -7,9 +7,17 @@ interface NavbarProps {
     onOpenSpotlight?: () => void;
     onOpenCamiLoveModal?: () => void;
     onOpenSidebar?: () => void;
+    onToggleSidebar?: () => void;
+    isSidebarOpen?: boolean;
 }
 
-export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal, onOpenSidebar }: NavbarProps) {
+export default function Navbar({
+    onOpenSpotlight,
+    onOpenCamiLoveModal,
+    onOpenSidebar,
+    onToggleSidebar,
+    isSidebarOpen = false,
+}: NavbarProps) {
     const { user, logout } = useAuth();
     const [open, setOpen] = useState(false);
     const dropRef = useRef<HTMLDivElement>(null);
@@ -30,6 +38,8 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal, onOpenSid
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    const handleMenuClick = onToggleSidebar || onOpenSidebar;
+
     return (
         <nav style={{
             position: 'sticky', top: 0, zIndex: 1000,
@@ -44,15 +54,20 @@ export default function Navbar({ onOpenSpotlight, onOpenCamiLoveModal, onOpenSid
         }}>
             {/* Brand + Hamburguesa Móvil */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                {onOpenSidebar && (
+                {handleMenuClick && (
                     <button
                         type="button"
-                        onClick={onOpenSidebar}
+                        onClick={handleMenuClick}
                         className="md:hidden flex items-center justify-center p-1.5 rounded-xl border border-[#f0e0d8] bg-white text-[#5c3d2e] hover:bg-[#fdf6f3] transition-colors cursor-pointer"
-                        aria-label="Abrir menú"
-                        title="Menú"
+                        aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
+                        aria-expanded={isSidebarOpen}
+                        title={isSidebarOpen ? "Cerrar menú" : "Menú"}
                     >
-                        <FiMenu style={{ fontSize: '18px' }} />
+                        {isSidebarOpen ? (
+                            <FiX style={{ fontSize: '18px' }} />
+                        ) : (
+                            <FiMenu style={{ fontSize: '18px' }} />
+                        )}
                     </button>
                 )}
                 <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', flexShrink: 0 }}>

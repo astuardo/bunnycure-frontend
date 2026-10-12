@@ -32,3 +32,8 @@ dist-ssr
 # Google Secrets
 google_client_secret.json
 client_secret_*.json
+
+# Playwright Test Artifacts
+test-results/
+playwright-report/
+

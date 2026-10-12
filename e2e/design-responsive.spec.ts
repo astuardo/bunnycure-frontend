@@ -164,6 +164,11 @@ test.describe('Pruebas Integrales de Diseño y Responsividad: Móvil vs PC', () 
         // Al pulsar el menú hamburguesa, se despliega el drawer
         await menuBtn.click();
         await expect(page.getByRole('dialog')).toBeVisible();
+
+        // Al volver a pulsar el botón en el header, el drawer se esconde
+        const toggleBtn = page.getByRole('button', { name: /cerrar menú/i }).first();
+        await toggleBtn.click();
+        await expect(page.getByRole('dialog')).toBeHidden();
       });
 
       test('Calendario (/calendar): Cabecera adaptada, celdas compactas y sin scroll horizontal', async ({ page }) => {
@@ -249,6 +254,12 @@ test.describe('Pruebas Integrales de Diseño y Responsividad: Móvil vs PC', () 
           return document.documentElement.scrollWidth > window.innerWidth;
         });
         expect(hasOverflow).toBe(false);
+
+        // Sidebar con contención de overscroll para evitar desplazamiento accidental de la página
+        const sidebarOverscroll = await page.locator('aside').evaluate((el) => {
+          return window.getComputedStyle(el).overscrollBehavior;
+        });
+        expect(sidebarOverscroll).toContain('contain');
       });
 
       test('Calendario en PC: Cuadrícula completa de 7 días y navegación alineada', async ({ page }) => {

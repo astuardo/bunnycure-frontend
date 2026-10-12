@@ -160,3 +160,24 @@ button:not(:disabled):active,
   }
 }
 
+/* ─── Scrollbar Elegante para Paneles de Navegación y Contenido ─── */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 169, 154, 0.45) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(224, 169, 154, 0.45);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 120, 100, 0.7);
+}
+
+

@@ -17,7 +17,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [showCamiLove, setShowCamiLove] = useState(false);
 
   const handleCloseSidebar = () => setShowSidebar(false);
-  const handleShowSidebar = () => setShowSidebar(true);
+  const handleToggleSidebar = () => setShowSidebar((prev) => !prev);
+
+  // Bloquear scroll de fondo cuando el drawer móvil está abierto
+  useEffect(() => {
+    if (showSidebar) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showSidebar]);
 
   // Escuchador global para abrir el Spotlight con Cmd+K o Ctrl+K
   useEffect(() => {
@@ -36,11 +47,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [showSidebar]);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col w-full max-w-full m-0 p-0 overflow-x-hidden bg-bunny-bg text-bunny-text">
+    <div className="min-h-screen min-h-[100dvh] md:h-screen md:h-[100dvh] md:overflow-hidden flex flex-col w-full max-w-full m-0 p-0 overflow-x-hidden bg-bunny-bg text-bunny-text">
       <Navbar
         onOpenSpotlight={() => setShowSpotlight(true)}
         onOpenCamiLoveModal={() => setShowCamiLove(true)}
-        onOpenSidebar={handleShowSidebar}
+        onToggleSidebar={handleToggleSidebar}
+        isSidebarOpen={showSidebar}
       />
 
       {/* ── Drawer móvil de navegación (Tailwind) ── */}
@@ -67,22 +79,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <FiX className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
               <Sidebar onNavigate={handleCloseSidebar} />
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Layout Principal: Sidebar Desktop Fijo + Contenido Fluido ── */}
-      <div className="flex flex-row flex-1 w-full min-h-[calc(100vh-3.5rem)] min-h-[calc(100dvh-3.5rem)] m-0 p-0">
-        {/* Sidebar desktop fijo */}
-        <div className="hidden md:block shrink-0">
+      {/* ── Layout Principal: Sidebar Desktop Fijo + Contenido Fluido con Scroll Independiente ── */}
+      <div className="flex flex-row flex-1 w-full md:h-[calc(100vh-3.5rem)] md:h-[calc(100dvh-3.5rem)] md:overflow-hidden m-0 p-0">
+        {/* Sidebar desktop fijo con scroll aislado */}
+        <div className="hidden md:block shrink-0 h-full">
           <Sidebar />
         </div>
 
-        {/* Main content que llena el 100% del espacio restante */}
-        <main className="flex-1 min-w-0 w-full md:w-[calc(100%-250px)] m-0 p-0 overflow-x-hidden pb-4 md:pb-0">
+        {/* Main content con scroll independiente y contención de overscroll */}
+        <main className="flex-1 min-w-0 w-full md:w-[calc(100%-250px)] h-full overflow-x-hidden md:overflow-y-auto md:overscroll-contain custom-scrollbar pb-4 md:pb-0">
           {children}
         </main>
       </div>

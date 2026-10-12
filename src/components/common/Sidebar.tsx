@@ -150,7 +150,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   const badgeVariant = (ROLE_BADGE_VARIANTS[userRole] as BadgeVariant) || 'neutral';
 
   return (
-    <aside className="w-full md:w-[250px] md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] md:overflow-y-auto bg-bunny-paper/40 border-r border-bunny-border/70 p-3 flex flex-col">
+    <aside className="w-full md:w-[250px] h-full overflow-y-auto overscroll-contain custom-scrollbar bg-bunny-paper/40 border-r border-bunny-border/70 p-3 flex flex-col">
       <div className="flex-1 flex flex-col gap-1">
         {user && (
           <div className="px-3.5 py-2.5 mb-2.5 bg-white rounded-xl border border-bunny-border shadow-xs flex items-center justify-between">
