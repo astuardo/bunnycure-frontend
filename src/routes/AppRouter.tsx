@@ -27,6 +27,7 @@ const GiftCardsPage = lazy(() => import('../pages/giftcards/GiftCardsPage'));
 const GenerateGiftCardPage = lazy(() => import('../pages/giftcards/GenerateGiftCardPage'));
 const PublicGiftCardPage = lazy(() => import('../pages/giftcards/PublicGiftCardPage'));
 const PublicBookingPage = lazy(() => import('../pages/booking-requests/PublicBookingPage'));
+const PublicLoyaltyCardPage = lazy(() => import('../pages/loyalty/PublicLoyaltyCardPage'));
 const InstallPage = lazy(() => import('../pages/InstallPage'));
 const TestApiPage = lazy(() => import('../pages/TestApiPage'));
 
@@ -87,6 +88,9 @@ function RoutesWithTracking() {
                 {import.meta.env.DEV && <Route path="/test" element={<TestApiPage />} />}
                 <Route path="/giftcards/public/:code" element={<PublicGiftCardPage />} />
                 <Route path="/reservar" element={<PublicBookingPage />} />
+                <Route path="/mi-tarjeta/:publicId" element={<PublicLoyaltyCardPage />} />
+                <Route path="/tarjeta/:publicId" element={<PublicLoyaltyCardPage />} />
+                <Route path="/pass/:publicId" element={<PublicLoyaltyCardPage />} />
 
                 {/* Rutas Protegidas Universales */}
                 <Route

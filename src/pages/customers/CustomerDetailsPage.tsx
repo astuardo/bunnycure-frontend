@@ -470,6 +470,9 @@ export default function CustomerDetailsPage() {
               <div className="space-y-4">
                 <StampCard 
                   customerId={customer.id}
+                  publicId={customer.publicId}
+                  customerName={customer.fullName}
+                  customerPhone={customer.phone}
                   loyaltyStamps={customer.loyaltyStamps} 
                   totalCompletedVisits={customer.totalCompletedVisits} 
                   currentRewardIndex={customer.currentRewardIndex}

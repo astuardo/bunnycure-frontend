@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Award, Plus, Minus, Gift, QrCode } from 'lucide-react';
+import { Award, Plus, Minus, Gift, QrCode, Smartphone, Share2, ExternalLink, Copy, Check } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
 import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
@@ -8,6 +8,9 @@ import { Card, Alert, Badge, Button, Modal } from '../ui';
 
 interface StampCardProps {
   customerId?: number;
+  publicId?: string;
+  customerName?: string;
+  customerPhone?: string;
   loyaltyStamps?: number;
   totalCompletedVisits?: number;
   currentRewardIndex?: number;
@@ -16,6 +19,9 @@ interface StampCardProps {
 
 export default function StampCard({
   customerId,
+  publicId,
+  customerName = '',
+  customerPhone = '',
   loyaltyStamps = 0,
   totalCompletedVisits = 0,
   currentRewardIndex = 0,
@@ -29,7 +35,34 @@ export default function StampCard({
   const [walletQrUrl, setWalletQrUrl] = useState<string>('');
   const [showQR, setShowQR] = useState(false);
   const [loadingQR, setLoadingQR] = useState(false);
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [copiedPass, setCopiedPass] = useState(false);
   const walletUrlLikelyTooLongForQr = walletQrUrl.length > 2900;
+
+  const passUrl = publicId
+    ? `${window.location.origin}/mi-tarjeta/${publicId}`
+    : '';
+
+  const handleCopyPassLink = () => {
+    if (!passUrl) return;
+    navigator.clipboard.writeText(passUrl);
+    setCopiedPass(true);
+    toast.success('¡Enlace de tarjeta copiado!');
+    setTimeout(() => setCopiedPass(false), 2500);
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!passUrl) return;
+    const cleanPhone = customerPhone ? customerPhone.replace(/[^0-9]/g, '') : '';
+    const name = customerName ? customerName.split(' ')[0] : 'Clienta';
+    const text = encodeURIComponent(
+      `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass con tus sellos actualizados (${loyaltyStamps}/10): ${passUrl}`
+    );
+    const waUrl = cleanPhone
+      ? `https://wa.me/${cleanPhone}?text=${text}`
+      : `https://wa.me/?text=${text}`;
+    window.open(waUrl, '_blank');
+  };
 
   useEffect(() => {
     fetchRewards();
@@ -201,7 +234,19 @@ export default function StampCard({
           </p>
 
           {customerId && (
-            <div className="flex justify-center items-center gap-2.5">
+            <div className="flex flex-wrap justify-center items-center gap-2.5">
+              {publicId && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowPassModal(true)}
+                  leftIcon={<Smartphone className="w-4 h-4" />}
+                  className="h-10 rounded-full px-4 bg-bunny-primary hover:bg-bunny-primary-hover text-white shadow-xs"
+                >
+                  Tarjeta Digital (PWA)
+                </Button>
+              )}
+
               <button
                 type="button"
                 onClick={handleAddToGoogleWallet}
@@ -223,16 +268,80 @@ export default function StampCard({
                 leftIcon={<QrCode className="w-4 h-4" />}
                 className="h-10 rounded-full px-4"
               >
-                {loadingQR ? 'Cargando...' : 'Ver QR'}
+                {loadingQR ? 'Cargando...' : 'Ver QR Google'}
               </Button>
             </div>
           )}
         </div>
 
-        {/* Modal para el Código QR */}
+        {/* Modal para Tarjeta Digital PWA Pass */}
+        <Modal show={showPassModal} onHide={() => setShowPassModal(false)} size="sm" centered>
+          <Modal.Header closeButton>
+            <Modal.Title className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-bunny-primary" />
+              Tarjeta Digital BunnyCure
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="text-center py-4 space-y-4">
+            <p className="text-xs text-bunny-text-muted mb-2">
+              Compatible con iPhone (Safari / Pantalla de inicio) y Android.
+            </p>
+
+            {passUrl && (
+              <div className="bg-white p-3 inline-block rounded-2xl border border-bunny-border shadow-xs">
+                <QRCodeSVG
+                  value={passUrl}
+                  size={190}
+                  level="M"
+                  includeMargin={false}
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyPassLink}
+                leftIcon={copiedPass ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                className="w-full justify-center"
+              >
+                {copiedPass ? '¡Enlace Copiado!' : 'Copiar Enlace de Tarjeta'}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSendWhatsApp}
+                leftIcon={<Share2 className="w-4 h-4 text-emerald-600" />}
+                className="w-full justify-center"
+              >
+                Enviar por WhatsApp
+              </Button>
+
+              {passUrl && (
+                <a
+                  href={passUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1"
+                >
+                  Abrir Tarjeta en navegador <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline" size="sm" onClick={() => setShowPassModal(false)} fullWidth>
+              Cerrar
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal para el Código QR de Google Wallet */}
         <Modal show={showQR} onHide={() => setShowQR(false)} size="sm" centered>
           <Modal.Header closeButton>
-            <Modal.Title>Escanea para descargar</Modal.Title>
+            <Modal.Title>Escanea para Google Wallet</Modal.Title>
           </Modal.Header>
           <Modal.Body className="text-center py-4">
             {walletQrUrl &&
