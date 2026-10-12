@@ -51,96 +51,74 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 /**
- * Construye el enlace universal para WhatsApp
+ * Normaliza un número telefónico al formato internacional de WhatsApp (ej. 56912345678)
+ * Idéntico a toWhatsAppPhone en giftcardRenderer.ts
+ */
+export const toWhatsAppPhone = (value?: string): string => {
+  const digits = (value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('56')) return digits;
+  if (digits.length === 9 && digits.startsWith('9')) return `56${digits}`;
+  return digits;
+};
+
+/**
+ * Construye el enlace universal oficial de WhatsApp usando wa.me (idéntico a GiftCard)
  */
 export function buildWhatsAppUrl(phone?: string, text?: string): string {
-  const cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
-  let finalPhone = cleanPhone;
-  if (finalPhone && finalPhone.startsWith('9') && finalPhone.length === 9) {
-    finalPhone = '56' + finalPhone;
-  }
-
+  const waPhone = toWhatsAppPhone(phone);
   const encodedText = text ? encodeURIComponent(text) : '';
-  return finalPhone
-    ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
-    : `https://api.whatsapp.com/send?text=${encodedText}`;
+  if (waPhone) {
+    return encodedText
+      ? `https://wa.me/${waPhone}?text=${encodedText}`
+      : `https://wa.me/${waPhone}`;
+  }
+  return encodedText
+    ? `https://wa.me/?text=${encodedText}`
+    : 'https://wa.me/';
 }
 
 /**
- * Abre WhatsApp de manera 100% compatible con móviles, PWAs y navegadores de escritorio.
- * Usa un elemento <a> dinámico con click directo para evitar bloqueos de popup y de webview standalone.
+ * Abre WhatsApp de forma directa (idéntico a sendGiftCardWhatsApp en giftcardRenderer.ts)
  */
 export function openWhatsApp(phone?: string, text?: string): void {
   const waUrl = buildWhatsAppUrl(phone, text);
-
-  try {
-    const link = document.createElement('a');
-    link.href = waUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      try {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link);
-        }
-      } catch {
-        // Ignorar
-      }
-    }, 300);
-  } catch (err) {
-    console.warn('[openWhatsApp] Fallback a navegación directa:', err);
-    window.location.href = waUrl;
-  }
+  window.open(waUrl, '_blank', 'noopener,noreferrer');
 }
 
 /**
- * Abre una URL de forma segura en dispositivos móviles o PWAs standalone
+ * Abre una URL de forma segura en una nueva pestaña (idéntico a GiftCard)
  */
 export function openExternalUrl(url: string): void {
   if (!url) return;
-
-  try {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      try {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link);
-        }
-      } catch {
-        // Ignorar
-      }
-    }, 300);
-  } catch (err) {
-    console.warn('[openExternalUrl] Fallback a navegación directa:', err);
-    window.location.href = url;
-  }
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /**
- * Intenta invocar el menú nativo para compartir (Web Share API) en iPhone / Android
+ * Intenta invocar el menú nativo para compartir (Web Share API) en iPhone / Android.
+ * IMPORTANTE: Solo pasa `title` y `text` (donde el link ya viene incluido en `text`).
+ * Esto es idéntico a shareGiftCardPng y evita que WhatsApp o iOS descarten el texto/enlace.
  */
-export async function shareNative(data: { title: string; text?: string; url: string }): Promise<boolean> {
+export async function shareNative(data: { title: string; text?: string; url?: string }): Promise<boolean> {
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
-      if (typeof navigator.canShare === 'function') {
-        if (navigator.canShare(data)) {
-          await navigator.share(data);
-          return true;
-        } else if (navigator.canShare({ text: data.text || data.url })) {
-          await navigator.share({ title: data.title, text: data.text || data.url });
-          return true;
-        }
-      } else {
-        await navigator.share(data);
-        return true;
+      // El mensaje completo con la URL incluida si se pasó separada
+      const fullText = data.text && data.url && !data.text.includes(data.url)
+        ? `${data.text} ${data.url}`
+        : (data.text || data.url || '');
+
+      const sharePayload = {
+        title: data.title,
+        text: fullText,
+      };
+
+      const nav = navigator as Navigator & { canShare?: (payload: any) => boolean };
+      if (typeof nav.canShare === 'function' && !nav.canShare(sharePayload)) {
+        return false;
       }
+
+      await navigator.share(sharePayload);
+      return true;
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Usuario canceló el modal nativo

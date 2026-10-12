@@ -204,11 +204,10 @@ export default function PublicLoyaltyCardPage() {
 
   const handleShareNative = async () => {
     if (!card) return;
-    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅)`;
+    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅): ${window.location.href}`;
     const shared = await shareNative({
       title: 'Bunny Pass Club',
       text,
-      url: window.location.href,
     });
     if (!shared) {
       handleShareWhatsApp();

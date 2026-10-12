@@ -6,7 +6,7 @@ import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, Alert, Badge, Button, Modal } from '../ui';
-import { copyToClipboard, openWhatsApp, openExternalUrl, shareNative } from '../../utils/shareUtils';
+import { copyToClipboard, openWhatsApp, shareNative } from '../../utils/shareUtils';
 
 interface StampCardProps {
   customerId?: number;
@@ -95,11 +95,6 @@ export default function StampCard({
     if (!effectivePublicId) return;
     setShowPassModal(false);
     navigate(`/mi-tarjeta/${effectivePublicId}`);
-  };
-
-  const handleOpenBrowser = () => {
-    if (!passUrl) return;
-    openExternalUrl(passUrl);
   };
 
   useEffect(() => {
@@ -273,16 +268,28 @@ export default function StampCard({
 
           {customerId && (
             <div className="flex flex-wrap justify-center items-center gap-2.5">
-              {publicId && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowPassModal(true)}
-                  leftIcon={<Smartphone className="w-4 h-4" />}
-                  className="h-10 rounded-full px-4 bg-bunny-primary hover:bg-bunny-primary-hover text-white shadow-xs"
-                >
-                  Tarjeta Digital (PWA)
-                </Button>
+              {effectivePublicId && (
+                <>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setShowPassModal(true)}
+                    leftIcon={<Smartphone className="w-4 h-4" />}
+                    className="h-10 rounded-full px-4 bg-bunny-primary hover:bg-bunny-primary-hover text-white shadow-xs font-semibold"
+                  >
+                    Tarjeta Digital (PWA)
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendWhatsApp}
+                    leftIcon={<Share2 className="w-4 h-4 text-emerald-600" />}
+                    className="h-10 rounded-full px-4 border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-semibold"
+                  >
+                    Enviar WhatsApp
+                  </Button>
+                </>
               )}
 
               <button
@@ -362,29 +369,29 @@ export default function StampCard({
             )}
 
             <div className="flex flex-col gap-2.5 pt-2">
-              {/* Opción 1: Menú nativo Compartir (si el dispositivo lo soporta) */}
-              {canShareNatively && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleShareNative}
-                  leftIcon={<Share2 className="w-4 h-4" />}
-                  className="w-full justify-center bg-bunny-primary hover:bg-bunny-primary-hover text-white"
-                >
-                  Compartir (WhatsApp / AirDrop)
-                </Button>
-              )}
-
-              {/* Opción 2: Enviar directo por WhatsApp */}
+              {/* Opción 1: Enviar directo por WhatsApp (idéntico a GiftCard) */}
               <Button
-                variant={canShareNatively ? 'outline' : 'primary'}
+                variant="primary"
                 size="sm"
                 onClick={handleSendWhatsApp}
-                leftIcon={<Share2 className="w-4 h-4 text-emerald-600" />}
-                className={`w-full justify-center ${!canShareNatively ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                leftIcon={<Share2 className="w-4 h-4" />}
+                className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
               >
                 Enviar por WhatsApp
               </Button>
+
+              {/* Opción 2: Menú nativo Compartir (si el dispositivo lo soporta) */}
+              {canShareNatively && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShareNative}
+                  leftIcon={<Share2 className="w-4 h-4 text-bunny-primary" />}
+                  className="w-full justify-center"
+                >
+                  Más opciones (Compartir / AirDrop)
+                </Button>
+              )}
 
               {/* Opción 3: Copiar enlace */}
               <Button
@@ -408,15 +415,16 @@ export default function StampCard({
                 Ver Tarjeta en Pantalla Completa
               </Button>
 
-              {/* Opción 5: Abrir en navegador externo */}
+              {/* Opción 5: Abrir en navegador externo (enlace nativo idéntico a GiftCard) */}
               {passUrl && (
-                <button
-                  type="button"
-                  onClick={handleOpenBrowser}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1 border-0 bg-transparent cursor-pointer"
+                <a
+                  href={passUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1"
                 >
                   Abrir Tarjeta en navegador <ExternalLink className="w-3.5 h-3.5" />
-                </button>
+                </a>
               )}
             </div>
           </Modal.Body>
