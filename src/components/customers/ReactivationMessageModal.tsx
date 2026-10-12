@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button, Form, Badge, Row, Col, Card } from 'react-bootstrap';
+import { Modal, Button, Badge } from '@/components/ui';
 import { FaWhatsapp, FaCopy, FaCheck, FaUndo, FaMagic, FaRegClock } from 'react-icons/fa';
 import { InactiveCustomer, TemplateTone } from '@/types/reactivation.types';
 import {
@@ -108,157 +108,158 @@ export default function ReactivationMessageModal({
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton className="border-bottom-0 pb-0">
-        <Modal.Title className="d-flex align-items-center gap-2 fs-5">
-          <FaWhatsapp className="text-success fs-4" />
-          <span>Mensaje de Reactivación para <strong>{inactiveItem.customer.fullName}</strong></span>
+      <Modal.Header closeButton>
+        <Modal.Title>
+          <div className="flex items-center gap-2">
+            <FaWhatsapp className="text-emerald-500 text-xl" />
+            <span>
+              Mensaje de Reactivación para <strong className="text-bunny-dark">{inactiveItem.customer.fullName}</strong>
+            </span>
+          </div>
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="pt-3">
+      <Modal.Body className="space-y-4">
         {/* Info de la Clienta */}
-        <div className="p-3 mb-3 rounded-3" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-          <Row className="g-2 small">
-            <Col sm={6} md={3}>
-              <span className="text-muted d-block">Teléfono:</span>
-              <span className="fw-semibold">{inactiveItem.customer.phone || 'No registrado'}</span>
-            </Col>
-            <Col sm={6} md={3}>
-              <span className="text-muted d-block">Último Servicio:</span>
-              <span className="fw-semibold text-truncate d-block" title={inactiveItem.lastServiceName}>
+        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div>
+              <span className="text-slate-500 block mb-0.5">Teléfono:</span>
+              <span className="font-semibold text-slate-800">{inactiveItem.customer.phone || 'No registrado'}</span>
+            </div>
+            <div>
+              <span className="text-slate-500 block mb-0.5">Último Servicio:</span>
+              <span className="font-semibold text-slate-800 truncate block" title={inactiveItem.lastServiceName}>
                 {inactiveItem.lastServiceName}
               </span>
-            </Col>
-            <Col sm={6} md={3}>
-              <span className="text-muted d-block">Días Inactiva:</span>
-              <Badge bg={inactiveItem.daysSinceLastAppointment >= 45 ? 'danger' : inactiveItem.daysSinceLastAppointment >= 30 ? 'warning' : 'info'}>
+            </div>
+            <div>
+              <span className="text-slate-500 block mb-0.5">Días Inactiva:</span>
+              <Badge variant={inactiveItem.daysSinceLastAppointment >= 45 ? 'danger' : inactiveItem.daysSinceLastAppointment >= 30 ? 'warning' : 'info'}>
                 {inactiveItem.daysSinceLastAppointment} días
               </Badge>
-            </Col>
-            <Col sm={6} md={3}>
-              <span className="text-muted d-block">Historial Contacto:</span>
+            </div>
+            <div>
+              <span className="text-slate-500 block mb-0.5">Historial Contacto:</span>
               {inactiveItem.isContactedRecently ? (
-                <span className="text-warning fw-semibold">
-                  <FaRegClock className="me-1" />
+                <span className="text-amber-600 font-semibold flex items-center gap-1">
+                  <FaRegClock />
                   Hace {inactiveItem.daysSinceLastContact} días
                 </span>
               ) : (
-                <span className="text-success fw-semibold">
-                  <FaCheck className="me-1" />
+                <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                  <FaCheck />
                   Disponible
                 </span>
               )}
-            </Col>
-          </Row>
+            </div>
+          </div>
         </div>
 
         {/* Selector de Tono de Plantilla */}
-        <Form.Group className="mb-3">
-          <Form.Label className="fw-semibold small d-flex justify-content-between align-items-center">
-            <span>🎨 Selecciona el estilo del mensaje:</span>
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 text-decoration-none small text-muted"
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-semibold text-slate-700">🎨 Selecciona el estilo del mensaje:</span>
+            <button
+              type="button"
+              className="text-xs text-slate-500 hover:text-bunny-primary flex items-center gap-1 transition-colors"
               onClick={handleResetToDefault}
             >
-              <FaUndo className="me-1" /> Restablecer
-            </Button>
-          </Form.Label>
-          <div className="d-flex gap-2 flex-wrap">
-            <Button
-              variant={tone === 'MAINTENANCE' ? 'primary' : 'outline-secondary'}
-              size="sm"
+              <FaUndo /> Restablecer
+            </button>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              type="button"
               onClick={() => handleToneChange('MAINTENANCE')}
-              className="d-flex align-items-center gap-1"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                tone === 'MAINTENANCE'
+                  ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
             >
               💅 Mantención Ideal (20-29d)
-            </Button>
-            <Button
-              variant={tone === 'MISS_YOU' ? 'primary' : 'outline-secondary'}
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => handleToneChange('MISS_YOU')}
-              className="d-flex align-items-center gap-1"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                tone === 'MISS_YOU'
+                  ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
             >
               🐰 Te Extrañamos (30-44d)
-            </Button>
-            <Button
-              variant={tone === 'SPECIAL_OFFER' ? 'primary' : 'outline-secondary'}
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => handleToneChange('SPECIAL_OFFER')}
-              className="d-flex align-items-center gap-1"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                tone === 'SPECIAL_OFFER'
+                  ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
             >
               ✨ Reactivación Especial (45+d)
-            </Button>
+            </button>
           </div>
-        </Form.Group>
+        </div>
 
         {/* Editor de Texto */}
-        <Form.Group className="mb-3">
-          <Form.Label className="fw-semibold small">✏️ Personalizar mensaje antes de enviar:</Form.Label>
-          <Form.Control
-            as="textarea"
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            ✏️ Personalizar mensaje antes de enviar:
+          </label>
+          <textarea
             rows={5}
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            className="font-monospace small"
+            className="w-full font-mono text-xs rounded-xl border border-slate-300 p-3 focus:outline-none focus:ring-2 focus:ring-bunny-primary/30 focus:border-bunny-primary"
           />
-        </Form.Group>
+        </div>
 
         {/* Previsualización WhatsApp */}
         <div>
-          <small className="text-muted fw-semibold d-block mb-1">
-            <FaMagic className="me-1 text-primary" />
+          <span className="text-slate-500 font-semibold text-xs flex items-center gap-1 mb-1.5">
+            <FaMagic className="text-bunny-primary" />
             Vista previa en chat:
-          </small>
-          <Card className="border-0 shadow-sm" style={{ background: '#e5ddd5', borderRadius: '12px' }}>
-            <Card.Body className="p-3">
-              <div
-                style={{
-                  background: '#ffffff',
-                  borderRadius: '8px 8px 8px 0',
-                  padding: '10px 14px',
-                  maxWidth: '92%',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
-                  whiteSpace: 'pre-wrap',
-                  fontSize: '0.9rem',
-                  lineHeight: '1.4',
-                  color: '#111827',
-                }}
-              >
-                {messageText}
-                <div className="text-end mt-1" style={{ fontSize: '0.72rem', color: '#6b7280' }}>
-                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓✓
-                </div>
+          </span>
+          <div className="p-3 rounded-2xl bg-[#e5ddd5] shadow-inner">
+            <div className="bg-white rounded-xl rounded-tr-none p-3 max-w-[92%] shadow-sm text-slate-900 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+              {messageText}
+              <div className="text-right mt-1 text-[10px] text-slate-500 font-sans">
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓✓
               </div>
-            </Card.Body>
-          </Card>
+            </div>
+          </div>
         </div>
       </Modal.Body>
 
-      <Modal.Footer className="border-top-0 pt-0 d-flex justify-content-between">
-        <Button variant="outline-secondary" size="sm" onClick={onHide}>
-          Cerrar
-        </Button>
-        <div className="d-flex gap-2">
-          <Button
-            variant="outline-primary"
-            size="sm"
-            onClick={handleCopyText}
-            className="d-inline-flex align-items-center gap-1"
-          >
-            {copied ? <FaCheck className="text-success" /> : <FaCopy />}
-            <span>{copied ? 'Copiado' : 'Copiar Texto'}</span>
+      <Modal.Footer>
+        <div className="w-full flex justify-between items-center">
+          <Button variant="secondary" size="sm" onClick={onHide}>
+            Cerrar
           </Button>
-          <Button
-            variant="success"
-            size="sm"
-            onClick={handleSendWhatsApp}
-            className="d-inline-flex align-items-center gap-2 fw-semibold px-3"
-          >
-            <FaWhatsapp className="fs-5" />
-            <span>Enviar por WhatsApp</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyText}
+              className="flex items-center gap-1.5"
+            >
+              {copied ? <FaCheck className="text-emerald-500" /> : <FaCopy />}
+              <span>{copied ? 'Copiado' : 'Copiar Texto'}</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSendWhatsApp}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <FaWhatsapp className="text-lg" />
+              <span>Enviar por WhatsApp</span>
+            </Button>
+          </div>
         </div>
       </Modal.Footer>
     </Modal>

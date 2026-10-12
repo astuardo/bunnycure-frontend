@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Card, Alert, Badge, Button, ButtonGroup, Modal } from 'react-bootstrap';
 import { Award, Plus, Minus, Gift, QrCode } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
 import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
 import { QRCodeSVG } from 'qrcode.react';
+import { Card, Alert, Badge, Button, Modal } from '../ui';
 
 interface StampCardProps {
   customerId?: number;
@@ -14,12 +14,12 @@ interface StampCardProps {
   onAdjust?: (delta: number) => void;
 }
 
-export default function StampCard({ 
+export default function StampCard({
   customerId,
-  loyaltyStamps = 0, 
+  loyaltyStamps = 0,
   totalCompletedVisits = 0,
   currentRewardIndex = 0,
-  onAdjust 
+  onAdjust,
 }: StampCardProps) {
   const { rewards, fetchRewards } = useLoyaltyStore();
   const toast = useToast();
@@ -36,7 +36,6 @@ export default function StampCard({
   }, [fetchRewards]);
 
   useEffect(() => {
-    // Si cambian sellos/premio, invalidamos enlaces para regenerar un JWT actualizado.
     setWalletUrl('');
     setWalletQrUrl('');
   }, [loyaltyStamps, currentRewardIndex]);
@@ -50,7 +49,7 @@ export default function StampCard({
 
   const handleShowQR = async () => {
     if (!customerId) return;
-    
+
     if (walletQrUrl) {
       setShowQR(true);
       return;
@@ -86,174 +85,177 @@ export default function StampCard({
       toast.error('Error al conectar con Google Wallet');
     }
   };
-  
-  // Calculate how many stamps to show on the current card
+
   const currentStamps = loyaltyStamps >= maxStamps ? maxStamps : loyaltyStamps;
-    
   const isRewardAvailable = loyaltyStamps >= maxStamps;
 
-  // Get current target reward
-  const currentReward = rewards.length > 0 
-    ? rewards[currentRewardIndex % rewards.length]
-    : null;
+  const currentReward =
+    rewards.length > 0 ? rewards[currentRewardIndex % rewards.length] : null;
 
   return (
-    <Card className="mb-4 shadow-sm border-0">
-      <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center py-3">
-        <h5 className="mb-0 d-flex align-items-center gap-2 text-white">
-          <Award size={20} />
+    <Card className="mb-6 shadow-bunny border-bunny-border overflow-hidden">
+      <div className="bg-bunny-paper border-b border-bunny-border px-5 py-3.5 flex justify-between items-center">
+        <h3 className="text-base font-bold text-bunny-cocoa flex items-center gap-2 m-0">
+          <Award className="w-5 h-5 text-bunny-primary" />
           Tarjeta de Fidelización
-        </h5>
-        <Badge bg="light" text="dark" className="rounded-pill px-3">
+        </h3>
+        <Badge variant="neutral">
           Visitas: {totalCompletedVisits}
         </Badge>
-      </Card.Header>
-      <Card.Body className="text-center">
+      </div>
+
+      <Card.Body className="p-5 text-center space-y-4">
         {isRewardAvailable ? (
-          <Alert variant="success" className="d-flex flex-column align-items-center gap-2 mb-4 py-3 border-0 shadow-sm">
-            <div className="d-flex align-items-center gap-2">
-              <Gift size={24} />
-              <strong className="fs-5">¡Recompensa Lista!</strong>
+          <Alert variant="success">
+            <div className="flex flex-col items-center gap-2 py-1 text-center w-full">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-base">
+                <Gift className="w-6 h-6" />
+                <span>¡Recompensa Lista!</span>
+              </div>
+              <p className="text-xs text-emerald-900 m-0">
+                Este cliente tiene 10 sellos. Su próxima cita es de beneficio:
+              </p>
+              <Badge variant="success" className="text-sm py-1 px-3 mt-1">
+                🎁 Premio: {currentReward?.name || 'Cargando...'}
+              </Badge>
             </div>
-            <p className="mb-0">Este cliente tiene 10 sellos. Su próxima cita es de beneficio:</p>
-            <Badge bg="success" className="fs-6 mt-1 p-2">
-              🎁 Premio: {currentReward?.name || 'Cargando...'}
-            </Badge>
           </Alert>
         ) : (
-          <div className="mb-4 p-3 bg-light rounded-3 d-flex flex-column align-items-center gap-2">
-             <div className="d-flex align-items-center gap-2 text-primary fw-bold">
-               <Gift size={18} />
-               Siguiente objetivo:
-             </div>
-             <span className="fs-5 fw-bold text-dark">
-               {currentReward?.name || 'Premio BunnyCure'}
-             </span>
+          <div className="p-3.5 bg-bunny-paper/50 rounded-xl border border-bunny-border flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-2 text-bunny-primary text-xs font-bold uppercase tracking-wider">
+              <Gift className="w-4 h-4" />
+              Siguiente objetivo:
+            </div>
+            <span className="text-base font-bold text-bunny-cocoa">
+              {currentReward?.name || 'Premio BunnyCure'}
+            </span>
           </div>
         )}
-        
-        <div className="d-flex justify-content-center align-items-center gap-4 mb-4 mt-2">
+
+        {/* Contador de Sellos */}
+        <div className="flex justify-center items-center gap-4 py-2">
           <div className="text-center">
-             <div className="fs-3 fw-bold text-primary">{currentStamps}</div>
-             <div className="small text-muted text-uppercase tracking-wider">Sellos</div>
+            <div className="text-3xl font-extrabold text-bunny-primary-dark">{currentStamps}</div>
+            <div className="text-[11px] font-semibold text-bunny-text-muted uppercase tracking-wider">
+              Sellos
+            </div>
           </div>
-          <div className="fs-2 text-light-emphasis">/</div>
+          <div className="text-2xl text-bunny-border-strong font-light">/</div>
           <div className="text-center">
-             <div className="fs-3 fw-bold text-muted">{maxStamps}</div>
-             <div className="small text-muted text-uppercase tracking-wider">Meta</div>
+            <div className="text-3xl font-extrabold text-bunny-text-muted">{maxStamps}</div>
+            <div className="text-[11px] font-semibold text-bunny-text-muted uppercase tracking-wider">
+              Meta
+            </div>
           </div>
-          
+
           {onAdjust && (
-            <div className="ms-3">
-              <ButtonGroup size="sm">
-                <Button 
-                  variant="outline-danger" 
-                  onClick={() => onAdjust(-1)}
-                  disabled={loyaltyStamps <= 0}
-                  title="Quitar un sello manualmente"
-                >
-                  <Minus size={16} />
-                </Button>
-                <Button 
-                  variant="outline-success" 
-                  onClick={() => onAdjust(1)}
-                  title="Agregar un sello manualmente"
-                >
-                  <Plus size={16} />
-                </Button>
-              </ButtonGroup>
+            <div className="ml-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => onAdjust(-1)}
+                disabled={loyaltyStamps <= 0}
+                title="Quitar un sello manualmente"
+                className="p-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onAdjust(1)}
+                title="Agregar un sello manualmente"
+                className="p-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
 
-        <div className="d-flex flex-wrap justify-content-center gap-3 mb-2">
+        {/* Grilla de Sellos (Círculos) */}
+        <div className="flex flex-wrap justify-center gap-3 py-2">
           {Array.from({ length: maxStamps }).map((_, index) => {
             const isFilled = index < currentStamps;
             return (
-              <div 
-                key={index} 
-                className={`d-flex align-items-center justify-content-center rounded-circle ${
-                  isFilled ? 'bg-primary text-white shadow-sm' : 'bg-light text-muted border border-2'
+              <div
+                key={index}
+                className={`flex items-center justify-center rounded-full transition-all duration-200 ${
+                  isFilled
+                    ? 'bg-bunny-primary text-white shadow-bunny scale-105'
+                    : 'bg-bunny-paper/80 text-bunny-text-muted border border-bunny-border'
                 }`}
-                style={{ 
-                  width: '52px', 
-                  height: '52px',
-                  transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1), background-color 200ms ease, box-shadow 200ms ease',
-                  transform: isFilled ? 'scale(1.06)' : 'scale(1)'
-                }}
+                style={{ width: '50px', height: '50px' }}
               >
-                {isFilled ? <Award size={26} /> : <span className="small fw-bold">{index + 1}</span>}
+                {isFilled ? (
+                  <Award className="w-6 h-6" />
+                ) : (
+                  <span className="text-xs font-bold text-bunny-cocoa/50">{index + 1}</span>
+                )}
               </div>
             );
           })}
         </div>
-        
-        <div className="mt-4 pt-3 border-top">
-          <p className="text-muted small mb-3 text-start">
-            <strong>Lógica del programa:</strong> Las visitas 1 a 10 acumulan sellos. 
-            La visita #11 es de premio.
-          </p>
-          {customerId && (
-            <div className="d-flex flex-column align-items-center gap-3">
-              <div className="d-flex justify-content-center align-items-center gap-2 w-100">
-                <button 
-                  onClick={handleAddToGoogleWallet}
-                  className="border-0 bg-transparent p-0"
-                  title="Añadir a Google Wallet"
-                  style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
-                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  <img 
-                    src="/save-to-google-wallet.svg" 
-                    alt="Save to Google Wallet"
-                    style={{ height: '44px' }}
-                  />
-                </button>
 
-                <Button 
-                  variant="outline-primary" 
-                  className="d-flex align-items-center gap-2"
-                  onClick={handleShowQR}
-                  disabled={loadingQR}
-                  style={{ height: '44px', borderRadius: '22px' }}
-                >
-                  <QrCode size={20} />
-                  {loadingQR ? 'Cargando...' : 'Ver QR'}
-                </Button>
-              </div>
+        <div className="pt-3 border-t border-bunny-border/60">
+          <p className="text-xs text-bunny-text-muted text-left mb-3">
+            <strong>Lógica del programa:</strong> Las visitas 1 a 10 acumulan sellos. La visita #11 es de premio.
+          </p>
+
+          {customerId && (
+            <div className="flex justify-center items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleAddToGoogleWallet}
+                className="border-0 bg-transparent p-0 transition-transform hover:scale-105 cursor-pointer"
+                title="Añadir a Google Wallet"
+              >
+                <img
+                  src="/save-to-google-wallet.svg"
+                  alt="Save to Google Wallet"
+                  className="h-10"
+                />
+              </button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShowQR}
+                disabled={loadingQR}
+                leftIcon={<QrCode className="w-4 h-4" />}
+                className="h-10 rounded-full px-4"
+              >
+                {loadingQR ? 'Cargando...' : 'Ver QR'}
+              </Button>
             </div>
           )}
         </div>
 
         {/* Modal para el Código QR */}
-        <Modal show={showQR} onHide={() => setShowQR(false)} centered size="sm">
+        <Modal show={showQR} onHide={() => setShowQR(false)} size="sm" centered>
           <Modal.Header closeButton>
-            <Modal.Title className="fs-6">Escanea para descargar</Modal.Title>
+            <Modal.Title>Escanea para descargar</Modal.Title>
           </Modal.Header>
           <Modal.Body className="text-center py-4">
-            {walletQrUrl && (
-              walletUrlLikelyTooLongForQr ? (
-                <Alert variant="warning" className="mb-3 text-start">
-                  El enlace es demasiado largo para generar un QR escaneable. Usa el bot&oacute;n de Google Wallet.
+            {walletQrUrl &&
+              (walletUrlLikelyTooLongForQr ? (
+                <Alert variant="warning" className="text-left mb-3">
+                  El enlace es demasiado largo para generar un QR escaneable. Usa el botón de Google Wallet.
                 </Alert>
               ) : (
-                <div className="bg-white p-3 d-inline-block rounded shadow-sm">
-                  <QRCodeSVG 
+                <div className="bg-white p-3 inline-block rounded-xl border border-bunny-border shadow-xs">
+                  <QRCodeSVG
                     value={walletQrUrl}
                     size={200}
                     level="L"
                     includeMargin={true}
                   />
                 </div>
-              )
-            )}
-            <p className="mt-3 mb-0 small text-muted">
-              Pide a la clienta que escanee este código para guardar su pase BunnyCure (formato Generic) en Google Wallet.
+              ))}
+            <p className="mt-3 mb-0 text-xs text-bunny-text-muted">
+              Pide a la clienta que escanee este código para guardar su pase BunnyCure en Google Wallet.
             </p>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowQR(false)} className="w-100">
+            <Button variant="outline" size="sm" onClick={() => setShowQR(false)} fullWidth>
               Cerrar
             </Button>
           </Modal.Footer>

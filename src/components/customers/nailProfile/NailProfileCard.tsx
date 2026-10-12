@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Button, Form } from 'react-bootstrap';
+import { Card, Button } from '@/components/ui';
 import { FiEdit2, FiCheck, FiX, FiAlertCircle } from 'react-icons/fi';
 import {
   BaseTechniqueType,
@@ -59,158 +59,153 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
   };
 
   return (
-    <Card className="border shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff', borderColor: 'rgba(140, 42, 62, 0.16)' }}>
-      <Card.Header className="bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3 px-md-4">
+    <Card className="border border-bunny-accent/40 bg-white shadow-sm mb-4">
+      <Card.Header className="bg-transparent border-0 flex justify-between items-center p-4">
         <div>
-          <h5 className="mb-0 fw-bold" style={{ color: '#422314', fontSize: '1rem' }}>
+          <h5 className="font-bold text-bunny-dark text-base sm:text-lg mb-0.5">
             💅 Ficha Técnica Permanente de Manicure
           </h5>
-          <small className="text-muted" style={{ fontSize: '12px' }}>
+          <small className="text-slate-500 text-xs">
             Preferencias de base, estado de uña y precauciones para cada servicio
           </small>
         </div>
         {!editing ? (
           <Button
             size="sm"
-            variant="outline-secondary"
+            variant="outline"
             onClick={() => setEditing(true)}
-            style={{ borderRadius: '8px', fontSize: '12px' }}
+            className="flex items-center gap-1.5 text-xs"
           >
-            <FiEdit2 className="me-1" /> Editar
+            <FiEdit2 /> Editar
           </Button>
         ) : (
-          <div className="d-flex gap-1">
-            <Button size="sm" variant="success" onClick={handleSave} style={{ borderRadius: '8px', fontSize: '12px' }}>
-              <FiCheck className="me-1" /> Guardar
+          <div className="flex gap-1.5">
+            <Button size="sm" variant="primary" onClick={handleSave} className="flex items-center gap-1 text-xs">
+              <FiCheck /> Guardar
             </Button>
-            <Button size="sm" variant="secondary" onClick={handleCancel} style={{ borderRadius: '8px', fontSize: '12px' }}>
+            <Button size="sm" variant="secondary" onClick={handleCancel} className="text-xs p-2">
               <FiX />
             </Button>
           </div>
         )}
       </Card.Header>
 
-      <Card.Body className="px-3 px-md-4 pb-3">
+      <Card.Body className="px-4 pb-4 pt-0">
         {editing ? (
-          <Row className="g-3">
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">TÉCNICA / BASE HABITUAL</Form.Label>
-                <Form.Select
-                  size="sm"
-                  value={preferredBase}
-                  onChange={(e) => setPreferredBase(e.target.value as BaseTechniqueType)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                >
-                  <option value="">Seleccionar...</option>
-                  {Object.entries(BASE_TECHNIQUE_LABELS).map(([k, label]) => (
-                    <option key={k} value={k}>
-                      {label}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+            <div className="md:col-span-6">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                TÉCNICA / BASE HABITUAL
+              </label>
+              <select
+                value={preferredBase}
+                onChange={(e) => setPreferredBase(e.target.value as BaseTechniqueType)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                <option value="">Seleccionar...</option>
+                {Object.entries(BASE_TECHNIQUE_LABELS).map(([k, label]) => (
+                  <option key={k} value={k}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">CONDICIÓN HABITUAL DE LA UÑA</Form.Label>
-                <Form.Select
-                  size="sm"
-                  value={usualCondition}
-                  onChange={(e) => setUsualCondition(e.target.value as NailConditionType)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                >
-                  <option value="">Seleccionar...</option>
-                  {Object.entries(NAIL_CONDITION_LABELS).map(([k, label]) => (
-                    <option key={k} value={k}>
-                      {label}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-6">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                CONDICIÓN HABITUAL DE LA UÑA
+              </label>
+              <select
+                value={usualCondition}
+                onChange={(e) => setUsualCondition(e.target.value as NailConditionType)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                <option value="">Seleccionar...</option>
+                {Object.entries(NAIL_CONDITION_LABELS).map(([k, label]) => (
+                  <option key={k} value={k}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <Col md={12}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">TONOS / GAMAS FAVORITAS</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  placeholder="Ej: Nudes rosados, Burdeos, Francesa con microglitter..."
-                  value={favoriteColors}
-                  onChange={(e) => setFavoriteColors(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                />
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-12">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                TONOS / GAMAS FAVORITAS
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Nudes rosados, Burdeos, Francesa con microglitter..."
+                value={favoriteColors}
+                onChange={(e) => setFavoriteColors(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              />
+            </div>
 
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-danger">⚠️ ALERGIAS O SENSIBILIDADES</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  placeholder="Ej: Alergia a monómero fuerte, cutícula hipersensible..."
-                  value={allergyNotes}
-                  onChange={(e) => setAllergyNotes(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#fca5a5' }}
-                />
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-6">
+              <label className="block text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">
+                ⚠️ ALERGIAS O SENSIBILIDADES
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Alergia a monómero fuerte, cutícula hipersensible..."
+                value={allergyNotes}
+                onChange={(e) => setAllergyNotes(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-rose-300 p-2 focus:outline-none focus:ring-1 focus:ring-rose-500"
+              />
+            </div>
 
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">RECOMENDACIONES TÉCNICAS GENERALES</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  placeholder="Ej: Trabajar a baja revolución, usar primer sin ácido..."
-                  value={generalNotes}
-                  onChange={(e) => setGeneralNotes(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+            <div className="md:col-span-6">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                RECOMENDACIONES TÉCNICAS GENERALES
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Trabajar a baja revolución, usar primer sin ácido..."
+                value={generalNotes}
+                onChange={(e) => setGeneralNotes(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              />
+            </div>
+          </div>
         ) : (
-          <Row className="g-3">
-            <Col xs={6} md={3}>
-              <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>TÉCNICA HABITUAL</small>
-              <div className="fw-bold" style={{ color: '#422314', fontSize: '13.5px' }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <small className="text-slate-400 block text-xs uppercase tracking-wider">TÉCNICA HABITUAL</small>
+              <div className="font-bold text-bunny-dark text-sm mt-0.5">
                 {profile.preferredBaseType
                   ? BASE_TECHNIQUE_LABELS[profile.preferredBaseType]
-                  : <span className="text-muted fw-normal">No definida</span>}
+                  : <span className="text-slate-400 font-normal">No definida</span>}
               </div>
-            </Col>
+            </div>
 
-            <Col xs={6} md={3}>
-              <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>CONDICIÓN DE UÑA</small>
-              <div className="fw-bold" style={{ color: '#422314', fontSize: '13.5px' }}>
+            <div>
+              <small className="text-slate-400 block text-xs uppercase tracking-wider">CONDICIÓN DE UÑA</small>
+              <div className="font-bold text-bunny-dark text-sm mt-0.5">
                 {profile.usualNailCondition
                   ? NAIL_CONDITION_LABELS[profile.usualNailCondition]
-                  : <span className="text-muted fw-normal">No evaluada</span>}
+                  : <span className="text-slate-400 font-normal">No evaluada</span>}
               </div>
-            </Col>
+            </div>
 
-            <Col xs={12} md={3}>
-              <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>COLORES FAVORITOS</small>
-              <div style={{ color: '#422314', fontSize: '13.5px', overflowWrap: 'anywhere' }}>
-                {profile.favoriteColors || <span className="text-muted">Sin registrar</span>}
+            <div>
+              <small className="text-slate-400 block text-xs uppercase tracking-wider">COLORES FAVORITOS</small>
+              <div className="text-bunny-dark text-sm mt-0.5 break-words">
+                {profile.favoriteColors || <span className="text-slate-400">Sin registrar</span>}
               </div>
-            </Col>
+            </div>
 
-            <Col xs={12} md={3}>
-              <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>SENSIBILIDAD / ALERGIAS</small>
+            <div>
+              <small className="text-slate-400 block text-xs uppercase tracking-wider">SENSIBILIDAD / ALERGIAS</small>
               {profile.allergyNotes ? (
-                <div className="d-flex align-items-start gap-1 text-danger fw-semibold" style={{ fontSize: '13px', overflowWrap: 'anywhere' }}>
-                  <FiAlertCircle style={{ flexShrink: 0, marginTop: '2px' }} /> <span>{profile.allergyNotes}</span>
+                <div className="flex items-start gap-1 text-rose-600 font-semibold text-xs sm:text-sm mt-0.5 break-words">
+                  <FiAlertCircle className="shrink-0 mt-0.5" /> <span>{profile.allergyNotes}</span>
                 </div>
               ) : (
-                <span className="text-muted" style={{ fontSize: '13px' }}>Ninguna reportada</span>
+                <span className="text-slate-400 text-sm mt-0.5 block">Ninguna reportada</span>
               )}
-            </Col>
-          </Row>
+            </div>
+          </div>
         )}
       </Card.Body>
     </Card>

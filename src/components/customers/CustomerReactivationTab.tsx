@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Row, Col, Card, Badge, Button, Form, Table, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import {
   FaWhatsapp,
@@ -31,6 +30,7 @@ import {
   BUNNYCURE_OFFICIAL_PHONE,
   clearCustomerContact,
 } from '@/utils/reactivationUtils';
+import { Button, Badge, Card, Spinner } from '@/components/ui';
 import ReactivationMessageModal from './ReactivationMessageModal';
 import { useToast } from '@/hooks/useToast';
 
@@ -185,52 +185,36 @@ export default function CustomerReactivationTab({
 
   const getInactivityBadge = (days: number) => {
     if (days >= 45) {
-      return <Badge bg="danger" className="px-2 py-1">🚨 {days} días (Crítica)</Badge>;
+      return <Badge variant="danger" className="px-2 py-1">🚨 {days} días (Crítica)</Badge>;
     }
     if (days >= 30) {
-      return <Badge bg="warning" text="dark" className="px-2 py-1">⚠️ {days} días (Seguimiento)</Badge>;
+      return <Badge variant="warning" className="px-2 py-1">⚠️ {days} días (Seguimiento)</Badge>;
     }
-    return <Badge bg="info" className="px-2 py-1">💅 {days} días (Mantención)</Badge>;
+    return <Badge variant="info" className="px-2 py-1">💅 {days} días (Mantención)</Badge>;
   };
 
   return (
-    <div className="reactivation-module">
+    <div className="space-y-4">
       {/* Banner de Campaña Masiva Meta WhatsApp */}
-      <Card
-        className="border-0 shadow-sm mb-3"
-        style={{
-          borderRadius: '14px',
-          background: 'linear-gradient(135deg, #fff9f9 0%, #fff 100%)',
-          border: '1px solid rgba(140, 42, 62, 0.2)',
-          boxShadow: '0 2px 12px rgba(140, 42, 62, 0.05)',
-        }}
-      >
-        <Card.Body className="p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <Card className="border border-bunny-accent/40 bg-gradient-to-r from-pink-50/70 via-white to-pink-50/40 shadow-sm">
+        <Card.Body className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <div className="d-flex align-items-center gap-2 mb-1">
-              <Badge bg="danger" style={{ fontSize: '11px', background: '#8c2a3e' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Badge variant="danger" className="text-[11px] bg-bunny-primary text-white">
                 🚀 CAMPAÑA MASIVA WHATSAPP
               </Badge>
-              <span className="fw-bold" style={{ color: '#422314', fontSize: '15px' }}>
+              <span className="font-bold text-bunny-dark text-sm sm:text-base">
                 ¿Quieres reactivar a todas tus clientas inactivas en 1 clic?
               </span>
             </div>
-            <p className="text-muted small mb-0">
+            <p className="text-slate-600 text-xs sm:text-sm mb-0 max-w-2xl">
               Usa la plantilla oficial de WhatsApp aprobada por Meta para llegar a todo tu segmento inactivo de forma automática con botones interactivos de reserva.
             </p>
           </div>
           <Button
-            variant="danger"
+            variant="primary"
             onClick={() => navigate('/marketing?template=bunnycure_reactivacion_clienta&audience=INACTIVE_30_DAYS')}
-            style={{
-              background: '#8c2a3e',
-              borderColor: '#8c2a3e',
-              fontWeight: 600,
-              fontSize: '13px',
-              padding: '8px 18px',
-              borderRadius: '10px',
-              whiteSpace: 'nowrap',
-            }}
+            className="whitespace-nowrap text-xs sm:text-sm font-semibold"
           >
             📣 Lanzar Campaña en 1 Clic &rarr;
           </Button>
@@ -238,220 +222,189 @@ export default function CustomerReactivationTab({
       </Card>
 
       {/* KPI Stats Cards */}
-      <Row className="g-3 mb-3">
-        <Col xs={6} md={3} lg={2}>
-          <Card
-            className={`h-100 border-0 shadow-sm cursor-pointer ${inactivityRange === 'ALL_20_PLUS' ? 'ring-2 ring-primary' : ''}`}
-            style={{ background: '#f8fafc', cursor: 'pointer' }}
-            onClick={() => setInactivityRange('ALL_20_PLUS')}
-          >
-            <Card.Body className="p-3">
-              <div className="text-muted small fw-semibold">Total Inactivas</div>
-              <div className="fs-3 fw-bold text-dark">{metrics.totalInactive20Plus}</div>
-              <small className="text-muted">≥20 días sin agendar</small>
-            </Card.Body>
-          </Card>
-        </Col>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div
+          onClick={() => setInactivityRange('ALL_20_PLUS')}
+          className={`p-3.5 rounded-xl border bg-slate-50 cursor-pointer transition-all ${
+            inactivityRange === 'ALL_20_PLUS' ? 'ring-2 ring-bunny-primary border-transparent shadow-sm' : 'border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <div className="text-slate-500 text-xs font-semibold">Total Inactivas</div>
+          <div className="text-2xl font-bold text-slate-800 my-0.5">{metrics.totalInactive20Plus}</div>
+          <div className="text-[11px] text-slate-400">≥20 días sin agendar</div>
+        </div>
 
-        <Col xs={6} md={3} lg={2}>
-          <Card
-            className="h-100 border-0 shadow-sm"
-            style={{ background: '#f0f9ff', cursor: 'pointer' }}
-            onClick={() => setInactivityRange('20_TO_29')}
-          >
-            <Card.Body className="p-3">
-              <div className="text-primary small fw-semibold">20 - 29 Días</div>
-              <div className="fs-3 fw-bold text-primary">{metrics.maintenance20To29}</div>
-              <small className="text-muted">Ventana mantención</small>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div
+          onClick={() => setInactivityRange('20_TO_29')}
+          className={`p-3.5 rounded-xl border bg-sky-50/70 cursor-pointer transition-all ${
+            inactivityRange === '20_TO_29' ? 'ring-2 ring-sky-500 border-transparent shadow-sm' : 'border-sky-200 hover:border-sky-300'
+          }`}
+        >
+          <div className="text-sky-700 text-xs font-semibold">20 - 29 Días</div>
+          <div className="text-2xl font-bold text-sky-700 my-0.5">{metrics.maintenance20To29}</div>
+          <div className="text-[11px] text-sky-600/70">Ventana mantención</div>
+        </div>
 
-        <Col xs={6} md={3} lg={2}>
-          <Card
-            className="h-100 border-0 shadow-sm"
-            style={{ background: '#fffbeb', cursor: 'pointer' }}
-            onClick={() => setInactivityRange('30_TO_44')}
-          >
-            <Card.Body className="p-3">
-              <div className="text-warning small fw-semibold">30 - 44 Días</div>
-              <div className="fs-3 fw-bold text-warning">{metrics.followUp30To44}</div>
-              <small className="text-muted">Alerta seguimiento</small>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div
+          onClick={() => setInactivityRange('30_TO_44')}
+          className={`p-3.5 rounded-xl border bg-amber-50/70 cursor-pointer transition-all ${
+            inactivityRange === '30_TO_44' ? 'ring-2 ring-amber-500 border-transparent shadow-sm' : 'border-amber-200 hover:border-amber-300'
+          }`}
+        >
+          <div className="text-amber-700 text-xs font-semibold">30 - 44 Días</div>
+          <div className="text-2xl font-bold text-amber-700 my-0.5">{metrics.followUp30To44}</div>
+          <div className="text-[11px] text-amber-600/70">Alerta seguimiento</div>
+        </div>
 
-        <Col xs={6} md={3} lg={3}>
-          <Card
-            className="h-100 border-0 shadow-sm"
-            style={{ background: '#fff1f2', cursor: 'pointer' }}
-            onClick={() => setInactivityRange('45_PLUS')}
-          >
-            <Card.Body className="p-3">
-              <div className="text-danger small fw-semibold">45+ Días (Críticas)</div>
-              <div className="fs-3 fw-bold text-danger">{metrics.critical45Plus}</div>
-              <small className="text-muted">Alto riesgo de fuga</small>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div
+          onClick={() => setInactivityRange('45_PLUS')}
+          className={`p-3.5 rounded-xl border bg-rose-50/70 cursor-pointer transition-all ${
+            inactivityRange === '45_PLUS' ? 'ring-2 ring-rose-500 border-transparent shadow-sm' : 'border-rose-200 hover:border-rose-300'
+          }`}
+        >
+          <div className="text-rose-700 text-xs font-semibold">45+ Días (Críticas)</div>
+          <div className="text-2xl font-bold text-rose-700 my-0.5">{metrics.critical45Plus}</div>
+          <div className="text-[11px] text-rose-600/70">Alto riesgo de fuga</div>
+        </div>
 
-        <Col xs={12} md={12} lg={3}>
-          <Card className="h-100 border-0 shadow-sm" style={{ background: '#f0fdf4' }}>
-            <Card.Body className="p-3">
-              <div className="text-success small fw-semibold">Contactadas Recientemente</div>
-              <div className="fs-3 fw-bold text-success">{metrics.contactedRecently}</div>
-              <small className="text-muted">En los últimos 7 días</small>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+        <div className="col-span-2 md:col-span-1 p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/70">
+          <div className="text-emerald-700 text-xs font-semibold">Contactadas Recientemente</div>
+          <div className="text-2xl font-bold text-emerald-700 my-0.5">{metrics.contactedRecently}</div>
+          <div className="text-[11px] text-emerald-600/70">Últimos 7 días</div>
+        </div>
+      </div>
 
       {/* Switch Maestro de Envío Directo 1-Clic */}
-      <Card className="mb-3 border-0 shadow-sm" style={{ background: '#ffffff' }}>
-        <Card.Body className="p-3 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-          <div className="d-flex align-items-center gap-3">
+      <Card className="border border-slate-200 shadow-sm bg-white">
+        <Card.Body className="p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
             <div
-              className="d-flex align-items-center justify-content-center rounded-circle"
-              style={{
-                width: '40px',
-                height: '40px',
-                background: templateSendEnabled ? '#ecfdf5' : '#f1f5f9',
-                color: templateSendEnabled ? '#10b981' : '#94a3b8',
-                fontSize: '20px',
-                flexShrink: 0,
-              }}
+              className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 transition-colors ${
+                templateSendEnabled ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
+              }`}
             >
               <FaWhatsapp />
             </div>
             <div>
-              <div className="fw-bold small d-flex align-items-center gap-2">
+              <div className="font-bold text-xs sm:text-sm flex items-center gap-2 text-slate-800">
                 <span>Envío Rápido de WhatsApp (1-clic) mediante Plantilla</span>
-                <Badge bg={templateSendEnabled ? 'success' : 'secondary'}>
+                <Badge variant={templateSendEnabled ? 'success' : 'secondary'}>
                   {templateSendEnabled ? '🟢 Habilitado' : '⚪ Deshabilitado'}
                 </Badge>
               </div>
-              <small className="text-muted d-block">
+              <p className="text-slate-500 text-xs mt-0.5 mb-0">
                 {templateSendEnabled
                   ? 'El botón "WhatsApp" (1-clic) abrirá la plantilla en WhatsApp directamente (+56 9 8887 3031).'
                   : 'Envío en 1-clic apagado. Las opciones de "Personalizar" (modal) y "Copiar mensaje" continúan 100% activas.'}
-              </small>
+              </p>
             </div>
           </div>
-          <Form.Check
-            type="switch"
-            id="reactivation-template-switch"
-            checked={templateSendEnabled}
-            onChange={(e) => handleToggleTemplateSend(e.target.checked)}
-            label={
-              <span className="small fw-semibold text-nowrap">
-                {templateSendEnabled ? 'Envío 1-clic: ON' : 'Envío 1-clic: OFF'}
-              </span>
-            }
-            className="fs-6 m-0 cursor-pointer"
-          />
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={templateSendEnabled}
+              onChange={(e) => handleToggleTemplateSend(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            <span className="ml-2 text-xs font-semibold text-slate-700 select-none">
+              {templateSendEnabled ? 'ON' : 'OFF'}
+            </span>
+          </label>
         </Card.Body>
       </Card>
 
       {/* Barra de Filtros */}
-      <Card className="mb-3 border-0 shadow-sm">
-        <Card.Body className="p-3">
-          <Row className="g-3 align-items-center">
+      <Card className="border border-slate-200 shadow-sm bg-white">
+        <Card.Body className="p-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
             {/* Rango de Inactividad */}
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label className="small fw-semibold mb-1">📅 Días de Inactividad:</Form.Label>
-                <Form.Select
-                  size="sm"
-                  value={inactivityRange}
-                  onChange={(e) => setInactivityRange(e.target.value as InactivityRange)}
-                >
-                  <option value="ALL_20_PLUS">Todos los Inactivos (≥20 días)</option>
-                  <option value="20_TO_29">20 - 29 días (Mantención Ideal)</option>
-                  <option value="30_TO_44">30 - 44 días (Seguimiento)</option>
-                  <option value="45_PLUS">45+ días (Crítico / Fuga)</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">📅 Días de Inactividad:</label>
+              <select
+                value={inactivityRange}
+                onChange={(e) => setInactivityRange(e.target.value as InactivityRange)}
+                className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                <option value="ALL_20_PLUS">Todos los Inactivos (≥20 días)</option>
+                <option value="20_TO_29">20 - 29 días (Mantención Ideal)</option>
+                <option value="30_TO_44">30 - 44 días (Seguimiento)</option>
+                <option value="45_PLUS">45+ días (Crítico / Fuga)</option>
+              </select>
+            </div>
 
             {/* Servicio Previo */}
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label className="small fw-semibold mb-1">💅 Servicio Previo:</Form.Label>
-                <Form.Select
-                  size="sm"
-                  value={selectedServiceId}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSelectedServiceId(val === 'ALL' ? 'ALL' : Number(val));
-                  }}
-                >
-                  <option value="ALL">Todos los servicios</option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">💅 Servicio Previo:</label>
+              <select
+                value={selectedServiceId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedServiceId(val === 'ALL' ? 'ALL' : Number(val));
+                }}
+                className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                <option value="ALL">Todos los servicios</option>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Estado Anti-Spam */}
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label className="small fw-semibold mb-1">🛡️ Estado Anti-Spam:</Form.Label>
-                <Form.Select
-                  size="sm"
-                  value={contactStatus}
-                  onChange={(e) => setContactStatus(e.target.value as ContactStatusFilter)}
-                >
-                  <option value="ALL">Todas las clientas</option>
-                  <option value="UNCONTACTED">🟢 Solo disponibles (Sin contactar)</option>
-                  <option value="CONTACTED_RECENTLY">🟡 Contactadas recientemente (&lt;7d)</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">🛡️ Estado Anti-Spam:</label>
+              <select
+                value={contactStatus}
+                onChange={(e) => setContactStatus(e.target.value as ContactStatusFilter)}
+                className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                <option value="ALL">Todas las clientas</option>
+                <option value="UNCONTACTED">🟢 Solo disponibles (Sin contactar)</option>
+                <option value="CONTACTED_RECENTLY">🟡 Contactadas recientemente (&lt;7d)</option>
+              </select>
+            </div>
 
             {/* Búsqueda por Texto */}
-            <Col md={3}>
-              <Form.Group>
-                <Form.Label className="small fw-semibold mb-1">🔍 Buscar Clienta:</Form.Label>
-                <div className="position-relative">
-                  <Form.Control
-                    type="text"
-                    size="sm"
-                    placeholder="Nombre, teléfono o RUT..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                  {search && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="position-absolute end-0 top-50 translate-middle-y text-muted p-1 text-decoration-none"
-                      onClick={() => setSearch('')}
-                    >
-                      <FaTimes />
-                    </Button>
-                  )}
-                </div>
-              </Form.Group>
-            </Col>
-          </Row>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">🔍 Buscar Clienta:</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Nombre, teléfono o RUT..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-300 p-2 pr-8 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <FaTimes size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </Card.Body>
       </Card>
 
       {/* Lista de Resultados */}
-      <Card className="border-0 shadow-sm">
-        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center gap-2">
-            <h5 className="mb-0 fs-6 fw-bold">Clientas Inactivas para Reactivación</h5>
-            <Badge bg="secondary" pill>
+      <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+        <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">Clientas Inactivas para Reactivación</h5>
+            <Badge variant="secondary">
               {filteredInactive.length} resultado(s)
             </Badge>
           </div>
           {(inactivityRange !== 'ALL_20_PLUS' || selectedServiceId !== 'ALL' || contactStatus !== 'ALL' || search) && (
             <Button
-              variant="outline-secondary"
+              variant="outline"
               size="sm"
               onClick={() => {
                 setInactivityRange('ALL_20_PLUS');
@@ -459,7 +412,7 @@ export default function CustomerReactivationTab({
                 setContactStatus('ALL');
                 setSearch('');
               }}
-              className="py-0 px-2 small"
+              className="text-xs py-1 px-2.5"
             >
               Limpiar Filtros
             </Button>
@@ -468,75 +421,74 @@ export default function CustomerReactivationTab({
 
         <Card.Body className="p-0">
           {loading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="primary" />
-              <p className="mt-2 text-muted small">Cargando historial de citas y clientes...</p>
+            <div className="text-center py-12">
+              <Spinner size="lg" className="border-bunny-primary mx-auto" />
+              <p className="mt-2 text-slate-500 text-xs">Cargando historial de citas y clientes...</p>
             </div>
           ) : filteredInactive.length === 0 ? (
-            <div className="text-center py-5">
-              <FaCheckCircle className="text-success fs-1 mb-2" />
-              <p className="text-muted mb-1 fw-semibold">No hay clientas inactivas que coincidan con los filtros.</p>
-              <small className="text-muted">¡Excelente trabajo manteniendo a las clientas agendadas!</small>
+            <div className="text-center py-12 px-4">
+              <FaCheckCircle className="text-emerald-500 text-4xl mx-auto mb-2 opacity-80" />
+              <p className="text-slate-700 font-semibold mb-1 text-sm">No hay clientas inactivas que coincidan con los filtros.</p>
+              <small className="text-slate-400">¡Excelente trabajo manteniendo a las clientas agendadas!</small>
             </div>
           ) : (
             <>
               {/* Vista Desktop: Tabla */}
-              <div className="d-none d-md-block">
-                <Table responsive hover className="mb-0 align-middle">
-                  <thead className="table-light small">
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                     <tr>
-                      <th>Clienta / Contacto</th>
-                      <th>Último Servicio Realizado</th>
-                      <th className="text-center">Días Inactiva</th>
-                      <th>Estado Anti-Spam</th>
-                      <th className="text-end">Acciones</th>
+                      <th className="py-3 px-4">Clienta / Contacto</th>
+                      <th className="py-3 px-4">Último Servicio Realizado</th>
+                      <th className="py-3 px-4 text-center">Días Inactiva</th>
+                      <th className="py-3 px-4">Estado Anti-Spam</th>
+                      <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {filteredInactive.map((item) => (
-                      <tr key={item.customer.id}>
+                      <tr key={item.customer.id} className="hover:bg-slate-50/60 transition-colors">
                         {/* Clienta */}
-                        <td>
-                          <div className="fw-semibold text-dark">{item.customer.fullName}</div>
-                          <div className="small text-muted d-flex gap-2">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-800 text-sm">{item.customer.fullName}</div>
+                          <div className="text-xs text-slate-500 flex gap-2 mt-0.5">
                             <span>📱 {item.customer.phone || 'Sin teléfono'}</span>
                             {item.customer.rut && <span>• RUT: {item.customer.rut}</span>}
                           </div>
                           {item.customer.instagram && (
-                            <div className="small text-primary">
+                            <div className="text-xs text-bunny-primary mt-0.5">
                               📸 {item.customer.instagram.startsWith('@') ? item.customer.instagram : `@${item.customer.instagram}`}
                             </div>
                           )}
                         </td>
 
                         {/* Último Servicio */}
-                        <td>
-                          <div className="fw-semibold small text-truncate" style={{ maxWidth: '220px' }}>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-xs text-slate-800 truncate max-w-[220px]">
                             {item.lastServiceName}
                           </div>
-                          <div className="small text-muted">
+                          <div className="text-xs text-slate-500">
                             {item.lastAppointmentDate
                               ? `Atendida el ${format(item.lastAppointmentDate, 'dd/MM/yyyy', { locale: es })}`
                               : 'Registrada sin cita previa'}
                           </div>
-                          <small className="text-muted">Visitas completadas: {item.totalCompletedVisits}</small>
+                          <div className="text-[11px] text-slate-400">Visitas completadas: {item.totalCompletedVisits}</div>
                         </td>
 
                         {/* Días Inactiva */}
-                        <td className="text-center">{getInactivityBadge(item.daysSinceLastAppointment)}</td>
+                        <td className="py-3 px-4 text-center">{getInactivityBadge(item.daysSinceLastAppointment)}</td>
 
                         {/* Estado Anti-Spam */}
-                        <td>
+                        <td className="py-3 px-4">
                           {item.isContactedRecently ? (
                             <div>
-                              <Badge bg="warning" text="dark" className="d-inline-flex align-items-center gap-1">
+                              <Badge variant="warning" className="inline-flex items-center gap-1">
                                 <FaClock /> Hace {item.daysSinceLastContact}d
                               </Badge>
                               <div className="mt-1">
                                 <button
                                   type="button"
-                                  className="btn btn-link p-0 text-muted"
-                                  style={{ fontSize: '0.72rem' }}
+                                  className="text-[11px] text-slate-400 hover:text-slate-600 underline"
                                   onClick={(e) => handleResetContact(item.customer.id, e)}
                                 >
                                   Restablecer
@@ -544,59 +496,64 @@ export default function CustomerReactivationTab({
                               </div>
                             </div>
                           ) : (
-                            <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                            <Badge variant="success" className="inline-flex items-center gap-1">
                               <FaCheckCircle /> Disponible
                             </Badge>
                           )}
                         </td>
 
                         {/* Acciones */}
-                        <td className="text-end">
-                          <div className="d-inline-flex gap-1">
-                            {/* Botón WhatsApp 1-clic (Depende del switch maestro) */}
-                            <Button
-                              variant={templateSendEnabled ? "success" : "secondary"}
-                              size="sm"
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            {/* Botón WhatsApp 1-clic */}
+                            <button
+                              type="button"
                               disabled={!templateSendEnabled}
                               onClick={() => handleQuickWhatsApp(item)}
                               title={
                                 templateSendEnabled
-                                  ? "Enviar mensaje WhatsApp en 1-clic"
-                                  : "Envío 1-clic desactivado por el switch superior. Usa 'Personalizar' o 'Copiar'"
+                                  ? 'Enviar mensaje WhatsApp en 1-clic'
+                                  : "Envío 1-clic desactivado. Usa 'Personalizar' o 'Copiar'"
                               }
-                              className="d-inline-flex align-items-center gap-1 fw-semibold"
-                              style={!templateSendEnabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${
+                                templateSendEnabled
+                                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              }`}
                             >
                               <FaWhatsapp />
                               <span>WhatsApp</span>
-                            </Button>
+                            </button>
 
-                            {/* Botón Personalizar (Siempre habilitado) */}
+                            {/* Botón Personalizar */}
                             <Button
-                              variant="outline-primary"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleOpenCustomizeModal(item)}
                               title="Previsualizar o personalizar mensaje"
+                              className="p-1.5"
                             >
                               <FaCommentDots />
                             </Button>
 
-                            {/* Botón Copiar (Siempre habilitado) */}
+                            {/* Botón Copiar */}
                             <Button
-                              variant="outline-secondary"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleQuickCopy(item)}
                               title="Copiar mensaje al portapapeles"
+                              className="p-1.5"
                             >
                               <FaCopy />
                             </Button>
 
-                            {/* Botón Ver Ficha (Siempre habilitado) */}
+                            {/* Botón Ver Ficha */}
                             <Button
-                              variant="outline-dark"
+                              variant="secondary"
                               size="sm"
                               onClick={() => navigate(`/customers/${item.customer.id}`)}
                               title="Ver ficha completa de cliente"
+                              className="p-1.5"
                             >
                               <FaEye />
                             </Button>
@@ -605,82 +562,84 @@ export default function CustomerReactivationTab({
                       </tr>
                     ))}
                   </tbody>
-                </Table>
+                </table>
               </div>
 
               {/* Vista Móvil: Tarjetas */}
-              <div className="d-md-none p-3">
+              <div className="md:hidden p-3 space-y-3">
                 {filteredInactive.map((item) => (
-                  <Card key={item.customer.id} className="mb-3 border shadow-sm">
-                    <Card.Body className="p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                          <h6 className="fw-bold mb-0">{item.customer.fullName}</h6>
-                          <small className="text-muted">📱 {item.customer.phone}</small>
-                        </div>
-                        <div>{getInactivityBadge(item.daysSinceLastAppointment)}</div>
+                  <div key={item.customer.id} className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-sm space-y-2.5">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h6 className="font-bold text-slate-800 text-sm mb-0.5">{item.customer.fullName}</h6>
+                        <span className="text-xs text-slate-500">📱 {item.customer.phone}</span>
                       </div>
+                      <div>{getInactivityBadge(item.daysSinceLastAppointment)}</div>
+                    </div>
 
-                      <div className="p-2 mb-2 rounded bg-light small">
-                        <div><strong>Último Servicio:</strong> {item.lastServiceName}</div>
-                        <div className="text-muted">
-                          {item.lastAppointmentDate
-                            ? `Fecha: ${format(item.lastAppointmentDate, 'dd/MM/yyyy', { locale: es })}`
-                            : 'Sin citas previas'}
-                        </div>
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                      <div><strong>Último Servicio:</strong> {item.lastServiceName}</div>
+                      <div className="text-slate-500 mt-0.5">
+                        {item.lastAppointmentDate
+                          ? `Fecha: ${format(item.lastAppointmentDate, 'dd/MM/yyyy', { locale: es })}`
+                          : 'Sin citas previas'}
                       </div>
+                    </div>
 
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <small className="text-muted">Anti-Spam:</small>
-                        {item.isContactedRecently ? (
-                          <Badge bg="warning" text="dark">
-                            Contactada hace {item.daysSinceLastContact}d
-                          </Badge>
-                        ) : (
-                          <Badge bg="success">Disponible</Badge>
-                        )}
-                      </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500">Anti-Spam:</span>
+                      {item.isContactedRecently ? (
+                        <Badge variant="warning">
+                          Contactada hace {item.daysSinceLastContact}d
+                        </Badge>
+                      ) : (
+                        <Badge variant="success">Disponible</Badge>
+                      )}
+                    </div>
 
-                      <div className="d-grid gap-2">
+                    <div className="space-y-1.5 pt-1">
+                      <button
+                        type="button"
+                        disabled={!templateSendEnabled}
+                        onClick={() => handleQuickWhatsApp(item)}
+                        className={`w-full flex items-center justify-center gap-2 text-xs font-semibold py-2 px-3 rounded-lg transition-all ${
+                          templateSendEnabled
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <FaWhatsapp className="text-base" />
+                        <span>{templateSendEnabled ? 'Enviar WhatsApp (1-clic)' : 'Envío 1-clic desactivado'}</span>
+                      </button>
+
+                      <div className="grid grid-cols-3 gap-1.5">
                         <Button
-                          variant={templateSendEnabled ? "success" : "secondary"}
+                          variant="outline"
                           size="sm"
-                          disabled={!templateSendEnabled}
-                          onClick={() => handleQuickWhatsApp(item)}
-                          className="d-flex align-items-center justify-content-center gap-2 fw-semibold"
-                          style={!templateSendEnabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                          className="flex items-center justify-center gap-1 text-xs"
+                          onClick={() => handleOpenCustomizeModal(item)}
                         >
-                          <FaWhatsapp className="fs-5" />
-                          <span>{templateSendEnabled ? 'Enviar WhatsApp (1-clic)' : 'Envío 1-clic desactivado'}</span>
+                          <FaCommentDots /> Personalizar
                         </Button>
-                        <div className="d-flex gap-2">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            className="flex-fill"
-                            onClick={() => handleOpenCustomizeModal(item)}
-                          >
-                            <FaCommentDots className="me-1" /> Personalizar
-                          </Button>
-                          <Button
-                            variant="outline-secondary"
-                            size="sm"
-                            className="flex-fill"
-                            onClick={() => handleQuickCopy(item)}
-                          >
-                            <FaCopy className="me-1" /> Copiar
-                          </Button>
-                          <Button
-                            variant="outline-dark"
-                            size="sm"
-                            onClick={() => navigate(`/customers/${item.customer.id}`)}
-                          >
-                            <FaEye />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center justify-center gap-1 text-xs"
+                          onClick={() => handleQuickCopy(item)}
+                        >
+                          <FaCopy /> Copiar
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="flex items-center justify-center text-xs"
+                          onClick={() => navigate(`/customers/${item.customer.id}`)}
+                        >
+                          <FaEye /> Ficha
+                        </Button>
                       </div>
-                    </Card.Body>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             </>

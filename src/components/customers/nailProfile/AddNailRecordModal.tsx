@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Form, Row, Col, Badge, Spinner } from 'react-bootstrap';
+import { Modal, Button, Badge, Spinner } from '@/components/ui';
 import { FiUpload, FiPlus, FiX } from 'react-icons/fi';
 import {
   BaseTechniqueType,
@@ -138,49 +138,40 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
-        <Modal.Title style={{ color: '#422314', fontSize: '1.15rem', fontWeight: 700 }}>
-          📸 Agregar Diseño / Ficha Técnica de Manicure &bull; {customerName}
+      <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
+        <Modal.Title>
+          <span className="text-bunny-dark font-bold text-base sm:text-lg">
+            📸 Agregar Diseño / Ficha Técnica de Manicure &bull; {customerName}
+          </span>
         </Modal.Title>
       </Modal.Header>
 
-      <Form onSubmit={handleSubmit}>
-        <Modal.Body className="p-3 p-md-4" style={{ background: '#fff9f8', maxHeight: '75vh', overflowY: 'auto' }}>
+      <form onSubmit={handleSubmit}>
+        <Modal.Body className="p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto bg-bunny-creamy/20">
           {/* Subida de Fotos */}
-          <div
-            className="mb-4 p-3 rounded-3 text-center"
-            style={{
-              background: '#fff',
-              border: '2px dashed #eed0c5',
-            }}
-          >
-            <div className="d-flex justify-content-center gap-2 mb-2">
+          <div className="p-4 rounded-xl text-center bg-white border-2 border-dashed border-bunny-accent/60">
+            <div className="flex justify-center gap-2 mb-2">
               <Button
-                variant="outline-primary"
+                type="button"
+                variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={processingImages}
-                style={{
-                  borderRadius: '10px',
-                  borderColor: '#8c2a3e',
-                  color: '#8c2a3e',
-                  fontWeight: 600,
-                  background: '#fdf4f2',
-                }}
+                className="border-bunny-primary text-bunny-primary hover:bg-bunny-light/30"
               >
                 {processingImages ? (
                   <>
-                    <Spinner size="sm" animation="border" className="me-1" />
+                    <Spinner size="sm" className="mr-1.5 border-bunny-primary" />
                     Procesando fotos...
                   </>
                 ) : (
                   <>
-                    <FiUpload className="me-1" /> Subir Fotos de Manicure
+                    <FiUpload className="mr-1.5 inline" /> Subir Fotos de Manicure
                   </>
                 )}
               </Button>
             </div>
-            <small className="text-muted d-block" style={{ fontSize: '11.5px' }}>
+            <small className="text-slate-500 text-xs block">
               Puedes subir fotos del resultado final o del proceso (antes / después) desde la galería o cámara.
             </small>
 
@@ -189,36 +180,27 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
               type="file"
               accept="image/*"
               multiple
-              style={{ display: 'none' }}
+              className="hidden"
               onChange={handleFileChange}
             />
 
             {/* Grid de Previsualización de Fotos */}
             {photoUrls.length > 0 && (
-              <div className="d-flex gap-2 flex-wrap justify-content-center mt-3">
+              <div className="flex gap-2.5 flex-wrap justify-center mt-3">
                 {photoUrls.map((url, idx) => (
                   <div
                     key={idx}
-                    className="position-relative"
-                    style={{
-                      width: '100px',
-                      height: '100px',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                      border: '2px solid #eed0c5',
-                      boxShadow: '0 2px 8px rgba(92, 61, 46, 0.1)',
-                    }}
+                    className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-bunny-accent shadow-sm"
                   >
                     <img
                       src={url}
                       alt={`Foto ${idx + 1}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      className="w-full h-full object-cover"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
-                      className="btn btn-sm btn-danger position-absolute top-0 end-0 p-1 m-1"
-                      style={{ borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 shadow-sm"
                     >
                       <FiX size={12} />
                     </button>
@@ -228,173 +210,162 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
             )}
           </div>
 
-          <Row className="g-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             {/* Título */}
-            <Col md={8}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">TÍTULO O DISEÑO REALIZADO *</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Ej: Kapping Gel Rosa Glaseado + Cristales Swarovski"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                  required
-                />
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-8">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                TÍTULO O DISEÑO REALIZADO *
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Kapping Gel Rosa Glaseado + Cristales Swarovski"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                required
+              />
+            </div>
 
             {/* Fecha */}
-            <Col md={4}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">FECHA DE ATENCIÓN</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                />
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-4">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                FECHA DE ATENCIÓN
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              />
+            </div>
 
             {/* Técnica / Base Usada */}
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">TÉCNICA / BASE APLICADA</Form.Label>
-                <Form.Select
-                  value={baseType}
-                  onChange={(e) => setBaseType(e.target.value as BaseTechniqueType)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5', fontWeight: 600 }}
-                >
-                  {Object.entries(BASE_TECHNIQUE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-6">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                TÉCNICA / BASE APLICADA
+              </label>
+              <select
+                value={baseType}
+                onChange={(e) => setBaseType(e.target.value as BaseTechniqueType)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 font-semibold text-bunny-dark focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                {Object.entries(BASE_TECHNIQUE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Estado de Cutícula / Uña */}
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">ESTADO DE LA UÑA / CUTÍCULA</Form.Label>
-                <Form.Select
-                  value={nailCondition}
-                  onChange={(e) => setNailCondition(e.target.value as NailConditionType)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                >
-                  {Object.entries(NAIL_CONDITION_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-6">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                ESTADO DE LA UÑA / CUTÍCULA
+              </label>
+              <select
+                value={nailCondition}
+                onChange={(e) => setNailCondition(e.target.value as NailConditionType)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              >
+                {Object.entries(NAIL_CONDITION_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Esmaltes y Tonos Usados */}
-            <Col md={12}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">ESMALTES Y TONOS UTILIZADOS</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Ej: OPI #21, Pink Blush, Foil Dorado, Top Coat Diamond"
-                  value={polishColors}
-                  onChange={(e) => setPolishColors(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-                />
-              </Form.Group>
-            </Col>
+            <div className="md:col-span-12">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                ESMALTES Y TONOS UTILIZADOS
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: OPI #21, Pink Blush, Foil Dorado, Top Coat Diamond"
+                value={polishColors}
+                onChange={(e) => setPolishColors(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              />
+            </div>
 
-            {/* Notas Técnicas / Recomendaciones para la próxima cita */}
-            <Col md={12}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">NOTAS TÉCNICAS & OBSERVACIONES</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  placeholder="Ej: Cutícula sensible en dedo anular derecho. Requiere nivelación con base rubber media. Prefiere largo almendra."
-                  value={techniqueNotes}
-                  onChange={(e) => setTechniqueNotes(e.target.value)}
-                  style={{ borderRadius: '8px', borderColor: '#eed0c5', fontSize: '13px' }}
-                />
-              </Form.Group>
-            </Col>
+            {/* Notas Técnicas */}
+            <div className="md:col-span-12">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                NOTAS TÉCNICAS & OBSERVACIONES
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Ej: Cutícula sensible en dedo anular derecho. Requiere nivelación con base rubber media. Prefiere largo almendra."
+                value={techniqueNotes}
+                onChange={(e) => setTechniqueNotes(e.target.value)}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+              />
+            </div>
 
             {/* Etiquetas / Tags */}
-            <Col md={12}>
-              <Form.Group>
-                <Form.Label className="fw-bold small text-muted">ETIQUETAS DEL ESTILO</Form.Label>
-                <div className="d-flex gap-2 mb-2">
-                  <Form.Control
-                    type="text"
-                    size="sm"
-                    placeholder="Ej: Francesa, Glitter, Efecto Espejo..."
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                    style={{ borderRadius: '8px', borderColor: '#eed0c5', maxWidth: '280px' }}
-                  />
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    onClick={handleAddTag}
-                    style={{ borderRadius: '8px' }}
-                  >
-                    <FiPlus className="me-1" /> Agregar Tag
-                  </Button>
-                </div>
+            <div className="md:col-span-12">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                ETIQUETAS DEL ESTILO
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="Ej: Francesa, Glitter, Efecto Espejo..."
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  className="max-w-xs text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddTag}
+                  className="flex items-center gap-1"
+                >
+                  <FiPlus /> Agregar Tag
+                </Button>
+              </div>
 
-                <div className="d-flex gap-1 flex-wrap">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      bg="light"
-                      text="dark"
-                      style={{
-                        border: '1px solid #eed0c5',
-                        padding: '6px 10px',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => handleRemoveTag(tag)}
-                      title="Click para remover"
-                    >
-                      {tag} &times;
-                    </Badge>
-                  ))}
-                </div>
-              </Form.Group>
-            </Col>
-          </Row>
+              <div className="flex gap-1.5 flex-wrap">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-slate-200 text-xs px-2.5 py-1"
+                    onClick={() => handleRemoveTag(tag)}
+                    title="Click para remover"
+                  >
+                    {tag} &times;
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
         </Modal.Body>
 
-        <Modal.Footer style={{ background: '#fdf4f2', borderTop: '1px solid #eed0c5' }}>
-          <Button variant="secondary" size="sm" onClick={onHide} style={{ borderRadius: '8px' }}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            style={{
-              background: '#8c2a3e',
-              borderColor: '#8c2a3e',
-              borderRadius: '8px',
-              fontWeight: 700,
-              padding: '6px 20px',
-            }}
-          >
-            💾 Guardar en Ficha
-          </Button>
+        <Modal.Footer className="bg-bunny-creamy/30 border-t border-bunny-accent/40">
+          <div className="w-full flex justify-end gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={onHide}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              className="bg-bunny-primary hover:bg-bunny-dark text-white font-semibold px-5"
+            >
+              💾 Guardar en Ficha
+            </Button>
+          </div>
         </Modal.Footer>
-      </Form>
+      </form>
     </Modal>
   );
 };

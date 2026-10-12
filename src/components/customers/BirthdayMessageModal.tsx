@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Badge, ButtonGroup, Spinner } from 'react-bootstrap';
+import { Modal, Button, Badge, Spinner } from '@/components/ui';
 import { FaWhatsapp, FaCopy, FaCheck } from 'react-icons/fa';
 import { FiGift, FiSmile, FiPercent } from 'react-icons/fi';
 import { BirthdayCustomer, BirthdayTone } from '../../types/birthday.types';
@@ -113,157 +113,154 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
-        <Modal.Title style={{ color: '#422314', fontSize: '1.15rem', fontWeight: 700 }}>
-          🎂 Enviar Saludo de Cumpleaños &bull; {customerName}
+      <Modal.Header closeButton className="bg-bunny-light/30 border-b border-bunny-accent/40">
+        <Modal.Title>
+          <span className="text-bunny-dark font-bold text-base sm:text-lg">
+            🎂 Enviar Saludo de Cumpleaños &bull; {customerName}
+          </span>
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="p-3 p-md-4" style={{ background: '#fff9f8' }}>
+      <Modal.Body className="p-4 sm:p-5 space-y-4 bg-bunny-creamy/30">
         {/* Info de la Clienta */}
-        <div
-          className="d-flex justify-content-between align-items-center mb-3 p-3 rounded-3"
-          style={{ background: '#fff', border: '1px solid #eed0c5' }}
-        >
+        <div className="flex justify-between items-center p-3 rounded-xl bg-white border border-bunny-accent/50 shadow-sm">
           <div>
-            <div className="fw-bold" style={{ color: '#422314', fontSize: '15px' }}>
+            <div className="font-bold text-bunny-dark text-sm sm:text-base">
               {customerName}
             </div>
-            <small style={{ color: '#8c6052' }}>
-              📅 Cumpleaños: <strong>{birthdayCustomer.formattedBirthDay}</strong>
+            <div className="text-xs text-bunny-dark/70 mt-0.5">
+              📅 Cumpleaños: <strong className="text-bunny-dark">{birthdayCustomer.formattedBirthDay}</strong>
               {birthdayCustomer.ageToTurn && ` (${birthdayCustomer.ageToTurn} años)`} &bull; 📱 {customerPhone || 'Sin teléfono'}
-            </small>
+            </div>
           </div>
           {birthdayCustomer.isToday ? (
-            <Badge bg="danger" style={{ fontSize: '12px', padding: '6px 10px' }}>
+            <Badge variant="danger" className="text-xs px-2.5 py-1">
               🎉 ¡CUMPLE HOY!
             </Badge>
           ) : (
-            <Badge bg="light" text="dark" style={{ border: '1px solid #eed0c5' }}>
+            <Badge variant="secondary" className="text-xs">
               Faltan {birthdayCustomer.daysUntilBirthday} día(s)
             </Badge>
           )}
         </div>
 
         {/* Selector de Tono / Tipo de Beneficio */}
-        <div className="mb-3">
-          <label className="form-label fw-bold small text-muted mb-2">SELECCIONA EL TIPO DE SALUDO Y BENEFICIO:</label>
-          <ButtonGroup className="w-100">
-            <Button
-              variant={tone === 'DISCOUNT' ? 'primary' : 'outline-secondary'}
-              size="sm"
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            SELECCIONA EL TIPO DE SALUDO Y BENEFICIO:
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
               onClick={() => setTone('DISCOUNT')}
-              style={{
-                background: tone === 'DISCOUNT' ? '#8c2a3e' : '#fff',
-                borderColor: '#eed0c5',
-                color: tone === 'DISCOUNT' ? '#fff' : '#8c2a3e',
-                fontWeight: 600,
-              }}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                tone === 'DISCOUNT'
+                  ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
+                  : 'bg-white text-bunny-primary border-bunny-accent/60 hover:bg-bunny-light/40'
+              }`}
             >
-              <FiPercent className="me-1" /> 15% Descuento
-            </Button>
-            <Button
-              variant={tone === 'GIFT' ? 'primary' : 'outline-secondary'}
-              size="sm"
+              <FiPercent /> 15% Descuento
+            </button>
+            <button
+              type="button"
               onClick={() => setTone('GIFT')}
-              style={{
-                background: tone === 'GIFT' ? '#8c2a3e' : '#fff',
-                borderColor: '#eed0c5',
-                color: tone === 'GIFT' ? '#fff' : '#8c2a3e',
-                fontWeight: 600,
-              }}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                tone === 'GIFT'
+                  ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
+                  : 'bg-white text-bunny-primary border-bunny-accent/60 hover:bg-bunny-light/40'
+              }`}
             >
-              <FiGift className="me-1" /> Regalo / Nail Art
-            </Button>
-            <Button
-              variant={tone === 'SIMPLE' ? 'primary' : 'outline-secondary'}
-              size="sm"
+              <FiGift /> Regalo / Nail Art
+            </button>
+            <button
+              type="button"
               onClick={() => setTone('SIMPLE')}
-              style={{
-                background: tone === 'SIMPLE' ? '#8c2a3e' : '#fff',
-                borderColor: '#eed0c5',
-                color: tone === 'SIMPLE' ? '#fff' : '#8c2a3e',
-                fontWeight: 600,
-              }}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                tone === 'SIMPLE'
+                  ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
+                  : 'bg-white text-bunny-primary border-bunny-accent/60 hover:bg-bunny-light/40'
+              }`}
             >
-              <FiSmile className="me-1" /> Saludo Cariñoso
-            </Button>
-          </ButtonGroup>
+              <FiSmile /> Saludo Cariñoso
+            </button>
+          </div>
         </div>
 
         {/* Vista previa y edición del mensaje */}
-        <div className="mb-3">
-          <div className="d-flex justify-content-between align-items-center mb-1">
-            <label className="form-label fw-bold small text-muted mb-0">MENSAJE PERSONALIZABLE:</label>
-            <Button variant="link" size="sm" onClick={handleCopy} className="p-0 text-decoration-none" style={{ color: '#8c2a3e', fontSize: '12px' }}>
-              {isCopied ? <><FaCheck className="me-1 text-success" /> Copiado</> : <><FaCopy className="me-1" /> Copiar texto</>}
-            </Button>
+        <div>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              MENSAJE PERSONALIZABLE:
+            </label>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="text-xs text-bunny-primary hover:text-bunny-dark font-medium flex items-center gap-1 transition-colors"
+            >
+              {isCopied ? (
+                <>
+                  <FaCheck className="text-emerald-500" /> Copiado
+                </>
+              ) : (
+                <>
+                  <FaCopy /> Copiar texto
+                </>
+              )}
+            </button>
           </div>
-          <Form.Control
-            as="textarea"
-            rows={7}
+          <textarea
+            rows={6}
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
-            style={{
-              borderRadius: '10px',
-              borderColor: '#eed0c5',
-              fontSize: '13.5px',
-              lineHeight: 1.45,
-              background: '#fff',
-            }}
+            className="w-full text-xs sm:text-sm leading-relaxed p-3 rounded-xl border border-bunny-accent/70 bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/30 focus:border-bunny-primary"
           />
-          <small style={{ color: '#8c6052', fontSize: '11.5px', display: 'block', marginTop: '4px' }}>
-            ℹ️ Número oficial de atención: <strong>{BUNNYCURE_OFFICIAL_PHONE}</strong>
-          </small>
+          <span className="block text-[11px] text-bunny-dark/70 mt-1">
+            ℹ️ Número oficial de atención: <strong className="text-bunny-dark">{BUNNYCURE_OFFICIAL_PHONE}</strong>
+          </span>
         </div>
       </Modal.Body>
 
-      <Modal.Footer className="d-flex justify-content-between align-items-center" style={{ background: '#fdf4f2', borderTop: '1px solid #eed0c5' }}>
-        <Button variant="outline-secondary" size="sm" onClick={onHide} style={{ borderRadius: '8px' }}>
-          Cerrar
-        </Button>
-        <div className="d-flex gap-2">
-          <Button
-            variant="outline-success"
-            size="sm"
-            onClick={handleSendWhatsApp}
-            disabled={!customerPhone}
-            title="Abre WhatsApp Web con el texto libre editado arriba"
-            style={{
-              borderRadius: '8px',
-              fontWeight: 600,
-              padding: '7px 14px',
-            }}
-          >
-            <FaWhatsapp className="me-1" /> Abrir WhatsApp Web (Texto Libre)
+      <Modal.Footer className="bg-bunny-light/20 border-t border-bunny-accent/40">
+        <div className="w-full flex justify-between items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onHide}>
+            Cerrar
           </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendWhatsApp}
+              disabled={!customerPhone}
+              title="Abre WhatsApp Web con el texto libre editado arriba"
+              className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+            >
+              <FaWhatsapp className="text-emerald-600 mr-1.5" />
+              <span className="hidden sm:inline">WhatsApp Web</span> (Texto Libre)
+            </Button>
 
-          <Button
-            variant="success"
-            size="sm"
-            onClick={handleSendMetaOfficial}
-            disabled={sendingMeta || !customerPhone}
-            title="Envía la plantilla oficial con botón interactivo por Meta API"
-            style={{
-              background: '#8c2a3e',
-              borderColor: '#8c2a3e',
-              borderRadius: '8px',
-              fontWeight: 700,
-              padding: '7px 16px',
-            }}
-          >
-            {sendingMeta ? (
-              <>
-                <Spinner size="sm" animation="border" className="me-1" /> Enviando...
-              </>
-            ) : (
-              <>
-                <FaWhatsapp className="me-1" style={{ fontSize: '15px' }} /> Enviar Oficial Meta (1 Clic)
-              </>
-            )}
-          </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSendMetaOfficial}
+              disabled={sendingMeta || !customerPhone}
+              title="Envía la plantilla oficial con botón interactivo por Meta API"
+              className="bg-bunny-primary hover:bg-bunny-dark text-white font-semibold"
+            >
+              {sendingMeta ? (
+                <>
+                  <Spinner size="sm" className="mr-1.5 border-white" /> Enviando...
+                </>
+              ) : (
+                <>
+                  <FaWhatsapp className="text-emerald-400 mr-1.5" /> Enviar Oficial Meta (1 Clic)
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </Modal.Footer>
     </Modal>
   );
 };
+
+export default BirthdayMessageModal;

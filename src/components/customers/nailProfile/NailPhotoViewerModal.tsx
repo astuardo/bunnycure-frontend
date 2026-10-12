@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Badge, Row, Col } from 'react-bootstrap';
+import { Modal, Button, Badge } from '@/components/ui';
 import { FiTrash2, FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { NailPhotoRecord } from '../../../types/nailProfile.types';
 import { BASE_TECHNIQUE_LABELS, NAIL_CONDITION_LABELS } from '../../../utils/nailProfileUtils';
@@ -47,106 +47,95 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
-        <Modal.Title style={{ color: '#422314', fontSize: '1.1rem', fontWeight: 700 }}>
-          {record.title}
+      <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
+        <Modal.Title>
+          <span className="text-bunny-dark font-bold text-base sm:text-lg">
+            {record.title}
+          </span>
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="p-0" style={{ background: '#2c170e' }}>
+      <Modal.Body className="p-0 bg-neutral-900 overflow-hidden">
         {/* Visor de Fotos */}
         {photos.length > 0 ? (
-          <div
-            className="position-relative d-flex align-items-center justify-content-center"
-            style={{ minHeight: '360px', maxHeight: '520px', background: '#1a0d08' }}
-          >
+          <div className="relative flex items-center justify-center min-h-[360px] max-h-[520px] bg-black">
             <img
               src={currentPhoto}
               alt={record.title}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '520px',
-                objectFit: 'contain',
-              }}
+              className="max-w-full max-h-[520px] object-contain"
             />
 
             {photos.length > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={handlePrev}
-                  className="btn btn-dark position-absolute start-0 top-50 translate-middle-y ms-2 rounded-circle p-2 opacity-75"
-                  style={{ zIndex: 10 }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all z-10"
                 >
-                  <FiChevronLeft size={20} />
+                  <FiChevronLeft size={22} />
                 </button>
                 <button
+                  type="button"
                   onClick={handleNext}
-                  className="btn btn-dark position-absolute end-0 top-50 translate-middle-y me-2 rounded-circle p-2 opacity-75"
-                  style={{ zIndex: 10 }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all z-10"
                 >
-                  <FiChevronRight size={20} />
+                  <FiChevronRight size={22} />
                 </button>
-                <div
-                  className="position-absolute bottom-0 start-50 translate-middle-x mb-2 px-3 py-1 rounded-pill"
-                  style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '12px' }}
-                >
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 text-white text-xs tracking-wider">
                   {photoIndex + 1} de {photos.length}
                 </div>
               </>
             )}
           </div>
         ) : (
-          <div className="text-center py-5 text-muted" style={{ background: '#fdf6f3' }}>
+          <div className="text-center py-16 text-slate-400 bg-slate-50">
             Sin fotografías adjuntas
           </div>
         )}
 
         {/* Ficha Técnica del Diseño */}
-        <div className="p-3 p-md-4" style={{ background: '#fff' }}>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <div className="d-flex align-items-center gap-2">
-              <Badge bg="primary" style={{ background: '#8c2a3e', fontSize: '12px', padding: '6px 10px' }}>
+        <div className="p-4 sm:p-5 bg-white space-y-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="primary" className="text-xs px-2.5 py-1">
                 {BASE_TECHNIQUE_LABELS[record.baseType] || record.baseType}
               </Badge>
               {record.nailCondition && (
-                <Badge bg="light" text="dark" style={{ border: '1px solid #eed0c5', fontSize: '12px' }}>
+                <Badge variant="secondary" className="text-xs px-2.5 py-1">
                   {NAIL_CONDITION_LABELS[record.nailCondition] || record.nailCondition}
                 </Badge>
               )}
             </div>
-            <small className="text-muted d-flex align-items-center gap-1">
+            <small className="text-slate-400 text-xs flex items-center gap-1">
               <FiCalendar /> {record.date}
             </small>
           </div>
 
-          <Row className="g-2 mb-3">
+          <div className="space-y-2">
             {record.polishColors && (
-              <Col xs={12}>
-                <strong style={{ color: '#8c6052', fontSize: '12px' }}>🎨 ESMALTES / TONOS:</strong>
-                <p className="mb-0" style={{ color: '#422314', fontSize: '14px' }}>
+              <div>
+                <strong className="text-bunny-dark/70 text-xs uppercase tracking-wider block">🎨 ESMALTES / TONOS:</strong>
+                <p className="text-sm font-medium text-bunny-dark mb-0">
                   {record.polishColors}
                 </p>
-              </Col>
+              </div>
             )}
 
             {record.techniqueNotes && (
-              <Col xs={12} className="mt-2">
-                <strong style={{ color: '#8c6052', fontSize: '12px' }}>📝 NOTAS TÉCNICAS & OBSERVACIONES:</strong>
-                <p
-                  className="mb-0 p-2 rounded-2"
-                  style={{ color: '#422314', fontSize: '13px', background: '#fdf6f3', border: '1px solid #eed0c5' }}
-                >
+              <div className="pt-1">
+                <strong className="text-bunny-dark/70 text-xs uppercase tracking-wider block mb-1">📝 NOTAS TÉCNICAS & OBSERVACIONES:</strong>
+                <p className="p-3 rounded-xl text-xs sm:text-sm text-bunny-dark bg-bunny-light/20 border border-bunny-accent/40 mb-0 leading-relaxed">
                   {record.techniqueNotes}
                 </p>
-              </Col>
+              </div>
             )}
-          </Row>
+          </div>
 
           {/* Tags */}
           {record.tags && record.tags.length > 0 && (
-            <div className="d-flex gap-1 flex-wrap">
+            <div className="flex gap-1.5 flex-wrap pt-1">
               {record.tags.map((t, idx) => (
-                <Badge key={idx} bg="light" text="dark" style={{ border: '1px solid #eed0c5', fontSize: '11px' }}>
+                <Badge key={idx} variant="secondary" className="text-xs">
                   #{t}
                 </Badge>
               ))}
@@ -155,13 +144,15 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
         </div>
       </Modal.Body>
 
-      <Modal.Footer style={{ background: '#fdf4f2', borderTop: '1px solid #eed0c5', justifyContent: 'space-between' }}>
-        <Button variant="outline-danger" size="sm" onClick={handleDelete} style={{ borderRadius: '8px' }}>
-          <FiTrash2 className="me-1" /> Eliminar Registro
-        </Button>
-        <Button variant="secondary" size="sm" onClick={onHide} style={{ borderRadius: '8px' }}>
-          Cerrar
-        </Button>
+      <Modal.Footer className="bg-bunny-creamy/20 border-t border-bunny-accent/40">
+        <div className="w-full flex justify-between items-center">
+          <Button variant="danger" size="sm" onClick={handleDelete} className="flex items-center gap-1.5">
+            <FiTrash2 /> Eliminar Registro
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onHide}>
+            Cerrar
+          </Button>
+        </div>
       </Modal.Footer>
     </Modal>
   );

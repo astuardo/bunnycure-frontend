@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Row, Col, Card, Alert, Table, Button, Form, Badge, Spinner, Nav, Modal } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import CustomerFormModal from '../../components/customers/CustomerFormModal';
@@ -14,6 +13,7 @@ import { Customer, NotificationPreference } from '../../types/customer.types';
 import { computeInactiveCustomers } from '../../utils/reactivationUtils';
 import { computeBirthdayCustomers } from '../../utils/birthdayUtils';
 import { formatRutWithDots } from '../../utils/rutUtils';
+import { Button, Badge, Card, Spinner, Alert, Modal } from '@/components/ui';
 
 export default function CustomersPage() {
     const navigate = useNavigate();
@@ -48,14 +48,10 @@ export default function CustomersPage() {
     }, [searchParams]);
 
     useEffect(() => {
-        // Solo fetch si está autenticado y tiene usuario
         if (isAuthenticated && user) {
-            console.log('✅ Usuario autenticado, cargando clientes, citas y servicios...');
             fetchCustomers();
             fetchAppointments();
             fetchServices();
-        } else {
-            console.warn('⚠️ Usuario no autenticado en CustomersPage');
         }
     }, [isAuthenticated, user, fetchCustomers, fetchAppointments, fetchServices]);
 
@@ -158,27 +154,27 @@ export default function CustomersPage() {
 
     const getNotificationBadge = (pref?: NotificationPreference | string) => {
         if (!pref || pref === NotificationPreference.BOTH || pref === 'BOTH') {
-            return <Badge bg="primary" style={{ fontSize: '11px' }}>📧💬 WhatsApp + Email</Badge>;
+            return <Badge variant="primary" className="text-[11px]">📧💬 WhatsApp + Email</Badge>;
         }
         if (pref === NotificationPreference.WHATSAPP || pref === 'WHATSAPP') {
-            return <Badge bg="success" style={{ fontSize: '11px' }}>💬 Solo WhatsApp</Badge>;
+            return <Badge variant="success" className="text-[11px]">💬 Solo WhatsApp</Badge>;
         }
         if (pref === NotificationPreference.EMAIL || pref === 'EMAIL') {
-            return <Badge bg="info" style={{ fontSize: '11px' }}>📧 Solo Email</Badge>;
+            return <Badge variant="info" className="text-[11px]">📧 Solo Email</Badge>;
         }
         if (pref === NotificationPreference.NONE || pref === 'NONE') {
-            return <Badge bg="secondary" style={{ fontSize: '11px' }}>🔕 Sin avisos</Badge>;
+            return <Badge variant="secondary" className="text-[11px]">🔕 Sin avisos</Badge>;
         }
-        return <Badge bg="success" style={{ fontSize: '11px' }}>💬 WhatsApp</Badge>;
+        return <Badge variant="success" className="text-[11px]">💬 WhatsApp</Badge>;
     };
 
     const formatHealthNotes = (notes?: string) => {
-        if (!notes || !notes.trim()) return <span className="text-muted small">Sin observaciones</span>;
+        if (!notes || !notes.trim()) return <span className="text-slate-400 text-xs">Sin observaciones</span>;
         const isAlert = /alerg|diabet|hong|medic|sensib|dolor/i.test(notes);
         return (
             <div>
-                {isAlert && <Badge bg="danger" className="mb-1 d-inline-block" style={{ fontSize: '10px' }}>⚠️ Alerta de Salud</Badge>}
-                <div className="small text-muted" style={{ lineHeight: 1.3 }}>
+                {isAlert && <Badge variant="danger" className="mb-1 inline-block text-[10px]">⚠️ Alerta de Salud</Badge>}
+                <div className="text-xs text-slate-500 leading-tight">
                     {notes.length > 70 ? `${notes.slice(0, 70)}...` : notes}
                 </div>
             </div>
@@ -197,405 +193,390 @@ export default function CustomersPage() {
 
     return (
         <DashboardLayout>
-            <div className="bunny-page">
+            <div className="space-y-5">
                 {/* Header de Página */}
-                <Row className="mb-3 mb-md-4">
-                    <Col>
-                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                            <div>
-                                <h1 className="mb-1">👥 Clientes &amp; Reactivación</h1>
-                                <p className="text-muted mb-0 small">
-                                    Administra la base de datos de clientas y fideliza a las inactivas
-                                </p>
-                            </div>
-                            <div className="d-flex gap-2 w-100 w-md-auto flex-wrap">
-                                <Button 
-                                    variant="outline-secondary" 
-                                    size="lg" 
-                                    onClick={() => setShowSyncModal(true)}
-                                    className="flex-fill flex-md-grow-0 d-flex align-items-center justify-content-center gap-2"
-                                    title="Recalcular visitas completadas de todos los clientes según sus citas reales"
-                                >
-                                    🔄 <span className="d-none d-sm-inline">Sincronizar Visitas</span>
-                                    <span className="d-sm-none">Sincronizar</span>
-                                </Button>
-                                <Button 
-                                    variant="primary" 
-                                    size="lg" 
-                                    onClick={handleNewCustomer}
-                                    className="flex-fill flex-md-grow-0"
-                                >
-                                    ➕ Nuevo Cliente
-                                </Button>
-                            </div>
-                        </div>
-                    </Col>
-                </Row>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-bunny-dark tracking-tight mb-1">
+                            👥 Clientes &amp; Reactivación
+                        </h1>
+                        <p className="text-slate-500 text-sm">
+                            Administra la base de datos de clientas y fideliza a las inactivas
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setShowSyncModal(true)}
+                            className="flex-1 md:flex-initial flex items-center justify-center gap-2 text-xs sm:text-sm"
+                            title="Recalcular visitas completadas de todos los clientes según sus citas reales"
+                        >
+                            🔄 <span className="hidden sm:inline">Sincronizar Visitas</span>
+                            <span className="sm:hidden">Sincronizar</span>
+                        </Button>
+                        <Button 
+                            variant="primary" 
+                            onClick={handleNewCustomer}
+                            className="flex-1 md:flex-initial bg-bunny-primary hover:bg-bunny-dark text-white font-semibold text-xs sm:text-sm"
+                        >
+                            ➕ Nuevo Cliente
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Pestañas de Navegación */}
-                <Nav variant="pills" className="mb-3 mb-md-4 gap-2 flex-wrap">
-                    <Nav.Item>
-                        <Nav.Link
-                            active={activeTab === 'directory'}
-                            onClick={() => {
-                                setActiveTab('directory');
-                                setSearchParams({});
-                            }}
-                            className="d-flex align-items-center gap-2"
+                <div className="flex items-center gap-2 flex-wrap border-b border-slate-200 pb-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveTab('directory');
+                            setSearchParams({});
+                        }}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                            activeTab === 'directory'
+                                ? 'bg-bunny-primary text-white shadow-sm'
+                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        }`}
+                    >
+                        <span>👥 Directorio de Clientes</span>
+                        <Badge 
+                            variant={activeTab === 'directory' ? 'secondary' : 'secondary'} 
+                            className={`text-xs ${activeTab === 'directory' ? 'bg-white/20 text-white' : ''}`}
                         >
-                            <span>👥 Directorio de Clientes</span>
+                            {customers.length}
+                        </Badge>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveTab('birthdays');
+                            setSearchParams({ tab: 'birthdays' });
+                        }}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                            activeTab === 'birthdays'
+                                ? 'bg-bunny-primary text-white shadow-sm'
+                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        }`}
+                    >
+                        <span>🎂 Cumpleañeras del Mes</span>
+                        {birthdayMetrics.totalThisMonth > 0 && (
                             <Badge 
-                                bg={activeTab === 'directory' ? 'light' : 'secondary'} 
-                                text={activeTab === 'directory' ? 'dark' : undefined}
+                                variant={activeTab === 'birthdays' ? 'danger' : 'secondary'} 
+                                className="text-xs"
                             >
-                                {customers.length}
+                                {birthdayMetrics.totalThisMonth} este mes
                             </Badge>
-                        </Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                        <Nav.Link
-                            active={activeTab === 'birthdays'}
-                            onClick={() => {
-                                setActiveTab('birthdays');
-                                setSearchParams({ tab: 'birthdays' });
-                            }}
-                            className="d-flex align-items-center gap-2"
-                        >
-                            <span>🎂 Cumpleañeras del Mes</span>
-                            {birthdayMetrics.totalThisMonth > 0 && (
-                                <Badge 
-                                    bg={activeTab === 'birthdays' ? 'danger' : 'light'} 
-                                    text={activeTab === 'birthdays' ? 'white' : 'dark'}
-                                    style={activeTab !== 'birthdays' ? { border: '1px solid #eed0c5' } : {}}
-                                >
-                                    {birthdayMetrics.totalThisMonth} este mes
-                                </Badge>
-                            )}
-                        </Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                        <Nav.Link
-                            active={activeTab === 'reactivation'}
-                            onClick={() => {
-                                setActiveTab('reactivation');
-                                setSearchParams({ tab: 'reactivation' });
-                            }}
-                            className="d-flex align-items-center gap-2"
-                        >
-                            <span>✨ Reactivación de Clientas</span>
-                            {inactiveCustomersCount > 0 && (
-                                <Badge 
-                                    bg={activeTab === 'reactivation' ? 'danger' : 'warning'} 
-                                    text={activeTab === 'reactivation' ? 'white' : 'dark'}
-                                >
-                                    {inactiveCustomersCount} inactivas
-                                </Badge>
-                            )}
-                        </Nav.Link>
-                    </Nav.Item>
-                </Nav>
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveTab('reactivation');
+                            setSearchParams({ tab: 'reactivation' });
+                        }}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                            activeTab === 'reactivation'
+                                ? 'bg-bunny-primary text-white shadow-sm'
+                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        }`}
+                    >
+                        <span>✨ Reactivación de Clientas</span>
+                        {inactiveCustomersCount > 0 && (
+                            <Badge 
+                                variant={activeTab === 'reactivation' ? 'danger' : 'warning'} 
+                                className="text-xs"
+                            >
+                                {inactiveCustomersCount} inactivas
+                            </Badge>
+                        )}
+                    </button>
+                </div>
 
                 {/* Vista: Directorio de Clientes */}
                 {activeTab === 'directory' && (
-                    <>
+                    <div className="space-y-4">
                         {/* Búsqueda */}
-                        <Row className="mb-3 mb-md-4">
-                            <Col md={8} lg={6}>
-                                <Card>
-                                    <Card.Body>
-                                        <Form onSubmit={handleSearch}>
-                                            <Form.Group className="d-flex gap-2">
-                                                <Form.Control
-                                                    type="text"
-                                                    placeholder="Buscar por nombre, RUT (18.664.589-8 o 18664589-8) o teléfono..."
-                                                    value={search}
-                                                    onChange={(e) => setSearch(e.target.value)}
-                                                />
-                                                <Button type="submit" variant="primary" className="text-nowrap" disabled={loading}>
-                                                    {loading ? (
-                                                        <>
-                                                            <Spinner animation="border" size="sm" className="me-1" />
-                                                            <span className="d-none d-sm-inline">Buscando...</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            🔍 <span className="d-none d-sm-inline">Buscar</span>
-                                                        </>
-                                                    )}
-                                                </Button>
-                                                {search && (
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="outline-secondary"
-                                                        onClick={handleClearSearch}
-                                                    >
-                                                        ✖️
-                                                    </Button>
-                                                )}
-                                            </Form.Group>
-                                        </Form>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
+                        <div className="max-w-xl">
+                            <Card className="border border-slate-200 shadow-sm bg-white">
+                                <Card.Body className="p-3">
+                                    <form onSubmit={handleSearch} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar por nombre, RUT (18.664.589-8 o 18664589-8) o teléfono..."
+                                            value={search}
+                                            onChange={(e) => setSearch(e.target.value)}
+                                            className="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                                        />
+                                        <Button type="submit" variant="primary" size="sm" disabled={loading} className="whitespace-nowrap flex items-center gap-1">
+                                            {loading ? (
+                                                <>
+                                                    <Spinner size="sm" className="border-white mr-1" />
+                                                    <span className="hidden sm:inline">Buscando...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    🔍 <span className="hidden sm:inline">Buscar</span>
+                                                </>
+                                            )}
+                                        </Button>
+                                        {search && (
+                                            <Button 
+                                                type="button" 
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={handleClearSearch}
+                                            >
+                                                ✖️
+                                            </Button>
+                                        )}
+                                    </form>
+                                </Card.Body>
+                            </Card>
+                        </div>
 
                         {/* Error */}
                         {error && (
-                            <Row className="mb-4">
-                                <Col>
-                                    <Alert variant="danger" dismissible>
-                                        {error}
-                                    </Alert>
-                                </Col>
-                            </Row>
+                            <Alert variant="danger" dismissible>
+                                {error}
+                            </Alert>
                         )}
 
                         {/* Tabla de Clientes */}
-                        <Row>
-                            <Col>
-                                <Card>
-                                    <Card.Header className="d-flex justify-content-between align-items-center">
-                                        <h5 className="mb-0">Lista de Clientes</h5>
-                                        <div className="d-flex align-items-center gap-2">
-                                            {loading && <Spinner animation="border" size="sm" variant="secondary" />}
-                                            <Badge bg="secondary">
-                                                {customers.length === 1 ? '1 cliente' : `${customers.length} clientes`}
-                                            </Badge>
-                                        </div>
-                                    </Card.Header>
-                                    <Card.Body className="p-0">
-                                        {loading && customers.length === 0 ? (
-                                            <div className="text-center py-5">
-                                                <Spinner animation="border" role="status">
-                                                    <span className="visually-hidden">Cargando...</span>
-                                                </Spinner>
-                                                <p className="mt-2 text-muted">Cargando clientes...</p>
-                                            </div>
-                                        ) : !loading && customers.length === 0 ? (
-                                            <div className="text-center py-5">
-                                                <p className="text-muted mb-0">
-                                                    {search 
-                                                        ? 'No se encontraron clientes con ese criterio'
-                                                        : 'No hay clientes registrados'
-                                                    }
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
-                                                {/* Vista Desktop: Tabla */}
-                                                <div className="d-none d-md-block">
-                                                    <Table responsive hover className="align-middle mb-0">
-                                                        <thead className="table-light">
-                                                            <tr>
-                                                                <th style={{ minWidth: '220px' }}>Cliente</th>
-                                                                <th>Contacto Directo</th>
-                                                                <th>Notificaciones</th>
-                                                                <th>Ficha & Salud</th>
-                                                                <th className="text-center" style={{ minWidth: '160px' }}>Acciones</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {customers.map((customer) => {
-                                                                const rawPhone = (customer.phone || '').replace(/\D/g, '');
-                                                                const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
-
-                                                                return (
-                                                                    <tr key={customer.id}>
-                                                                        <td>
-                                                                            <div className="d-flex flex-column gap-1">
-                                                                                <div className="d-flex align-items-center gap-2 flex-wrap">
-                                                                                    <span className="fw-bold" style={{ color: '#422314', fontSize: '14.5px' }}>
-                                                                                        {customer.fullName}
-                                                                                    </span>
-                                                                                    {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits >= 5 && (
-                                                                                        <Badge bg="warning" text="dark" style={{ fontSize: '10px' }}>👑 VIP</Badge>
-                                                                                    )}
-                                                                                    {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits < 2 && (
-                                                                                        <Badge bg="light" text="dark" style={{ fontSize: '10px', border: '1px solid #eed0c5' }}>✨ Nueva</Badge>
-                                                                                    )}
-                                                                                    {isBirthdayThisMonth(customer.birthDate) && (
-                                                                                        <Badge bg="danger" style={{ fontSize: '10px' }}>🎂 Cumpleañera</Badge>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="d-flex align-items-center gap-2 flex-wrap small">
-                                                                                    {customer.rut ? (
-                                                                                        <span className="badge bg-light text-secondary border px-2 py-1 font-monospace" style={{ fontSize: '11px' }}>
-                                                                                            🆔 {formatRutWithDots(customer.rut)}
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="text-muted fst-italic" style={{ fontSize: '11px' }}>Sin RUT</span>
-                                                                                    )}
-                                                                                    <span className="text-muted" style={{ fontSize: '11.5px' }}>
-                                                                                        ⭐ <strong>{customer.loyaltyStamps || 0}/10</strong> sellos &bull; {customer.totalCompletedVisits || 0} visitas
-                                                                                    </span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td>
-                                                                            <div className="d-flex flex-column gap-1">
-                                                                                <div className="d-flex align-items-center gap-2">
-                                                                                    <a href={`tel:${customer.phone}`} className="text-decoration-none small fw-semibold" style={{ color: '#422314' }}>
-                                                                                        📱 {customer.phone}
-                                                                                    </a>
-                                                                                    {rawPhone && (
-                                                                                        <a
-                                                                                            href={`https://wa.me/${waPhone}`}
-                                                                                            target="_blank"
-                                                                                            rel="noopener noreferrer"
-                                                                                            className="badge bg-success text-white text-decoration-none px-2 py-1"
-                                                                                            title="Enviar WhatsApp"
-                                                                                            style={{ fontSize: '11px' }}
-                                                                                        >
-                                                                                            💬 WhatsApp
-                                                                                        </a>
-                                                                                    )}
-                                                                                </div>
-                                                                                {customer.email && (
-                                                                                    <span className="text-muted small text-truncate" style={{ maxWidth: '200px', fontSize: '11.5px' }}>
-                                                                                        ✉️ {customer.email}
-                                                                                    </span>
-                                                                                )}
-                                                                                {customer.instagram && (
-                                                                                    <span className="text-primary small" style={{ fontSize: '11.5px' }}>
-                                                                                        📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td>{getNotificationBadge(customer.notificationPreference)}</td>
-                                                                        <td>{formatHealthNotes(customer.healthNotes)}</td>
-                                                                        <td className="text-center">
-                                                                            <Button 
-                                                                                variant="outline-primary" 
-                                                                                size="sm" 
-                                                                                className="me-1"
-                                                                                onClick={() => navigate(`/customers/${customer.id}`)}
-                                                                                style={{ borderRadius: '6px' }}
-                                                                            >
-                                                                                👁️ Ver Ficha
-                                                                            </Button>
-                                                                            <Button 
-                                                                                variant="outline-secondary" 
-                                                                                size="sm" 
-                                                                                className="me-1"
-                                                                                onClick={() => handleEditCustomer(customer)}
-                                                                                style={{ borderRadius: '6px' }}
-                                                                            >
-                                                                                ✏️
-                                                                            </Button>
-                                                                            <Button 
-                                                                                variant="outline-danger" 
-                                                                                size="sm" 
-                                                                                onClick={() => handleDeleteCustomer(customer)}
-                                                                                style={{ borderRadius: '6px' }}
-                                                                            >
-                                                                                🗑️
-                                                                            </Button>
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                        </tbody>
-                                                    </Table>
-                                                </div>
-
-                                                {/* Vista Móvil: Cards */}
-                                                <div className="d-md-none">
+                        <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+                            <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+                                <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">Lista de Clientes</h5>
+                                <div className="flex items-center gap-2">
+                                    {loading && <Spinner size="sm" className="border-bunny-primary" />}
+                                    <Badge variant="secondary">
+                                        {customers.length === 1 ? '1 cliente' : `${customers.length} clientes`}
+                                    </Badge>
+                                </div>
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                                {loading && customers.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <Spinner size="lg" className="border-bunny-primary mx-auto" />
+                                        <p className="mt-2 text-slate-500 text-xs">Cargando clientes...</p>
+                                    </div>
+                                ) : !loading && customers.length === 0 ? (
+                                    <div className="text-center py-12 px-4">
+                                        <p className="text-slate-500 text-sm mb-0">
+                                            {search 
+                                                ? 'No se encontraron clientes con ese criterio'
+                                                : 'No hay clientes registrados'
+                                            }
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className={loading ? 'opacity-60 transition-opacity' : ''}>
+                                        {/* Vista Desktop: Tabla */}
+                                        <div className="hidden md:block overflow-x-auto">
+                                            <table className="w-full text-left text-xs sm:text-sm">
+                                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                                                    <tr>
+                                                        <th className="py-3 px-4 min-w-[220px]">Cliente</th>
+                                                        <th className="py-3 px-4">Contacto Directo</th>
+                                                        <th className="py-3 px-4">Notificaciones</th>
+                                                        <th className="py-3 px-4">Ficha & Salud</th>
+                                                        <th className="py-3 px-4 text-center min-w-[160px]">Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
                                                     {customers.map((customer) => {
                                                         const rawPhone = (customer.phone || '').replace(/\D/g, '');
                                                         const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
 
                                                         return (
-                                                            <Card key={customer.id} className="mb-3 mx-3 mt-3 border-0 shadow-sm" style={{ borderRadius: '12px', background: '#fff' }}>
-                                                                <Card.Body className="p-3">
-                                                                    <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
-                                                                        <div style={{ minWidth: 0 }}>
-                                                                            <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                                                                <h6 className="mb-0 fw-bold text-break" style={{ color: '#422314' }}>{customer.fullName}</h6>
-                                                                                {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits >= 5 && (
-                                                                                    <Badge bg="warning" text="dark" style={{ fontSize: '9px' }}>👑 VIP</Badge>
-                                                                                )}
-                                                                                {isBirthdayThisMonth(customer.birthDate) && (
-                                                                                    <Badge bg="danger" style={{ fontSize: '9px' }}>🎂</Badge>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="d-flex align-items-center gap-2 flex-wrap small">
-                                                                                {customer.rut ? (
-                                                                                    <span className="badge bg-light text-secondary border font-monospace" style={{ fontSize: '10.5px' }}>
-                                                                                        🆔 {formatRutWithDots(customer.rut)}
-                                                                                    </span>
-                                                                                ) : (
-                                                                                    <span className="text-muted fst-italic" style={{ fontSize: '10.5px' }}>Sin RUT</span>
-                                                                                )}
-                                                                                <span className="text-muted" style={{ fontSize: '11px' }}>
-                                                                                    ⭐ {customer.loyaltyStamps || 0}/10 sellos
-                                                                                </span>
-                                                                            </div>
+                                                            <tr key={customer.id} className="hover:bg-slate-50/60 transition-colors">
+                                                                <td className="py-3 px-4">
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <span className="font-bold text-bunny-dark text-sm sm:text-base">
+                                                                                {customer.fullName}
+                                                                            </span>
+                                                                            {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits >= 5 && (
+                                                                                <Badge variant="warning" className="text-[10px]">👑 VIP</Badge>
+                                                                            )}
+                                                                            {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits < 2 && (
+                                                                                <Badge variant="secondary" className="text-[10px]">✨ Nueva</Badge>
+                                                                            )}
+                                                                            {isBirthdayThisMonth(customer.birthDate) && (
+                                                                                <Badge variant="danger" className="text-[10px]">🎂 Cumpleañera</Badge>
+                                                                            )}
                                                                         </div>
-                                                                        <div className="flex-shrink-0">
-                                                                            {getNotificationBadge(customer.notificationPreference)}
+                                                                        <div className="flex items-center gap-2 flex-wrap text-xs">
+                                                                            {customer.rut ? (
+                                                                                <span className="bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px]">
+                                                                                    🆔 {formatRutWithDots(customer.rut)}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-slate-400 italic text-[11px]">Sin RUT</span>
+                                                                            )}
+                                                                            <span className="text-slate-500 text-[11px]">
+                                                                                ⭐ <strong className="text-slate-700">{customer.loyaltyStamps || 0}/10</strong> sellos &bull; {customer.totalCompletedVisits || 0} visitas
+                                                                            </span>
                                                                         </div>
                                                                     </div>
-                                                                    
-                                                                    <div className="d-flex align-items-center gap-2 mb-2">
-                                                                        <small className="text-muted text-break">📱 {customer.phone}</small>
-                                                                        {rawPhone && (
-                                                                            <a
-                                                                                href={`https://wa.me/${waPhone}`}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="badge bg-success text-white text-decoration-none px-2 py-1"
-                                                                                style={{ fontSize: '10px' }}
-                                                                            >
-                                                                                💬 WhatsApp
+                                                                </td>
+                                                                <td className="py-3 px-4">
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <a href={`tel:${customer.phone}`} className="text-xs font-semibold text-bunny-dark hover:underline">
+                                                                                📱 {customer.phone}
                                                                             </a>
+                                                                            {rawPhone && (
+                                                                                <a
+                                                                                    href={`https://wa.me/${waPhone}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold px-2 py-0.5 rounded transition-colors"
+                                                                                    title="Enviar WhatsApp"
+                                                                                >
+                                                                                    💬 WhatsApp
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
+                                                                        {customer.email && (
+                                                                            <span className="text-slate-400 text-xs truncate max-w-[200px]">
+                                                                                ✉️ {customer.email}
+                                                                            </span>
+                                                                        )}
+                                                                        {customer.instagram && (
+                                                                            <span className="text-bunny-primary text-xs">
+                                                                                📸 {customer.instagram.startsWith('@') ? customer.instagram : `@${customer.instagram}`}
+                                                                            </span>
                                                                         )}
                                                                     </div>
-
-                                                                    <div className="mb-3">
-                                                                        {formatHealthNotes(customer.healthNotes)}
-                                                                    </div>
-                                                                    
-                                                                    <div className="d-flex gap-2 flex-wrap">
+                                                                </td>
+                                                                <td className="py-3 px-4">{getNotificationBadge(customer.notificationPreference)}</td>
+                                                                <td className="py-3 px-4">{formatHealthNotes(customer.healthNotes)}</td>
+                                                                <td className="py-3 px-4 text-center">
+                                                                    <div className="inline-flex items-center gap-1.5">
                                                                         <Button 
-                                                                            variant="outline-primary" 
+                                                                            variant="outline" 
                                                                             size="sm" 
-                                                                            className="flex-fill"
                                                                             onClick={() => navigate(`/customers/${customer.id}`)}
-                                                                            style={{ borderRadius: '8px' }}
+                                                                            className="text-xs"
                                                                         >
                                                                             👁️ Ver Ficha
                                                                         </Button>
                                                                         <Button 
-                                                                            variant="outline-secondary" 
+                                                                            variant="secondary" 
                                                                             size="sm" 
-                                                                            className="flex-fill"
                                                                             onClick={() => handleEditCustomer(customer)}
-                                                                            style={{ borderRadius: '8px' }}
+                                                                            className="text-xs p-1.5"
                                                                         >
-                                                                            ✏️ Editar
+                                                                            ✏️
                                                                         </Button>
                                                                         <Button 
-                                                                            variant="outline-danger" 
+                                                                            variant="danger" 
                                                                             size="sm" 
                                                                             onClick={() => handleDeleteCustomer(customer)}
-                                                                            style={{ borderRadius: '8px' }}
+                                                                            className="text-xs p-1.5"
                                                                         >
                                                                             🗑️
                                                                         </Button>
                                                                     </div>
-                                                                </Card.Body>
-                                                            </Card>
+                                                                </td>
+                                                            </tr>
                                                         );
                                                     })}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Vista Móvil: Cards */}
+                                        <div className="md:hidden p-3 space-y-3">
+                                            {customers.map((customer) => {
+                                                const rawPhone = (customer.phone || '').replace(/\D/g, '');
+                                                const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
+
+                                                return (
+                                                    <div key={customer.id} className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-sm space-y-2.5">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div className="min-w-0">
+                                                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                                    <h6 className="font-bold text-bunny-dark text-sm break-words">{customer.fullName}</h6>
+                                                                    {customer.totalCompletedVisits !== undefined && customer.totalCompletedVisits >= 5 && (
+                                                                        <Badge variant="warning" className="text-[9px]">👑 VIP</Badge>
+                                                                    )}
+                                                                    {isBirthdayThisMonth(customer.birthDate) && (
+                                                                        <Badge variant="danger" className="text-[9px]">🎂</Badge>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 flex-wrap text-xs">
+                                                                    {customer.rut ? (
+                                                                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-1 py-0.5 rounded font-mono text-[10.5px]">
+                                                                            🆔 {formatRutWithDots(customer.rut)}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-slate-400 italic text-[10.5px]">Sin RUT</span>
+                                                                    )}
+                                                                    <span className="text-slate-500 text-[11px]">
+                                                                        ⭐ {customer.loyaltyStamps || 0}/10 sellos
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="shrink-0">
+                                                                {getNotificationBadge(customer.notificationPreference)}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-2">
+                                                            <small className="text-slate-500 text-xs">📱 {customer.phone}</small>
+                                                            {rawPhone && (
+                                                                <a
+                                                                    href={`https://wa.me/${waPhone}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-semibold px-2 py-0.5 rounded transition-colors"
+                                                                >
+                                                                    💬 WhatsApp
+                                                                </a>
+                                                            )}
+                                                        </div>
+
+                                                        <div>
+                                                            {formatHealthNotes(customer.healthNotes)}
+                                                        </div>
+                                                        
+                                                        <div className="flex gap-1.5 pt-1">
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm" 
+                                                                className="flex-1 text-xs"
+                                                                onClick={() => navigate(`/customers/${customer.id}`)}
+                                                            >
+                                                                👁️ Ver Ficha
+                                                            </Button>
+                                                            <Button 
+                                                                variant="secondary" 
+                                                                size="sm" 
+                                                                className="flex-1 text-xs"
+                                                                onClick={() => handleEditCustomer(customer)}
+                                                            >
+                                                                ✏️ Editar
+                                                            </Button>
+                                                            <Button 
+                                                                variant="danger" 
+                                                                size="sm" 
+                                                                onClick={() => handleDeleteCustomer(customer)}
+                                                                className="text-xs p-2"
+                                                            >
+                                                                🗑️
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </Card.Body>
+                        </Card>
+                    </div>
                 )}
 
                 {/* Vista: Cumpleañeras del Mes */}
@@ -635,39 +616,45 @@ export default function CustomersPage() {
                 {/* Modal de Sincronización Masiva de Visitas */}
                 <Modal show={showSyncModal} onHide={() => !syncingAll && setShowSyncModal(false)} centered>
                     <Modal.Header closeButton={!syncingAll}>
-                        <Modal.Title className="fs-5">🔄 Sincronizar Visitas de Clientes</Modal.Title>
+                        <Modal.Title>
+                            <span className="text-base font-bold text-slate-800">🔄 Sincronizar Visitas de Clientes</span>
+                        </Modal.Title>
                     </Modal.Header>
-                    <Modal.Body>
-                        <p>
+                    <Modal.Body className="space-y-3">
+                        <p className="text-slate-600 text-sm mb-0">
                             ¿Deseas recalcular las visitas registradas de <strong>todos los clientes ({customers.length})</strong> basándote en sus citas reales en estado <strong>COMPLETADA</strong>?
                         </p>
-                        <Alert variant="info" className="mb-0 small">
+                        <Alert variant="info" className="text-xs">
                             ℹ️ Esta acción ajustará el contador de visitas históricas de cada cliente para que coincida exactamente con las citas completadas reales en la base de datos.
                         </Alert>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => setShowSyncModal(false)} 
-                            disabled={syncingAll}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button 
-                            variant="primary" 
-                            onClick={handleConfirmSyncAllVisits} 
-                            disabled={syncingAll}
-                            className="d-flex align-items-center gap-2"
-                        >
-                            {syncingAll ? (
-                                <>
-                                    <Spinner animation="border" size="sm" />
-                                    Sincronizando...
-                                </>
-                            ) : (
-                                'Confirmar Sincronización'
-                            )}
-                        </Button>
+                        <div className="w-full flex justify-end gap-2">
+                            <Button 
+                                variant="secondary" 
+                                size="sm"
+                                onClick={() => setShowSyncModal(false)} 
+                                disabled={syncingAll}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                size="sm"
+                                onClick={handleConfirmSyncAllVisits} 
+                                disabled={syncingAll}
+                                className="flex items-center gap-1.5"
+                            >
+                                {syncingAll ? (
+                                    <>
+                                        <Spinner size="sm" className="border-white" />
+                                        Sincronizando...
+                                    </>
+                                ) : (
+                                    'Confirmar Sincronización'
+                                )}
+                            </Button>
+                        </div>
                     </Modal.Footer>
                 </Modal>
             </div>

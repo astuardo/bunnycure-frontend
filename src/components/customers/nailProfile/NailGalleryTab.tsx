@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { Row, Col, Card, Badge, Button, Form } from 'react-bootstrap';
 import { FiCamera, FiPlus, FiCalendar, FiImage } from 'react-icons/fi';
 import {
   CustomerNailProfile,
@@ -10,6 +9,7 @@ import {
   deleteNailPhotoRecord,
   BASE_TECHNIQUE_LABELS,
 } from '../../../utils/nailProfileUtils';
+import { Button, Badge, Card } from '@/components/ui';
 import NailProfileCard from './NailProfileCard';
 import AddNailRecordModal from './AddNailRecordModal';
 import NailPhotoViewerModal from './NailPhotoViewerModal';
@@ -62,7 +62,7 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
   };
 
   return (
-    <div className="nail-gallery-tab">
+    <div className="space-y-4">
       {/* 1. Ficha Técnica Permanente */}
       <NailProfileCard
         customerId={customerId}
@@ -71,33 +71,25 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
       />
 
       {/* 2. Barra de Acciones y Filtros de la Galería */}
-      <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '14px', background: '#fff' }}>
-        <Card.Body className="p-3">
-          <Row className="g-2 align-items-center">
-            <Col xs={12} md={4}>
+      <Card className="border border-slate-200 shadow-sm bg-white">
+        <Card.Body className="p-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+            <div className="sm:col-span-4">
               <Button
                 variant="primary"
                 size="sm"
-                className="w-100 d-flex align-items-center justify-content-center gap-2"
+                className="w-full flex items-center justify-center gap-2 bg-bunny-primary hover:bg-bunny-dark text-white font-semibold py-2"
                 onClick={() => setShowAddModal(true)}
-                style={{
-                  background: '#8c2a3e',
-                  borderColor: '#8c2a3e',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  padding: '8px 16px',
-                }}
               >
                 <FiCamera size={16} /> 📸 Agregar Diseño / Foto
               </Button>
-            </Col>
+            </div>
 
-            <Col xs={12} sm={6} md={4}>
-              <Form.Select
-                size="sm"
+            <div className="sm:col-span-4">
+              <select
                 value={filterBase}
                 onChange={(e) => setFilterBase(e.target.value)}
-                style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
               >
                 <option value="ALL">🎨 Todas las técnicas ({records.length})</option>
                 {Object.entries(BASE_TECHNIQUE_LABELS).map(([key, label]) => {
@@ -109,155 +101,117 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
                     </option>
                   );
                 })}
-              </Form.Select>
-            </Col>
+              </select>
+            </div>
 
-            <Col xs={12} sm={6} md={4}>
-              <Form.Control
-                size="sm"
+            <div className="sm:col-span-4">
+              <input
                 type="text"
                 placeholder="Buscar por color, diseño o tag..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
+                className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
               />
-            </Col>
-          </Row>
+            </div>
+          </div>
         </Card.Body>
       </Card>
 
       {/* 3. Grid de Galería Fotográfica */}
       {filteredRecords.length === 0 ? (
-        <Card className="border-0 shadow-sm text-center py-5" style={{ borderRadius: '14px', background: '#fff' }}>
+        <Card className="border border-slate-200 shadow-sm text-center py-12 bg-white">
           <Card.Body>
-            <FiImage size={40} className="text-muted opacity-50 mb-2" />
-            <h6 className="fw-bold" style={{ color: '#422314' }}>
+            <FiImage size={44} className="text-slate-300 mx-auto mb-2" />
+            <h6 className="font-bold text-bunny-dark text-base mb-1">
               No hay fotos o diseños registrados aún
             </h6>
-            <p className="text-muted small mb-3">
+            <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto mb-4">
               Guarda las fotos del resultado final de cada cita para llevar un historial visual de la clienta.
             </p>
             <Button
-              variant="outline-primary"
+              variant="outline"
               size="sm"
               onClick={() => setShowAddModal(true)}
-              style={{ borderRadius: '8px', borderColor: '#8c2a3e', color: '#8c2a3e' }}
+              className="border-bunny-primary text-bunny-primary hover:bg-bunny-light/30"
             >
-              <FiPlus className="me-1" /> Subir Primera Foto
+              <FiPlus className="mr-1 inline" /> Subir Primera Foto
             </Button>
           </Card.Body>
         </Card>
       ) : (
-        <Row className="g-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredRecords.map((record) => {
             const coverPhoto = (record.photoUrls && record.photoUrls[0]) || null;
             const photoCount = (record.photoUrls && record.photoUrls.length) || 0;
 
             return (
-              <Col key={record.id} xs={12} sm={6} lg={4}>
-                <Card
-                  className="border-0 shadow-sm h-100"
-                  style={{
-                    borderRadius: '14px',
-                    overflow: 'hidden',
-                    background: '#fff',
-                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setSelectedRecord(record)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(92, 61, 46, 0.12)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(92, 61, 46, 0.06)';
-                  }}
-                >
-                  {/* Foto de Portada */}
-                  <div
-                    className="position-relative"
-                    style={{
-                      height: '200px',
-                      background: '#fdf4f2',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {coverPhoto ? (
-                      <img
-                        src={coverPhoto}
-                        alt={record.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <FiImage size={36} style={{ color: '#eed0c5' }} />
-                    )}
+              <div
+                key={record.id}
+                onClick={() => setSelectedRecord(record)}
+                className="group rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col"
+              >
+                {/* Foto de Portada */}
+                <div className="relative h-48 bg-bunny-light/20 flex items-center justify-center overflow-hidden">
+                  {coverPhoto ? (
+                    <img
+                      src={coverPhoto}
+                      alt={record.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <FiImage size={40} className="text-bunny-accent" />
+                  )}
 
-                    {photoCount > 1 && (
-                      <Badge
-                        bg="dark"
-                        className="position-absolute top-0 end-0 m-2"
-                        style={{ opacity: 0.85, fontSize: '11px' }}
-                      >
-                        +{photoCount} fotos
-                      </Badge>
-                    )}
-
+                  {photoCount > 1 && (
                     <Badge
-                      bg="light"
-                      text="dark"
-                      className="position-absolute bottom-0 start-0 m-2"
-                      style={{ border: '1px solid #eed0c5', fontSize: '11px', fontWeight: 600 }}
+                      variant="secondary"
+                      className="absolute top-2 right-2 text-xs bg-black/75 text-white backdrop-blur-sm border-0"
                     >
-                      <FiCalendar className="me-1" /> {record.date}
+                      +{photoCount} fotos
                     </Badge>
-                  </div>
+                  )}
 
-                  <Card.Body className="p-3">
-                    <div className="d-flex justify-content-between align-items-start mb-1 gap-2">
-                      <h6 className="fw-bold mb-0 text-truncate" style={{ color: '#422314', fontSize: '14px' }}>
-                        {record.title}
-                      </h6>
-                    </div>
+                  <Badge
+                    variant="secondary"
+                    className="absolute bottom-2 left-2 text-xs bg-white/90 backdrop-blur-sm border border-bunny-accent/40 font-medium"
+                  >
+                    <FiCalendar className="mr-1 inline" /> {record.date}
+                  </Badge>
+                </div>
+
+                <div className="p-3.5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h6 className="font-bold text-bunny-dark text-sm truncate mb-1.5" title={record.title}>
+                      {record.title}
+                    </h6>
 
                     <div className="mb-2">
-                      <Badge
-                        bg="primary"
-                        style={{
-                          background: '#8c2a3e',
-                          fontSize: '11px',
-                          padding: '4px 8px',
-                          fontWeight: 500,
-                        }}
-                      >
+                      <Badge variant="primary" className="text-[11px] font-medium">
                         {BASE_TECHNIQUE_LABELS[record.baseType] || record.baseType}
                       </Badge>
                     </div>
 
                     {record.polishColors && (
-                      <small className="text-muted d-block text-truncate mb-2" style={{ fontSize: '12px' }}>
+                      <p className="text-xs text-slate-500 truncate mb-2">
                         🎨 {record.polishColors}
-                      </small>
+                      </p>
                     )}
+                  </div>
 
-                    {record.tags && record.tags.length > 0 && (
-                      <div className="d-flex gap-1 flex-wrap mt-2">
-                        {record.tags.slice(0, 3).map((t, idx) => (
-                          <Badge key={idx} bg="light" text="dark" style={{ border: '1px solid #eed0c5', fontSize: '10px' }}>
-                            #{t}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </Card.Body>
-                </Card>
-              </Col>
+                  {record.tags && record.tags.length > 0 && (
+                    <div className="flex gap-1 flex-wrap pt-1">
+                      {record.tags.slice(0, 3).map((t, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-[10px]">
+                          #{t}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             );
           })}
-        </Row>
+        </div>
       )}
 
       {/* Modal para Subir Nueva Foto / Diseño */}

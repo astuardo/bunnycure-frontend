@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Table, Badge, Form, Alert, Spinner, Nav } from 'react-bootstrap';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -21,6 +20,7 @@ import {
 } from '../../utils/giftcardRenderer';
 import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
 import { customersApi } from '../../api/customers.api';
+import { Button, Badge, Card, Spinner, Alert } from '@/components/ui';
 
 export default function CustomerDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -128,7 +128,6 @@ export default function CustomerDetailsPage() {
 
   const handleSaveNotes = () => {
     if (!customer) return;
-    // TODO: Implementar actualización de notas en el backend
     toast.info('Notas guardadas localmente');
     setEditingNotes(false);
   };
@@ -158,7 +157,7 @@ export default function CustomerDetailsPage() {
   };
 
   const getStatusBadge = (status: AppointmentStatus) => {
-    const variants: Record<AppointmentStatus, string> = {
+    const variants: Record<AppointmentStatus, 'warning' | 'info' | 'success' | 'danger'> = {
       PENDING: 'warning',
       CONFIRMED: 'info',
       COMPLETED: 'success',
@@ -172,7 +171,7 @@ export default function CustomerDetailsPage() {
       CANCELLED: 'Cancelada',
       RESCHEDULE_REQUESTED: 'Reprogramar',
     };
-    return <Badge bg={variants[status]}>{labels[status]}</Badge>;
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
   const getAppointmentServiceLabel = (apt: Appointment) => {
@@ -183,10 +182,10 @@ export default function CustomerDetailsPage() {
   if ((customersLoading || appointmentsLoading || directCustomerLoading) && !customer) {
     return (
       <DashboardLayout>
-        <Container fluid className="bunny-page text-center py-5">
-          <Spinner animation="border" />
-          <p className="mt-3">Cargando información del cliente...</p>
-        </Container>
+        <div className="text-center py-16">
+          <Spinner size="lg" className="border-bunny-primary mx-auto" />
+          <p className="mt-3 text-slate-500 text-sm">Cargando información del cliente...</p>
+        </div>
       </DashboardLayout>
     );
   }
@@ -194,14 +193,14 @@ export default function CustomerDetailsPage() {
   if (!customer) {
     return (
       <DashboardLayout>
-        <Container fluid className="bunny-page">
+        <div className="max-w-md mx-auto space-y-4 pt-10">
           <Alert variant="danger">
             Cliente no encontrado
           </Alert>
           <Button variant="primary" onClick={() => navigate('/customers')}>
             Volver a Clientes
           </Button>
-        </Container>
+        </div>
       </DashboardLayout>
     );
   }
@@ -210,139 +209,141 @@ export default function CustomerDetailsPage() {
 
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page">
-        <Row className="mb-4">
-          <Col>
-            <div className="d-flex justify-content-between align-items-center gap-3">
-              <div style={{ minWidth: 0 }}>
-                <h2 style={{ overflowWrap: 'anywhere', wordBreak: 'normal' }}>👤 {customer.fullName}</h2>
-                <p className="text-muted mb-0">Detalles del cliente</p>
-              </div>
-              <Button variant="outline-secondary" onClick={() => navigate('/customers')} style={{ flexShrink: 0 }}>
-                ← Volver
-              </Button>
-            </div>
-          </Col>
-        </Row>
+      <div className="space-y-5">
+        {/* Encabezado */}
+        <div className="flex justify-between items-center gap-3">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold text-bunny-dark tracking-tight break-words">
+              👤 {customer.fullName}
+            </h2>
+            <p className="text-slate-500 text-sm">Detalles del cliente</p>
+          </div>
+          <Button variant="secondary" onClick={() => navigate('/customers')} className="shrink-0 text-xs sm:text-sm">
+            ← Volver
+          </Button>
+        </div>
 
-        <Row>
-          <Col md={4}>
-            <Card className="mb-4">
-              <Card.Header>
-                <h5 className="mb-0">Información de Contacto</h5>
+        {/* Layout en 2 columnas */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Columna Izquierda: Info de contacto, Estadísticas, Notas */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Info de Contacto */}
+            <Card className="border border-slate-200 shadow-sm bg-white">
+              <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4">
+                <h5 className="font-bold text-sm text-slate-800 mb-0">Información de Contacto</h5>
               </Card.Header>
-              <Card.Body>
-                <div className="mb-3">
-                  <strong>🪪 RUT:</strong>
-                  <p className="mb-0">{customer.rut?.trim() ? customer.rut.trim() : 'No tiene'}</p>
+              <Card.Body className="p-4 space-y-3 text-xs sm:text-sm">
+                <div>
+                  <strong className="text-slate-500 block text-xs">🪪 RUT:</strong>
+                  <p className="font-medium text-slate-800 mb-0">{customer.rut?.trim() ? customer.rut.trim() : 'No tiene'}</p>
                 </div>
-                <div className="mb-3">
-                  <strong>📧 Email:</strong>
-                  <p className="mb-0" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                <div>
+                  <strong className="text-slate-500 block text-xs">📧 Email:</strong>
+                  <p className="font-medium text-slate-800 break-words mb-0">
                     {customer.email?.trim() ? customer.email.trim() : 'No tiene'}
                   </p>
                 </div>
-                <div className="mb-3">
-                  <strong>📱 Teléfono:</strong>
-                  <p className="mb-0">{customer.phone?.trim() ? customer.phone.trim() : 'No tiene'}</p>
+                <div>
+                  <strong className="text-slate-500 block text-xs">📱 Teléfono:</strong>
+                  <p className="font-medium text-slate-800 mb-0">{customer.phone?.trim() ? customer.phone.trim() : 'No tiene'}</p>
                 </div>
-                <div className="mb-3">
-                  <strong>🚨 Teléfono de Emergencia:</strong>
-                  <p className="mb-0">{customer.emergencyPhone?.trim() ? customer.emergencyPhone.trim() : 'No tiene'}</p>
+                <div>
+                  <strong className="text-slate-500 block text-xs">🚨 Teléfono de Emergencia:</strong>
+                  <p className="font-medium text-slate-800 mb-0">{customer.emergencyPhone?.trim() ? customer.emergencyPhone.trim() : 'No tiene'}</p>
                 </div>
-                <div className="mb-3">
-                  <strong>📸 Instagram:</strong>
-                  <div style={{ overflowWrap: 'anywhere' }}>
+                <div>
+                  <strong className="text-slate-500 block text-xs">📸 Instagram:</strong>
+                  <div className="break-words">
                     {customer.instagram?.trim() ? (
                       <a
                         href={`https://instagram.com/${customer.instagram.replace(/^@/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-decoration-none fw-semibold text-primary"
-                        style={{ overflowWrap: 'anywhere' }}
+                        className="font-semibold text-bunny-primary hover:underline"
                       >
                         @{customer.instagram.replace(/^@/, '')}
                       </a>
                     ) : (
-                      <p className="mb-0">No tiene</p>
+                      <p className="text-slate-400 mb-0">No tiene</p>
                     )}
                   </div>
                 </div>
-                <div className="mb-3">
-                  <strong>🚻 Género:</strong>
-                  <p className="mb-0">
+                <div>
+                  <strong className="text-slate-500 block text-xs">🚻 Género:</strong>
+                  <p className="font-medium text-slate-800 mb-0">
                     {customer.gender === 'FEMENINO' || customer.gender === 'F' ? 'Femenino' :
                      customer.gender === 'MASCULINO' || customer.gender === 'M' ? 'Masculino' :
                      customer.gender?.trim() ? customer.gender.trim() : 'No especificado'}
                   </p>
                 </div>
-                <div className="mb-3">
-                  <strong>🎂 Fecha de Nacimiento:</strong>
-                  <p className="mb-0">{customer.birthDate ? formatDateSafe(customer.birthDate) : 'No tiene'}</p>
+                <div>
+                  <strong className="text-slate-500 block text-xs">🎂 Fecha de Nacimiento:</strong>
+                  <p className="font-medium text-slate-800 mb-0">{customer.birthDate ? formatDateSafe(customer.birthDate) : 'No tiene'}</p>
                 </div>
-                <div className="mb-3">
-                  <strong>📅 Cliente desde:</strong>
-                  <p className="mb-0">{customer.createdAt ? formatDateSafe(customer.createdAt) : 'No tiene'}</p>
+                <div>
+                  <strong className="text-slate-500 block text-xs">📅 Cliente desde:</strong>
+                  <p className="font-medium text-slate-800 mb-0">{customer.createdAt ? formatDateSafe(customer.createdAt) : 'No tiene'}</p>
                 </div>
-                <div className="mb-3">
-                  <strong>🔔 Notificaciones:</strong>
-                  <p className="mb-0">
+                <div>
+                  <strong className="text-slate-500 block text-xs mb-1">🔔 Notificaciones:</strong>
+                  <div>
                     {customer.notificationPreference === NotificationPreference.WHATSAPP_ONLY ? (
-                      <Badge bg="success">💬 Solo WhatsApp</Badge>
+                      <Badge variant="success">💬 Solo WhatsApp</Badge>
                     ) : customer.notificationPreference === NotificationPreference.EMAIL_ONLY ? (
-                      <Badge bg="info">📧 Solo Email</Badge>
+                      <Badge variant="info">📧 Solo Email</Badge>
                     ) : customer.notificationPreference === NotificationPreference.NONE ? (
-                      <Badge bg="secondary">🔕 Sin avisos</Badge>
+                      <Badge variant="secondary">🔕 Sin avisos</Badge>
                     ) : (
-                      <Badge bg="primary">📧💬 WhatsApp + Email</Badge>
+                      <Badge variant="primary">📧💬 WhatsApp + Email</Badge>
                     )}
-                  </p>
+                  </div>
                 </div>
-                <div className="mb-0">
-                  <strong>🩺 Notas de Salud / Alergias:</strong>
-                  <p className="mb-0 text-muted small">
+                <div>
+                  <strong className="text-slate-500 block text-xs">🩺 Notas de Salud / Alergias:</strong>
+                  <p className="text-slate-600 text-xs mt-0.5 mb-0">
                     {customer.healthNotes?.trim() ? customer.healthNotes.trim() : 'Sin observaciones de salud registradas'}
                   </p>
                 </div>
               </Card.Body>
             </Card>
 
-            <Card className="mb-4">
-              <Card.Header>
-                <h5 className="mb-0">Estadísticas</h5>
+            {/* Estadísticas */}
+            <Card className="border border-slate-200 shadow-sm bg-white">
+              <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4">
+                <h5 className="font-bold text-sm text-slate-800 mb-0">Estadísticas</h5>
               </Card.Header>
-              <Card.Body>
-                <div className="d-flex justify-content-between mb-2">
-                  <span>Total de Citas:</span>
-                  <strong>{totalAppointments}</strong>
+              <Card.Body className="p-4 space-y-2.5 text-xs sm:text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Total de Citas:</span>
+                  <strong className="text-slate-800">{totalAppointments}</strong>
                 </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span>Completadas:</span>
-                  <strong className="text-success">{completedAppointments}</strong>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Completadas:</span>
+                  <strong className="text-emerald-600">{completedAppointments}</strong>
                 </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span>Canceladas:</span>
-                  <strong className="text-danger">{cancelledAppointments}</strong>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Canceladas:</span>
+                  <strong className="text-rose-600">{cancelledAppointments}</strong>
                 </div>
-                <div className="d-flex justify-content-between align-items-center pt-2 mt-2 border-top">
+                <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
                   <div>
-                    <span className="small text-muted d-block">Visitas registradas:</span>
-                    <strong>{customer.totalCompletedVisits || 0}</strong>
+                    <span className="text-xs text-slate-400 block">Visitas registradas:</span>
+                    <strong className="text-slate-800">{customer.totalCompletedVisits || 0}</strong>
                   </div>
                   <Button
                     size="sm"
-                    variant="outline-secondary"
+                    variant="secondary"
                     onClick={handleSyncVisits}
-                    style={{ fontSize: '11.5px' }}
+                    className="text-xs py-1 px-2.5"
                     title="Recalcula las visitas registradas según las citas completadas reales"
                   >
                     🔄 Sincronizar
                   </Button>
                 </div>
                 {lastAppointment && (
-                  <div className="mt-3 pt-3 border-top">
-                    <small className="text-muted">Última visita:</small>
-                    <p className="mb-0">
+                  <div className="pt-2.5 border-t border-slate-100">
+                    <small className="text-slate-400 block text-xs">Última visita:</small>
+                    <p className="font-semibold text-slate-800 mb-0">
                       {formatDateSafe(lastAppointment.appointmentDate)}
                     </p>
                   </div>
@@ -350,34 +351,35 @@ export default function CustomerDetailsPage() {
               </Card.Body>
             </Card>
 
-            <Card>
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Notas</h5>
+            {/* Notas */}
+            <Card className="border border-slate-200 shadow-sm bg-white">
+              <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+                <h5 className="font-bold text-sm text-slate-800 mb-0">Notas</h5>
                 {!editingNotes && (
-                  <Button
-                    size="sm"
-                    variant="link"
+                  <button
+                    type="button"
+                    className="text-xs text-bunny-primary hover:text-bunny-dark font-medium"
                     onClick={() => {
                       setNotesDraft(customer.notes || '');
                       setEditingNotes(true);
                     }}
                   >
                     ✏️ Editar
-                  </Button>
+                  </button>
                 )}
               </Card.Header>
-              <Card.Body>
+              <Card.Body className="p-4">
                 {editingNotes ? (
-                  <>
-                    <Form.Control
-                      as="textarea"
+                  <div className="space-y-2">
+                    <textarea
                       rows={4}
                       value={notesDraft}
                       onChange={(e) => setNotesDraft(e.target.value)}
                       placeholder="Agregar notas sobre el cliente..."
+                      className="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
                     />
-                    <div className="mt-2 d-flex gap-2">
-                      <Button size="sm" variant="primary" onClick={handleSaveNotes}>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="primary" onClick={handleSaveNotes} className="text-xs">
                         Guardar
                       </Button>
                       <Button
@@ -387,80 +389,73 @@ export default function CustomerDetailsPage() {
                           setEditingNotes(false);
                           setNotesDraft(customer.notes || '');
                         }}
+                        className="text-xs"
                       >
                         Cancelar
                       </Button>
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <p className="mb-0">{displayedNotes || 'Sin notas'}</p>
+                  <p className="text-slate-700 text-xs sm:text-sm mb-0">{displayedNotes || 'Sin notas'}</p>
                 )}
               </Card.Body>
             </Card>
-          </Col>
+          </div>
 
-          <Col md={8}>
+          {/* Columna Derecha: Tabs (Historial & Citas, Galería de Diseños, GiftCards) */}
+          <div className="lg:col-span-8 space-y-4">
             {/* Pestañas de Navegación de la Ficha */}
-            <Nav variant="pills" className="mb-3 gap-2 flex-wrap">
-              <Nav.Item>
-                <Nav.Link
-                  active={activeTab === 'appointments'}
-                  onClick={() => setActiveTab('appointments')}
-                  className="d-flex align-items-center gap-2"
-                  style={{
-                    borderRadius: '10px',
-                    fontWeight: 600,
-                    background: activeTab === 'appointments' ? '#8c2a3e' : '#fff',
-                    color: activeTab === 'appointments' ? '#fff' : '#5c3d2e',
-                    border: '1px solid #eed0c5',
-                  }}
+            <div className="flex gap-2 flex-wrap border-b border-slate-200 pb-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('appointments')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  activeTab === 'appointments'
+                    ? 'bg-bunny-primary text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>📋 Historial &amp; Citas</span>
+                <Badge
+                  variant={activeTab === 'appointments' ? 'secondary' : 'secondary'}
+                  className={`text-xs ${activeTab === 'appointments' ? 'bg-white/20 text-white' : ''}`}
                 >
-                  <span>📋 Historial & Citas</span>
-                  <Badge bg={activeTab === 'appointments' ? 'light' : 'secondary'} text={activeTab === 'appointments' ? 'dark' : undefined}>
-                    {customerAppointments.length}
+                  {customerAppointments.length}
+                </Badge>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('gallery')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  activeTab === 'gallery'
+                    ? 'bg-bunny-primary text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>💅 Galería de Diseños &amp; Ficha Técnica</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('giftcards')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  activeTab === 'giftcards'
+                    ? 'bg-bunny-primary text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>🎁 GiftCards</span>
+                {customerGiftCards.length > 0 && (
+                  <Badge
+                    variant={activeTab === 'giftcards' ? 'secondary' : 'primary'}
+                    className={`text-xs ${activeTab === 'giftcards' ? 'bg-white/20 text-white' : ''}`}
+                  >
+                    {customerGiftCards.length}
                   </Badge>
-                </Nav.Link>
-              </Nav.Item>
-
-              <Nav.Item>
-                <Nav.Link
-                  active={activeTab === 'gallery'}
-                  onClick={() => setActiveTab('gallery')}
-                  className="d-flex align-items-center gap-2"
-                  style={{
-                    borderRadius: '10px',
-                    fontWeight: 600,
-                    background: activeTab === 'gallery' ? '#8c2a3e' : '#fff',
-                    color: activeTab === 'gallery' ? '#fff' : '#5c3d2e',
-                    border: '1px solid #eed0c5',
-                  }}
-                >
-                  <span>💅 Galería de Diseños &amp; Ficha Técnica</span>
-                </Nav.Link>
-              </Nav.Item>
-
-              <Nav.Item>
-                <Nav.Link
-                  active={activeTab === 'giftcards'}
-                  onClick={() => setActiveTab('giftcards')}
-                  className="d-flex align-items-center gap-2"
-                  style={{
-                    borderRadius: '10px',
-                    fontWeight: 600,
-                    background: activeTab === 'giftcards' ? '#8c2a3e' : '#fff',
-                    color: activeTab === 'giftcards' ? '#fff' : '#5c3d2e',
-                    border: '1px solid #eed0c5',
-                  }}
-                >
-                  <span>🎁 GiftCards</span>
-                  {customerGiftCards.length > 0 && (
-                    <Badge bg={activeTab === 'giftcards' ? 'light' : 'primary'} text={activeTab === 'giftcards' ? 'dark' : undefined}>
-                      {customerGiftCards.length}
-                    </Badge>
-                  )}
-                </Nav.Link>
-              </Nav.Item>
-            </Nav>
+                )}
+              </button>
+            </div>
 
             {/* Vista: Galería de Diseños & Ficha Técnica */}
             {activeTab === 'gallery' && (
@@ -472,7 +467,7 @@ export default function CustomerDetailsPage() {
 
             {/* Vista: Historial & Citas */}
             {activeTab === 'appointments' && (
-              <>
+              <div className="space-y-4">
                 <StampCard 
                   customerId={customer.id}
                   loyaltyStamps={customer.loyaltyStamps} 
@@ -481,93 +476,96 @@ export default function CustomerDetailsPage() {
                   onAdjust={handleLoyaltyAdjust}
                 />
 
-                <Card>
-                  <Card.Header>
-                    <h5 className="mb-0">Historial de Citas</h5>
+                <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+                  <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4">
+                    <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">Historial de Citas</h5>
                   </Card.Header>
-                  <Card.Body>
+                  <Card.Body className="p-0">
                     {customerAppointments.length === 0 ? (
-                      <Alert variant="info">
-                        Este cliente aún no tiene citas registradas.
-                      </Alert>
+                      <div className="p-4">
+                        <Alert variant="info" className="text-xs sm:text-sm mb-0">
+                          Este cliente aún no tiene citas registradas.
+                        </Alert>
+                      </div>
                     ) : (
-                      <div className="table-responsive">
-                        <Table hover>
-                          <thead>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs sm:text-sm">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                             <tr>
-                              <th>Fecha</th>
-                              <th>Hora</th>
-                              <th>Servicio</th>
-                              <th>Estado</th>
-                              <th>Notas</th>
+                              <th className="py-3 px-4">Fecha</th>
+                              <th className="py-3 px-4">Hora</th>
+                              <th className="py-3 px-4">Servicio</th>
+                              <th className="py-3 px-4">Estado</th>
+                              <th className="py-3 px-4">Notas</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="divide-y divide-slate-100">
                             {customerAppointments.map((apt) => (
-                              <tr key={apt.id}>
-                                <td>{formatDateSafe(apt.appointmentDate)}</td>
-                                <td>{apt.appointmentTime}</td>
-                                <td>{getAppointmentServiceLabel(apt)}</td>
-                                <td>{getStatusBadge(apt.status)}</td>
-                                <td>
+                              <tr key={apt.id} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="py-3 px-4 font-semibold text-slate-800">{formatDateSafe(apt.appointmentDate)}</td>
+                                <td className="py-3 px-4 text-slate-600">{apt.appointmentTime}</td>
+                                <td className="py-3 px-4 font-medium text-slate-800">{getAppointmentServiceLabel(apt)}</td>
+                                <td className="py-3 px-4">{getStatusBadge(apt.status)}</td>
+                                <td className="py-3 px-4">
                                   {apt.notes ? (
-                                    <span className="text-muted small">
+                                    <span className="text-slate-500 text-xs">
                                       {apt.notes.length > 50 ? `${apt.notes.substring(0, 50)}...` : apt.notes}
                                     </span>
                                   ) : (
-                                    '-'
+                                    <span className="text-slate-300">-</span>
                                   )}
                                 </td>
                               </tr>
                             ))}
                           </tbody>
-                        </Table>
+                        </table>
                       </div>
                     )}
                   </Card.Body>
                 </Card>
-              </>
+              </div>
             )}
 
             {/* Vista: GiftCards */}
             {activeTab === 'giftcards' && (
-              <Card className="mb-4">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center gap-2">
-                    <h5 className="mb-0">🎁 GiftCards del Cliente</h5>
-                    <Badge bg={activeCustomerGiftCards.length > 0 ? 'success' : 'secondary'}>
+              <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+                <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">🎁 GiftCards del Cliente</h5>
+                    <Badge variant={activeCustomerGiftCards.length > 0 ? 'success' : 'secondary'}>
                       {activeCustomerGiftCards.length} activa{activeCustomerGiftCards.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
                   <Button
                     size="sm"
-                    variant="outline-primary"
+                    variant="outline"
                     onClick={() => navigate('/giftcards/generar')}
+                    className="text-xs"
                   >
                     + Emitir GiftCard
                   </Button>
                 </Card.Header>
-                <Card.Body>
+                <Card.Body className="p-0">
                   {giftCardsLoading ? (
-                    <div className="text-center py-3 text-muted">Cargando GiftCards...</div>
+                    <div className="text-center py-6 text-slate-400 text-xs">Cargando GiftCards...</div>
                   ) : customerGiftCards.length === 0 ? (
-                    <div className="text-muted small py-2">
+                    <div className="p-4 text-slate-500 text-xs">
                       Esta clienta no tiene GiftCards asociadas (como beneficiaria ni compradora).
                     </div>
                   ) : (
-                    <div className="table-responsive">
-                      <Table hover size="sm" className="align-middle mb-0">
-                        <thead>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs sm:text-sm">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                           <tr>
-                            <th>Código</th>
-                            <th>Rol</th>
-                            <th>Estado</th>
-                            <th>Servicios Disponibles</th>
-                            <th>Vence</th>
-                            <th className="text-end">Acciones</th>
+                            <th className="py-3 px-4">Código</th>
+                            <th className="py-3 px-4">Rol</th>
+                            <th className="py-3 px-4">Estado</th>
+                            <th className="py-3 px-4">Servicios Disponibles</th>
+                            <th className="py-3 px-4">Vence</th>
+                            <th className="py-3 px-4 text-right">Acciones</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-100">
                           {customerGiftCards.map((gc) => {
                             const isBeneficiary = toWhatsAppPhone(gc.beneficiaryPhone) === toWhatsAppPhone(customer.phone);
                             const remainingServices = gc.items.map(
@@ -576,41 +574,41 @@ export default function CustomerDetailsPage() {
                             const publicUrl = normalizeGiftCardPublicUrl(gc.publicUrl, gc.code);
 
                             return (
-                              <tr key={gc.id}>
-                                <td>
-                                  <strong>{gc.code}</strong>
-                                  <br />
-                                  <small className="text-muted">${gc.totalAmount.toLocaleString('es-CL')}</small>
+                              <tr key={gc.id} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="py-3 px-4">
+                                  <strong className="text-slate-800">{gc.code}</strong>
+                                  <div className="text-slate-500 text-xs mt-0.5">${gc.totalAmount.toLocaleString('es-CL')}</div>
                                 </td>
-                                <td>
-                                  <Badge bg={isBeneficiary ? 'primary' : 'info'}>
+                                <td className="py-3 px-4">
+                                  <Badge variant={isBeneficiary ? 'primary' : 'info'}>
                                     {isBeneficiary ? 'Beneficiaria' : 'Compradora'}
                                   </Badge>
                                 </td>
-                                <td>
-                                  <Badge bg={gc.status === 'ACTIVE' ? 'success' : gc.status === 'PARTIAL' ? 'warning' : 'secondary'}>
+                                <td className="py-3 px-4">
+                                  <Badge variant={gc.status === 'ACTIVE' ? 'success' : gc.status === 'PARTIAL' ? 'warning' : 'secondary'}>
                                     {gc.status}
                                   </Badge>
                                 </td>
-                                <td>
-                                  <small>{remainingServices || 'Sin servicios'}</small>
+                                <td className="py-3 px-4">
+                                  <small className="text-slate-600">{remainingServices || 'Sin servicios'}</small>
                                 </td>
-                                <td>
-                                  <small>{gc.expiresOn}</small>
+                                <td className="py-3 px-4">
+                                  <small className="text-slate-600">{gc.expiresOn}</small>
                                 </td>
-                                <td className="text-end">
-                                  <div className="d-flex justify-content-end gap-1">
+                                <td className="py-3 px-4 text-right">
+                                  <div className="flex justify-end gap-1 items-center">
                                     <Button
                                       size="sm"
-                                      variant="outline-secondary"
+                                      variant="secondary"
                                       title="Ver en Gestión"
                                       onClick={() => navigate(`/giftcards?search=${encodeURIComponent(gc.code)}`)}
+                                      className="p-1.5"
                                     >
                                       🔍
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant="outline-success"
+                                      variant="outline"
                                       title="Enviar por WhatsApp"
                                       onClick={() =>
                                         sendGiftCardWhatsApp({
@@ -625,12 +623,13 @@ export default function CustomerDetailsPage() {
                                           onError: (msg) => toast.error(msg),
                                         })
                                       }
+                                      className="p-1.5 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                                     >
                                       📱
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant="outline-primary"
+                                      variant="outline"
                                       title="Descargar Imagen PNG"
                                       onClick={async () => {
                                         try {
@@ -646,12 +645,13 @@ export default function CustomerDetailsPage() {
                                           toast.error('Error al descargar PNG');
                                         }
                                       }}
+                                      className="text-xs"
                                     >
                                       📥 PNG
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant="outline-dark"
+                                      variant="secondary"
                                       title="Imprimir / Guardar PDF"
                                       onClick={async () => {
                                         try {
@@ -666,11 +666,12 @@ export default function CustomerDetailsPage() {
                                           toast.error('Error al generar PDF');
                                         }
                                       }}
+                                      className="text-xs"
                                     >
                                       📄 PDF
                                     </Button>
                                     <a
-                                      className="btn btn-sm btn-outline-info"
+                                      className="px-2 py-1 text-xs rounded-lg border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors"
                                       href={publicUrl}
                                       target="_blank"
                                       rel="noreferrer"
@@ -684,15 +685,15 @@ export default function CustomerDetailsPage() {
                             );
                           })}
                         </tbody>
-                      </Table>
+                      </table>
                     </div>
                   )}
                 </Card.Body>
               </Card>
             )}
-          </Col>
-        </Row>
-      </Container>
+          </div>
+        </div>
+      </div>
     </DashboardLayout>
   );
 }
