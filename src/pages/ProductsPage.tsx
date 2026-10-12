@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, Card, Col, Form, Nav, Row, Spinner, Table } from 'react-bootstrap';
-import { FiTrendingUp, FiShoppingBag, FiLayers, FiAlertTriangle, FiCheckCircle, FiPackage, FiRefreshCw } from 'react-icons/fi';
+import {
+  FiTrendingUp,
+  FiShoppingBag,
+  FiLayers,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiPackage,
+  FiRefreshCw,
+  FiPlus,
+} from 'react-icons/fi';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { inventoryApi } from '@/api/inventory.api';
 import { settingsApi } from '@/api/settings.api';
@@ -12,6 +20,7 @@ import MovementListModal from '@/components/MovementListModal';
 import ProductPriceAnalysisModal from '@/components/inventory/ProductPriceAnalysisModal';
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
+import { Card, Button, Badge, Alert, Spinner } from '@/components/ui';
 
 export default function ProductsPage() {
   const toast = useToast();
@@ -107,7 +116,9 @@ export default function ProductsPage() {
   const handleSaved = (product: Product) => {
     setProducts((prev) => {
       const exists = prev.some((item) => item.id === product.id);
-      return exists ? prev.map((item) => (item.id === product.id ? product : item)) : [product, ...prev];
+      return exists
+        ? prev.map((item) => (item.id === product.id ? product : item))
+        : [product, ...prev];
     });
     loadProjections();
   };
@@ -148,315 +159,317 @@ export default function ProductsPage() {
 
   return (
     <DashboardLayout>
-      <div className="bunny-page">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
         {/* Header con Switch Maestro */}
-        <Row className="mb-3 mb-md-4 align-items-center">
-          <Col md={7}>
-            <h1 className="mb-1">📦 Inventario, Insumos y Proyecciones</h1>
-            <p className="text-muted mb-0 small">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-bunny-cocoa tracking-tight flex items-center gap-2 m-0">
+                📦 Inventario, Insumos y Proyecciones
+              </h1>
+              <Badge variant="neutral">
+                {summary.total} {summary.total === 1 ? 'producto' : 'productos'}
+              </Badge>
+            </div>
+            <p className="text-sm text-bunny-text-muted mt-1 m-0">
               Administra insumos, recetas por servicio, historial de compras y proyección de demanda a 7 días
             </p>
-          </Col>
-          <Col md={5} className="mt-3 mt-md-0 d-flex flex-column align-items-md-end gap-2">
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
             <div
-              style={{
-                background: autoConsumptionEnabled ? '#f0fdf4' : '#fef2f2',
-                border: `1px solid ${autoConsumptionEnabled ? '#bbf7d0' : '#fecaca'}`,
-                borderRadius: '12px',
-                padding: '8px 14px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '12px',
-              }}
+              className={`p-2.5 px-3.5 rounded-xl border flex items-center gap-3 transition-colors ${
+                autoConsumptionEnabled
+                  ? 'bg-emerald-50/70 border-emerald-200'
+                  : 'bg-rose-50/70 border-rose-200'
+              }`}
             >
-              <div className="text-start">
-                <div className="fw-bold small text-dark">Control de Consumo en Citas</div>
-                <small className="text-muted d-block" style={{ fontSize: '0.75rem' }}>
+              <div>
+                <div className="text-xs font-bold text-bunny-cocoa">Control de Consumo en Citas</div>
+                <span className="text-[11px] text-bunny-text-muted block">
                   {autoConsumptionEnabled ? '🟢 Activo: descuenta insumos' : '🔴 Apagado: no descuenta stock'}
-                </small>
+                </span>
               </div>
-              <Form.Check
-                type="switch"
-                id="master-consumption-switch"
+              <input
+                type="checkbox"
                 checked={autoConsumptionEnabled}
                 disabled={savingSwitch}
                 onChange={(e) => handleToggleAutoConsumption(e.target.checked)}
-                style={{ transform: 'scale(1.25)', cursor: 'pointer' }}
+                className="h-4 w-4 rounded border-bunny-border text-bunny-primary focus:ring-bunny-primary/30 cursor-pointer accent-[#8c2a3e]"
               />
             </div>
 
             <Button
-              variant="primary"
               size="sm"
+              variant="primary"
               onClick={() => setShowFormModal(true)}
-              className="d-inline-flex align-items-center gap-1"
+              leftIcon={<FiPlus />}
             >
-              ➕ Nuevo Producto
+              Nuevo Producto
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </div>
 
         {/* Tarjetas de Métricas Rápidas */}
-        <Row className="g-3 mb-3 mb-md-4">
-          <Col sm={6} md={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ background: '#f8fafc' }}>
-              <Card.Body className="p-3">
-                <div className="text-muted small">Total Productos</div>
-                <div className="fs-4 fw-bold text-dark">{summary.total}</div>
-                <small className="text-muted">en catálogo</small>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={6} md={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ background: summary.withDeficit > 0 ? '#fff1f2' : '#f8fafc' }}>
-              <Card.Body className="p-3">
-                <div className="text-muted small">Stock con Déficit</div>
-                <div className={`fs-4 fw-bold ${summary.withDeficit > 0 ? 'text-danger' : 'text-success'}`}>
-                  {summary.withDeficit}
-                </div>
-                <small className="text-muted">saldo en negativo</small>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={6} md={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ background: summary.critical7Days > 0 ? '#fff7ed' : '#f8fafc' }}>
-              <Card.Body className="p-3">
-                <div className="text-muted small">Críticos a 7 Días</div>
-                <div className={`fs-4 fw-bold ${summary.critical7Days > 0 ? 'text-warning' : 'text-success'}`}>
-                  {summary.critical7Days}
-                </div>
-                <small className="text-muted">no alcanzarán las citas</small>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={6} md={3}>
-            <Card className="h-100 border-0 shadow-sm" style={{ background: '#f0fdf4' }}>
-              <Card.Body className="p-3">
-                <div className="text-muted small">Stock en Nivel Óptimo</div>
-                <div className="fs-4 fw-bold text-success">
-                  {summary.total - summary.withDeficit - summary.critical7Days}
-                </div>
-                <small className="text-muted">abastecimiento seguro</small>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="shadow-xs border-bunny-border">
+            <Card.Body className="p-4 text-center">
+              <span className="text-xs text-bunny-text-muted font-medium block">Total Productos</span>
+              <span className="text-2xl font-bold text-bunny-cocoa mt-0.5 block">{summary.total}</span>
+              <span className="text-[11px] text-bunny-text-muted">en catálogo</span>
+            </Card.Body>
+          </Card>
+          <Card className="shadow-xs border-bunny-border">
+            <Card.Body className="p-4 text-center">
+              <span className="text-xs text-bunny-text-muted font-medium block">Stock con Déficit</span>
+              <span
+                className={`text-2xl font-bold mt-0.5 block ${
+                  summary.withDeficit > 0 ? 'text-bunny-danger' : 'text-emerald-700'
+                }`}
+              >
+                {summary.withDeficit}
+              </span>
+              <span className="text-[11px] text-bunny-text-muted">saldo en negativo</span>
+            </Card.Body>
+          </Card>
+          <Card className="shadow-xs border-bunny-border">
+            <Card.Body className="p-4 text-center">
+              <span className="text-xs text-bunny-text-muted font-medium block">Críticos a 7 Días</span>
+              <span
+                className={`text-2xl font-bold mt-0.5 block ${
+                  summary.critical7Days > 0 ? 'text-amber-600' : 'text-emerald-700'
+                }`}
+              >
+                {summary.critical7Days}
+              </span>
+              <span className="text-[11px] text-bunny-text-muted">no alcanzarán las citas</span>
+            </Card.Body>
+          </Card>
+          <Card className="shadow-xs border-bunny-border">
+            <Card.Body className="p-4 text-center">
+              <span className="text-xs text-bunny-text-muted font-medium block">Stock en Nivel Óptimo</span>
+              <span className="text-2xl font-bold text-emerald-700 mt-0.5 block">
+                {Math.max(0, summary.total - summary.withDeficit - summary.critical7Days)}
+              </span>
+              <span className="text-[11px] text-bunny-text-muted">abastecimiento seguro</span>
+            </Card.Body>
+          </Card>
+        </div>
 
         {/* Pestañas / Tabs */}
-        <Nav variant="pills" className="mb-3 gap-2">
-          <Nav.Item>
-            <Nav.Link
-              active={activeTab === 'inventory'}
-              onClick={() => setActiveTab('inventory')}
-              style={{ cursor: 'pointer', fontWeight: 600 }}
-              className="d-flex align-items-center gap-2"
-            >
-              <FiLayers /> 📦 Inventario & Precios
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link
-              active={activeTab === 'projections'}
-              onClick={() => {
-                setActiveTab('projections');
-                loadProjections();
-              }}
-              style={{ cursor: 'pointer', fontWeight: 600 }}
-              className="d-flex align-items-center gap-2"
-            >
-              <FiTrendingUp /> 📊 Proyección a 7 Días & Reabastecimiento
-              {summary.critical7Days > 0 && (
-                <Badge bg="danger" className="ms-1">
-                  {summary.critical7Days}
-                </Badge>
-              )}
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
+        <div className="flex border-b border-bunny-border gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('inventory')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'inventory'
+                ? 'border-bunny-primary text-bunny-primary-dark'
+                : 'border-transparent text-bunny-text-muted hover:text-bunny-cocoa'
+            }`}
+          >
+            <FiLayers /> Inventario &amp; Precios
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('projections');
+              loadProjections();
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'projections'
+                ? 'border-bunny-primary text-bunny-primary-dark'
+                : 'border-transparent text-bunny-text-muted hover:text-bunny-cocoa'
+            }`}
+          >
+            <FiTrendingUp /> Proyección a 7 Días &amp; Reabastecimiento
+            {summary.critical7Days > 0 && (
+              <Badge variant="danger" className="text-[10px] ml-1">
+                {summary.critical7Days}
+              </Badge>
+            )}
+          </button>
+        </div>
 
         {/* Tab 1: Inventario */}
         {activeTab === 'inventory' && (
-          <>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <span className="text-muted small">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-bunny-text-muted">
                 Monitorea existencias, precios de compra y registra nuevas entradas de insumos.
               </span>
-              <Button variant="outline-secondary" size="sm" onClick={loadProducts} disabled={loading}>
-                {loading ? <Spinner size="sm" animation="border" className="me-1" /> : <FiRefreshCw className="me-1" />}
+              <Button variant="outline" size="sm" onClick={loadProducts} disabled={loading} leftIcon={<FiRefreshCw />}>
                 Actualizar
               </Button>
             </div>
 
-            <Card className="shadow-sm border-0">
-              <Card.Body className="p-0">
-                {loading ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" />
-                    <p className="mt-2 text-muted mb-0 small">Cargando inventario...</p>
-                  </div>
-                ) : products.length === 0 ? (
-                  <div className="text-center py-5">
-                    <p className="text-muted mb-0">No hay productos registrados en el inventario.</p>
-                  </div>
-                ) : (
-                  <ProductList
-                    products={products}
-                    onEdit={(product) => {
-                      setEditingProduct(product);
-                      setShowFormModal(true);
-                    }}
-                    onDelete={handleDelete}
-                    onPurchase={(product) => {
-                      setPurchaseProduct(product);
-                      setShowPurchaseModal(true);
-                    }}
-                    onViewMovements={(product) => {
-                      setMovementsProductId(product.id);
-                      setShowMovementsModal(true);
-                    }}
-                    onRefreshObserved={handleRefreshObserved}
-                    onViewPriceAnalysis={(product) => {
-                      setPriceAnalysisProductId(product.id);
-                      setShowPriceAnalysisModal(true);
-                    }}
-                  />
-                )}
-              </Card.Body>
+            <Card className="shadow-bunny border-bunny-border overflow-hidden">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 text-bunny-text-muted">
+                  <Spinner size="lg" variant="primary" />
+                  <p className="text-sm mt-3">Cargando inventario...</p>
+                </div>
+              ) : products.length === 0 ? (
+                <div className="text-center py-16 text-bunny-text-muted text-sm">
+                  No hay productos registrados en el inventario.
+                </div>
+              ) : (
+                <ProductList
+                  products={products}
+                  onEdit={(product) => {
+                    setEditingProduct(product);
+                    setShowFormModal(true);
+                  }}
+                  onDelete={handleDelete}
+                  onPurchase={(product) => {
+                    setPurchaseProduct(product);
+                    setShowPurchaseModal(true);
+                  }}
+                  onViewMovements={(product) => {
+                    setMovementsProductId(product.id);
+                    setShowMovementsModal(true);
+                  }}
+                  onRefreshObserved={handleRefreshObserved}
+                  onViewPriceAnalysis={(product) => {
+                    setPriceAnalysisProductId(product.id);
+                    setShowPriceAnalysisModal(true);
+                  }}
+                />
+              )}
             </Card>
-          </>
+          </div>
         )}
 
         {/* Tab 2: Proyecciones a 7 Días */}
         {activeTab === 'projections' && (
-          <>
-            <Alert variant="info" className="py-2 px-3 mb-3 small d-flex align-items-center gap-2">
-              <FiPackage size={18} className="flex-shrink-0" />
-              <div>
-                <strong>Proyección de Demanda Semanal (7 días):</strong> Cruza las citas agendadas de la semana con
-                la receta de cada servicio para predecir si el stock alcanzará o cuándo se agotará.
+          <div className="space-y-4">
+            <Alert variant="info">
+              <div className="flex items-start gap-2">
+                <FiPackage className="text-base shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <strong>Proyección de Demanda Semanal (7 días):</strong> Cruza las citas agendadas de la semana con
+                  la receta de cada servicio para predecir si el stock alcanzará o cuándo se agotará.
+                </div>
               </div>
             </Alert>
 
-            <div className="d-flex justify-content-end mb-3">
-              <Button variant="outline-secondary" size="sm" onClick={loadProjections} disabled={loadingProjections}>
-                {loadingProjections ? <Spinner size="sm" animation="border" className="me-1" /> : <FiRefreshCw className="me-1" />}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadProjections}
+                disabled={loadingProjections}
+                leftIcon={<FiRefreshCw className={loadingProjections ? 'animate-spin' : ''} />}
+              >
                 Recalcular Proyecciones
               </Button>
             </div>
 
-            <Card className="shadow-sm border-0">
-              <Card.Body className="p-0">
-                {loadingProjections ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" />
-                    <p className="mt-2 text-muted mb-0 small">Calculando proyección de citas y demanda...</p>
-                  </div>
-                ) : projections.length === 0 ? (
-                  <div className="text-center py-5">
-                    <p className="text-muted mb-0">No hay productos para proyectar.</p>
-                  </div>
-                ) : (
-                  <div className="table-responsive">
-                    <Table hover className="mb-0 align-middle" style={{ fontSize: '0.88rem' }}>
-                      <thead className="table-light">
-                        <tr>
-                          <th>Insumo / Producto</th>
-                          <th>Stock Actual</th>
-                          <th>Demanda (7 Días)</th>
-                          <th>Balance Proyectado</th>
-                          <th>Servicios Restantes</th>
-                          <th>Sugerencia de Compra</th>
-                          <th className="text-end">Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {projections.map((proj) => {
-                          const isCritical = proj.status === 'CRITICO_7_DIAS' || proj.status === 'SIN_STOCK';
-                          const isLow = proj.status === 'BAJO';
+            <Card className="shadow-bunny border-bunny-border overflow-hidden">
+              {loadingProjections ? (
+                <div className="flex flex-col items-center justify-center py-16 text-bunny-text-muted">
+                  <Spinner size="lg" variant="primary" />
+                  <p className="text-sm mt-3">Calculando proyección de citas y demanda...</p>
+                </div>
+              ) : projections.length === 0 ? (
+                <div className="text-center py-16 text-bunny-text-muted text-sm">
+                  No hay productos para proyectar.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-bunny-paper/70 border-b border-bunny-border text-xs font-semibold text-bunny-text-muted uppercase">
+                        <th className="py-3 px-4">Insumo / Producto</th>
+                        <th className="py-3 px-4">Stock Actual</th>
+                        <th className="py-3 px-4">Demanda (7 Días)</th>
+                        <th className="py-3 px-4">Balance Proyectado</th>
+                        <th className="py-3 px-4">Servicios Restantes</th>
+                        <th className="py-3 px-4">Sugerencia de Compra</th>
+                        <th className="py-3 px-4 text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-bunny-border/60">
+                      {projections.map((proj) => {
+                        const isCritical = proj.status === 'CRITICO_7_DIAS' || proj.status === 'SIN_STOCK';
+                        const isLow = proj.status === 'BAJO';
 
-                          return (
-                            <tr key={proj.productId}>
-                              <td>
-                                <div className="fw-bold text-dark">{proj.productName}</div>
-                                <small className="text-muted">
-                                  {proj.appointmentsNext7Days > 0
-                                    ? `Usado en ${proj.appointmentsNext7Days} cita(s) esta semana`
-                                    : 'Sin citas agendadas con este insumo'}
-                                </small>
-                              </td>
-                              <td>
-                                <span
-                                  className={`badge ${
-                                    proj.currentStockConsumptionUnit < 0
-                                      ? 'bg-danger'
-                                      : proj.currentStockConsumptionUnit === 0
-                                      ? 'bg-warning text-dark'
-                                      : 'bg-success'
-                                  }`}
-                                  style={{ fontSize: '0.8rem' }}
-                                >
-                                  {proj.currentStockConsumptionUnit} {proj.consumptionUnit}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="fw-semibold text-dark">
-                                  {proj.projectedDemand7Days} {proj.consumptionUnit}
-                                </span>
-                              </td>
-                              <td>
-                                {proj.balanceAfter7Days < 0 ? (
-                                  <Badge bg="danger" className="d-inline-flex align-items-center gap-1">
-                                    <FiAlertTriangle /> Falta {Math.abs(proj.balanceAfter7Days).toFixed(1)}{' '}
-                                    {proj.consumptionUnit}
-                                  </Badge>
-                                ) : (
-                                  <Badge bg="success">
-                                    {proj.balanceAfter7Days.toFixed(1)} {proj.consumptionUnit} sobrantes
-                                  </Badge>
-                                )}
-                              </td>
-                              <td>
-                                <span className="fw-semibold text-dark">
-                                  ~{proj.servicesRemainingWithStock} atenciones
-                                </span>
-                              </td>
-                              <td>
-                                {proj.suggestedPurchaseQuantity > 0 ? (
-                                  <div>
-                                    <span className="fw-bold text-danger">
-                                      Comprar {proj.suggestedPurchaseQuantity} {proj.purchaseUnit}(s)
-                                    </span>
-                                    <small className="text-muted d-block">
-                                      Est. {formatCurrencyCLP(proj.estimatedRestockCost)}
-                                    </small>
-                                  </div>
-                                ) : (
-                                  <span className="text-success small fw-semibold">
-                                    <FiCheckCircle className="me-1" /> Stock suficiente
+                        return (
+                          <tr key={proj.productId} className="hover:bg-bunny-blush/20 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="font-semibold text-bunny-cocoa">{proj.productName}</div>
+                              <small className="text-xs text-bunny-text-muted block">
+                                {proj.appointmentsNext7Days > 0
+                                  ? `Usado en ${proj.appointmentsNext7Days} cita(s) esta semana`
+                                  : 'Sin citas agendadas con este insumo'}
+                              </small>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                variant={
+                                  proj.currentStockConsumptionUnit < 0
+                                    ? 'danger'
+                                    : proj.currentStockConsumptionUnit === 0
+                                    ? 'warning'
+                                    : 'success'
+                                }
+                                className="text-xs"
+                              >
+                                {proj.currentStockConsumptionUnit} {proj.consumptionUnit}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-bunny-cocoa">
+                              {proj.projectedDemand7Days} {proj.consumptionUnit}
+                            </td>
+                            <td className="py-3 px-4">
+                              {proj.balanceAfter7Days < 0 ? (
+                                <Badge variant="danger" className="gap-1 inline-flex items-center text-xs">
+                                  <FiAlertTriangle /> Falta {Math.abs(proj.balanceAfter7Days).toFixed(1)}{' '}
+                                  {proj.consumptionUnit}
+                                </Badge>
+                              ) : (
+                                <Badge variant="success" className="text-xs">
+                                  {proj.balanceAfter7Days.toFixed(1)} {proj.consumptionUnit} sobrantes
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-xs font-semibold text-bunny-cocoa">
+                              ~{proj.servicesRemainingWithStock} atenciones
+                            </td>
+                            <td className="py-3 px-4">
+                              {proj.suggestedPurchaseQuantity > 0 ? (
+                                <div>
+                                  <span className="font-bold text-xs text-bunny-danger block">
+                                    Comprar {proj.suggestedPurchaseQuantity} {proj.purchaseUnit}(s)
                                   </span>
-                                )}
-                              </td>
-                              <td className="text-end">
-                                <Button
-                                  variant={isCritical ? 'danger' : isLow ? 'warning' : 'outline-success'}
-                                  size="sm"
-                                  className="d-inline-flex align-items-center gap-1"
-                                  onClick={() => handlePurchaseSuggested(proj)}
-                                >
-                                  <FiShoppingBag size={13} />
-                                  {proj.suggestedPurchaseQuantity > 0 ? 'Comprar' : 'Reabastecer'}
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
-                  </div>
-                )}
-              </Card.Body>
+                                  <small className="text-[11px] text-bunny-text-muted block">
+                                    Est. {formatCurrencyCLP(proj.estimatedRestockCost)}
+                                  </small>
+                                </div>
+                              ) : (
+                                <span className="text-emerald-700 text-xs font-semibold inline-flex items-center gap-1">
+                                  <FiCheckCircle /> Stock suficiente
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <Button
+                                variant={isCritical ? 'danger' : isLow ? 'secondary' : 'outline'}
+                                size="sm"
+                                onClick={() => handlePurchaseSuggested(proj)}
+                                leftIcon={<FiShoppingBag />}
+                              >
+                                {proj.suggestedPurchaseQuantity > 0 ? 'Comprar' : 'Reabastecer'}
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Card>
-          </>
+          </div>
         )}
 
         {/* Modales */}

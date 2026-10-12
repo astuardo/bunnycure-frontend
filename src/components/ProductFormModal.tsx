@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { Modal } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Product, ProductFormData } from '@/types/inventory.types';
 import { inventoryApi } from '@/api/inventory.api';
 import { toast } from 'react-toastify';
+import { Modal, Button } from '@/components/ui';
 
 interface Props {
   show: boolean;
@@ -18,8 +18,7 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
     handleSubmit,
     reset,
     setValue,
-    watch,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     defaultValues: {
       name: '',
@@ -28,12 +27,11 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
       purchaseUnit: 'Unidad',
       consumptionUnit: 'unidad',
       conversionFactor: 1,
-      stockConsumptionUnit: 0
-    }
+      stockConsumptionUnit: 0,
+    },
   });
-  const [isImporting, setIsImporting] = React.useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
-  // Helper to normalize URLs by adding https:// when protocol is missing
   const normalizeUrl = (v?: string | null) => {
     if (!v) return v;
     if (v.startsWith('http://') || v.startsWith('https://')) return v;
@@ -44,7 +42,6 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
     if (productToEdit) {
       setValue('name', productToEdit.name);
       setValue('purchasePrice', productToEdit.purchasePrice);
-      // normalize displayed URL so the form shows the protocol-prefixed value
       setValue('purchaseUrl', normalizeUrl(productToEdit.purchaseUrl) || '');
       setValue('purchaseUnit', productToEdit.purchaseUnit);
       setValue('consumptionUnit', productToEdit.consumptionUnit);
@@ -58,66 +55,46 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
   const onSubmit = async (data: ProductFormData) => {
     try {
       const payload: ProductFormData = {
-        ...data,
-        purchaseUrl: normalizeUrl(data.purchaseUrl),
+        name: data.name.trim(),
+        purchasePrice: Number(data.purchasePrice),
+        purchaseUrl: data.purchaseUrl ? normalizeUrl(data.purchaseUrl.trim()) : undefined,
+        purchaseUnit: data.purchaseUnit.trim(),
+        consumptionUnit: data.consumptionUnit.trim(),
+        conversionFactor: Number(data.conversionFactor),
+        stockConsumptionUnit: Number(data.stockConsumptionUnit),
       };
 
+      let saved: Product;
       if (productToEdit) {
-        const updated = await inventoryApi.updateProduct(productToEdit.id, payload);
-        // update form to show normalized url returned by backend before closing
-        setValue('purchaseUrl', updated.purchaseUrl || '');
+        saved = await inventoryApi.updateProduct(productToEdit.id, payload);
         toast.success('Producto actualizado');
-        onSaved && onSaved(updated);
       } else {
-        const created = await inventoryApi.createProduct(payload);
-        setValue('purchaseUrl', created.purchaseUrl || '');
+        saved = await inventoryApi.createProduct(payload);
         toast.success('Producto creado');
-        onSaved && onSaved(created);
       }
-
-      // small delay to let user see normalized url briefly (optional)
-      // await new Promise(res => setTimeout(res, 120));
-
+      onSaved && onSaved(saved);
       onHide();
-    } catch (err: any) {
-      const msg = err?.response?.data?.error?.message ?? err?.message ?? 'Error';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      const msg = error?.response?.data?.error?.message ?? error?.message ?? 'Error al guardar producto';
       toast.error(msg);
     }
   };
 
   const handleImportFromUrl = async () => {
-    const rawUrl = watch('purchaseUrl');
-    if (!rawUrl || !rawUrl.trim()) {
-      toast.info('Ingresa el link del producto para importar');
+    const rawUrl = (document.querySelector('input[name="purchaseUrl"]') as HTMLInputElement)?.value;
+    if (!rawUrl) {
+      toast.error('Ingresa una URL antes de importar');
       return;
     }
-    if (!isValidUrl(rawUrl)) {
-      toast.error('La URL no es válida');
-      return;
-    }
-
+    const normalized = normalizeUrl(rawUrl);
     setIsImporting(true);
     try {
-      const normalizedUrl = normalizeUrl(rawUrl) || rawUrl;
-      const imported = await inventoryApi.importProductFromUrl(normalizedUrl);
-
-      if (imported.name && imported.name.trim()) {
-        setValue('name', imported.name.trim(), { shouldDirty: true });
-      }
-      if (imported.purchasePrice !== null && imported.purchasePrice !== undefined) {
-        setValue('purchasePrice', Number(imported.purchasePrice), { shouldDirty: true });
-      }
-      if (imported.purchaseUrl) {
-        setValue('purchaseUrl', imported.purchaseUrl, { shouldDirty: true });
-      } else {
-        setValue('purchaseUrl', normalizedUrl, { shouldDirty: true });
-      }
-      if (imported.suggestedPurchaseUnit && imported.suggestedPurchaseUnit.trim()) {
-        setValue('purchaseUnit', imported.suggestedPurchaseUnit.trim(), { shouldDirty: true });
-      }
-      if (imported.suggestedConsumptionUnit && imported.suggestedConsumptionUnit.trim()) {
-        setValue('consumptionUnit', imported.suggestedConsumptionUnit.trim(), { shouldDirty: true });
-      }
+      const imported = await inventoryApi.importProductFromUrl(normalized!);
+      if (imported.name) setValue('name', imported.name, { shouldDirty: true });
+      if (imported.purchasePrice) setValue('purchasePrice', Number(imported.purchasePrice), { shouldDirty: true });
+      if (imported.suggestedPurchaseUnit) setValue('purchaseUnit', imported.suggestedPurchaseUnit, { shouldDirty: true });
+      if (imported.suggestedConsumptionUnit) setValue('consumptionUnit', imported.suggestedConsumptionUnit, { shouldDirty: true });
       if (imported.suggestedConversionFactor !== null && imported.suggestedConversionFactor !== undefined) {
         setValue('conversionFactor', Number(imported.suggestedConversionFactor), { shouldDirty: true });
       }
@@ -127,22 +104,20 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
       } else {
         toast.success('Datos importados desde el link');
       }
-    } catch (err: any) {
-      const msg = err?.response?.data?.error?.message ?? err?.message ?? 'No se pudo importar desde el link';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      const msg = error?.response?.data?.error?.message ?? error?.message ?? 'No se pudo importar desde el link';
       toast.error(msg);
     } finally {
       setIsImporting(false);
     }
   };
 
-  // URL validator helper
-  const isValidUrl = (v: any) => {
+  const isValidUrl = (v: unknown) => {
     if (v === undefined || v === null || v === '') return true;
     if (typeof v !== 'string') return false;
     try {
-      // Ensure it has protocol; allow users to input without protocol by trying to add https://
       const normalized = v.startsWith('http://') || v.startsWith('https://') ? v : `https://${v}`;
-      // eslint-disable-next-line no-new
       new URL(normalized);
       return true;
     } catch {
@@ -151,75 +126,126 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} size="md" centered>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Modal.Header closeButton>
-          <Modal.Title>{productToEdit ? 'Editar producto' : 'Nuevo producto'}</Modal.Title>
+          <Modal.Title>{productToEdit ? '✏️ Editar Producto' : '📦 Nuevo Producto'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <div className="mb-3">
-            <label className="form-label">Nombre</label>
-            <input className="form-control" {...register('name', { required: true })} />
-            {errors.name && <small className="text-danger">Nombre es requerido</small>}
+        <Modal.Body className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              Nombre *
+            </label>
+            <input
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+              {...register('name', { required: true })}
+            />
+            {errors.name && <small className="text-xs text-bunny-danger font-medium mt-1 block">Nombre es requerido</small>}
           </div>
 
-          <div className="mb-3">
-            <label className="form-label">Precio de compra (por unidad de compra)</label>
-            <div className="input-group">
-              <span className="input-group-text" aria-hidden>$</span>
-              <input type="number" step="0.01" className="form-control" {...register('purchasePrice', { valueAsNumber: true, min: 0 })} aria-label="Precio de compra" />
+          <div>
+            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              Precio de compra (por unidad de compra)
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-sm text-bunny-text-muted">$</span>
+              <input
+                type="number"
+                step="0.01"
+                className="w-full rounded-xl border border-bunny-border bg-white pl-8 pr-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+                {...register('purchasePrice', { valueAsNumber: true, min: 0 })}
+                aria-label="Precio de compra"
+              />
             </div>
           </div>
 
-          <div className="mb-3">
-            <label className="form-label">URL del proveedor</label>
-            <div className="d-flex gap-2">
+          <div>
+            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              URL del proveedor
+            </label>
+            <div className="flex gap-2">
               <input
                 type="url"
-                className="form-control"
-                {...register('purchaseUrl', { validate: (v) => (v === undefined || v === null || v === '') || isValidUrl(v) })}
+                className="flex-1 rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+                {...register('purchaseUrl', {
+                  validate: (v) => v === undefined || v === null || v === '' || isValidUrl(v),
+                })}
               />
-              <button
+              <Button
                 type="button"
-                className="btn btn-outline-info"
+                variant="outline"
+                size="sm"
                 onClick={handleImportFromUrl}
                 disabled={isImporting}
               >
                 {isImporting ? 'Importando...' : 'Importar'}
-              </button>
+              </Button>
             </div>
-            {errors.purchaseUrl && <small className="text-danger">La URL no es válida</small>}
+            {errors.purchaseUrl && <small className="text-xs text-bunny-danger font-medium mt-1 block">La URL no es válida</small>}
           </div>
 
-          {/* Helper: URL validator */}
-          {/* Note: isValidUrl is defined below via a local function */}
-
-          <div className="row">
-            <div className="col-6 mb-3">
-              <label className="form-label">Unidad de compra</label>
-              <input className="form-control" {...register('purchaseUnit', { required: true })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+                Unidad de compra *
+              </label>
+              <input
+                className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+                {...register('purchaseUnit', { required: true })}
+              />
             </div>
-            <div className="col-6 mb-3">
-              <label className="form-label">Unidad de consumo</label>
-              <input className="form-control" {...register('consumptionUnit', { required: true })} />
+            <div>
+              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+                Unidad de consumo *
+              </label>
+              <input
+                className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+                {...register('consumptionUnit', { required: true })}
+              />
             </div>
           </div>
 
-          <div className="row">
-            <div className="col-6 mb-3">
-              <label className="form-label">Factor de conversión</label>
-              <input type="number" step="0.0001" className="form-control" {...register('conversionFactor', { valueAsNumber: true, min: 0.0001 })} />
-              <small className="text-muted">Cuántas unidades de consumo hay en 1 unidad de compra</small>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+                Factor de conversión
+              </label>
+              <input
+                type="number"
+                step="0.0001"
+                className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+                {...register('conversionFactor', { valueAsNumber: true, min: 0.0001 })}
+              />
+              <small className="text-[11px] text-bunny-text-muted block mt-1">
+                Consumo por unidad de compra
+              </small>
             </div>
-            <div className="col-6 mb-3">
-              <label className="form-label">Stock (unidad de consumo)</label>
-              <input type="number" step="0.01" className="form-control" {...register('stockConsumptionUnit', { valueAsNumber: true })} />
+            <div>
+              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+                Stock (unidad de consumo)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
+                {...register('stockConsumptionUnit', { valueAsNumber: true })}
+              />
             </div>
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onHide}>Cancelar</button>
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{productToEdit ? 'Guardar' : 'Crear'}</button>
+          <Button variant="outline" size="sm" onClick={onHide} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            isLoading={isSubmitting}
+            loadingText={productToEdit ? 'Guardando...' : 'Creando...'}
+          >
+            {productToEdit ? 'Guardar' : 'Crear'}
+          </Button>
         </Modal.Footer>
       </form>
     </Modal>

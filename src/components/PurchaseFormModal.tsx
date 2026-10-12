@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
-import { Modal, Badge } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { PurchaseRequest, Product } from '@/types/inventory.types';
 import { inventoryApi } from '@/api/inventory.api';
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
+import { Modal, Button, Badge } from '@/components/ui';
 
 interface Props {
   show: boolean;
@@ -16,13 +16,20 @@ interface Props {
 
 export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPurchased }) => {
   const toast = useToast();
-  const { register, handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = useForm<PurchaseRequest>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { isSubmitting },
+  } = useForm<PurchaseRequest>({
     defaultValues: {
       productId: product?.id ?? 0,
       purchaseQuantity: 1,
       unitPurchasePrice: product?.purchasePrice ?? 0,
-      reference: ''
-    }
+      reference: '',
+    },
   });
 
   const enteredPrice = watch('unitPurchasePrice') || 0;
@@ -58,58 +65,62 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
   if (!show) return null;
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} size="md" centered>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
-          <Modal.Title style={{ color: '#422314', fontSize: '1.15rem', fontWeight: 700 }}>
-            🛒 Registrar Compra / Entrada de Stock
-          </Modal.Title>
+        <Modal.Header closeButton>
+          <Modal.Title>🛒 Registrar Compra / Entrada de Stock</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="p-3">
-          <div className="mb-3">
-            <label className="form-label text-muted small mb-1">Producto</label>
-            <input className="form-control fw-bold bg-light" value={product?.name ?? ''} disabled />
-            <small className="text-muted d-block mt-1">
-              Stock actual: <strong>{product?.stockConsumptionUnit} {product?.consumptionUnit}</strong>
+        <Modal.Body className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              Producto
+            </label>
+            <input
+              className="w-full rounded-xl border border-bunny-border bg-bunny-paper/50 px-3.5 py-2 text-sm font-semibold text-bunny-cocoa cursor-not-allowed"
+              value={product?.name ?? ''}
+              disabled
+            />
+            <small className="text-xs text-bunny-text-muted block mt-1">
+              Stock actual: <strong className="text-bunny-cocoa">{product?.stockConsumptionUnit} {product?.consumptionUnit}</strong>
             </small>
           </div>
 
-          <div className="mb-3">
-            <label className="form-label text-dark fw-semibold small mb-1">
+          <div>
+            <label className="text-xs font-semibold text-bunny-cocoa uppercase block mb-1">
               Cantidad a Comprar (en {product?.purchaseUnit ?? 'unidades de compra'})
             </label>
             <input
               type="number"
               step="0.01"
-              className="form-control"
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
               {...register('purchaseQuantity', { valueAsNumber: true, min: 0.0001 })}
               defaultValue={1}
               required
             />
             {product?.conversionFactor && (
-              <small className="text-muted d-block mt-1">
-                Equivale a: <strong>{(enteredQty * product.conversionFactor).toFixed(1)} {product.consumptionUnit}</strong> agregados al inventario.
+              <small className="text-xs text-bunny-text-muted block mt-1">
+                Equivale a: <strong className="text-bunny-cocoa">{(enteredQty * product.conversionFactor).toFixed(1)} {product.consumptionUnit}</strong> agregados al inventario.
               </small>
             )}
           </div>
 
-          <div className="mb-3">
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label text-dark fw-semibold small mb-0">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-bunny-cocoa uppercase block">
                 Precio Unitario de Compra (por {product?.purchaseUnit ?? 'unidad'})
               </label>
               {oldPrice > 0 && enteredPrice > 0 && (
                 <div>
                   {priceDelta > 0 ? (
-                    <Badge bg="danger" className="d-inline-flex align-items-center gap-1">
+                    <Badge variant="danger" className="gap-1 inline-flex items-center text-[10px]">
                       <FiTrendingUp /> +{variationPct.toFixed(1)}% Más Caro
                     </Badge>
                   ) : priceDelta < 0 ? (
-                    <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                    <Badge variant="success" className="gap-1 inline-flex items-center text-[10px]">
                       <FiTrendingDown /> {variationPct.toFixed(1)}% Más Barato
                     </Badge>
                   ) : (
-                    <Badge bg="secondary" className="d-inline-flex align-items-center gap-1">
+                    <Badge variant="neutral" className="gap-1 inline-flex items-center text-[10px]">
                       <FiMinus /> Mismo Precio
                     </Badge>
                   )}
@@ -117,56 +128,57 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
               )}
             </div>
 
-            <div className="input-group">
-              <span className="input-group-text">$</span>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-sm text-bunny-text-muted">$</span>
               <input
                 type="number"
                 step="0.01"
-                className="form-control fw-bold"
+                className="w-full rounded-xl border border-bunny-border bg-white pl-8 pr-3.5 py-2 text-sm font-semibold text-bunny-cocoa focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
                 {...register('unitPurchasePrice', { valueAsNumber: true, min: 0 })}
                 required
               />
             </div>
             {oldPrice > 0 && (
-              <small className="text-muted d-block mt-1">
-                Último precio de compra registrado: <strong>{formatCurrencyCLP(oldPrice)}</strong>
+              <small className="text-xs text-bunny-text-muted block mt-1">
+                Último precio de compra registrado: <strong className="text-bunny-cocoa">{formatCurrencyCLP(oldPrice)}</strong>
               </small>
             )}
           </div>
 
           {/* Total calculado */}
-          <div
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              padding: '10px 14px',
-              marginBottom: '14px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <span className="text-muted small">Total a Pagar por esta Compra:</span>
-            <span className="fw-bold fs-6 text-dark">{formatCurrencyCLP(Math.round(totalAmount))}</span>
+          <div className="rounded-xl border border-bunny-border bg-bunny-paper/60 p-3.5 flex justify-between items-center">
+            <span className="text-xs text-bunny-text-muted font-medium">
+              Total a Pagar por esta Compra:
+            </span>
+            <span className="text-base font-bold text-bunny-primary-dark">
+              {formatCurrencyCLP(Math.round(totalAmount))}
+            </span>
           </div>
 
-          <div className="mb-2">
-            <label className="form-label text-muted small mb-1">Proveedor / Referencia / Factura</label>
+          <div>
+            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              Proveedor / Referencia / Factura
+            </label>
             <input
-              className="form-control"
+              className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
               placeholder="Ej: Distribuidora Nails, Factura #1234"
               {...register('reference')}
             />
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onHide}>
+          <Button variant="outline" size="sm" onClick={onHide} disabled={isSubmitting}>
             Cancelar
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? 'Guardando...' : 'Registrar Compra'}
-          </button>
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            isLoading={isSubmitting}
+            loadingText="Guardando..."
+          >
+            Registrar Compra
+          </Button>
         </Modal.Footer>
       </form>
     </Modal>
@@ -174,4 +186,3 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
 };
 
 export default PurchaseFormModal;
-

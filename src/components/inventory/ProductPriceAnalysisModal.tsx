@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Table, Badge, Spinner, Row, Col, Alert } from 'react-bootstrap';
 import { FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
 import { inventoryApi } from '@/api/inventory.api';
 import { ProductPriceAnalysis } from '@/types/inventory.types';
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
+import { Modal, Button, Badge, Spinner, Alert } from '@/components/ui';
 
 interface Props {
   show: boolean;
@@ -34,158 +34,168 @@ export const ProductPriceAnalysisModal: React.FC<Props> = ({ show, productId, on
     };
 
     load();
-  }, [show, productId]);
+  }, [show, productId, toast]);
 
   if (!show || !productId) return null;
 
   const renderTrendBadge = (trend: string, varPct: number) => {
     if (trend === 'UP') {
       return (
-        <Badge bg="danger" className="d-inline-flex align-items-center gap-1 p-2">
+        <Badge variant="danger" className="gap-1 inline-flex items-center text-xs py-1 px-2.5">
           <FiTrendingUp /> +{varPct.toFixed(1)}% Más Caro
         </Badge>
       );
     }
     if (trend === 'DOWN') {
       return (
-        <Badge bg="success" className="d-inline-flex align-items-center gap-1 p-2">
+        <Badge variant="success" className="gap-1 inline-flex items-center text-xs py-1 px-2.5">
           <FiTrendingDown /> {varPct.toFixed(1)}% Más Barato
         </Badge>
       );
     }
     if (trend === 'EQUAL') {
       return (
-        <Badge bg="secondary" className="d-inline-flex align-items-center gap-1 p-2">
+        <Badge variant="neutral" className="gap-1 inline-flex items-center text-xs py-1 px-2.5">
           <FiMinus /> Sin Cambio de Precio
         </Badge>
       );
     }
-    return <Badge bg="info" className="p-2">Primer Registro</Badge>;
+    return <Badge variant="info" className="text-xs py-1 px-2.5">Primer Registro</Badge>;
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
-        <Modal.Title style={{ color: '#422314', fontSize: '1.15rem', fontWeight: 700 }}>
+    <Modal show={show} onHide={onHide} size="xl" centered>
+      <Modal.Header closeButton>
+        <Modal.Title>
           📈 Análisis de Variación de Precios de Compra
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="p-3">
+      <Modal.Body className="space-y-4">
         {loading ? (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-2 text-muted small">Cargando análisis de precios...</p>
+          <div className="flex flex-col items-center justify-center py-12 text-bunny-text-muted">
+            <Spinner size="lg" variant="primary" />
+            <p className="mt-2 text-xs">Cargando análisis de precios...</p>
           </div>
         ) : !analysis ? (
-          <p className="text-muted text-center py-4">No se encontraron datos del producto.</p>
+          <p className="text-bunny-text-muted text-center py-6 text-sm">No se encontraron datos del producto.</p>
         ) : (
           <>
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-bunny-border/60 pb-3">
               <div>
-                <h5 className="mb-0 fw-bold text-dark">{analysis.productName}</h5>
-                <small className="text-muted">Total compras registradas: {analysis.totalPurchasesCount}</small>
+                <h4 className="text-base font-bold text-bunny-cocoa m-0">{analysis.productName}</h4>
+                <span className="text-xs text-bunny-text-muted block mt-0.5">
+                  Total compras registradas: {analysis.totalPurchasesCount}
+                </span>
               </div>
               <div>{renderTrendBadge(analysis.trend, analysis.priceVariationPercentage)}</div>
             </div>
 
             {/* Tarjetas de Métricas de Precios */}
-            <Row className="g-2 mb-3">
-              <Col sm={3}>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                  <div className="text-muted small">Último Precio</div>
-                  <div className="fw-bold fs-6 text-dark">{formatCurrencyCLP(analysis.lastPurchasePrice)}</div>
-                </div>
-              </Col>
-              <Col sm={3}>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                  <div className="text-muted small">Precio Promedio</div>
-                  <div className="fw-bold fs-6 text-primary">{formatCurrencyCLP(analysis.averagePurchasePrice)}</div>
-                </div>
-              </Col>
-              <Col sm={3}>
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                  <div className="text-muted small">Precio Mínimo</div>
-                  <div className="fw-bold fs-6 text-success">{formatCurrencyCLP(analysis.minPurchasePrice)}</div>
-                </div>
-              </Col>
-              <Col sm={3}>
-                <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                  <div className="text-muted small">Precio Máximo</div>
-                  <div className="fw-bold fs-6 text-danger">{formatCurrencyCLP(analysis.maxPurchasePrice)}</div>
-                </div>
-              </Col>
-            </Row>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-bunny-paper/60 border border-bunny-border rounded-xl p-3 text-center">
+                <span className="text-xs text-bunny-text-muted font-medium block">Último Precio</span>
+                <span className="text-base font-bold text-bunny-cocoa">
+                  {formatCurrencyCLP(analysis.lastPurchasePrice)}
+                </span>
+              </div>
+              <div className="bg-bunny-paper/60 border border-bunny-border rounded-xl p-3 text-center">
+                <span className="text-xs text-bunny-text-muted font-medium block">Precio Promedio</span>
+                <span className="text-base font-bold text-bunny-primary-dark">
+                  {formatCurrencyCLP(analysis.averagePurchasePrice)}
+                </span>
+              </div>
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-center">
+                <span className="text-xs text-emerald-800 font-medium block">Precio Mínimo</span>
+                <span className="text-base font-bold text-emerald-700">
+                  {formatCurrencyCLP(analysis.minPurchasePrice)}
+                </span>
+              </div>
+              <div className="bg-rose-50/70 border border-rose-200 rounded-xl p-3 text-center">
+                <span className="text-xs text-rose-800 font-medium block">Precio Máximo</span>
+                <span className="text-base font-bold text-bunny-danger">
+                  {formatCurrencyCLP(analysis.maxPurchasePrice)}
+                </span>
+              </div>
+            </div>
 
             {/* Tabla de Histórico de Compras */}
-            <h6 className="fw-bold text-dark mb-2">Historial Cronológico de Compras:</h6>
-            {analysis.purchaseHistory.length === 0 ? (
-              <Alert variant="secondary" className="small">
-                Aún no hay compras registradas en el historial para este producto.
-              </Alert>
-            ) : (
-              <div className="table-responsive">
-                <Table hover size="sm" className="mb-0 align-middle" style={{ fontSize: '0.88rem' }}>
-                  <thead className="table-light">
-                    <tr>
-                      <th>Fecha Compra</th>
-                      <th>Cantidad</th>
-                      <th>Precio Unitario</th>
-                      <th>Variación</th>
-                      <th>Total Pagado</th>
-                      <th>Referencia / Proveedor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analysis.purchaseHistory.map((h, i) => {
-                      const isUp = h.variationFromPrevious > 0;
-                      const isDown = h.variationFromPrevious < 0;
+            <div>
+              <h5 className="text-xs font-bold text-bunny-text-muted uppercase tracking-wider mb-2">
+                Historial Cronológico de Compras:
+              </h5>
+              {analysis.purchaseHistory.length === 0 ? (
+                <Alert variant="info">
+                  Aún no hay compras registradas en el historial para este producto.
+                </Alert>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-bunny-border">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-bunny-paper/70 border-b border-bunny-border text-xs font-semibold text-bunny-text-muted uppercase">
+                        <th className="py-2.5 px-3">Fecha Compra</th>
+                        <th className="py-2.5 px-3">Cantidad</th>
+                        <th className="py-2.5 px-3">Precio Unitario</th>
+                        <th className="py-2.5 px-3">Variación</th>
+                        <th className="py-2.5 px-3">Total Pagado</th>
+                        <th className="py-2.5 px-3">Referencia / Proveedor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-bunny-border/60">
+                      {analysis.purchaseHistory.map((h, i) => {
+                        const isUp = h.variationFromPrevious > 0;
+                        const isDown = h.variationFromPrevious < 0;
 
-                      return (
-                        <tr key={h.movementId}>
-                          <td>
-                            <small className="text-muted">
-                              {h.purchaseDate ? new Date(h.purchaseDate).toLocaleDateString('es-CL') : '-'}
-                            </small>
-                          </td>
-                          <td>
-                            {h.purchaseQuantity} {h.purchaseUnit}
-                          </td>
-                          <td className="fw-semibold text-dark">{formatCurrencyCLP(h.unitPurchasePrice)}</td>
-                          <td>
-                            {i === analysis.purchaseHistory.length - 1 ? (
-                              <span className="text-muted small">-</span>
-                            ) : isUp ? (
-                              <Badge bg="danger" style={{ fontSize: '0.72rem' }}>
-                                ▲ +{h.variationFromPrevious.toFixed(1)}%
-                              </Badge>
-                            ) : isDown ? (
-                              <Badge bg="success" style={{ fontSize: '0.72rem' }}>
-                                ▼ {h.variationFromPrevious.toFixed(1)}%
-                              </Badge>
-                            ) : (
-                              <Badge bg="secondary" style={{ fontSize: '0.72rem' }}>
-                                = 0%
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="fw-bold text-dark">{formatCurrencyCLP(h.totalPaid)}</td>
-                          <td className="text-muted small">{h.reference || '-'}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              </div>
-            )}
+                        return (
+                          <tr key={h.movementId} className="hover:bg-bunny-blush/20 transition-colors">
+                            <td className="py-2.5 px-3 text-xs text-bunny-text-muted whitespace-nowrap">
+                              {h.purchaseDate ? new Date(h.purchaseDate).toLocaleDateString('es-CL') : '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-xs font-medium text-bunny-cocoa">
+                              {h.purchaseQuantity} {h.purchaseUnit}
+                            </td>
+                            <td className="py-2.5 px-3 text-xs font-semibold text-bunny-cocoa">
+                              {formatCurrencyCLP(h.unitPurchasePrice)}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              {i === analysis.purchaseHistory.length - 1 ? (
+                                <span className="text-bunny-text-muted text-xs">—</span>
+                              ) : isUp ? (
+                                <Badge variant="danger" className="text-[10px]">
+                                  ▲ +{h.variationFromPrevious.toFixed(1)}%
+                                </Badge>
+                              ) : isDown ? (
+                                <Badge variant="success" className="text-[10px]">
+                                  ▼ {h.variationFromPrevious.toFixed(1)}%
+                                </Badge>
+                              ) : (
+                                <Badge variant="neutral" className="text-[10px]">
+                                  = 0%
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-xs font-bold text-bunny-cocoa">
+                              {formatCurrencyCLP(h.totalPaid)}
+                            </td>
+                            <td className="py-2.5 px-3 text-xs text-bunny-text-muted">
+                              {h.reference || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </>
         )}
       </Modal.Body>
 
       <Modal.Footer>
-        <button className="btn btn-secondary" onClick={onHide}>
+        <Button variant="outline" size="sm" onClick={onHide}>
           Cerrar
-        </button>
+        </Button>
       </Modal.Footer>
     </Modal>
   );

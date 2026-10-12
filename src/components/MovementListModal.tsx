@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Modal } from 'react-bootstrap';
 import { InventoryMovement } from '@/types/inventory.types';
 import { inventoryApi } from '@/api/inventory.api';
 import { toast } from 'react-toastify';
 import { formatCurrencyCLP } from '@/utils/formatters';
+import { Modal, Button, Badge, Spinner } from '@/components/ui';
 
 interface Props {
   show: boolean;
@@ -22,7 +22,7 @@ export const MovementListModal: React.FC<Props> = ({ show, onHide, productId }) 
       try {
         const data = await inventoryApi.listMovements(productId ?? undefined);
         setMovements(data);
-      } catch (err: any) {
+      } catch {
         toast.error('No se pudo cargar movimientos');
       } finally {
         setLoading(false);
@@ -34,37 +34,65 @@ export const MovementListModal: React.FC<Props> = ({ show, onHide, productId }) 
   if (!show) return null;
 
   return (
-    <Modal show={show} onHide={onHide} size="lg" centered>
+    <Modal show={show} onHide={onHide} size="xl" centered>
       <Modal.Header closeButton>
-        <Modal.Title>Historial de movimientos</Modal.Title>
+        <Modal.Title>📋 Historial de Movimientos de Stock</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className="p-4">
         {loading ? (
-          <div>Cargando...</div>
+          <div className="flex flex-col items-center justify-center py-12 text-bunny-text-muted">
+            <Spinner size="lg" variant="primary" />
+            <p className="text-xs mt-3">Cargando movimientos...</p>
+          </div>
         ) : movements.length === 0 ? (
-          <div className="text-muted">No hay movimientos registrados</div>
+          <div className="text-center py-12 text-bunny-text-muted text-sm">
+            No hay movimientos registrados para este producto.
+          </div>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-sm">
+          <div className="overflow-x-auto rounded-xl border border-bunny-border">
+            <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr>
-                  <th>Tipo</th>
-                  <th>Cantidad (consumo)</th>
-                  <th>Cantidad (compra)</th>
-                  <th>Precio unidad</th>
-                  <th>Referencia</th>
-                  <th>Fecha</th>
+                <tr className="bg-bunny-paper/70 border-b border-bunny-border text-xs font-semibold text-bunny-text-muted uppercase">
+                  <th className="py-3 px-4">Tipo</th>
+                  <th className="py-3 px-4">Cant. (consumo)</th>
+                  <th className="py-3 px-4">Cant. (compra)</th>
+                  <th className="py-3 px-4">Precio unidad</th>
+                  <th className="py-3 px-4">Referencia</th>
+                  <th className="py-3 px-4">Fecha</th>
                 </tr>
               </thead>
-              <tbody>
-                {movements.map(m => (
-                  <tr key={m.id}>
-                    <td>{m.movementType}</td>
-                    <td>{m.quantityConsumptionUnit}</td>
-                    <td>{m.quantityPurchaseUnit ?? '-'}</td>
-                    <td>{m.unitPurchasePrice != null ? formatCurrencyCLP(m.unitPurchasePrice) : '-'}</td>
-                    <td>{m.reference ?? '-'}</td>
-                    <td>{m.createdAt ? new Date(m.createdAt).toLocaleString() : '-'}</td>
+              <tbody className="divide-y divide-bunny-border/60">
+                {movements.map((m) => (
+                  <tr key={m.id} className="hover:bg-bunny-blush/20 transition-colors">
+                    <td className="py-3 px-4">
+                      <Badge
+                        variant={
+                          m.movementType === 'PURCHASE'
+                            ? 'success'
+                            : m.movementType === 'CONSUMPTION'
+                            ? 'danger'
+                            : 'neutral'
+                        }
+                        className="text-[10px]"
+                      >
+                        {m.movementType}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-bunny-cocoa">
+                      {m.quantityConsumptionUnit}
+                    </td>
+                    <td className="py-3 px-4 text-bunny-text-muted">
+                      {m.quantityPurchaseUnit ?? '—'}
+                    </td>
+                    <td className="py-3 px-4 font-medium text-bunny-text">
+                      {m.unitPurchasePrice != null ? formatCurrencyCLP(m.unitPurchasePrice) : '—'}
+                    </td>
+                    <td className="py-3 px-4 text-xs text-bunny-text-muted">
+                      {m.reference ?? '—'}
+                    </td>
+                    <td className="py-3 px-4 text-xs text-bunny-text-muted whitespace-nowrap">
+                      {m.createdAt ? new Date(m.createdAt).toLocaleString() : '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -73,7 +101,9 @@ export const MovementListModal: React.FC<Props> = ({ show, onHide, productId }) 
         )}
       </Modal.Body>
       <Modal.Footer>
-        <button className="btn btn-secondary" onClick={onHide}>Cerrar</button>
+        <Button variant="outline" size="sm" onClick={onHide}>
+          Cerrar
+        </Button>
       </Modal.Footer>
     </Modal>
   );
