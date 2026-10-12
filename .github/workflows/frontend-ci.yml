@@ -1,0 +1,37 @@
+name: Frontend CI - Lint & Build
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - staging
+
+jobs:
+  lint-and-build:
+    name: Lint, Typecheck & Vite Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+
+      - name: TypeScript Typecheck & Production Build
+        run: npm run build
+
+      - name: Validate Docker Nginx Image Build
+        run: docker build -t bunnycure-frontend:${{ github.sha }} .
