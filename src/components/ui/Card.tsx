@@ -4,24 +4,6 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverEffect?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({
-  className = '',
-  hoverEffect = false,
-  children,
-  ...props
-}) => {
-  return (
-    <div
-      className={`bg-white/95 backdrop-blur-sm border border-bunny-border rounded-2xl shadow-bunny overflow-hidden transition-all duration-200
-        ${hoverEffect ? 'hover:shadow-bunny-lg hover:-translate-y-0.5' : ''}
-        ${className}`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
-
 export const CardHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   className = '',
   children,
@@ -81,3 +63,35 @@ export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     </div>
   );
 };
+
+export const CardComponent: React.FC<CardProps> = ({
+  className = '',
+  hoverEffect = false,
+  children,
+  ...props
+}) => {
+  return (
+    <div
+      className={`bg-white/95 backdrop-blur-sm border border-bunny-border rounded-2xl shadow-bunny overflow-hidden transition-all duration-200
+        ${hoverEffect ? 'hover:shadow-bunny-lg hover:-translate-y-0.5' : ''}
+        ${className}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+export const Card = CardComponent as React.FC<CardProps> & {
+  Header: typeof CardHeader;
+  Title: typeof CardTitle;
+  Description: typeof CardDescription;
+  Body: typeof CardBody;
+  Footer: typeof CardFooter;
+};
+
+Card.Header = CardHeader;
+Card.Title = CardTitle;
+Card.Description = CardDescription;
+Card.Body = CardBody;
+Card.Footer = CardFooter;

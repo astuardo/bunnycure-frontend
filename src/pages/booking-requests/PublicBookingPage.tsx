@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Container, Row, Col, Card, Form, Button, Badge, Spinner, Alert, ProgressBar } from 'react-bootstrap';
-import { FiCalendar, FiClock, FiUser, FiCheckCircle } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiUser, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import { FaWhatsapp, FaRegClock } from 'react-icons/fa';
 import { servicesApi } from '../../api/services.api';
 import { bookingsApi } from '../../api/bookings.api';
@@ -20,6 +19,17 @@ import {
   checkTimeSlotConflict,
   getTimeSlotBlocksForDate,
 } from '../../utils/unavailabilityUtils';
+import {
+  Card,
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Badge,
+  Spinner,
+  Alert,
+  ProgressBar,
+} from '../../components/ui';
 
 export const PublicBookingPage: React.FC = () => {
   const isEnabled = getPublicBookingEnabled();
@@ -71,11 +81,16 @@ export const PublicBookingPage: React.FC = () => {
       }
     };
     fetchServices();
-    settingsApi.getAll().then((data) => {
-      if (data.unavailabilities && data.unavailabilities.length > 0) {
-        setUnavailabilities(data.unavailabilities);
-      }
-    }).catch((err) => console.error('Error loading unavailabilities in PublicBookingPage:', err));
+    settingsApi
+      .getAll()
+      .then((data) => {
+        if (data.unavailabilities && data.unavailabilities.length > 0) {
+          setUnavailabilities(data.unavailabilities);
+        }
+      })
+      .catch((err) =>
+        console.error('Error loading unavailabilities in PublicBookingPage:', err)
+      );
   }, [isEnabled]);
 
   const selectedServices = useMemo(() => {
@@ -133,7 +148,9 @@ export const PublicBookingPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim() || selectedServiceIds.length === 0) {
-      setSubmitError('Por favor completa tu nombre, teléfono y selecciona al menos un servicio.');
+      setSubmitError(
+        'Por favor completa tu nombre, teléfono y selecciona al menos un servicio.'
+      );
       return;
     }
 
@@ -144,7 +161,9 @@ export const PublicBookingPage: React.FC = () => {
 
     if (preferredDateBlock.blocked) {
       setSubmitError(
-        `La fecha seleccionada (${preferredDate}) no está disponible para atención (${preferredDateBlock.reason || 'Día cerrado'}). Por favor elige otra fecha.`
+        `La fecha seleccionada (${preferredDate}) no está disponible para atención (${
+          preferredDateBlock.reason || 'Día cerrado'
+        }). Por favor elige otra fecha.`
       );
       return;
     }
@@ -166,9 +185,16 @@ export const PublicBookingPage: React.FC = () => {
       `Hora aprox: ${formattedTime} hrs`,
       rut.trim() ? `RUT: ${normalizeRut(rut)}` : '',
       instagram.trim() ? `Instagram: @${instagram.replace(/^@/, '')}` : '',
-      selectedServices.length > 1 ? `Servicios adicionales: ${selectedServices.slice(1).map((s) => s.name).join(', ')}` : '',
+      selectedServices.length > 1
+        ? `Servicios adicionales: ${selectedServices
+            .slice(1)
+            .map((s) => s.name)
+            .join(', ')}`
+        : '',
       notes.trim() ? `Notas: ${notes.trim()}` : '',
-    ].filter(Boolean).join(' | ');
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     const payload: BookingRequestFormData = {
       fullName: fullName.trim(),
@@ -186,7 +212,10 @@ export const PublicBookingPage: React.FC = () => {
       setStep(4);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      setSubmitError(error.message || 'Ocurrió un error al procesar tu solicitud. Por favor intenta nuevamente.');
+      setSubmitError(
+        error.message ||
+          'Ocurrió un error al procesar tu solicitud. Por favor intenta nuevamente.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -198,231 +227,216 @@ export const PublicBookingPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="bunny-public-page"
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(180deg, #fdf6f0 0%, #faede8 100%)',
-        padding: '24px 12px 60px 12px',
-        color: '#422314',
-      }}
-    >
-      <Container style={{ maxWidth: '640px' }}>
+    <div className="min-h-screen min-h-[100dvh] py-8 px-4 bg-gradient-to-b from-bunny-bg to-bunny-blush/40 text-bunny-text flex flex-col justify-center">
+      <div className="w-full max-w-xl mx-auto">
         {/* Cabecera de Marca BunnyCure */}
-        <div className="text-center mb-4">
-          <div
-            className="d-inline-flex align-items-center justify-content-center mb-2 shadow-sm"
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '20px',
-              background: '#fff',
-              border: '2px solid #eed0c5',
-              fontSize: '32px',
-            }}
-          >
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-bunny border-2 border-bunny-border-strong text-3xl mb-2">
             🐰
           </div>
-          <h2 className="fw-bold mb-1" style={{ color: '#8c2a3e', letterSpacing: '-0.5px' }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-bunny-primary-dark tracking-tight">
             BunnyCure
-          </h2>
-          <p className="text-muted mb-0" style={{ fontSize: '14.5px' }}>
+          </h1>
+          <p className="text-sm text-bunny-text-muted mt-0.5">
             Estudio de Manicure &amp; Cuidado de Uñas
           </p>
         </div>
 
-        {/* CASO: AGENDAMIENTO DESHABILITADO */}
+        {/* CASO 1: AGENDAMIENTO DESHABILITADO */}
         {!isEnabled ? (
-          <Card className="border-0 shadow-sm text-center p-4 p-md-5" style={{ borderRadius: '20px', background: '#fff' }}>
-            <Card.Body>
-              <div className="mb-3" style={{ fontSize: '48px' }}>
-                🌸
-              </div>
-              <h4 className="fw-bold mb-3" style={{ color: '#8c2a3e' }}>
+          <Card className="shadow-bunny-lg border-bunny-border text-center p-6 sm:p-8">
+            <Card.Body className="space-y-4">
+              <div className="text-5xl">🌸</div>
+              <h2 className="text-xl font-bold text-bunny-primary-dark">
                 Agendamiento Online en Pausa
-              </h4>
-              <p className="text-muted mb-4" style={{ fontSize: '15px', lineHeight: 1.6 }}>
-                En este momento la agenda online se encuentra temporalmente en mantención o sin cupos disponibles en la web.
+              </h2>
+              <p className="text-sm text-bunny-text-muted leading-relaxed">
+                En este momento la agenda online se encuentra temporalmente en mantención o sin cupos
+                disponibles en la web.
                 <br />
-                <strong>¡Pero no te preocupes!</strong> Puedes escribirnos directamente por WhatsApp para coordinar tu cita o consultar disponibilidad.
+                <strong className="text-bunny-cocoa">¡Pero no te preocupes!</strong> Puedes
+                escribirnos directamente por WhatsApp para coordinar tu cita o consultar
+                disponibilidad.
               </p>
 
-              <Button
-                as="a"
-                href={`https://wa.me/${OFFICIAL_WHATSAPP_PHONE.replace(/\D/g, '')}?text=Hola%20BunnyCure!%20%F0%9F%90%B0%20Quisiera%20consultar%20por%20disponibilidad%20de%20horas%20para%20manicure.`}
+              <a
+                href={`https://wa.me/${OFFICIAL_WHATSAPP_PHONE.replace(
+                  /\D/g,
+                  ''
+                )}?text=Hola%20BunnyCure!%20%F0%9F%90%B0%20Quisiera%20consultar%20por%20disponibilidad%20de%20horas%20para%20manicure.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                size="lg"
-                className="w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-                style={{ background: '#25D366', borderColor: '#25D366', borderRadius: '12px' }}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-white flex items-center justify-center gap-2.5 shadow-sm bg-[#25D366] hover:bg-[#20ba59] transition-colors"
               >
-                <FaWhatsapp size={22} /> Escribir al WhatsApp Oficial
-              </Button>
-              <div className="mt-3 text-muted small">
+                <FaWhatsapp className="text-xl" /> Escribir al WhatsApp Oficial
+              </a>
+              <p className="text-xs text-bunny-text-muted mt-2">
                 Atención directa al {OFFICIAL_WHATSAPP_DISPLAY}
-              </div>
+              </p>
             </Card.Body>
           </Card>
         ) : step === 4 ? (
-          /* CASO: CONFIRMACIÓN EXITOSA */
-          <Card className="border-0 shadow-sm text-center p-4 p-md-5" style={{ borderRadius: '20px', background: '#fff' }}>
-            <Card.Body>
-              <div
-                className="d-inline-flex align-items-center justify-content-center mb-3 text-success shadow-sm"
-                style={{
-                  width: '72px',
-                  height: '72px',
-                  borderRadius: '50%',
-                  background: '#f0fdf4',
-                  border: '2px solid #bbf7d0',
-                }}
-              >
-                <FiCheckCircle size={40} />
+          /* CASO 2: CONFIRMACIÓN EXITOSA */
+          <Card className="shadow-bunny-lg border-bunny-border text-center p-6 sm:p-8 animate-fade-in">
+            <Card.Body className="space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 mb-1">
+                <FiCheckCircle className="text-3xl" />
               </div>
 
-              <h4 className="fw-bold mb-2" style={{ color: '#14532d' }}>
+              <h2 className="text-xl sm:text-2xl font-bold text-emerald-900">
                 ¡Solicitud de Reserva Recibida!
-              </h4>
-              <p className="text-muted mb-4" style={{ fontSize: '14.5px' }}>
-                Muchas gracias, <strong>{fullName}</strong>. Hemos recibido tu solicitud para el{' '}
-                <strong>{preferredDate}</strong> ({preferredTimeExact} hrs).
+              </h2>
+              <p className="text-sm text-bunny-text-muted">
+                Muchas gracias, <strong className="text-bunny-cocoa">{fullName}</strong>. Hemos
+                recibido tu solicitud para el{' '}
+                <strong className="text-bunny-cocoa">{preferredDate}</strong> ({preferredTimeExact}{' '}
+                hrs).
               </p>
 
-              <div className="p-3 rounded mb-4 text-start" style={{ background: '#fdf4f2', border: '1px solid #eed0c5' }}>
-                <h6 className="fw-bold mb-2" style={{ color: '#8c2a3e' }}>
+              <div className="p-4 rounded-xl text-left bg-bunny-paper/60 border border-bunny-border space-y-2">
+                <h3 className="text-sm font-bold text-bunny-primary-dark">
                   Resumen de tu Solicitud #{createdRequestId}:
-                </h6>
-                <div className="small mb-1">
-                  <strong>Servicio(s):</strong> {selectedServices.map((s) => s.name).join(' + ')}
+                </h3>
+                <div className="text-xs text-bunny-text">
+                  <span className="font-semibold">Servicio(s):</span>{' '}
+                  {selectedServices.map((s) => s.name).join(' + ')}
                 </div>
-                <div className="small mb-1">
-                  <strong>Valor Estimado:</strong> {formatCurrencyCLP(totalEstimatedPrice)}
+                <div className="text-xs text-bunny-text">
+                  <span className="font-semibold">Valor Estimado:</span>{' '}
+                  {formatCurrencyCLP(totalEstimatedPrice)}
                 </div>
-                <div className="small mb-1">
-                  <strong>Fecha y Hora:</strong> {preferredDate} a las {preferredTimeExact} hrs ({timeBlockLabels[preferredTimeBlock]})
+                <div className="text-xs text-bunny-text">
+                  <span className="font-semibold">Fecha y Hora:</span> {preferredDate} a las{' '}
+                  {preferredTimeExact} hrs ({timeBlockLabels[preferredTimeBlock]})
                 </div>
-                <div className="small text-muted mt-2 pt-2 border-top">
-                  ✨ Te enviaremos la confirmación definitiva a tu WhatsApp <strong>{phone}</strong> en breve.
-                </div>
+                <p className="text-xs text-bunny-text-muted pt-2 border-t border-bunny-border/60">
+                  ✨ Te enviaremos la confirmación definitiva a tu WhatsApp{' '}
+                  <strong className="text-bunny-cocoa">{phone}</strong> en breve.
+                </p>
               </div>
 
-              <Button
-                as="a"
-                href={`https://wa.me/${OFFICIAL_WHATSAPP_PHONE.replace(/\D/g, '')}?text=Hola%20BunnyCure!%20Acabo%20de%20enviar%20mi%20solicitud%20de%20reserva%20%23${createdRequestId}%20a%20nombre%20de%20${encodeURIComponent(fullName)}.`}
+              <a
+                href={`https://wa.me/${OFFICIAL_WHATSAPP_PHONE.replace(
+                  /\D/g,
+                  ''
+                )}?text=Hola%20BunnyCure!%20Acabo%20de%20enviar%20mi%20solicitud%20de%20reserva%20%23${createdRequestId}%20a%20nombre%20de%20${encodeURIComponent(
+                  fullName
+                )}.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                size="lg"
-                className="w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-2"
-                style={{ background: '#25D366', borderColor: '#25D366', borderRadius: '12px' }}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-white flex items-center justify-center gap-2.5 shadow-sm bg-[#25D366] hover:bg-[#20ba59] transition-colors"
               >
-                <FaWhatsapp size={22} /> Notificar por WhatsApp
-              </Button>
+                <FaWhatsapp className="text-xl" /> Notificar por WhatsApp
+              </a>
 
               <Button
-                variant="outline-secondary"
+                variant="outline"
                 size="sm"
-                className="mt-2"
+                className="w-full mt-2"
                 onClick={() => {
                   setStep(1);
                   setFullName('');
                   setPhone('');
                   setNotes('');
                 }}
-                style={{ borderRadius: '8px' }}
               >
                 Realizar otra reserva
               </Button>
             </Card.Body>
           </Card>
         ) : (
-          /* FORMULARIO EN PASOS */
-          <Card className="border-0 shadow-sm" style={{ borderRadius: '20px', background: '#fff', overflow: 'hidden' }}>
+          /* FORMULARIO EN PASOS (1, 2, 3) */
+          <Card className="shadow-bunny-lg border-bunny-border overflow-hidden">
             {/* Barra de Progreso */}
-            <div className="p-3 border-bottom bg-light">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="small fw-bold" style={{ color: '#8c2a3e' }}>
+            <div className="p-4 border-b border-bunny-border bg-bunny-paper/50">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-bunny-primary-dark">
                   Paso {step} de 3:{' '}
-                  {step === 1 ? 'Elige tu Servicio' : step === 2 ? 'Fecha y Horario' : 'Tus Datos'}
+                  {step === 1
+                    ? 'Elige tu Servicio'
+                    : step === 2
+                    ? 'Fecha y Horario'
+                    : 'Tus Datos'}
                 </span>
-                <span className="small text-muted">{step === 1 ? '33%' : step === 2 ? '66%' : '100%'}</span>
+                <span className="text-xs text-bunny-text-muted font-medium">
+                  {step === 1 ? '33%' : step === 2 ? '66%' : '100%'}
+                </span>
               </div>
               <ProgressBar
-                now={step === 1 ? 33 : step === 2 ? 66 : 100}
-                style={{ height: '6px', background: '#eed0c5' }}
-                variant="danger"
+                value={step === 1 ? 33 : step === 2 ? 66 : 100}
+                variant="primary"
+                size="xs"
               />
             </div>
 
-            <Card.Body className="p-3 p-md-4">
+            <Card.Body className="p-5 sm:p-7">
               {submitError && (
-                <Alert variant="danger" className="py-2 small mb-3">
+                <Alert variant="danger" className="mb-4">
                   {submitError}
                 </Alert>
               )}
 
               {/* PASO 1: SELECCIÓN DE SERVICIOS */}
               {step === 1 && (
-                <div>
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <FaRegClock className="text-danger" size={18} />
-                    <h5 className="fw-bold mb-0" style={{ color: '#422314', fontSize: '1.1rem' }}>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <FaRegClock className="text-bunny-primary text-base" />
+                    <h2 className="text-base font-bold text-bunny-cocoa">
                       Selecciona el servicio que deseas
-                    </h5>
+                    </h2>
                   </div>
 
                   {loadingServices ? (
-                    <div className="text-center py-5">
-                      <Spinner animation="border" variant="danger" />
-                      <p className="text-muted small mt-2">Cargando catálogo de servicios...</p>
+                    <div className="flex flex-col items-center justify-center py-12 text-bunny-text-muted">
+                      <Spinner size="lg" variant="primary" />
+                      <p className="text-xs mt-3">Cargando catálogo de servicios...</p>
                     </div>
                   ) : services.length === 0 ? (
-                    <div className="text-center py-4 text-muted">
+                    <div className="text-center py-8 text-sm text-bunny-text-muted">
                       No hay servicios disponibles en este momento.
                     </div>
                   ) : (
-                    <div className="d-flex flex-column gap-2 mb-3">
+                    <div className="space-y-2.5">
                       {services.map((srv) => {
                         const isSelected = selectedServiceIds.includes(srv.id);
                         return (
                           <div
                             key={srv.id}
                             onClick={() => handleToggleService(srv.id)}
-                            className="p-3 rounded d-flex justify-content-between align-items-start gap-2"
-                            style={{
-                              border: isSelected ? '2px solid #8c2a3e' : '1px solid #eed0c5',
-                              background: isSelected ? '#fdf4f2' : '#fff',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease',
-                            }}
+                            className={`p-3.5 rounded-xl border flex justify-between items-start gap-3 cursor-pointer transition-all duration-150 ${
+                              isSelected
+                                ? 'border-bunny-primary bg-bunny-blush/40 shadow-xs'
+                                : 'border-bunny-border bg-white hover:border-bunny-border-strong'
+                            }`}
                           >
-                            <div className="pe-2" style={{ minWidth: 0, flex: '1 1 auto', overflowWrap: 'anywhere' }}>
-                              <div className="d-flex align-items-start gap-2">
-                                <Form.Check
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2.5">
+                                <input
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => {}}
-                                  style={{ pointerEvents: 'none', flexShrink: 0, marginTop: '3px' }}
+                                  className="h-4 w-4 rounded border-bunny-border text-bunny-primary focus:ring-bunny-primary/30 pointer-events-none accent-[#8c2a3e]"
                                 />
-                                <span className="fw-bold" style={{ color: '#422314', fontSize: '15px', overflowWrap: 'anywhere', wordBreak: 'normal' }}>
+                                <span className="font-semibold text-sm text-bunny-cocoa">
                                   {srv.name}
                                 </span>
                               </div>
                               {srv.description && (
-                                <p className="text-muted small mb-0 mt-1" style={{ fontSize: '12.5px', paddingLeft: '24px', overflowWrap: 'anywhere' }}>
+                                <p className="text-xs text-bunny-text-muted mt-1 pl-6">
                                   {srv.description}
                                 </p>
                               )}
-                              <div className="d-flex align-items-center gap-2 mt-1" style={{ paddingLeft: '24px' }}>
-                                <Badge bg="light" text="dark" style={{ border: '1px solid #eed0c5', fontSize: '11px' }}>
-                                  <FiClock className="me-1" /> {srv.durationMinutes || 60} min
+                              <div className="pl-6 mt-1.5 flex items-center gap-2">
+                                <Badge variant="neutral" className="text-[11px] gap-1">
+                                  <FiClock className="text-[10px]" /> {srv.durationMinutes || 60} min
                                 </Badge>
                               </div>
                             </div>
 
-                            <div className="text-end" style={{ flexShrink: 0, whiteSpace: 'nowrap', marginTop: '2px' }}>
-                              <div className="fw-bold" style={{ color: '#8c2a3e', fontSize: '16px' }}>
+                            <div className="shrink-0 text-right">
+                              <span className="font-bold text-sm sm:text-base text-bunny-primary-dark">
                                 {formatCurrencyCLP(srv.price || 0)}
-                              </div>
+                              </span>
                             </div>
                           </div>
                         );
@@ -432,25 +446,23 @@ export const PublicBookingPage: React.FC = () => {
 
                   {/* Resumen flotante */}
                   {selectedServices.length > 0 && (
-                    <div className="p-3 rounded mb-3" style={{ background: '#fdf4f2', border: '1px dashed #eed0c5' }}>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="small text-muted">
-                          {selectedServices.length} servicio{selectedServices.length !== 1 ? 's' : ''} (~{totalEstimatedDuration} min):
-                        </span>
-                        <strong className="fw-bold" style={{ color: '#8c2a3e', fontSize: '17px' }}>
-                          Total: {formatCurrencyCLP(totalEstimatedPrice)}
-                        </strong>
-                      </div>
+                    <div className="p-3.5 rounded-xl bg-bunny-paper/60 border border-dashed border-bunny-border-strong flex justify-between items-center">
+                      <span className="text-xs text-bunny-text-muted">
+                        {selectedServices.length} servicio
+                        {selectedServices.length !== 1 ? 's' : ''} (~{totalEstimatedDuration} min):
+                      </span>
+                      <strong className="text-sm font-bold text-bunny-primary-dark">
+                        Total: {formatCurrencyCLP(totalEstimatedPrice)}
+                      </strong>
                     </div>
                   )}
 
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-100 py-2 fw-bold shadow-sm"
+                    fullWidth
                     disabled={selectedServiceIds.length === 0}
                     onClick={() => setStep(2)}
-                    style={{ background: '#8c2a3e', borderColor: '#8c2a3e', borderRadius: '12px' }}
                   >
                     Continuar a Fecha y Hora &rarr;
                   </Button>
@@ -459,74 +471,66 @@ export const PublicBookingPage: React.FC = () => {
 
               {/* PASO 2: FECHA Y HORARIO */}
               {step === 2 && (
-                <div>
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <FiCalendar className="text-danger" size={18} />
-                    <h5 className="fw-bold mb-0" style={{ color: '#422314', fontSize: '1.1rem' }}>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <FiCalendar className="text-bunny-primary text-base" />
+                    <h2 className="text-base font-bold text-bunny-cocoa">
                       ¿Cuándo te gustaría venir?
-                    </h5>
+                    </h2>
                   </div>
 
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small text-muted">FECHA PREFERIDA</Form.Label>
-                    <Form.Control
+                  <div>
+                    <Input
                       type="date"
+                      label="FECHA PREFERIDA"
                       min={getMinDate()}
                       value={preferredDate}
                       onChange={(e) => setPreferredDate(e.target.value)}
-                      size="lg"
-                      className={preferredDateBlock.blocked ? 'is-invalid' : ''}
-                      style={{
-                        borderRadius: '10px',
-                        borderColor: preferredDateBlock.blocked ? '#dc3545' : '#eed0c5',
-                        backgroundColor: preferredDateBlock.blocked ? '#fff5f5' : '#fff',
-                      }}
+                      error={preferredDateBlock.blocked ? 'Fecha no disponible' : undefined}
                     />
-                  </Form.Group>
+                  </div>
 
                   {/* Alerta de Día Cerrado / Bloqueado */}
                   {preferredDateBlock.blocked && (
-                    <Alert
-                      variant="danger"
-                      className="py-2 px-3 mb-3 d-flex align-items-start gap-2 shadow-sm"
-                      style={{ borderRadius: '12px' }}
-                    >
-                      <span className="fs-5 lh-1">🚫</span>
-                      <div style={{ fontSize: '13px' }}>
-                        <strong className="d-block text-danger">
-                          Día no disponible: {preferredDateBlock.reason || 'Cerrado'}
-                        </strong>
-                        <span>
-                          En esta fecha BunnyCure no atenderá público. Por favor escoge otra fecha disponible para tu reserva.
-                        </span>
+                    <Alert variant="danger">
+                      <div className="flex items-start gap-2">
+                        <FiAlertCircle className="text-lg shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="block">
+                            Día no disponible: {preferredDateBlock.reason || 'Cerrado'}
+                          </strong>
+                          <span className="text-xs">
+                            En esta fecha BunnyCure no atenderá público. Por favor escoge otra fecha disponible para tu reserva.
+                          </span>
+                        </div>
                       </div>
                     </Alert>
                   )}
 
                   {/* Alerta de Horarios parciales bloqueados */}
                   {!preferredDateBlock.blocked && preferredDateSlotBlocks.length > 0 && (
-                    <Alert
-                      variant="warning"
-                      className="py-2 px-3 mb-3 shadow-sm"
-                      style={{ borderRadius: '12px', background: '#fffbeb', borderColor: '#fde68a' }}
-                    >
-                      <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '12.5px', color: '#92400e' }}>
-                        <span>⏰</span>
-                        <strong>Horarios con bloqueos registrados en esta fecha:</strong>
-                      </div>
-                      <div className="d-flex flex-wrap gap-1 ps-3">
-                        {preferredDateSlotBlocks.map((b) => (
-                          <Badge key={b.id} bg="warning" text="dark" className="border border-warning small">
-                            🚫 {b.startTime} a {b.endTime} hrs ({b.reason})
-                          </Badge>
-                        ))}
+                    <Alert variant="warning">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-900">
+                          <span>⏰</span> Horarios con bloqueos registrados en esta fecha:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {preferredDateSlotBlocks.map((b) => (
+                            <Badge key={b.id} variant="warning" className="text-[11px]">
+                              🚫 {b.startTime} a {b.endTime} hrs ({b.reason})
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </Alert>
                   )}
 
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small text-muted">BLOQUE HORARIO DESEADO</Form.Label>
-                    <Row className="g-2">
+                  {/* Bloques Horarios */}
+                  <div>
+                    <label className="text-xs font-bold text-bunny-text-muted uppercase block mb-2">
+                      Bloque Horario Deseado
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
                       {Object.entries(timeBlockLabels).map(([key, label]) => {
                         const blockTimeCheck =
                           key === 'MANANA'
@@ -534,76 +538,66 @@ export const PublicBookingPage: React.FC = () => {
                             : key === 'TARDE'
                             ? checkTimeSlotConflict(preferredDate, '15:00', 90, unavailabilities)
                             : checkTimeSlotConflict(preferredDate, '18:30', 90, unavailabilities);
-                        const isBlockBlocked = !preferredDateBlock.blocked && blockTimeCheck.hasConflict;
+                        const isBlockBlocked =
+                          !preferredDateBlock.blocked && blockTimeCheck.hasConflict;
 
                         return (
-                          <Col xs={12} key={key}>
-                            <div
-                              onClick={() => {
-                                if (isBlockBlocked) return;
-                                setPreferredTimeBlock(key);
-                                if (key === 'MANANA') setPreferredTimeExact('11:00');
-                                if (key === 'TARDE') setPreferredTimeExact('15:00');
-                                if (key === 'NOCHE') setPreferredTimeExact('18:30');
-                              }}
-                              className="p-3 rounded d-flex align-items-center justify-content-between"
-                              style={{
-                                border:
-                                  preferredTimeBlock === key
-                                    ? '2px solid #8c2a3e'
-                                    : isBlockBlocked
-                                    ? '1px dashed #fca5a5'
-                                    : '1px solid #eed0c5',
-                                background:
-                                  preferredTimeBlock === key
-                                    ? '#fdf4f2'
-                                    : isBlockBlocked
-                                    ? '#fff5f5'
-                                    : '#fff',
-                                opacity: isBlockBlocked ? 0.6 : 1,
-                                cursor: isBlockBlocked ? 'not-allowed' : 'pointer',
-                              }}
-                            >
-                              <div className="d-flex align-items-center gap-2">
-                                <span className="fw-semibold" style={{ fontSize: '14px' }}>
-                                  {label}
-                                </span>
-                                {isBlockBlocked && (
-                                  <Badge bg="danger" className="small">
-                                    Bloqueado
-                                  </Badge>
-                                )}
-                              </div>
-                              <Form.Check
-                                type="radio"
-                                name="timeBlock"
-                                checked={preferredTimeBlock === key}
-                                onChange={() => {}}
-                                disabled={isBlockBlocked}
-                                style={{ pointerEvents: 'none' }}
-                              />
+                          <div
+                            key={key}
+                            onClick={() => {
+                              if (isBlockBlocked) return;
+                              setPreferredTimeBlock(key);
+                              if (key === 'MANANA') setPreferredTimeExact('11:00');
+                              if (key === 'TARDE') setPreferredTimeExact('15:00');
+                              if (key === 'NOCHE') setPreferredTimeExact('18:30');
+                            }}
+                            className={`p-3 rounded-xl border flex items-center justify-between transition-all duration-150 ${
+                              isBlockBlocked
+                                ? 'border-dashed border-red-300 bg-red-50/50 opacity-60 cursor-not-allowed'
+                                : preferredTimeBlock === key
+                                ? 'border-bunny-primary bg-bunny-blush/40 shadow-xs cursor-pointer'
+                                : 'border-bunny-border bg-white hover:border-bunny-border-strong cursor-pointer'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-bunny-cocoa">{label}</span>
+                              {isBlockBlocked && (
+                                <Badge variant="danger" className="text-[10px]">
+                                  Bloqueado
+                                </Badge>
+                              )}
                             </div>
-                          </Col>
+                            <input
+                              type="radio"
+                              name="timeBlock"
+                              checked={preferredTimeBlock === key}
+                              onChange={() => {}}
+                              disabled={isBlockBlocked}
+                              className="pointer-events-none text-bunny-primary accent-[#8c2a3e]"
+                            />
+                          </div>
                         );
                       })}
-                    </Row>
-                  </Form.Group>
+                    </div>
+                  </div>
 
-                  <Form.Group className="mb-4">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <Form.Label className="fw-bold small text-muted mb-0">HORA ESPECÍFICA (APROXIMADA)</Form.Label>
+                  {/* Selector de Hora Exacta */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-bold text-bunny-text-muted uppercase">
+                        Hora Específica (Aproximada)
+                      </span>
                       {exactTimeConflict.hasConflict && (
-                        <span className="small text-danger fw-bold">
-                          ⚠️ Horario seleccionado bloqueado
+                        <span className="text-xs text-bunny-danger font-semibold flex items-center gap-1">
+                          ⚠️ Horario bloqueado
                         </span>
                       )}
                     </div>
-                    <Form.Select
+
+                    <Select
                       value={preferredTimeExact}
                       onChange={(e) => setPreferredTimeExact(e.target.value)}
-                      size="lg"
-                      className={exactTimeConflict.hasConflict ? 'is-invalid' : ''}
-                      style={{ borderRadius: '10px', borderColor: exactTimeConflict.hasConflict ? '#dc3545' : '#eed0c5' }}
+                      error={exactTimeConflict.hasConflict ? exactTimeConflict.reason : undefined}
                     >
                       {[
                         '10:00',
@@ -630,34 +624,27 @@ export const PublicBookingPage: React.FC = () => {
                           unavailabilities
                         );
                         return (
-                          <option
-                            key={slot}
-                            value={slot}
-                            disabled={slotConflict.hasConflict}
-                          >
-                            {slot} hrs {slotConflict.hasConflict ? `— 🚫 Bloqueado (${slotConflict.reason})` : ''}
+                          <option key={slot} value={slot} disabled={slotConflict.hasConflict}>
+                            {slot} hrs{' '}
+                            {slotConflict.hasConflict
+                              ? `— 🚫 Bloqueado (${slotConflict.reason})`
+                              : ''}
                           </option>
                         );
                       })}
-                    </Form.Select>
-                  </Form.Group>
+                    </Select>
+                  </div>
 
-                  <div className="d-flex gap-2">
-                    <Button
-                      variant="outline-secondary"
-                      size="lg"
-                      onClick={() => setStep(1)}
-                      style={{ borderRadius: '12px' }}
-                    >
+                  <div className="flex gap-2.5 pt-2">
+                    <Button variant="outline" size="lg" onClick={() => setStep(1)}>
                       &larr; Volver
                     </Button>
                     <Button
                       variant="primary"
                       size="lg"
-                      className="w-100 fw-bold shadow-sm"
+                      fullWidth
                       disabled={preferredDateBlock.blocked || exactTimeConflict.hasConflict}
                       onClick={() => setStep(3)}
-                      style={{ background: '#8c2a3e', borderColor: '#8c2a3e', borderRadius: '12px' }}
                     >
                       {preferredDateBlock.blocked
                         ? 'Día Cerrado (Elige otra fecha)'
@@ -671,100 +658,69 @@ export const PublicBookingPage: React.FC = () => {
 
               {/* PASO 3: DATOS PERSONALES */}
               {step === 3 && (
-                <Form onSubmit={handleSubmit}>
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <FiUser className="text-danger" size={18} />
-                    <h5 className="fw-bold mb-0" style={{ color: '#422314', fontSize: '1.1rem' }}>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <FiUser className="text-bunny-primary text-base" />
+                    <h2 className="text-base font-bold text-bunny-cocoa">
                       Tus Datos de Contacto
-                    </h5>
+                    </h2>
                   </div>
 
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small text-muted">NOMBRE Y APELLIDO *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Ej: Valentina Gómez"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      size="lg"
-                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
+                  <Input
+                    label="Nombre y Apellido *"
+                    placeholder="Ej: Valentina Gómez"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+
+                  <Input
+                    type="tel"
+                    label="Teléfono WhatsApp *"
+                    placeholder="+56 9 8765 4321 o 987654321"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    helperText="Te contactaremos a este número para confirmar tu cita."
+                    required
+                  />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="RUT (Opcional)"
+                      placeholder="18.664.589-8"
+                      value={rut}
+                      onChange={(e) => setRut(e.target.value)}
                     />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small text-muted">TELÉFONO WHATSAPP *</Form.Label>
-                    <Form.Control
-                      type="tel"
-                      placeholder="+56 9 8765 4321 o 987654321"
-                      value={phone}
-                      onChange={(e) => handlePhoneChange(e.target.value)}
-                      required
-                      size="lg"
-                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
+                    <Input
+                      label="Instagram (Opcional)"
+                      placeholder="@tu_usuario"
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value)}
                     />
-                    <Form.Text className="text-muted small">
-                      Te contactaremos a este número para confirmar tu cita.
-                    </Form.Text>
-                  </Form.Group>
+                  </div>
 
-                  <Row className="g-2 mb-3">
-                    <Col xs={12} sm={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-bold small text-muted">RUT (OPCIONAL)</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder="18.664.589-8 o 18664589-8"
-                          value={rut}
-                          onChange={(e) => setRut(e.target.value)}
-                          style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col xs={12} sm={6}>
-                      <Form.Group>
-                        <Form.Label className="fw-bold small text-muted">INSTAGRAM (OPCIONAL)</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder="@tu_usuario"
-                          value={instagram}
-                          onChange={(e) => setInstagram(e.target.value)}
-                          style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
+                  <Input
+                    type="email"
+                    label="Email (Opcional)"
+                    placeholder="tu_email@ejemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
 
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold small text-muted">EMAIL (OPCIONAL)</Form.Label>
-                    <Form.Control
-                      type="email"
-                      placeholder="tu_email@ejemplo.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
-                    />
-                  </Form.Group>
+                  <Textarea
+                    label="Notas / Diseño o Retiro Previo"
+                    placeholder="Ej: Tengo esmalte permanente anterior para retirar, quiero diseño de flores..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                  />
 
-                  <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold small text-muted">NOTAS / DISEÑO O RETIRO PREVIO</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      placeholder="Ej: Tengo esmalte permanente anterior para retirar, quiero diseño de flores..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      style={{ borderRadius: '10px', borderColor: '#eed0c5' }}
-                    />
-                  </Form.Group>
-
-                  <div className="d-flex gap-2">
+                  <div className="flex gap-2.5 pt-2">
                     <Button
-                      variant="outline-secondary"
+                      variant="outline"
                       size="lg"
                       onClick={() => setStep(2)}
                       disabled={submitting}
-                      style={{ borderRadius: '12px' }}
                     >
                       &larr; Volver
                     </Button>
@@ -772,26 +728,19 @@ export const PublicBookingPage: React.FC = () => {
                       type="submit"
                       variant="primary"
                       size="lg"
-                      className="w-100 fw-bold shadow-sm"
-                      disabled={submitting}
-                      style={{ background: '#8c2a3e', borderColor: '#8c2a3e', borderRadius: '12px' }}
+                      fullWidth
+                      isLoading={submitting}
+                      loadingText="Enviando Solicitud..."
                     >
-                      {submitting ? (
-                        <>
-                          <Spinner animation="border" size="sm" className="me-2" />
-                          Enviando Solicitud...
-                        </>
-                      ) : (
-                        '✨ Confirmar y Enviar Solicitud'
-                      )}
+                      ✨ Confirmar y Enviar Solicitud
                     </Button>
                   </div>
-                </Form>
+                </form>
               )}
             </Card.Body>
           </Card>
         )}
-      </Container>
+      </div>
     </div>
   );
 };

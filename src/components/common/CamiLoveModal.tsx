@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button } from 'react-bootstrap';
 import { FaHeart } from 'react-icons/fa';
+import { Modal } from '../ui';
 import { useAuthStore } from '../../stores/authStore';
 import {
   isCamiUser,
@@ -63,6 +63,7 @@ export const CamiLoveModal: React.FC<CamiLoveModalProps> = ({ forceOpen, onClose
       centered
       backdrop="static"
       keyboard={false}
+      size="md"
       className="cami-love-modal"
     >
       {/* Fondo de corazones flotantes */}
@@ -74,7 +75,7 @@ export const CamiLoveModal: React.FC<CamiLoveModalProps> = ({ forceOpen, onClose
         <span className="floating-heart">💕</span>
       </div>
 
-      <Modal.Body className="p-4">
+      <div className="p-6 relative z-10">
         {/* Encabezado */}
         <div className="cami-love-header">
           <div className="cami-avatar-heart">
@@ -94,22 +95,24 @@ export const CamiLoveModal: React.FC<CamiLoveModalProps> = ({ forceOpen, onClose
 
         {/* Acciones */}
         <div className="cami-love-actions">
-          <Button
-            className="btn-cami-love d-flex align-items-center justify-content-center gap-2"
+          <button
+            type="button"
+            className="btn-cami-love flex items-center justify-center gap-2 w-full cursor-pointer"
             onClick={handleClose}
           >
             <FaHeart className="text-white" />
             <span>¡Empezar un día hermoso! ✨</span>
-          </Button>
+          </button>
 
-          <Button
-            className="btn-cami-another d-flex align-items-center justify-content-center gap-2"
+          <button
+            type="button"
+            className="btn-cami-another flex items-center justify-center gap-2 w-full cursor-pointer"
             onClick={handleNextMessage}
           >
             <span>💌 Leer otro mensajito de amor</span>
-          </Button>
+          </button>
         </div>
-      </Modal.Body>
+      </div>
     </Modal>
   );
 };

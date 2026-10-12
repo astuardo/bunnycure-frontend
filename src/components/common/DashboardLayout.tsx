@@ -1,129 +1,121 @@
 import { useState, useEffect, ReactNode } from 'react';
-import { Offcanvas } from 'react-bootstrap';
+import { FiX, FiMenu } from 'react-icons/fi';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SpotlightSearchModal } from './SpotlightSearchModal';
 import { CashClosingModal } from '../finances/CashClosingModal';
 import { CamiLoveModal } from './CamiLoveModal';
-import './DashboardLayout.css';
 
 interface DashboardLayoutProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-    const [showSidebar, setShowSidebar] = useState(false);
-    const [showSpotlight, setShowSpotlight] = useState(false);
-    const [showCashClosing, setShowCashClosing] = useState(false);
-    const [showCamiLove, setShowCamiLove] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSpotlight, setShowSpotlight] = useState(false);
+  const [showCashClosing, setShowCashClosing] = useState(false);
+  const [showCamiLove, setShowCamiLove] = useState(false);
 
-    const handleCloseSidebar = () => setShowSidebar(false);
-    const handleShowSidebar  = () => setShowSidebar(true);
+  const handleCloseSidebar = () => setShowSidebar(false);
+  const handleShowSidebar = () => setShowSidebar(true);
 
-    // Escuchador global para abrir el Spotlight con Cmd+K o Ctrl+K
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-                e.preventDefault();
-                setShowSpotlight((prev) => !prev);
-            }
-        };
+  // Escuchador global para abrir el Spotlight con Cmd+K o Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setShowSpotlight((prev) => !prev);
+      }
+      if (e.key === 'Escape' && showSidebar) {
+        setShowSidebar(false);
+      }
+    };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSidebar]);
 
-    return (
-        <div className="dashboard-layout">
-            <Navbar 
-                onOpenSpotlight={() => setShowSpotlight(true)} 
-                onOpenCamiLoveModal={() => setShowCamiLove(true)}
-            />
+  return (
+    <div className="min-h-screen min-h-[100dvh] flex flex-col w-full max-w-full m-0 p-0 overflow-x-hidden bg-bunny-bg text-bunny-text">
+      <Navbar
+        onOpenSpotlight={() => setShowSpotlight(true)}
+        onOpenCamiLoveModal={() => setShowCamiLove(true)}
+      />
 
-            {/* ── Botón hamburguesa móvil — estilo BunnyCure ── */}
-            <div
-                className="d-md-none"
-                style={{
-                    padding: '10px 16px',
-                    borderBottom: '1px solid #f0e0d8',
-                    background: '#fdf6f3',
-                }}
-            >
-                <button
-                    onClick={handleShowSidebar}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: '#fff',
-                        border: '1px solid #f0d8d0',
-                        borderRadius: '10px',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        color: '#5c3d2e',
-                        boxShadow: '0 1px 4px rgba(180,120,100,0.08)',
-                    }}
-                >
-                    <span style={{ fontSize: '18px', lineHeight: 1 }}>☰</span>
-                    <span>Menú</span>
-                </button>
+      {/* ── Botón hamburguesa móvil — estilo BunnyCure ── */}
+      <div className="md:hidden px-4 py-2.5 bg-bunny-paper/60 border-b border-bunny-border/70 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handleShowSidebar}
+          className="flex items-center gap-2 bg-white border border-bunny-border rounded-xl px-3.5 py-1.5 text-sm font-semibold text-bunny-cocoa shadow-xs hover:bg-bunny-blush/40 transition-colors cursor-pointer"
+        >
+          <FiMenu className="text-lg leading-none" />
+          <span>Menú</span>
+        </button>
+      </div>
+
+      {/* ── Drawer móvil de navegación (Tailwind) ── */}
+      {showSidebar && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+          {/* Overlay backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={handleCloseSidebar}
+          />
+
+          {/* Panel lateral */}
+          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white border-r border-bunny-border shadow-bunny-lg flex flex-col z-10 animate-fade-in">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-bunny-border/70 bg-bunny-paper/50">
+              <span className="font-bold text-bunny-cocoa text-base flex items-center gap-2">
+                <span>🐰</span> BunnyCure
+              </span>
+              <button
+                type="button"
+                onClick={handleCloseSidebar}
+                className="rounded-lg p-1 text-bunny-text-muted hover:text-bunny-cocoa hover:bg-bunny-blush transition-colors"
+                aria-label="Cerrar menú"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
             </div>
-
-            {/* ── Offcanvas sidebar móvil — estilo BunnyCure ── */}
-            <Offcanvas
-                show={showSidebar}
-                onHide={handleCloseSidebar}
-                className="d-md-none"
-                placement="start"
-            >
-                <Offcanvas.Header
-                    closeButton
-                    style={{ borderBottom: '1px solid #f0e0d8', background: '#fdf6f3' }}
-                >
-                    <Offcanvas.Title>
-                        <span style={{ fontWeight: 700, color: '#5c3d2e', fontSize: '17px' }}>
-                            🐰 BunnyCure
-                        </span>
-                    </Offcanvas.Title>
-                </Offcanvas.Header>
-                <Offcanvas.Body className="p-0" style={{ background: '#fdf6f3' }}>
-                    <Sidebar onNavigate={handleCloseSidebar} />
-                </Offcanvas.Body>
-            </Offcanvas>
-
-            {/* ── Layout Principal: Sidebar Fijo + Contenido Fluido ── */}
-            <div className="dashboard-body">
-                {/* Sidebar fijo desktop */}
-                <aside className="d-none d-md-block dashboard-sidebar-wrapper">
-                    <Sidebar />
-                </aside>
-
-                {/* Main content que llena el 100% del espacio restante */}
-                <main className="dashboard-main-content">
-                    {children}
-                </main>
+            <div className="flex-1 overflow-y-auto">
+              <Sidebar onNavigate={handleCloseSidebar} />
             </div>
-
-            {/* Buscador Universal Spotlight (Cmd+K / Ctrl+K) */}
-            <SpotlightSearchModal
-                show={showSpotlight}
-                onHide={() => setShowSpotlight(false)}
-                onOpenCashClosing={() => setShowCashClosing(true)}
-            />
-
-            {/* Cierre de Caja Modal Global */}
-            <CashClosingModal
-                show={showCashClosing}
-                onHide={() => setShowCashClosing(false)}
-            />
-
-            {/* Modal de Amor para Cami (Aparece 1 vez al día o al hacer clic en su corazón) */}
-            <CamiLoveModal
-                forceOpen={showCamiLove}
-                onCloseManual={() => setShowCamiLove(false)}
-            />
+          </div>
         </div>
-    );
+      )}
+
+      {/* ── Layout Principal: Sidebar Desktop Fijo + Contenido Fluido ── */}
+      <div className="flex flex-row flex-1 w-full min-h-[calc(100vh-3.5rem)] min-h-[calc(100dvh-3.5rem)] m-0 p-0">
+        {/* Sidebar desktop fijo */}
+        <div className="hidden md:block shrink-0">
+          <Sidebar />
+        </div>
+
+        {/* Main content que llena el 100% del espacio restante */}
+        <main className="flex-1 min-w-0 w-full md:w-[calc(100%-250px)] m-0 p-0 overflow-x-hidden pb-4 md:pb-0">
+          {children}
+        </main>
+      </div>
+
+      {/* Buscador Universal Spotlight (Cmd+K / Ctrl+K) */}
+      <SpotlightSearchModal
+        show={showSpotlight}
+        onHide={() => setShowSpotlight(false)}
+        onOpenCashClosing={() => setShowCashClosing(true)}
+      />
+
+      {/* Cierre de Caja Modal Global */}
+      <CashClosingModal
+        show={showCashClosing}
+        onHide={() => setShowCashClosing(false)}
+      />
+
+      {/* Modal de Amor para Cami (Aparece 1 vez al día o al hacer clic en su corazón) */}
+      <CamiLoveModal
+        forceOpen={showCamiLove}
+        onCloseManual={() => setShowCamiLove(false)}
+      />
+    </div>
+  );
 }

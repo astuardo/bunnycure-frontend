@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert } from 'react-bootstrap';
-import { FiUser, FiMail, FiLock, FiCheck, FiX, FiShield } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiCheck, FiX } from 'react-icons/fi';
 import { User, CreateUserFormData, UpdateUserFormData } from '../../types/user.types';
+import { Modal, Button, Input, Select, Alert } from '../ui';
 
 interface UserFormModalProps {
   show: boolean;
@@ -98,105 +98,88 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered className="bunny-modal">
+    <Modal show={show} onHide={onHide} size="md" centered>
       <Modal.Header closeButton>
-        <Modal.Title style={{ color: 'var(--bc-text)', fontSize: '1.15rem', fontWeight: 700 }}>
+        <Modal.Title>
           {isEditing ? '✏️ Editar Usuario' : '➕ Nuevo Usuario del Personal'}
         </Modal.Title>
       </Modal.Header>
 
-      <Form onSubmit={handleSubmit}>
-        <Modal.Body className="p-4">
-          {error && <Alert variant="danger" className="py-2 small">{error}</Alert>}
+      <form onSubmit={handleSubmit}>
+        <Modal.Body className="space-y-4">
+          {error && (
+            <Alert variant="danger">
+              {error}
+            </Alert>
+          )}
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-muted">
-              <FiUser className="me-1" /> Nombre de Usuario (Login)
-            </Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ej: manicurista1"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={isEditing}
-              required
-              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-            />
-          </Form.Group>
+          <Input
+            label="Nombre de Usuario (Login)"
+            placeholder="Ej: manicurista1"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={isEditing}
+            leftIcon={<FiUser className="text-sm" />}
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-muted">Nombre Completo</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ej: Camila Silva"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-            />
-          </Form.Group>
+          <Input
+            label="Nombre Completo"
+            placeholder="Ej: Camila Silva"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-muted">
-              <FiShield className="me-1" /> Rol y Nivel de Acceso
-            </Form.Label>
-            <Form.Select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-            >
-              <option value="SPECIALIST">💅 Especialista / Manicurista (Agenda y clientas propias)</option>
-              <option value="RECEPTIONIST">🛎️ Recepcionista (Citas, clientes, caja y solicitudes)</option>
-              <option value="SALON_ADMIN">🏢 Dueña / Administradora (Control total del salón)</option>
-            </Form.Select>
-          </Form.Group>
+          <Select
+            label="Rol y Nivel de Acceso"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            <option value="SPECIALIST">💅 Especialista / Manicurista (Agenda y clientas propias)</option>
+            <option value="RECEPTIONIST">🛎️ Recepcionista (Citas, clientes, caja y solicitudes)</option>
+            <option value="SALON_ADMIN">🏢 Dueña / Administradora (Control total del salón)</option>
+          </Select>
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-muted">
-              <FiMail className="me-1" /> Correo Electrónico (Opcional)
-            </Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="camila@bunnycure.cl"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-            />
-          </Form.Group>
+          <Input
+            type="email"
+            label="Correo Electrónico (Opcional)"
+            placeholder="camila@bunnycure.cl"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            leftIcon={<FiMail className="text-sm" />}
+          />
 
           {!isEditing && (
-            <Form.Group className="mb-3">
-              <Form.Label className="small fw-bold text-muted">
-                <FiLock className="me-1" /> Contraseña Inicial
-              </Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Mínimo 8 caracteres (mayúscula, minúscula y número)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-              />
-              <Form.Text className="text-muted" style={{ fontSize: '11.5px' }}>
-                Debe tener mayúscula, minúscula y al menos un dígito.
-              </Form.Text>
-            </Form.Group>
+            <Input
+              type="password"
+              label="Contraseña Inicial"
+              placeholder="Mínimo 8 caracteres (mayúscula, minúscula y número)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              helperText="Debe contener mayúscula, minúscula y al menos un dígito."
+              leftIcon={<FiLock className="text-sm" />}
+              required
+            />
           )}
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={onHide} disabled={submitting}>
-            <FiX className="me-1" /> Cancelar
+          <Button variant="outline" size="sm" onClick={onHide} disabled={submitting}>
+            <FiX className="mr-1" /> Cancelar
           </Button>
           <Button
             type="submit"
             variant="primary"
-            disabled={submitting}
+            size="sm"
+            isLoading={submitting}
+            loadingText="Guardando..."
+            leftIcon={<FiCheck />}
           >
-            {submitting ? 'Guardando...' : <><FiCheck className="me-1" /> {isEditing ? 'Actualizar' : 'Crear Usuario'}</>}
+            {isEditing ? 'Actualizar' : 'Crear Usuario'}
           </Button>
         </Modal.Footer>
-      </Form>
+      </form>
     </Modal>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { FiLock, FiCheck, FiX } from 'react-icons/fi';
 import { User, ChangeUserPasswordFormData } from '../../types/user.types';
+import { Modal, Button, Input, Alert } from '../ui';
 
 interface ChangeUserPasswordModalProps {
   show: boolean;
@@ -64,59 +64,58 @@ export const ChangeUserPasswordModal: React.FC<ChangeUserPasswordModalProps> = (
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered className="bunny-modal">
+    <Modal show={show} onHide={onHide} size="md" centered>
       <Modal.Header closeButton>
-        <Modal.Title style={{ color: 'var(--bc-text)', fontSize: '1.15rem', fontWeight: 700 }}>
+        <Modal.Title>
           🔐 Cambiar Contraseña de {user?.fullName || user?.username}
         </Modal.Title>
       </Modal.Header>
 
-      <Form onSubmit={handleSubmit}>
-        <Modal.Body className="p-4">
-          {error && <Alert variant="danger" className="py-2 small">{error}</Alert>}
+      <form onSubmit={handleSubmit}>
+        <Modal.Body className="space-y-4">
+          {error && (
+            <Alert variant="danger">
+              {error}
+            </Alert>
+          )}
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-muted">
-              <FiLock className="me-1" /> Nueva Contraseña
-            </Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Mínimo 8 caracteres (mayúscula, minúscula y número)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-            />
-          </Form.Group>
+          <Input
+            type="password"
+            label="Nueva Contraseña"
+            placeholder="Mínimo 8 caracteres (mayúscula, minúscula y número)"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            leftIcon={<FiLock className="text-sm" />}
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold text-muted">
-              <FiLock className="me-1" /> Confirmar Nueva Contraseña
-            </Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Repetir nueva contraseña"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              style={{ borderRadius: '8px', borderColor: '#eed0c5' }}
-            />
-          </Form.Group>
+          <Input
+            type="password"
+            label="Confirmar Nueva Contraseña"
+            placeholder="Repetir nueva contraseña"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            leftIcon={<FiLock className="text-sm" />}
+            required
+          />
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={onHide} disabled={submitting}>
-            <FiX className="me-1" /> Cancelar
+          <Button variant="outline" size="sm" onClick={onHide} disabled={submitting}>
+            <FiX className="mr-1" /> Cancelar
           </Button>
           <Button
             type="submit"
             variant="primary"
-            disabled={submitting}
+            size="sm"
+            isLoading={submitting}
+            loadingText="Guardando..."
+            leftIcon={<FiCheck />}
           >
-            {submitting ? 'Guardando...' : <><FiCheck className="me-1" /> Cambiar Contraseña</>}
+            Cambiar Contraseña
           </Button>
         </Modal.Footer>
-      </Form>
+      </form>
     </Modal>
   );
 };
