@@ -7,7 +7,7 @@
   ],
   "headers": [
     {
-      "source": "/service-worker.js",
+      "source": "/(sw\\.js|pwa-sw\\.js|service-worker\\.js)",
       "headers": [
         {
           "key": "Service-Worker-Allowed",
