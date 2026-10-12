@@ -2,6 +2,7 @@ import AppRouter from './routes/AppRouter'
 import { PWAUpdatePrompt } from './components/PWAUpdatePrompt'
 import { OfflineIndicator } from './components/OfflineIndicator'
 import { InstallPWA } from './components/InstallPWA'
+import { WebPushPrompt } from './components/pwa/WebPushPrompt'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import './styles/mobile.css'
@@ -19,6 +20,7 @@ function App() {
         </BuildVersionGuard>
         <PWAUpdatePrompt />
         <InstallPWA />
+        <WebPushPrompt />
         <ToastContainer
           position="top-right"
           autoClose={3000}

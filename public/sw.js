@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Service Worker para notificaciones PWA y cache offline
  * Maneja notificaciones en segundo plano y cache de recursos
  * Incluye chequeo automÃ¡tico de citas prÃ³ximas para notificaciones
@@ -156,15 +156,33 @@ function sanitizePushText(text) {
 
 // Manejo de clicks en notificaciones
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Click en notificaciÃ³n:', event);
+  console.log('[SW] Click en notificación:', event);
   
   event.notification.close();
 
-  if (event.action === 'open' || !event.action) {
-    event.waitUntil(
-      clients.openWindow(self.registration.scope)
-    );
+  if (event.action === 'close') {
+    return;
   }
+
+  const targetPath = (event.notification.data && event.notification.data.url)
+    ? event.notification.data.url
+    : '/calendar';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          if (client.navigate) {
+            client.navigate(targetPath);
+          }
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetPath);
+      }
+    })
+  );
 });
 
 // Manejo de cierre de notificaciones

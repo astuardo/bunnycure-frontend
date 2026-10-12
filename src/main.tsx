@@ -6,31 +6,19 @@ import './styles/mobile.css';
 import './styles/bunny-theme.css';
 import apiClient from './api/client';
 import { initializeGA } from './utils/analytics';
-
-const WEB_PUSH_SYNC_KEY = 'webpush_subscription_synced_endpoint';
-
-const urlBase64ToUint8Array = (base64String: string): Uint8Array<ArrayBuffer> => {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(new ArrayBuffer(rawData.length));
-  for (let i = 0; i < rawData.length; i += 1) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-};
+import { getWebPushPublicKey, urlBase64ToUint8Array, WEB_PUSH_SYNC_KEY } from './api/webPush.api';
 
 const registerWebPushSubscription = async (registration: ServiceWorkerRegistration) => {
   if (!('PushManager' in window) || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
-  const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY?.trim();
-  if (!publicKey) {
-    console.warn('[PWA-PUSH] Falta VITE_WEB_PUSH_PUBLIC_KEY');
-    return;
-  }
-
   try {
+    const publicKey = await getWebPushPublicKey();
+    if (!publicKey) {
+      console.warn('[PWA-PUSH] No hay clave pública VAPID disponible (backend/env)');
+      return;
+    }
+
     let subscription = await registration.pushManager.getSubscription();
 
     if (!subscription) {
@@ -50,7 +38,7 @@ const registerWebPushSubscription = async (registration: ServiceWorkerRegistrati
       return;
     }
 
-    const lastSyncedEndpoint = localStorage.getItem('webpush_subscription_synced_endpoint');
+    const lastSyncedEndpoint = localStorage.getItem(WEB_PUSH_SYNC_KEY);
     if (lastSyncedEndpoint === endpoint) {
       return;
     }
@@ -61,7 +49,7 @@ const registerWebPushSubscription = async (registration: ServiceWorkerRegistrati
     });
 
     localStorage.setItem(WEB_PUSH_SYNC_KEY, endpoint);
-    console.log('[PWA-PUSH] ✅ Suscripción web push registrada');
+    console.log('[PWA-PUSH] ✅ Suscripción web push registrada exitosamente');
   } catch (error) {
     console.error('[PWA-PUSH] ❌ Error registrando suscripción push:', error);
   }

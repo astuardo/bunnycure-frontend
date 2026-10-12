@@ -170,7 +170,15 @@ export default function SettingsPage() {
 
   const activeTab = (searchParams.get('tab') as TabType) || 'identity';
 
-  const { permission, requestPermission, sendTestNotification } = useNotificationPermission();
+  const {
+    permission,
+    isSubscribed,
+    isLoading: isPushLoading,
+    subscribe,
+    unsubscribe,
+    sendTestNotification,
+    sendServerTestPush,
+  } = useNotificationPermission();
 
   const handleTabChange = (tab: TabType) => {
     setSearchParams({ tab });
@@ -407,25 +415,33 @@ export default function SettingsPage() {
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
-  const handleRequestNotificationPermission = async () => {
+  const handleTogglePushSubscription = async () => {
     try {
-      const result = await requestPermission();
-      if (result === 'granted') {
-        toast.success('✅ Permisos de notificaciones concedidos');
-      } else if (result === 'denied') {
-        toast.error('❌ Permisos de notificaciones denegados');
+      if (isSubscribed) {
+        await unsubscribe();
+        toast.success('Dispositivo desuscrito de notificaciones push');
+      } else {
+        await subscribe();
+        toast.success('✅ ¡Dispositivo suscrito con éxito a notificaciones push!');
       }
-    } catch {
-      toast.error('Error al solicitar permisos');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al actualizar suscripción';
+      toast.error(msg);
     }
   };
 
-  const handleSendTestNotification = () => {
-    sendTestNotification(
-      `🐰 ${settings.businessName}`,
-      '¡Esta es una notificación de prueba! Las notificaciones están funcionando correctamente.'
-    );
-    toast.success('Notificación de prueba enviada');
+  const handleSendTestNotification = async () => {
+    toast.info('Enviando notificación de prueba...');
+    const success = await sendServerTestPush();
+    if (success) {
+      toast.success('🚀 Notificación push enviada desde el servidor');
+    } else {
+      sendTestNotification(
+        `🐰 ${settings.businessName}`,
+        '¡Notificación de prueba local! Las alertas están funcionando correctamente.'
+      );
+      toast.success('Notificación de prueba mostrada');
+    }
   };
 
   const tabs: Array<{ key: TabType; label: string; icon: React.ReactNode }> = [
@@ -1110,34 +1126,65 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <Card>
               <Card.Header>
-                <Card.Title>🔔 Notificaciones Web Push (Navegador)</Card.Title>
+                <div className="flex items-center justify-between">
+                  <Card.Title>🔔 Notificaciones Web Push (Nativo en Celular y Desktop)</Card.Title>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                    isSubscribed
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                      : permission === 'granted'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                      : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                  }`}>
+                    {isSubscribed ? '● Suscrito y Activo' : permission === 'granted' ? '● Permiso Concedido' : '● Sin Suscribir'}
+                  </span>
+                </div>
               </Card.Header>
               <Card.Body>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-bunny-border bg-bunny-paper/40">
-                  <div>
-                    <h4 className="text-xs font-bold text-bunny-text uppercase tracking-wider">
-                      Alertas en Tiempo Real en tu Computador o Móvil
-                    </h4>
-                    <p className="text-xs text-bunny-text-muted mt-0.5">
-                      Estado actual: <strong>{permission === 'granted' ? '✅ Concedido' : permission === 'denied' ? '❌ Denegado' : '⏳ Pendiente'}</strong>
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-bunny-border bg-bunny-paper/40">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-semibold text-bunny-text">
+                        Alertas y Recordatorios en Segundo Plano
+                      </h4>
+                      <p className="text-xs text-bunny-text-muted leading-relaxed">
+                        Permiso del navegador: <strong>{permission === 'granted' ? '✅ Concedido' : permission === 'denied' ? '❌ Denegado' : '⏳ Pendiente'}</strong>
+                        {' · '}
+                        Servidor Web Push: <strong>{isSubscribed ? '🟢 Vinculado a este equipo' : '⚪ No vinculado'}</strong>
+                      </p>
+                      <p className="text-xs text-bunny-text-muted/80">
+                        {isSubscribed
+                          ? 'Este dispositivo recibirá avisos de citas y alertas del sistema aunque la app esté cerrada.'
+                          : 'Activa las alertas para recibir recordatorios directos en la barra de notificaciones de tu teléfono.'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Button
+                        variant={isSubscribed ? 'outline' : 'primary'}
+                        size="sm"
+                        onClick={handleTogglePushSubscription}
+                        disabled={isPushLoading}
+                        className={!isSubscribed ? 'bg-pink-500 hover:bg-pink-600 text-white' : ''}
+                      >
+                        {isPushLoading
+                          ? 'Procesando...'
+                          : isSubscribed
+                          ? 'Desactivar en este equipo'
+                          : 'Activar en este Celular / PC'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSendTestNotification}
+                        disabled={permission !== 'granted'}
+                      >
+                        Enviar Prueba Push
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRequestNotificationPermission}
-                    >
-                      Solicitar Permisos
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSendTestNotification}
-                      disabled={permission !== 'granted'}
-                    >
-                      Enviar Prueba
-                    </Button>
+
+                  <div className="text-xs text-bunny-text-muted bg-pink-50/50 dark:bg-pink-950/20 border border-pink-100 dark:border-pink-900/40 rounded-xl p-3">
+                    💡 <strong>Consejo para celular (iOS / Android):</strong> En iPhone añade BunnyCure a la pantalla de inicio desde Safari (Compartir &gt; Agregar a Inicio) para habilitar notificaciones push nativas en iOS 16.4+. En Android funciona directo desde Chrome o la PWA instalada.
                   </div>
                 </div>
               </Card.Body>
