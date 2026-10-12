@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Row, Col, Button, Card, Table, Badge, Form, Modal, Alert, Dropdown } from 'react-bootstrap';
+import { Button, Card, Badge, Modal, Alert, Spinner } from '@/components/ui';
 import { FaWhatsapp, FaBell, FaEnvelope, FaSearch, FaTimes, FaCalendarAlt, FaSyncAlt, FaCalendarDay, FaHistory } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
@@ -1158,8 +1158,16 @@ export default function AppointmentsPage() {
     setCustomChargeItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const [openDropdownAptId, setOpenDropdownAptId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdownAptId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+
   const getStatusBadge = (status: AppointmentStatus) => {
-    const variants: Record<AppointmentStatus, string> = {
+    const variants: Record<AppointmentStatus, 'warning' | 'primary' | 'success' | 'secondary'> = {
       PENDING: 'warning',
       CONFIRMED: 'primary',
       COMPLETED: 'success',
@@ -1173,117 +1181,114 @@ export default function AppointmentsPage() {
       CANCELLED: 'Cancelada',
       RESCHEDULE_REQUESTED: '🔄 Reprogramar',
     };
-    return <Badge bg={variants[status]}>{labels[status]}</Badge>;
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
   return (
     <DashboardLayout>
-      <div className="bunny-page">
-      <Row className="mb-4">
-        <Col>
-          <h1>📅 Gestión de Citas</h1>
-          <p className="text-muted">Administra las citas y agenda del salón</p>
-        </Col>
-        <Col xs="auto">
-          <Button variant="primary" onClick={() => openCreateModal()}>
-            + Nueva Cita
-          </Button>
-        </Col>
-      </Row>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-bunny-dark tracking-tight">
+              📅 Gestión de Citas
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Administra las citas y agenda del salón
+            </p>
+          </div>
+          <div>
+            <Button variant="primary" onClick={() => openCreateModal()} className="shadow-xs">
+              + Nueva Cita
+            </Button>
+          </div>
+        </div>
 
-      {error && (
-        <Alert variant="danger" onClose={clearError} dismissible>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert variant="danger" onClose={clearError} dismissible>
+            {error}
+          </Alert>
+        )}
 
-      {/* Barra de Búsqueda y Filtros */}
-      <Card className="mb-4 shadow-sm border-0 bg-white">
-        <Card.Body className="p-3 p-md-4">
-          <Row className="g-3">
-            {/* Buscador de texto */}
-            <Col xs={12} lg={4}>
-              <Form.Group>
-                <Form.Label className="small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
-                  <FaSearch className="text-primary" /> Búsqueda
-                </Form.Label>
-                <div className="position-relative">
-                  <Form.Control
+        {/* Barra de Búsqueda y Filtros */}
+        <Card className="border border-slate-200/80 shadow-xs bg-white">
+          <Card.Body className="p-4 sm:p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+              {/* Buscador de texto */}
+              <div className="lg:col-span-5">
+                <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+                  <FaSearch className="text-bunny-mid" /> Búsqueda
+                </label>
+                <div className="relative">
+                  <input
                     type="text"
                     placeholder="Clienta, RUT, teléfono, servicio o notas..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pe-5"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
                   />
                   {searchQuery && (
-                    <Button
-                      variant="link"
-                      className="position-absolute top-50 end-0 translate-middle-y text-muted p-2"
-                      style={{ textDecoration: 'none' }}
+                    <button
+                      type="button"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                       onClick={() => setSearchQuery('')}
                       title="Limpiar búsqueda"
                     >
                       <FaTimes />
-                    </Button>
+                    </button>
                   )}
                 </div>
-              </Form.Group>
-            </Col>
+              </div>
 
-            {/* Selector de Fecha */}
-            <Col xs={12} sm={6} lg={3}>
-              <Form.Group>
-                <Form.Label className="small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
-                  <FaCalendarAlt className="text-primary" /> Fecha
-                </Form.Label>
-                <Form.Control
+              {/* Selector de Fecha */}
+              <div className="sm:col-span-1 lg:col-span-3">
+                <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+                  <FaCalendarAlt className="text-bunny-mid" /> Fecha
+                </label>
+                <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
                 />
-              </Form.Group>
-              <div className="d-flex gap-1 mt-1">
-                <Button
-                  size="sm"
-                  variant={dateFilter === format(new Date(), 'yyyy-MM-dd') ? 'primary' : 'outline-secondary'}
-                  className="py-0 px-2 small"
-                  style={{ fontSize: '0.75rem' }}
-                  onClick={() => setDateFilter(format(new Date(), 'yyyy-MM-dd'))}
-                >
-                  Hoy
-                </Button>
-                <Button
-                  size="sm"
-                  variant={dateFilter === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'primary' : 'outline-secondary'}
-                  className="py-0 px-2 small"
-                  style={{ fontSize: '0.75rem' }}
-                  onClick={() => setDateFilter(format(addDays(new Date(), 1), 'yyyy-MM-dd'))}
-                >
-                  Mañana
-                </Button>
-                {dateFilter && (
+                <div className="flex gap-1.5 mt-2">
                   <Button
                     size="sm"
-                    variant="outline-danger"
-                    className="py-0 px-2 small"
-                    style={{ fontSize: '0.75rem' }}
-                    onClick={() => setDateFilter('')}
+                    variant={dateFilter === format(new Date(), 'yyyy-MM-dd') ? 'primary' : 'outline'}
+                    className="py-0.5 px-2 text-xs"
+                    onClick={() => setDateFilter(format(new Date(), 'yyyy-MM-dd'))}
                   >
-                    Todas
+                    Hoy
                   </Button>
-                )}
+                  <Button
+                    size="sm"
+                    variant={dateFilter === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'primary' : 'outline'}
+                    className="py-0.5 px-2 text-xs"
+                    onClick={() => setDateFilter(format(addDays(new Date(), 1), 'yyyy-MM-dd'))}
+                  >
+                    Mañana
+                  </Button>
+                  {dateFilter && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="py-0.5 px-2 text-xs"
+                      onClick={() => setDateFilter('')}
+                    >
+                      Todas
+                    </Button>
+                  )}
+                </div>
               </div>
-            </Col>
 
-            {/* Selector de Estado */}
-            <Col xs={12} sm={6} lg={3}>
-              <Form.Group>
-                <Form.Label className="small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
-                  <FaCalendarDay className="text-primary" /> Estado
-                </Form.Label>
-                <Form.Select
+              {/* Selector de Estado */}
+              <div className="sm:col-span-1 lg:col-span-2">
+                <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+                  <FaCalendarDay className="text-bunny-mid" /> Estado
+                </label>
+                <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as AppointmentStatusFilter)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
                 >
                   <option value="ACTIVE">⚡ Pendientes, confirmadas y reprogramar</option>
                   <option value="ALL">📋 Todas las citas</option>
@@ -1292,50 +1297,48 @@ export default function AppointmentsPage() {
                   <option value={AppointmentStatus.RESCHEDULE_REQUESTED}>🔄 Reprogramar</option>
                   <option value={AppointmentStatus.COMPLETED}>🎉 Completada</option>
                   <option value={AppointmentStatus.CANCELLED}>❌ Cancelada</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-
-            {/* Botones de acción */}
-            <Col xs={12} lg={2} className="d-flex align-items-end gap-2">
-              <Button
-                variant="primary"
-                className="w-100 d-flex align-items-center justify-content-center gap-1"
-                onClick={handleApplyFilters}
-                title="Actualizar citas desde el servidor"
-              >
-                <FaSyncAlt className={isLoading ? 'fa-spin' : ''} />
-                <span>Filtrar</span>
-              </Button>
-              <Button
-                variant="outline-secondary"
-                onClick={handleClearFilters}
-                title="Restablecer todos los filtros"
-              >
-                Limpiar
-              </Button>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      {/* Resumen de resultados */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="text-muted small">
-          Mostrando <strong className="text-dark">{displayedAppointments.length}</strong> de <strong className="text-dark">{appointments.length}</strong> citas
-          {(dateFilter || searchQuery || statusFilter !== 'ACTIVE') && (
-            <Badge bg="info" className="ms-2 text-dark fw-normal">Filtros activos</Badge>
-          )}
-        </div>
-      </div>
-
-      <Row>
-        <Col>
-          {isLoading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
+                </select>
               </div>
+
+              {/* Botones de acción */}
+              <div className="sm:col-span-2 lg:col-span-2 flex items-end gap-2">
+                <Button
+                  variant="primary"
+                  className="flex-1 flex items-center justify-center gap-1 text-sm py-2"
+                  onClick={handleApplyFilters}
+                  title="Actualizar citas desde el servidor"
+                >
+                  <FaSyncAlt className={isLoading ? 'animate-spin' : ''} />
+                  <span>Filtrar</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-sm py-2 px-3"
+                  onClick={handleClearFilters}
+                  title="Restablecer todos los filtros"
+                >
+                  Limpiar
+                </Button>
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Resumen de resultados */}
+        <div className="flex justify-between items-center">
+          <div className="text-slate-500 text-xs sm:text-sm">
+            Mostrando <strong className="text-slate-800 font-bold">{displayedAppointments.length}</strong> de <strong className="text-slate-800 font-bold">{appointments.length}</strong> citas
+            {(dateFilter || searchQuery || statusFilter !== 'ACTIVE') && (
+              <Badge variant="info" className="ml-2 font-normal">Filtros activos</Badge>
+            )}
+          </div>
+        </div>
+
+        <div>
+          {isLoading ? (
+            <div className="text-center py-12 flex flex-col items-center justify-center">
+              <Spinner size="lg" variant="primary" />
+              <span className="text-slate-500 text-sm mt-3">Cargando citas...</span>
             </div>
           ) : displayedAppointments.length === 0 ? (
             <Alert variant="info">
@@ -1343,162 +1346,226 @@ export default function AppointmentsPage() {
             </Alert>
           ) : (
             <>
-              
-              {/* Vista Desktop: Tabla */}<div className="d-none d-md-block"><div className="table-responsive">
-                <Table striped bordered hover className="mb-0">
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Hora</th>
-                      <th>Cliente</th>
-                      <th>Servicio(s)</th>
-                      <th>Valor</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayedAppointments.map((apt) => {
-                      const appointmentServices = getAppointmentServices(apt);
-                      return (
-                        <tr key={apt.id}>
-                          <td>{format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}</td>
-                          <td>{apt.appointmentTime.slice(0, 5)}</td>
-                          <td>{apt.customer.fullName}</td>
-                          <td>{appointmentServices.map((service) => service.name).join(' + ')}</td>
-                          <td>{formatCurrency(getAppointmentTotal(apt))}</td>
-                          <td>{getStatusBadge(apt.status)}</td>
-                          <td>
-                            <div className="d-flex gap-1 flex-wrap">
-                              {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED ? (
-                                <Button
-                                  size="sm"
-                                  variant="warning"
-                                  onClick={() => openRescheduleModal(apt)}
-                                  title="Reagendar esta cita con nueva fecha y hora (mismo ID)"
-                                >
-                                  🔄 Reagendar
-                                </Button>
-                              ) : (
-                                <>
+              {/* Vista Desktop: Tabla */}
+              <div className="hidden md:block overflow-hidden bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+                        <th className="px-3.5 py-3">Fecha</th>
+                        <th className="px-3.5 py-3">Hora</th>
+                        <th className="px-3.5 py-3">Cliente</th>
+                        <th className="px-3.5 py-3">Servicio(s)</th>
+                        <th className="px-3.5 py-3">Valor</th>
+                        <th className="px-3.5 py-3">Estado</th>
+                        <th className="px-3.5 py-3 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {displayedAppointments.map((apt) => {
+                        const appointmentServices = getAppointmentServices(apt);
+                        return (
+                          <tr key={apt.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="px-3.5 py-3 font-medium text-slate-800 whitespace-nowrap">
+                              {format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}
+                            </td>
+                            <td className="px-3.5 py-3 font-semibold text-slate-700 whitespace-nowrap">
+                              {apt.appointmentTime.slice(0, 5)}
+                            </td>
+                            <td className="px-3.5 py-3 text-slate-800 font-medium">
+                              {apt.customer.fullName}
+                            </td>
+                            <td className="px-3.5 py-3 text-slate-600 max-w-xs truncate" title={appointmentServices.map((s) => s.name).join(' + ')}>
+                              {appointmentServices.map((service) => service.name).join(' + ')}
+                            </td>
+                            <td className="px-3.5 py-3 font-bold text-emerald-700 whitespace-nowrap">
+                              {formatCurrency(getAppointmentTotal(apt))}
+                            </td>
+                            <td className="px-3.5 py-3 whitespace-nowrap">
+                              {getStatusBadge(apt.status)}
+                            </td>
+                            <td className="px-3.5 py-3 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center justify-end gap-1.5 flex-wrap">
+                                {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED ? (
                                   <Button
                                     size="sm"
-                                    variant="outline-primary"
-                                    onClick={() => openEditModal(apt)}
-                                    title="Editar detalles de esta cita (mismo ID)"
+                                    variant="warning"
+                                    onClick={() => openRescheduleModal(apt)}
+                                    title="Reagendar esta cita con nueva fecha y hora (mismo ID)"
+                                    className="text-xs py-1 px-2.5"
                                   >
-                                    Editar
+                                    🔄 Reagendar
                                   </Button>
+                                ) : (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openEditModal(apt)}
+                                      title="Editar detalles de esta cita (mismo ID)"
+                                      className="text-xs py-1 px-2.5"
+                                    >
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openNextAppointmentModal(apt)}
+                                      title="Agendar próxima cita futura para esta clienta (mantiene cliente y servicios, crea nuevo ID)"
+                                      className="text-xs py-1 px-2.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                                    >
+                                      ➕ Próxima
+                                    </Button>
+                                  </>
+                                )}
+                                {apt.status === AppointmentStatus.PENDING && (
                                   <Button
                                     size="sm"
-                                    variant="outline-success"
-                                    onClick={() => openNextAppointmentModal(apt)}
-                                    title="Agendar próxima cita futura para esta clienta (mantiene cliente y servicios, crea nuevo ID)"
+                                    variant="success"
+                                    onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
+                                    className="text-xs py-1 px-2.5"
                                   >
-                                    ➕ Próxima
+                                    Confirmar
                                   </Button>
-                                </>
-                              )}
-                              {apt.status === AppointmentStatus.PENDING && (
-                                <Button
-                                  size="sm"
-                                  variant="success"
-                                  onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}
-                                >
-                                  Confirmar
-                                </Button>
-                              )}
-                              {apt.status === AppointmentStatus.CONFIRMED && (
-                                <Button
-                                  size="sm"
-                                  variant="primary"
-                                  onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
-                                >
-                                  Completar
-                                </Button>
-                              )}
-                              {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
-                                <Button
-                                  size="sm"
-                                  variant="outline-success"
-                                  href={`https://wa.me/${apt.customer.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.customer.fullName}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita del ${format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}.`)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title="Contactar por WhatsApp"
-                                >
-                                  <FaWhatsapp className="me-1" /> Contactar
-                                </Button>
-                              )}
-                              {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
-                                <Button
-                                  size="sm"
-                                  variant="warning"
-                                  onClick={() => handleCancelAppointment(apt.id)}
-                                  title="Cancelar cita solicitando motivo"
-                                >
-                                  Cancelar
-                                </Button>
-                              )}
+                                )}
+                                {apt.status === AppointmentStatus.CONFIRMED && (
+                                  <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}
+                                    className="text-xs py-1 px-2.5"
+                                  >
+                                    Completar
+                                  </Button>
+                                )}
+                                {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
+                                  <a
+                                    href={`https://wa.me/${apt.customer.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.customer.fullName}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita del ${format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}.`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Contactar por WhatsApp"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                                  >
+                                    <FaWhatsapp className="text-emerald-600" /> Contactar
+                                  </a>
+                                )}
+                                {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
+                                  <Button
+                                    size="sm"
+                                    variant="warning"
+                                    onClick={() => handleCancelAppointment(apt.id)}
+                                    title="Cancelar cita solicitando motivo"
+                                    className="text-xs py-1 px-2.5"
+                                  >
+                                    Cancelar
+                                  </Button>
+                                )}
 
-                              <Dropdown>
-                                <Dropdown.Toggle size="sm" variant="info" id={`dropdown-${apt.id}`}>
-                                  📩
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu>
-                                  <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
-                                    <FaBell className="me-2" />
-                                    Enviar Notificación
-                                  </Dropdown.Item>
-                                  <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
-                                    <FaWhatsapp className="me-2 text-success" />
-                                    Confirmar por WhatsApp
-                                  </Dropdown.Item>
-                                  <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
-                                    <FaEnvelope className="me-2 text-primary" />
-                                    Recordatorio WhatsApp
-                                  </Dropdown.Item>
-                                  <Dropdown.Divider />
-                                  <Dropdown.Item onClick={() => setSelectedNotificationsApt(apt)}>
-                                    <FaHistory className="me-2 text-info" />
-                                    Historial de Mensajes
-                                  </Dropdown.Item>
-                                  <Dropdown.Divider />
-                                  <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
-                                    <FaWhatsapp className="me-2 text-success" />
-                                    Traspaso a Humano
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
+                                {/* Dropdown de comunicación */}
+                                <div className="relative inline-block text-left">
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-xs text-xs font-medium"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenDropdownAptId(openDropdownAptId === apt.id ? null : apt.id);
+                                    }}
+                                    title="Opciones de mensajería"
+                                  >
+                                    📩
+                                  </button>
+                                  {openDropdownAptId === apt.id && (
+                                    <div 
+                                      className="absolute right-0 mt-1 w-52 rounded-xl bg-white shadow-xl border border-slate-200 py-1 z-50 text-xs text-left"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <button
+                                        type="button"
+                                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                        onClick={() => {
+                                          setOpenDropdownAptId(null);
+                                          handleSendNotification(apt.id);
+                                        }}
+                                      >
+                                        <FaBell className="text-amber-500" /> Enviar Notificación
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                        onClick={() => {
+                                          setOpenDropdownAptId(null);
+                                          handleSendWhatsAppConfirmation(apt.id);
+                                        }}
+                                      >
+                                        <FaWhatsapp className="text-emerald-500" /> Confirmar por WhatsApp
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                        onClick={() => {
+                                          setOpenDropdownAptId(null);
+                                          handleSendWhatsAppReminder(apt.id);
+                                        }}
+                                      >
+                                        <FaEnvelope className="text-sky-500" /> Recordatorio WhatsApp
+                                      </button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <button
+                                        type="button"
+                                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                        onClick={() => {
+                                          setOpenDropdownAptId(null);
+                                          setSelectedNotificationsApt(apt);
+                                        }}
+                                      >
+                                        <FaHistory className="text-sky-600" /> Historial de Mensajes
+                                      </button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <button
+                                        type="button"
+                                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                        onClick={() => {
+                                          setOpenDropdownAptId(null);
+                                          handleWhatsAppHandoff(apt.id);
+                                        }}
+                                      >
+                                        <FaWhatsapp className="text-emerald-500" /> Traspaso a Humano
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
 
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                onClick={() => handleDeleteAppointment(apt.id)}
-                              >
-                                Eliminar
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              </div></div>
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={() => handleDeleteAppointment(apt.id)}
+                                  className="text-xs py-1 px-2.5"
+                                >
+                                  Eliminar
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
               {/* Vista Móvil: Cards */}
-              <div className="d-md-none">
+              <div className="md:hidden space-y-3">
                 {displayedAppointments.map((apt) => {
                   const appointmentServices = getAppointmentServices(apt);
                   return (
-                    <Card key={apt.id} className="mb-3 border-peach shadow-sm">
-                      <Card.Body className="p-3">
-                        <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
-                          <div style={{ minWidth: 0 }}>
-                            <div className="text-muted small mb-1 text-truncate">
+                    <Card key={apt.id} className="border border-slate-200 shadow-xs bg-white">
+                      <Card.Body className="p-4">
+                        <div className="flex justify-between items-start mb-2 gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-slate-400 text-xs mb-0.5 truncate">
                               {format(parseISO(apt.appointmentDate), 'EEEE d MMMM', { locale: es })}
                             </div>
-                            <h6 className="mb-0 fw-bold text-bunny-dark text-break">
+                            <h6 className="font-bold text-bunny-dark text-sm truncate">
                               {apt.appointmentTime.slice(0, 5)} · {apt.customer.fullName}
                             </h6>
                           </div>
@@ -1508,57 +1575,67 @@ export default function AppointmentsPage() {
                         </div>
 
                         <div className="mb-3">
-                          <div className="d-flex justify-content-between align-items-center gap-2">
-                            <span className="text-bunny-mid small text-break" style={{ minWidth: 0 }}>
+                          <div className="flex justify-between items-center gap-2">
+                            <span className="text-slate-600 text-xs truncate flex-1">
                               {appointmentServices.map((service) => service.name).join(' + ')}
                             </span>
-                            <span className="fw-bold text-success flex-shrink-0">
+                            <span className="font-bold text-emerald-700 text-xs flex-shrink-0">
                               {formatCurrency(getAppointmentTotal(apt))}
                             </span>
                           </div>
                           {apt.notes && (
-                            <div className="mt-1 p-2 bg-light rounded small text-muted italic text-break">
+                            <div className="mt-2 p-2 bg-slate-50 rounded-lg text-xs text-slate-600 italic border border-slate-100">
                               {apt.notes}
                             </div>
                           )}
                         </div>
 
-                        <div className="d-flex gap-2 flex-wrap">
+                        <div className="flex gap-1.5 flex-wrap">
                           {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED ? (
-                            <Button size="sm" variant="warning" className="flex-fill" onClick={() => openRescheduleModal(apt)} title="Reagendar esta cita (mismo ID)">
+                            <Button size="sm" variant="warning" className="flex-1 text-xs" onClick={() => openRescheduleModal(apt)} title="Reagendar esta cita (mismo ID)">
                               🔄 Reagendar
                             </Button>
                           ) : (
                             <>
-                              <Button size="sm" variant="outline-secondary" className="flex-fill" onClick={() => openEditModal(apt)}>
+                              <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => openEditModal(apt)}>
                                 Editar
                               </Button>
-                              <Button size="sm" variant="outline-success" className="flex-fill" onClick={() => openNextAppointmentModal(apt)} title="Agendar próxima cita futura (nuevo ID)">
+                              <Button size="sm" variant="outline" className="flex-1 text-xs text-emerald-700 border-emerald-300" onClick={() => openNextAppointmentModal(apt)} title="Agendar próxima cita futura (nuevo ID)">
                                 ➕ Próxima
                               </Button>
                             </>
                           )}
-                          {apt.status === AppointmentStatus.PENDING && (<Button size="sm" variant="success" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}>Confirmar</Button>)}
-                          {apt.status === AppointmentStatus.CONFIRMED && (<Button size="sm" variant="primary" className="flex-fill" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}>Completar</Button>)}
+                          {apt.status === AppointmentStatus.PENDING && (
+                            <Button size="sm" variant="success" className="flex-1 text-xs" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.CONFIRMED)}>
+                              Confirmar
+                            </Button>
+                          )}
+                          {apt.status === AppointmentStatus.CONFIRMED && (
+                            <Button size="sm" variant="primary" className="flex-1 text-xs" onClick={() => handleChangeStatus(apt.id, AppointmentStatus.COMPLETED)}>
+                              Completar
+                            </Button>
+                          )}
                           {apt.status === AppointmentStatus.RESCHEDULE_REQUESTED && (
-                            <Button
-                              size="sm"
-                              variant="outline-success"
-                              className="flex-fill"
+                            <a
                               href={`https://wa.me/${apt.customer.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.customer.fullName}! Te escribimos de BunnyCure respecto a tu solicitud para reprogramar tu cita del ${format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
+                              className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200"
                             >
-                              <FaWhatsapp className="me-1" /> Contactar
-                            </Button>
+                              <FaWhatsapp /> Contactar
+                            </a>
                           )}
                           {apt.status !== AppointmentStatus.CANCELLED && apt.status !== AppointmentStatus.COMPLETED && (
-                            <Button size="sm" variant="warning" onClick={() => handleCancelAppointment(apt.id)}>Cancelar</Button>
+                            <Button size="sm" variant="warning" className="text-xs" onClick={() => handleCancelAppointment(apt.id)}>
+                              Cancelar
+                            </Button>
                           )}
-                          <Button size="sm" variant="outline-info" onClick={() => setSelectedNotificationsApt(apt)} title="Historial de Mensajes">
-                            <FaHistory />
+                          <Button size="sm" variant="outline" className="text-xs px-2.5" onClick={() => setSelectedNotificationsApt(apt)} title="Historial de Mensajes">
+                            <FaHistory className="text-sky-600" />
                           </Button>
-                          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteAppointment(apt.id)}>Eliminar</Button>
+                          <Button size="sm" variant="danger" className="text-xs px-2.5" onClick={() => handleDeleteAppointment(apt.id)}>
+                            Eliminar
+                          </Button>
                         </div>
                       </Card.Body>
                     </Card>
@@ -1567,36 +1644,38 @@ export default function AppointmentsPage() {
               </div>
             </>
           )}
-        </Col>
-      </Row>
+        </div>
 
       <Modal
         show={showCreateAppointmentModal}
         onHide={closeCreateModal}
         size="lg"
-        className="bunny-modal create-appointment-modal"
-        scrollable
+        centered
       >
-        <Modal.Header closeButton>
+        <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
           <Modal.Title>
-            {createStep === 'form' ? 'Nueva Cita' : 'Resumen de Nueva Cita'}
+            <span className="text-bunny-dark font-bold text-lg">
+              {createStep === 'form' ? '✨ Nueva Cita' : '📋 Resumen de Nueva Cita'}
+            </span>
           </Modal.Title>
         </Modal.Header>
         {createStep === 'form' ? (
-          <Form onSubmit={handleGoToCreateSummary} className="create-appointment-form">
-            <Modal.Body>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Cliente *</Form.Label>
+          <form onSubmit={handleGoToCreateSummary}>
+            <Modal.Body className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Selector de Cliente */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                    Cliente <span className="text-rose-500">*</span>
+                  </label>
                   {isCustomerListCollapsed && selectedCreateCustomer ? (
-                    <div className="p-3 border rounded mb-2 d-flex justify-content-between align-items-center bg-light" style={{ borderColor: '#c9897a' }}>
+                    <div className="p-3 border border-bunny-accent/40 rounded-xl mb-2 flex justify-between items-center bg-slate-50">
                       <div>
-                        <div className="fw-semibold text-bunny-dark">{selectedCreateCustomer.fullName}</div>
-                        <small className="text-muted">{selectedCreateCustomer.phone}</small>
+                        <div className="font-semibold text-bunny-dark text-sm">{selectedCreateCustomer.fullName}</div>
+                        <small className="text-slate-500 text-xs">{selectedCreateCustomer.phone}</small>
                         {availableCreateCustomerGiftCards.length > 0 && (
                           <div className="mt-1">
-                            <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                            <Badge variant="success" className="inline-flex items-center gap-1 text-xs">
                               <span>🎁</span>
                               <span>{availableCreateCustomerGiftCards.length} GiftCard activa(s) con saldo</span>
                             </Badge>
@@ -1604,7 +1683,7 @@ export default function AppointmentsPage() {
                         )}
                       </div>
                       <Button
-                        variant="outline-primary"
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setIsCustomerListCollapsed(false);
@@ -1612,27 +1691,28 @@ export default function AppointmentsPage() {
                           setCreateSelectedGiftCardId(null);
                           setCreateSelectedGiftCardItemIds([]);
                         }}
+                        className="text-xs"
                       >
                         Cambiar
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <Form.Control
+                      <input
                         type="text"
                         placeholder="Buscar cliente por nombre o teléfono..."
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
-                        className="mb-2"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white mb-2"
                       />
-                      <div className="border rounded create-appointment-list" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                      <div className="border border-slate-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-slate-100 bg-white">
                         {filteredCustomers.length > 0 ? (
                           filteredCustomers.map((customer) => (
                             <button
                               key={customer.id}
                               type="button"
-                              className={`btn w-100 text-start border-bottom rounded-0 ${
-                                formData.customerId === customer.id ? 'btn-primary' : 'btn-light'
+                              className={`w-full text-left p-2.5 transition-colors ${
+                                formData.customerId === customer.id ? 'bg-bunny-creamy/50 text-bunny-dark font-medium' : 'hover:bg-slate-50 text-slate-700'
                               }`}
                               onClick={() => {
                                 setFormData((prev) => ({ ...prev, customerId: customer.id }));
@@ -1642,50 +1722,52 @@ export default function AppointmentsPage() {
                                 setCreateSelectedGiftCardItemIds([]);
                               }}
                             >
-                              <div className="fw-semibold">{customer.fullName}</div>
-                              <small>{customer.phone}</small>
+                              <div className="font-semibold text-sm">{customer.fullName}</div>
+                              <small className="text-xs text-slate-500">{customer.phone}</small>
                             </button>
                           ))
                         ) : (
-                          <div className="p-3 text-muted">No se encontraron clientes</div>
+                          <div className="p-3 text-slate-400 text-sm text-center">No se encontraron clientes</div>
                         )}
                       </div>
-                      <Form.Text className="text-muted">
+                      <small className="text-xs text-slate-500 mt-1 block">
                         {selectedCreateCustomer
                           ? `Seleccionado: ${selectedCreateCustomer.fullName}`
                           : 'Selecciona un cliente de la lista'}
-                      </Form.Text>
+                      </small>
                     </>
                   )}
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Servicio(s) *</Form.Label>
+                </div>
+
+                {/* Selector de Servicios */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                    Servicio(s) <span className="text-rose-500">*</span>
+                  </label>
                   {isServiceListCollapsed && selectedCreateServices.length > 0 ? (
-                    <div className="p-3 border rounded mb-2 d-flex justify-content-between align-items-center bg-light" style={{ borderColor: '#c9897a' }}>
+                    <div className="p-3 border border-bunny-accent/40 rounded-xl mb-2 flex justify-between items-center bg-slate-50">
                       <div>
-                        <div className="fw-semibold text-bunny-dark">
+                        <div className="font-semibold text-bunny-dark text-sm">
                           {selectedCreateServices.length === 1
                             ? selectedCreateServices[0].name
                             : `${selectedCreateServices.length} servicios (${selectedCreateServices.map((s) => s.name).join(' + ')})`}
                         </div>
-                        <small className="text-muted">{formatCurrency(createTotal)} ({createDuration} min)</small>
+                        <small className="text-slate-500 text-xs">{formatCurrency(createTotal)} ({createDuration} min)</small>
                       </div>
-                      <Button variant="outline-primary" size="sm" onClick={() => setIsServiceListCollapsed(false)}>
+                      <Button variant="outline" size="sm" onClick={() => setIsServiceListCollapsed(false)} className="text-xs">
                         Cambiar
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <Form.Control
+                      <input
                         type="text"
                         placeholder="Buscar servicios..."
                         value={serviceSearch}
                         onChange={(e) => setServiceSearch(e.target.value)}
-                        className="mb-2"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white mb-2"
                       />
-                      <div className="border rounded create-appointment-list" style={{ maxHeight: '180px', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+                      <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-slate-100 bg-white">
                         {filteredServices.length > 0 ? (
                           filteredServices.map((service) => {
                             const isSelected = formData.serviceIds.includes(service.id);
@@ -1693,8 +1775,8 @@ export default function AppointmentsPage() {
                               <button
                                 key={service.id}
                                 type="button"
-                                className={`btn w-100 text-start border-bottom rounded-0 p-2 d-flex justify-content-between align-items-center ${
-                                  isSelected ? 'btn-primary' : 'btn-light'
+                                className={`w-full text-left p-2.5 flex justify-between items-center transition-colors ${
+                                  isSelected ? 'bg-bunny-creamy/50 text-bunny-dark' : 'hover:bg-slate-50 text-slate-700'
                                 }`}
                                 onClick={() => {
                                   if (!isSelected) {
@@ -1709,71 +1791,72 @@ export default function AppointmentsPage() {
                                 }}
                               >
                                 <div>
-                                  <div className="fw-semibold">{service.name}</div>
-                                  <small style={{ opacity: isSelected ? 0.9 : 0.7 }}>
-                                    ⏱️ {service.durationMinutes} min
-                                  </small>
+                                  <div className="font-semibold text-sm">{service.name}</div>
+                                  <small className="text-xs text-slate-500">⏱️ {service.durationMinutes} min</small>
                                 </div>
-                                <div className="text-end">
-                                  <div className="fw-bold">{formatCurrency(service.price)}</div>
-                                  {isSelected && <span className="badge bg-white text-dark mt-1">✓ Seleccionado</span>}
+                                <div className="text-right">
+                                  <div className="font-bold text-sm text-slate-800">{formatCurrency(service.price)}</div>
+                                  {isSelected && <span className="inline-block mt-0.5 text-xs text-bunny-dark font-medium bg-white px-1.5 py-0.5 rounded border border-bunny-accent/40">✓ Seleccionado</span>}
                                 </div>
                               </button>
                             );
                           })
                         ) : (
-                          <div className="p-3 text-muted">No se encontraron servicios</div>
+                          <div className="p-3 text-slate-400 text-sm text-center">No se encontraron servicios</div>
                         )}
                       </div>
                       {formData.serviceIds.length > 0 && (
                         <Button
-                          variant="outline-primary"
+                          variant="outline"
                           size="sm"
-                          className="mt-2 w-100"
+                          className="mt-2 w-full text-xs"
                           onClick={() => setIsServiceListCollapsed(true)}
                         >
                           Cerrar lista de servicios
                         </Button>
                       )}
-                      <Form.Text className="text-muted d-block mt-2">
+                      <small className="text-xs text-slate-500 mt-2 block">
                         Seleccionados: {selectedCreateServices.length} | Total: {formatCurrency(createTotal)} | Duración: {createDuration} min
-                      </Form.Text>
+                      </small>
                     </>
                   )}
-                </Form.Group>
-              </Col>
-            </Row>
-            <AppointmentSchedulePicker
-              selectedDate={formData.appointmentDate}
-              selectedTime={formData.appointmentTime}
-              durationMinutes={createDuration}
-              onDateChange={(date) => setFormData((prev) => ({ ...prev, appointmentDate: date }))}
-              onTimeChange={(time) => setFormData((prev) => ({ ...prev, appointmentTime: time }))}
-              unavailabilities={unavailabilities}
-              unavailabilityColors={unavailabilityColors}
-              appointments={appointments}
-              minDate={format(new Date(), 'yyyy-MM-dd')}
-            />
-            <Form.Group className="mb-3">
-              <Form.Label>Detalle de servicios</Form.Label>
-              <Form.Control
-                plaintext
-                readOnly
-                value={selectedCreateServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
+                </div>
+              </div>
+
+              <AppointmentSchedulePicker
+                selectedDate={formData.appointmentDate}
+                selectedTime={formData.appointmentTime}
+                durationMinutes={createDuration}
+                onDateChange={(date) => setFormData((prev) => ({ ...prev, appointmentDate: date }))}
+                onTimeChange={(time) => setFormData((prev) => ({ ...prev, appointmentTime: time }))}
+                unavailabilities={unavailabilities}
+                unavailabilityColors={unavailabilityColors}
+                appointments={appointments}
+                minDate={format(new Date(), 'yyyy-MM-dd')}
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Notas</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={formData.notes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-                placeholder="Observaciones, preferencias, etc..."
-              />
-            </Form.Group>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">Detalle de servicios</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={selectedCreateServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">Notas</label>
+                <textarea
+                  rows={3}
+                  value={formData.notes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Observaciones, preferencias, etc..."
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white transition-colors"
+                />
+              </div>
             </Modal.Body>
-            <Modal.Footer>
+            <Modal.Footer className="border-t border-slate-100 flex justify-end gap-2 p-4">
               <Button variant="secondary" onClick={closeCreateModal}>
                 Cancelar
               </Button>
@@ -1781,48 +1864,51 @@ export default function AppointmentsPage() {
                 Continuar al resumen
               </Button>
             </Modal.Footer>
-          </Form>
+          </form>
         ) : (
           <>
-            <Modal.Body>
+            <Modal.Body className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <Alert variant="info">
                 Revisa el detalle antes de crear la cita. Desde aquí puedes ajustar servicios y agregar cargos extra.
               </Alert>
 
-              <Row className="mb-3">
-                <Col md={6}>
-                  <h6 className="mb-1">Cliente</h6>
-                  <p className="mb-0">{selectedCreateCustomer?.fullName || 'Sin cliente'}</p>
-                  <small className="text-muted">{selectedCreateCustomer?.phone || '-'}</small>
-                </Col>
-                <Col md={6}>
-                  <h6 className="mb-1">Fecha y hora</h6>
-                  <p className="mb-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <h6 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cliente</h6>
+                  <p className="font-semibold text-slate-800 text-sm mb-0">{selectedCreateCustomer?.fullName || 'Sin cliente'}</p>
+                  <small className="text-slate-500 text-xs">{selectedCreateCustomer?.phone || '-'}</small>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <h6 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha y hora</h6>
+                  <p className="font-semibold text-slate-800 text-sm mb-0">
                     {formData.appointmentDate} · {formData.appointmentTime}
                   </p>
-                </Col>
-              </Row>
-              <div className="mb-3">
-                <h6 className="mb-1">Notas</h6>
-                <p className="mb-0 text-muted">{formData.notes.trim() || 'Sin notas'}</p>
+                </div>
+              </div>
+
+              <div>
+                <h6 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Notas</h6>
+                <p className="text-sm text-slate-600 mb-0 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  {formData.notes.trim() || 'Sin notas'}
+                </p>
               </div>
 
               {availableCreateCustomerGiftCards.length > 0 && (
-                <div className="p-3 border rounded mb-3 bg-light border-primary-subtle shadow-sm">
-                  <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <span className="fs-5">🎁</span>
-                      <strong className="text-dark">GiftCard Activa Detectada</strong>
+                <div className="p-4 border border-bunny-accent/40 rounded-2xl bg-white shadow-xs">
+                  <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🎁</span>
+                      <strong className="text-slate-800 text-sm">GiftCard Activa Detectada</strong>
                     </div>
                     <Badge
-                      bg={
+                      variant={
                         createUseGiftCardChoice === 'YES'
                           ? 'success'
                           : createUseGiftCardChoice === 'NO'
                           ? 'secondary'
                           : 'warning'
                       }
-                      className="px-2 py-1"
+                      className="px-2.5 py-1 text-xs"
                     >
                       {createUseGiftCardChoice === 'YES'
                         ? '✓ Cobro con GiftCard'
@@ -1832,21 +1918,21 @@ export default function AppointmentsPage() {
                     </Badge>
                   </div>
 
-                  <p className="small text-muted mb-2">
+                  <p className="text-xs text-slate-500 mb-3">
                     La clienta tiene <strong>{availableCreateCustomerGiftCards.length} GiftCard(s) activa(s)</strong> con saldo ({availableCreateCustomerGiftCards.map((gc) => gc.code).join(', ')}).
                   </p>
 
-                  <div className="p-3 rounded bg-white border mb-2">
-                    <label className="form-label fw-semibold small text-primary mb-2 d-block">
-                      ¿Deseas utilizar la GiftCard para el cobro de esta cita? <span className="text-danger">*</span>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3">
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">
+                      ¿Deseas utilizar la GiftCard para el cobro de esta cita? <span className="text-rose-500">*</span>
                     </label>
-                    <div className="d-flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         type="button"
                         size="sm"
-                        variant={createUseGiftCardChoice === 'YES' ? 'success' : 'outline-success'}
+                        variant={createUseGiftCardChoice === 'YES' ? 'success' : 'outline'}
                         onClick={() => handleSelectCreateGiftCardUsage('YES')}
-                        className="d-flex align-items-center gap-1"
+                        className="flex items-center gap-1.5 text-xs"
                       >
                         <span>🎁</span>
                         <span>Sí, utilizar GiftCard para cobro</span>
@@ -1854,9 +1940,9 @@ export default function AppointmentsPage() {
                       <Button
                         type="button"
                         size="sm"
-                        variant={createUseGiftCardChoice === 'NO' ? 'secondary' : 'outline-secondary'}
+                        variant={createUseGiftCardChoice === 'NO' ? 'secondary' : 'outline'}
                         onClick={() => handleSelectCreateGiftCardUsage('NO')}
-                        className="d-flex align-items-center gap-1"
+                        className="flex items-center gap-1.5 text-xs"
                       >
                         <span>💵</span>
                         <span>No utilizar GiftCard (Cobro habitual)</span>
@@ -1865,18 +1951,17 @@ export default function AppointmentsPage() {
                   </div>
 
                   {createUseGiftCardChoice === 'NO' && (
-                    <div className="small text-muted fst-italic px-1">
+                    <div className="text-xs text-slate-500 italic px-1">
                       ℹ️ La cita se cobrará habitualmente en el local (efectivo/transferencia). El saldo de la GiftCard no se descontará.
                     </div>
                   )}
 
                   {createUseGiftCardChoice === 'YES' && effectiveSelectedGiftCard && (
-                    <div className="mt-2 pt-2 border-top">
+                    <div className="mt-3 pt-3 border-t border-slate-100">
                       {availableCreateCustomerGiftCards.length > 1 && (
-                        <Form.Group className="mb-2">
-                          <Form.Label className="small fw-semibold mb-1">GiftCard a utilizar:</Form.Label>
-                          <Form.Select
-                            size="sm"
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-slate-700 mb-1 block">GiftCard a utilizar:</label>
+                          <select
                             value={effectiveSelectedGiftCard.id}
                             onChange={(e) => {
                               const newId = Number(e.target.value);
@@ -1899,6 +1984,7 @@ export default function AppointmentsPage() {
                                 }
                               }
                             }}
+                            className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
                           >
                             {availableCreateCustomerGiftCards.map((gc) => (
                               <option key={gc.id} value={gc.id}>
@@ -1906,27 +1992,26 @@ export default function AppointmentsPage() {
                                 {gc.items.filter((i) => i.remainingQuantity > 0).length} servicio(s) con saldo)
                               </option>
                             ))}
-                          </Form.Select>
-                        </Form.Group>
+                          </select>
+                        </div>
                       )}
 
-                      <div className="d-flex justify-content-between align-items-center mb-1">
-                        <small className="fw-semibold text-dark">
+                      <div className="flex justify-between items-center mb-2">
+                        <small className="font-semibold text-slate-700 text-xs">
                           Selecciona los servicios de {effectiveSelectedGiftCard.code} a canjear en esta cita:
                         </small>
-                        <Button
-                          size="sm"
-                          variant="link"
-                          className="p-0 text-decoration-none small"
+                        <button
+                          type="button"
+                          className="text-xs text-bunny-mid hover:underline font-medium"
                           onClick={() =>
                             navigate(`/giftcards?search=${encodeURIComponent(effectiveSelectedGiftCard.code)}`)
                           }
                         >
                           Ver detalle GiftCard ↗
-                        </Button>
+                        </button>
                       </div>
 
-                      <div className="d-flex flex-column gap-1 mb-2">
+                      <div className="space-y-1.5 mb-3">
                         {effectiveSelectedGiftCard.items
                           .filter((item) => item.remainingQuantity > 0)
                           .map((item) => {
@@ -1939,34 +2024,33 @@ export default function AppointmentsPage() {
                             return (
                               <div
                                 key={item.id}
-                                className={`p-2 rounded border d-flex justify-content-between align-items-center ${
-                                  isChecked ? 'bg-success-subtle border-success' : 'bg-white'
+                                className={`p-2.5 rounded-xl border flex justify-between items-center cursor-pointer transition-colors ${
+                                  isChecked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:bg-slate-50'
                                 }`}
-                                style={{ cursor: 'pointer' }}
                                 onClick={() => toggleCreateGiftCardItem(item.id)}
                               >
-                                <Form.Check
-                                  type="checkbox"
-                                  id={`create-gc-item-${item.id}`}
-                                  label={
-                                    <div>
-                                      <span className="fw-semibold">{item.serviceName}</span>
-                                      {matchesService && (
-                                        <Badge bg="info" className="ms-2 small">
-                                          Coincide con servicio seleccionado
-                                        </Badge>
-                                      )}
-                                      <div className="text-muted small">
-                                        Valor: {formatCurrency(item.unitPrice)} · Disponibles:{' '}
-                                        {item.remainingQuantity}
-                                      </div>
+                                <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                  <input
+                                    type="checkbox"
+                                    id={`create-gc-item-${item.id}`}
+                                    checked={isChecked}
+                                    onChange={() => toggleCreateGiftCardItem(item.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="rounded text-bunny-mid focus:ring-bunny-mid h-4 w-4 border-slate-300"
+                                  />
+                                  <div>
+                                    <span className="font-semibold text-xs text-slate-800">{item.serviceName}</span>
+                                    {matchesService && (
+                                      <Badge variant="info" className="ml-2 text-xs">
+                                        Coincide con servicio
+                                      </Badge>
+                                    )}
+                                    <div className="text-slate-500 text-xs mt-0.5">
+                                      Valor: {formatCurrency(item.unitPrice)} · Disponibles: {item.remainingQuantity}
                                     </div>
-                                  }
-                                  checked={isChecked}
-                                  onChange={() => toggleCreateGiftCardItem(item.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <span className={`fw-bold ${isChecked ? 'text-success' : 'text-muted'}`}>
+                                  </div>
+                                </label>
+                                <span className={`font-bold text-xs ${isChecked ? 'text-emerald-700' : 'text-slate-500'}`}>
                                   {isChecked ? `-${formatCurrency(item.unitPrice)}` : formatCurrency(item.unitPrice)}
                                 </span>
                               </div>
@@ -1975,9 +2059,9 @@ export default function AppointmentsPage() {
                       </div>
 
                       {createGiftCardCoverage > 0 && (
-                        <div className="alert alert-success py-1 px-2 mb-0 small d-flex justify-content-between align-items-center">
+                        <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex justify-between items-center font-medium">
                           <span>Total cubierto por GiftCard:</span>
-                          <strong>-{formatCurrency(createGiftCardCoverage)}</strong>
+                          <strong className="text-emerald-700">-{formatCurrency(createGiftCardCoverage)}</strong>
                         </div>
                       )}
                     </div>
@@ -1985,121 +2069,130 @@ export default function AppointmentsPage() {
                 </div>
               )}
 
-              <hr />
+              <div className="border-t border-slate-200 pt-3">
+                <h6 className="font-bold text-slate-800 text-sm mb-2">Servicios seleccionados</h6>
+                <input
+                  type="text"
+                  placeholder="Buscar y ajustar servicios..."
+                  value={summaryServiceSearch}
+                  onChange={(e) => setSummaryServiceSearch(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white mb-2"
+                />
+                <div className="border border-slate-200 rounded-xl p-2.5 mb-2 max-h-48 overflow-y-auto space-y-1.5 bg-white">
+                  {filteredSummaryServices.length > 0 ? (
+                    filteredSummaryServices.map((service) => (
+                      <label
+                        key={`summary-service-${service.id}`}
+                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs"
+                      >
+                        <input
+                          id={`summary-service-${service.id}`}
+                          type="checkbox"
+                          checked={formData.serviceIds.includes(service.id)}
+                          onChange={() => toggleCreateService(service.id)}
+                          className="rounded text-bunny-mid focus:ring-bunny-mid h-4 w-4 border-slate-300"
+                        />
+                        <span className="text-slate-700 font-medium">
+                          {service.name} - {formatCurrency(service.price)} ({service.durationMinutes} min)
+                        </span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="text-slate-400 text-xs text-center py-2">No se encontraron servicios</div>
+                  )}
+                </div>
+                <div className="text-xs text-slate-500 mb-3">
+                  Subtotal servicios: <strong className="text-slate-800">{formatCurrency(createTotal)}</strong> · Duración estimada: <strong className="text-slate-800">{createDuration} min</strong>
+                </div>
+              </div>
 
-              <h6 className="mb-2">Servicios seleccionados</h6>
-              <Form.Control
-                type="text"
-                placeholder="Buscar y ajustar servicios..."
-                value={summaryServiceSearch}
-                onChange={(e) => setSummaryServiceSearch(e.target.value)}
-                className="mb-2"
-              />
-              <div className="border rounded p-2 mb-2 create-appointment-list" style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                {filteredSummaryServices.length > 0 ? (
-                  filteredSummaryServices.map((service) => (
-                    <Form.Check
-                      key={`summary-service-${service.id}`}
-                      id={`summary-service-${service.id}`}
-                      type="checkbox"
-                      className="mb-2"
-                      label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
-                      checked={formData.serviceIds.includes(service.id)}
-                      onChange={() => toggleCreateService(service.id)}
-                    />
-                  ))
+              <div className="border-t border-slate-200 pt-3">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <h6 className="font-bold text-slate-800 text-sm mb-0">Cargos extra personalizados</h6>
+                    <small className="text-slate-500 text-xs">
+                      Agrega ítems como cristalería, decoración u otros cobros adicionales.
+                    </small>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addCustomChargeItem} className="text-xs">
+                    + Agregar ítem
+                  </Button>
+                </div>
+
+                {customChargeItems.length === 0 ? (
+                  <p className="text-slate-400 text-xs italic mb-3">No hay cargos extra agregados.</p>
                 ) : (
-                  <div className="text-muted">No se encontraron servicios</div>
+                  <div className="space-y-2 mb-3">
+                    {customChargeItems.map((item) => (
+                      <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-7">
+                          <input
+                            type="text"
+                            placeholder="Descripción (ej: Cristalería)"
+                            value={item.description}
+                            onChange={(e) =>
+                              updateCustomChargeItem(item.id, { description: e.target.value })
+                            }
+                            className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <input
+                            type="number"
+                            min={0}
+                            step={100}
+                            value={item.amount}
+                            onChange={(e) =>
+                              updateCustomChargeItem(item.id, {
+                                amount: Math.max(0, Number(e.target.value) || 0),
+                              })
+                            }
+                            className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => removeCustomChargeItem(item.id)}
+                            className="w-full text-xs py-1"
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              <div className="small text-muted mb-3">
-                Subtotal servicios: <strong>{formatCurrency(createTotal)}</strong> · Duración estimada: <strong>{createDuration} min</strong>
-              </div>
 
-              <h6 className="mb-2">Cargos extra personalizados</h6>
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <small className="text-muted">
-                  Agrega ítems como cristalería, decoración u otros cobros adicionales.
-                </small>
-                <Button size="sm" variant="outline-primary" onClick={addCustomChargeItem}>
-                  + Agregar ítem
-                </Button>
-              </div>
-
-              {customChargeItems.length === 0 ? (
-                <p className="text-muted small mb-3">No hay cargos extra agregados.</p>
-              ) : (
-                <div className="d-flex flex-column gap-2 mb-3">
-                  {customChargeItems.map((item) => (
-                    <Row key={item.id} className="g-2 align-items-center">
-                      <Col md={7}>
-                        <Form.Control
-                          type="text"
-                          placeholder="Descripción del ítem (ej: Cristalería)"
-                          value={item.description}
-                          onChange={(e) =>
-                            updateCustomChargeItem(item.id, { description: e.target.value })
-                          }
-                        />
-                      </Col>
-                      <Col md={3}>
-                        <Form.Control
-                          type="number"
-                          min={0}
-                          step={100}
-                          value={item.amount}
-                          onChange={(e) =>
-                            updateCustomChargeItem(item.id, {
-                              amount: Math.max(0, Number(e.target.value) || 0),
-                            })
-                          }
-                        />
-                      </Col>
-                      <Col md={2} className="d-grid">
-                        <Button
-                          size="sm"
-                          variant="outline-danger"
-                          onClick={() => removeCustomChargeItem(item.id)}
-                        >
-                          Eliminar
-                        </Button>
-                      </Col>
-                    </Row>
-                  ))}
-                </div>
-              )}
-
-              <hr />
-
-              <div className="d-flex flex-column gap-1">
-                <div className="d-flex justify-content-between">
+              <div className="border-t border-slate-200 pt-3 space-y-1.5 text-sm">
+                <div className="flex justify-between text-slate-600">
                   <span>Subtotal servicios</span>
-                  <strong>{formatCurrency(createTotal)}</strong>
+                  <strong className="text-slate-800">{formatCurrency(createTotal)}</strong>
                 </div>
                 {createUseGiftCardChoice === 'YES' && createGiftCardCoverage > 0 && (
-                  <div className="d-flex justify-content-between text-success">
-                    <span>
-                      🎁 Cobertura GiftCard ({effectiveSelectedGiftCard?.code})
-                    </span>
+                  <div className="flex justify-between text-emerald-700">
+                    <span>🎁 Cobertura GiftCard ({effectiveSelectedGiftCard?.code})</span>
                     <strong>-{formatCurrency(createGiftCardCoverage)}</strong>
                   </div>
                 )}
-                <div className="d-flex justify-content-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Total extras</span>
-                  <strong>{formatCurrency(customChargesTotal)}</strong>
+                  <strong className="text-slate-800">{formatCurrency(customChargesTotal)}</strong>
                 </div>
-                <div className="d-flex justify-content-between fs-5 mt-1 border-top pt-1">
+                <div className="flex justify-between text-base font-bold pt-2 border-t border-slate-200 text-slate-900">
                   <span>Total final a cobrar en local</span>
-                  <strong className={createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0 ? 'text-success' : ''}>
+                  <span className={createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0 ? 'text-emerald-700' : 'text-bunny-dark'}>
                     {createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0
                       ? '$0 (100% Cubierto con GiftCard)'
                       : formatCurrency(createUseGiftCardChoice === 'YES' ? createNetTotalToPay : createFinalTotal)}
-                  </strong>
+                  </span>
                 </div>
               </div>
             </Modal.Body>
-            <Modal.Footer>
-              <Button variant="outline-secondary" onClick={() => setCreateStep('form')} disabled={isCreatingAppointment}>
+            <Modal.Footer className="border-t border-slate-100 flex justify-end gap-2 p-4">
+              <Button variant="outline" onClick={() => setCreateStep('form')} disabled={isCreatingAppointment}>
                 Volver a editar datos
               </Button>
               <Button variant="secondary" onClick={closeCreateModal} disabled={isCreatingAppointment}>
@@ -2121,93 +2214,104 @@ export default function AppointmentsPage() {
         show={showEditModal}
         onHide={closeEditModal}
         size="lg"
-        className="bunny-modal appointment-edit-modal"
-        scrollable
+        centered
       >
-        <Modal.Header closeButton>
-          <Modal.Title>{editMode === 'reschedule' ? `Reagendar Cita #${editingAppointmentId}` : `Editar Cita #${editingAppointmentId}`}</Modal.Title>
+        <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
+          <Modal.Title>
+            <span className="text-bunny-dark font-bold text-lg">
+              {editMode === 'reschedule' ? `🔄 Reagendar Cita #${editingAppointmentId}` : `✏️ Editar Cita #${editingAppointmentId}`}
+            </span>
+          </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleEditAppointment}>
-          <Modal.Body>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Cliente *</Form.Label>
-                  {editMode === 'reschedule' ? (
-                    <div className="p-3 border rounded bg-light">
-                      <div className="fw-semibold">{selectedEditCustomer?.fullName || 'Cliente no disponible'}</div>
-                      <small className="text-muted">{selectedEditCustomer?.phone || '-'}</small>
+        <form onSubmit={handleEditAppointment}>
+          <Modal.Body className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                  Cliente <span className="text-rose-500">*</span>
+                </label>
+                {editMode === 'reschedule' ? (
+                  <div className="p-3 border border-slate-200 rounded-xl bg-slate-50">
+                    <div className="font-semibold text-slate-800 text-sm">{selectedEditCustomer?.fullName || 'Cliente no disponible'}</div>
+                    <small className="text-slate-500 text-xs">{selectedEditCustomer?.phone || '-'}</small>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Buscar cliente por nombre o teléfono..."
+                      value={editCustomerSearch}
+                      onChange={(e) => setEditCustomerSearch(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white mb-2"
+                    />
+                    <div className="border border-slate-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-slate-100 bg-white">
+                      {filteredEditCustomers.length > 0 ? (
+                        filteredEditCustomers.map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            className={`w-full text-left p-2.5 transition-colors ${
+                              editFormData.customerId === customer.id ? 'bg-bunny-creamy/50 text-bunny-dark font-medium' : 'hover:bg-slate-50 text-slate-700'
+                            }`}
+                            onClick={() => setEditFormData((prev) => ({ ...prev, customerId: customer.id }))}
+                          >
+                            <div className="font-semibold text-sm">{customer.fullName}</div>
+                            <small className="text-xs text-slate-500">{customer.phone}</small>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-3 text-slate-400 text-sm text-center">No se encontraron clientes</div>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      <Form.Control
-                        type="text"
-                        placeholder="Buscar cliente por nombre o teléfono..."
-                        value={editCustomerSearch}
-                        onChange={(e) => setEditCustomerSearch(e.target.value)}
-                        className="mb-2"
-                      />
-                      <div className="border rounded" style={{ maxHeight: '210px', overflowY: 'auto' }}>
-                        {filteredEditCustomers.length > 0 ? (
-                          filteredEditCustomers.map((customer) => (
-                            <button
-                              key={customer.id}
-                              type="button"
-                              className={`btn w-100 text-start border-bottom rounded-0 ${
-                                editFormData.customerId === customer.id ? 'btn-primary' : 'btn-light'
-                              }`}
-                              onClick={() => setEditFormData((prev) => ({ ...prev, customerId: customer.id }))}
-                            >
-                              <div className="fw-semibold">{customer.fullName}</div>
-                              <small>{customer.phone}</small>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="p-3 text-muted">No se encontraron clientes</div>
-                        )}
-                      </div>
-                      <Form.Text className="text-muted">
-                        {selectedEditCustomer
-                          ? `Seleccionado: ${selectedEditCustomer.fullName}`
-                          : 'Selecciona un cliente de la lista'}
-                      </Form.Text>
-                    </>
-                  )}
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Servicio(s) *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Buscar servicios..."
-                    value={editServiceSearch}
-                    onChange={(e) => setEditServiceSearch(e.target.value)}
-                    className="mb-2"
-                  />
-                  <div className="border rounded p-2" style={{ maxHeight: '210px', overflowY: 'auto' }}>
-                    {filteredEditServices.length > 0 ? (
-                      filteredEditServices.map((service) => (
-                        <Form.Check
-                          key={service.id}
+                    <small className="text-xs text-slate-500 mt-1 block">
+                      {selectedEditCustomer
+                        ? `Seleccionado: ${selectedEditCustomer.fullName}`
+                        : 'Selecciona un cliente de la lista'}
+                    </small>
+                  </>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                  Servicio(s) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Buscar servicios..."
+                  value={editServiceSearch}
+                  onChange={(e) => setEditServiceSearch(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white mb-2"
+                />
+                <div className="border border-slate-200 rounded-xl p-2.5 max-h-52 overflow-y-auto space-y-1.5 bg-white">
+                  {filteredEditServices.length > 0 ? (
+                    filteredEditServices.map((service) => (
+                      <label
+                        key={service.id}
+                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs"
+                      >
+                        <input
                           id={`edit-service-${service.id}`}
                           type="checkbox"
-                          className="mb-2"
-                          label={`${service.name} - ${formatCurrency(service.price)} (${service.durationMinutes} min)`}
                           checked={editFormData.serviceIds.includes(service.id)}
                           onChange={() => toggleEditService(service.id)}
+                          className="rounded text-bunny-mid focus:ring-bunny-mid h-4 w-4 border-slate-300"
                         />
-                      ))
-                    ) : (
-                      <div className="text-muted">No se encontraron servicios</div>
-                    )}
-                  </div>
-                  <Form.Text className="text-muted d-block mt-2">
-                    Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | Duración: {editDuration} min
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-            </Row>
+                        <span className="text-slate-700 font-medium">
+                          {service.name} - {formatCurrency(service.price)} ({service.durationMinutes} min)
+                        </span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="text-slate-400 text-xs text-center py-2">No se encontraron servicios</div>
+                  )}
+                </div>
+                <small className="text-xs text-slate-500 mt-1 block">
+                  Seleccionados: {selectedEditServices.length} | Total: {formatCurrency(editTotal)} | Duración: {editDuration} min
+                </small>
+              </div>
+            </div>
+
             <AppointmentSchedulePicker
               selectedDate={editFormData.appointmentDate}
               selectedTime={editFormData.appointmentTime}
@@ -2219,71 +2323,74 @@ export default function AppointmentsPage() {
               appointments={appointments.filter((a) => a.id !== editingAppointmentId)}
               allowPastDates={editMode === 'edit'}
             />
+
             {editMode === 'edit' ? (
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Estado</Form.Label>
-                    <Form.Select
-                      value={editFormData.status}
-                      onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as AppointmentStatus }))}
-                    >
-                      <option value={AppointmentStatus.PENDING}>Pendiente</option>
-                      <option value={AppointmentStatus.CONFIRMED}>Confirmada</option>
-                      <option value={AppointmentStatus.RESCHEDULE_REQUESTED}>Reprogramar</option>
-                      <option value={AppointmentStatus.COMPLETED}>Completada</option>
-                      <option value={AppointmentStatus.CANCELLED}>Cancelada</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={6} className="d-flex align-items-center">
-                  <div className="text-muted small">
-                    Valor estimado: {formatCurrency(editTotal)} CLP
-                  </div>
-                </Col>
-              </Row>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1.5 block">Estado</label>
+                  <select
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as AppointmentStatus }))}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white"
+                  >
+                    <option value={AppointmentStatus.PENDING}>⏳ Pendiente</option>
+                    <option value={AppointmentStatus.CONFIRMED}>✅ Confirmada</option>
+                    <option value={AppointmentStatus.RESCHEDULE_REQUESTED}>🔄 Reprogramar</option>
+                    <option value={AppointmentStatus.COMPLETED}>🎉 Completada</option>
+                    <option value={AppointmentStatus.CANCELLED}>❌ Cancelada</option>
+                  </select>
+                </div>
+                <div className="text-xs text-slate-500 md:pt-5">
+                  Valor estimado: <strong className="text-slate-700">{formatCurrency(editTotal)} CLP</strong>
+                </div>
+              </div>
             ) : (
-              <div className="mb-3 p-2 bg-warning-subtle text-warning-emphasis rounded border border-warning-subtle small">
+              <div className="p-3 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs">
                 🔄 Reagendando cita <strong>#{editingAppointmentId}</strong> de <strong>{selectedEditCustomer?.fullName}</strong>. Selecciona la nueva fecha y hora. La cita mantendrá su ID y pasará a estado <strong>Confirmada</strong>.
               </div>
             )}
-            <Form.Group className="mb-3">
-              <Form.Label>Detalle de servicios</Form.Label>
-              <Form.Control
-                plaintext
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 mb-1.5 block">Detalle de servicios</label>
+              <input
+                type="text"
                 readOnly
                 value={selectedEditServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-medium"
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Precio Final (CLP)</Form.Label>
-              <Form.Control
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 mb-1.5 block">Precio Final (CLP)</label>
+              <input
                 type="number"
                 min={0}
                 step={100}
                 value={editFormData.totalPrice || 0}
                 onChange={(e) => setEditFormData((prev) => ({ ...prev, totalPrice: Number(e.target.value) }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white"
               />
-              <Form.Text className="text-muted">
+              <small className="text-xs text-slate-500 mt-1 block">
                 Valor calculado según servicios: {formatCurrency(editTotal)}
-              </Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Notas</Form.Label>
-              <Form.Control
-                as="textarea"
+              </small>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 mb-1.5 block">Notas</label>
+              <textarea
                 rows={3}
                 value={editFormData.notes}
                 onChange={(e) => setEditFormData((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder="Observaciones, preferencias, etc..."
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white transition-colors"
               />
-            </Form.Group>
+            </div>
 
-            <div className="p-3 border rounded bg-light border-primary-subtle mb-3">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <div className="fw-semibold text-primary">🎁 Canje de GiftCards para esta Cita</div>
+            <div className="p-4 border border-bunny-accent/40 rounded-2xl bg-white shadow-xs">
+              <div className="flex justify-between items-center mb-2">
+                <div className="font-semibold text-sm text-bunny-dark">🎁 Canje de GiftCards para esta Cita</div>
                 {availableEditCustomerGiftCards.length > 0 && (
-                  <Badge bg="success">
+                  <Badge variant="success" className="text-xs">
                     {availableEditCustomerGiftCards.length} disponible{availableEditCustomerGiftCards.length > 1 ? 's' : ''}
                   </Badge>
                 )}
@@ -2291,24 +2398,25 @@ export default function AppointmentsPage() {
 
               {availableEditCustomerGiftCards.length > 0 ? (
                 <>
-                  <p className="text-muted small mb-2">
+                  <p className="text-slate-500 text-xs mb-2">
                     Servicios disponibles de la clienta. Haz clic en el botón para canjear 1 servicio hacia esta cita:
                   </p>
-                  <div className="d-flex flex-column gap-2 mb-3">
+                  <div className="space-y-2 mb-3">
                     {availableEditCustomerGiftCards.map((gc) => (
-                      <div key={gc.id} className="p-2 border rounded bg-white">
-                        <div className="d-flex justify-content-between align-items-center mb-1">
-                          <span className="fw-semibold small">{gc.code}</span>
-                          <small className="text-muted">Vence: {gc.expiresOn}</small>
+                      <div key={gc.id} className="p-3 border border-slate-200 rounded-xl bg-slate-50">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="font-semibold text-xs text-slate-800">{gc.code}</span>
+                          <small className="text-slate-500 text-xs">Vence: {gc.expiresOn}</small>
                         </div>
-                        <div className="d-flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                           {gc.items.filter((item) => item.remainingQuantity > 0).map((item) => (
                             <Button
                               key={item.id}
                               size="sm"
-                              variant="outline-success"
+                              variant="outline"
                               disabled={applyingGiftCard}
                               onClick={() => handleApplyGiftCardToEditAppointment(gc, item)}
+                              className="text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50 py-1"
                             >
                               ⚡ Canjear {item.serviceName} ({item.remainingQuantity} disp.)
                             </Button>
@@ -2319,28 +2427,30 @@ export default function AppointmentsPage() {
                   </div>
                 </>
               ) : (
-                <p className="text-muted small mb-2">
+                <p className="text-slate-400 text-xs mb-2 italic">
                   La clienta no tiene GiftCards vinculadas activas con saldo.
                 </p>
               )}
 
               {/* Input para vincular GiftCard al portador o código */}
-              <div className="pt-2 border-top">
-                <small className="text-muted fw-semibold d-block mb-1">
+              <div className="pt-3 border-t border-slate-100 mt-2">
+                <small className="text-slate-600 font-semibold block mb-1 text-xs">
                   ¿La clienta presenta una GiftCard al portador o código de tarjeta?
                 </small>
-                <div className="d-flex gap-2">
-                  <Form.Control
-                    size="sm"
+                <div className="flex gap-2">
+                  <input
+                    type="text"
                     placeholder="Ej: GC-2026-000123"
                     value={gcCodeInput}
                     onChange={(e) => setGcCodeInput(e.target.value)}
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
                   />
                   <Button
                     size="sm"
-                    variant="outline-primary"
+                    variant="outline"
                     disabled={bindingGcLoading || !gcCodeInput.trim()}
                     onClick={handleBindGiftCardCodeToEditCustomer}
+                    className="text-xs"
                   >
                     {bindingGcLoading ? 'Buscando...' : 'Vincular y Mostrar'}
                   </Button>
@@ -2348,66 +2458,75 @@ export default function AppointmentsPage() {
               </div>
             </div>
 
-            <hr />
-            <h6 className="mb-2">Cargos extra personalizados</h6>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <small className="text-muted">Gestión de ítems adicionales para esta cita.</small>
-              <Button size="sm" variant="outline-primary" onClick={() => {
-                setEditCustomChargeItems(prev => [...prev, { id: nextEditCustomChargeId, description: '', amount: 0 }]);
-                setNextEditCustomChargeId(prev => prev + 1);
-              }}>
-                + Agregar ítem
-              </Button>
+            <div className="border-t border-slate-200 pt-3">
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h6 className="font-bold text-slate-800 text-sm mb-0">Cargos extra personalizados</h6>
+                  <small className="text-slate-500 text-xs">Gestión de ítems adicionales para esta cita.</small>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setEditCustomChargeItems(prev => [...prev, { id: nextEditCustomChargeId, description: '', amount: 0 }]);
+                  setNextEditCustomChargeId(prev => prev + 1);
+                }} className="text-xs">
+                  + Agregar ítem
+                </Button>
+              </div>
+
+              {editCustomChargeItems.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {editCustomChargeItems.map((item) => (
+                    <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-7">
+                        <input
+                          type="text"
+                          placeholder="Descripción (ej: Cristalería)"
+                          value={item.description}
+                          onChange={(e) => setEditCustomChargeItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <input
+                          type="number"
+                          min={0}
+                          step={100}
+                          value={item.amount}
+                          onChange={(e) => setEditCustomChargeItems(prev => prev.map(i => i.id === item.id ? { ...i, amount: Number(e.target.value) || 0 } : i))}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => setEditCustomChargeItems(prev => prev.filter(i => i.id !== item.id))}
+                          className="w-full text-xs py-1"
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {editCustomChargeItems.length > 0 && (
-              <div className="d-flex flex-column gap-2 mb-3">
-                {editCustomChargeItems.map((item) => (
-                  <Row key={item.id} className="g-2 align-items-center">
-                    <Col md={7}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Descripción (ej: Cristalería)"
-                        value={item.description}
-                        onChange={(e) => setEditCustomChargeItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
-                      />
-                    </Col>
-                    <Col md={3}>
-                      <Form.Control
-                        type="number"
-                        min={0}
-                        step={100}
-                        value={item.amount}
-                        onChange={(e) => setEditCustomChargeItems(prev => prev.map(i => i.id === item.id ? { ...i, amount: Number(e.target.value) || 0 } : i))}
-                      />
-                    </Col>
-                    <Col md={2} className="d-grid">
-                      <Button size="sm" variant="outline-danger" onClick={() => setEditCustomChargeItems(prev => prev.filter(i => i.id !== item.id))}>
-                        Eliminar
-                      </Button>
-                    </Col>
-                  </Row>
-                ))}
-              </div>
-            )}
-
-            <hr />
-            <div className="d-flex flex-column gap-1">
-              <div className="d-flex justify-content-between">
+            <div className="border-t border-slate-200 pt-3 space-y-1.5 text-sm">
+              <div className="flex justify-between text-slate-600">
                 <span>Subtotal servicios</span>
-                <strong>{formatCurrency(editTotal)}</strong>
+                <strong className="text-slate-800">{formatCurrency(editTotal)}</strong>
               </div>
-              <div className="d-flex justify-content-between">
+              <div className="flex justify-between text-slate-600">
                 <span>Total extras</span>
-                <strong>{formatCurrency(editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}</strong>
+                <strong className="text-slate-800">{formatCurrency(editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}</strong>
               </div>
-              <div className="d-flex justify-content-between fs-5 mt-1 text-bunny-dark">
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-slate-200 text-slate-900">
                 <span>Total final estimado</span>
-                <strong>{formatCurrency(editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}</strong>
+                <span className="text-bunny-dark">{formatCurrency(editTotal + editCustomChargeItems.reduce((s, i) => s + i.amount, 0))}</span>
               </div>
             </div>
           </Modal.Body>
-          <Modal.Footer>
+          <Modal.Footer className="border-t border-slate-100 flex justify-end gap-2 p-4">
             <Button variant="secondary" onClick={closeEditModal}>
               Cancelar
             </Button>
@@ -2415,7 +2534,7 @@ export default function AppointmentsPage() {
               {editMode === 'reschedule' ? 'Guardar Reagendado' : 'Guardar Cambios'}
             </Button>
           </Modal.Footer>
-        </Form>
+        </form>
       </Modal>
 
       {/* Modal de Cancelación con Motivo */}

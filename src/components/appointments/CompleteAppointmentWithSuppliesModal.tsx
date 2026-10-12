@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Table, Form, Alert, Spinner, Row, Col, Badge } from 'react-bootstrap';
 import { FiCheckCircle, FiAlertTriangle, FiPackage, FiFileText } from 'react-icons/fi';
 import { inventoryApi } from '@/api/inventory.api';
 import { appointmentsApi } from '@/api/appointments.api';
@@ -8,6 +7,7 @@ import { Appointment } from '@/types/appointment.types';
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { formatRutWithDots } from '@/utils/rutUtils';
+import { Modal, Button, Badge, Spinner, Alert } from '@/components/ui';
 
 interface Props {
   show: boolean;
@@ -122,111 +122,105 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
-        <Modal.Title className="d-flex align-items-center gap-2" style={{ color: '#14532d', fontSize: '1.15rem', fontWeight: 700 }}>
-          <FiCheckCircle size={22} className="text-success" />
-          Completar Cita #{appointmentId}
+      <Modal.Header closeButton className="bg-emerald-50/70 border-b border-emerald-200">
+        <Modal.Title>
+          <div className="flex items-center gap-2 text-emerald-900 font-bold text-base sm:text-lg">
+            <FiCheckCircle size={22} className="text-emerald-600" />
+            <span>Completar Cita #{appointmentId}</span>
+          </div>
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="p-3">
+      <Modal.Body className="p-4 space-y-4">
         {loading ? (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="success" />
-            <p className="mt-2 text-muted small">Cargando receta e insumos...</p>
+          <div className="text-center py-12">
+            <Spinner size="lg" className="border-emerald-600 mx-auto" />
+            <p className="mt-2 text-slate-400 text-xs">Cargando receta e insumos...</p>
           </div>
         ) : (
           <>
             {/* Resumen de la Cita */}
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '10px',
-                padding: '12px 16px',
-                marginBottom: '16px',
-              }}
-            >
-              <Row className="gy-2">
-                <Col sm={6}>
-                  <div className="text-muted small">Cliente</div>
-                  <div className="fw-bold text-dark">{preview?.customerName}</div>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                <div>
+                  <span className="text-slate-400 block text-xs">Cliente</span>
+                  <span className="font-bold text-slate-800">{preview?.customerName}</span>
                   {appointmentData?.customer?.rut ? (
-                    <div className="text-muted small font-monospace mt-1">
+                    <div className="text-slate-500 font-mono text-xs mt-0.5">
                       🆔 {formatRutWithDots(appointmentData.customer.rut)}
                     </div>
                   ) : (
-                    <div className="small text-warning fw-semibold mt-1">
+                    <div className="text-amber-600 font-semibold text-xs mt-0.5">
                       ⚠️ Sin RUT registrado
                     </div>
                   )}
-                </Col>
-                <Col sm={6}>
-                  <div className="text-muted small">Servicios Realizados</div>
-                  <div className="fw-semibold text-dark">
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Servicios Realizados</span>
+                  <span className="font-semibold text-slate-800">
                     {preview?.serviceNames.join(' + ') || 'Servicio'}
-                  </div>
-                </Col>
-              </Row>
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Insumos */}
             {items.length === 0 ? (
-              <Alert variant="secondary" className="small py-3 px-3 mb-3">
+              <Alert variant="info" className="text-xs sm:text-sm">
                 ℹ️ Los servicios de esta cita no tienen insumos ni receta configurada en el inventario. La cita se completará normalmente.
               </Alert>
             ) : (
-              <>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <div className="fw-bold small text-dark d-flex align-items-center gap-2">
-                    <FiPackage className="text-primary" />
-                    Insumos a Descontar (Ajusta las cantidades si se usó más o menos):
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-2">
+                    <FiPackage className="text-bunny-primary" />
+                    <span>Insumos a Descontar:</span>
                   </div>
-                  <Form.Check
-                    type="switch"
-                    id="deduct-switch"
-                    label="Descontar stock"
-                    checked={deductSupplies}
-                    onChange={(e) => setDeductSupplies(e.target.checked)}
-                    className="small fw-semibold text-secondary"
-                  />
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={deductSupplies}
+                      onChange={(e) => setDeductSupplies(e.target.checked)}
+                      className="rounded border-slate-300 text-bunny-primary focus:ring-bunny-primary"
+                    />
+                    <span>Descontar stock</span>
+                  </label>
                 </div>
 
                 {hasDeficit && deductSupplies && (
-                  <Alert variant="warning" className="py-2 px-3 mb-2 small d-flex align-items-center gap-2">
-                    <FiAlertTriangle className="flex-shrink-0" size={18} />
+                  <Alert variant="warning" className="text-xs flex items-start gap-2">
+                    <FiAlertTriangle className="shrink-0 text-base mt-0.5" />
                     <div>
                       <strong>Aviso de stock insuficiente:</strong> Uno o más insumos quedarán con saldo negativo para registrar el déficit y poder auditarlo.
                     </div>
                   </Alert>
                 )}
 
-                <div className="table-responsive mb-3">
-                  <Table hover size="sm" className="mb-0 align-middle" style={{ fontSize: '0.88rem' }}>
-                    <thead className="table-light">
+                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
                       <tr>
-                        <th>Insumo</th>
-                        <th style={{ width: '130px' }}>Cantidad Usada</th>
-                        <th>Stock Actual</th>
-                        <th>Stock Resultante</th>
-                        <th className="text-end">Costo Est.</th>
+                        <th className="py-2.5 px-3">Insumo</th>
+                        <th className="py-2.5 px-3 w-32">Cantidad Usada</th>
+                        <th className="py-2.5 px-3">Stock Actual</th>
+                        <th className="py-2.5 px-3">Stock Resultante</th>
+                        <th className="py-2.5 px-3 text-right">Costo Est.</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100">
                       {items.map((item) => {
                         const stockAfter = item.currentStock - item.quantity;
                         const isItemDeficit = stockAfter < 0;
 
                         return (
-                          <tr key={item.productId}>
-                            <td>
-                              <div className="fw-semibold text-dark">{item.productName}</div>
-                              <small className="text-muted">{item.consumptionUnit}</small>
+                          <tr key={item.productId} className="hover:bg-slate-50/60">
+                            <td className="py-2 px-3">
+                              <div className="font-semibold text-slate-800">{item.productName}</div>
+                              <small className="text-slate-400">{item.consumptionUnit}</small>
                             </td>
-                            <td>
-                              <Form.Control
+                            <td className="py-2 px-3">
+                              <input
                                 type="number"
-                                size="sm"
                                 min={0}
                                 step="any"
                                 value={item.quantity}
@@ -234,103 +228,100 @@ export const CompleteAppointmentWithSuppliesModal: React.FC<Props> = ({
                                   handleQuantityChange(item.productId, parseFloat(e.target.value) || 0)
                                 }
                                 disabled={!deductSupplies}
-                                style={{ width: '100px' }}
+                                className="w-24 text-xs rounded border border-slate-300 p-1.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:opacity-50"
                               />
                             </td>
-                            <td className="text-muted">
+                            <td className="py-2 px-3 text-slate-500">
                               {item.currentStock.toFixed(1)} {item.consumptionUnit}
                             </td>
-                            <td>
+                            <td className="py-2 px-3">
                               <span
-                                className={`fw-semibold ${
-                                  isItemDeficit && deductSupplies ? 'text-danger' : 'text-success'
+                                className={`font-semibold ${
+                                  isItemDeficit && deductSupplies ? 'text-rose-600' : 'text-emerald-600'
                                 }`}
                               >
                                 {deductSupplies ? stockAfter.toFixed(1) : item.currentStock.toFixed(1)}{' '}
                                 {item.consumptionUnit}
                               </span>
                               {isItemDeficit && deductSupplies && (
-                                <Badge bg="danger" className="ms-1 small">
+                                <Badge variant="danger" className="ml-1 text-[10px]">
                                   Déficit
                                 </Badge>
                               )}
                             </td>
-                            <td className="text-end text-muted">
+                            <td className="py-2 px-3 text-right text-slate-500 font-medium">
                               {formatCurrencyCLP(item.quantity * item.unitConsumptionCost)}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
-                    <tfoot className="table-light">
+                    <tfoot className="bg-slate-50 border-t border-slate-200 font-bold">
                       <tr>
-                        <td colSpan={4} className="fw-bold text-end">
+                        <td colSpan={4} className="py-2 px-3 text-right text-slate-700">
                           Costo Total de Materiales:
                         </td>
-                        <td className="text-end fw-bold text-primary">
+                        <td className="py-2 px-3 text-right text-bunny-primary">
                           {formatCurrencyCLP(totalCost)}
                         </td>
                       </tr>
                     </tfoot>
-                  </Table>
+                  </table>
                 </div>
-              </>
+              </div>
             )}
 
             {/* Opción de Boleta */}
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                padding: '10px 14px',
-                marginBottom: '10px',
-              }}
-            >
-              <Form.Check
-                type="checkbox"
-                id="generate-invoice-checkbox"
-                label={
-                  <span className="d-flex align-items-center gap-2 small fw-semibold text-dark">
-                    <FiFileText /> Generar boleta de honorarios para esta cita
-                  </span>
-                }
-                checked={generateInvoice}
-                onChange={(e) => setGenerateInvoice(e.target.checked)}
-              />
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs sm:text-sm font-semibold text-slate-800">
+                <input
+                  type="checkbox"
+                  id="generate-invoice-checkbox"
+                  checked={generateInvoice}
+                  onChange={(e) => setGenerateInvoice(e.target.checked)}
+                  className="rounded border-slate-300 text-bunny-primary focus:ring-bunny-primary"
+                />
+                <span className="flex items-center gap-1.5">
+                  <FiFileText /> Generar boleta de honorarios para esta cita
+                </span>
+              </label>
               {invoiceQuotaInfo && (
-                <small className="text-muted d-block mt-1 ps-4">{invoiceQuotaInfo}</small>
+                <small className="text-slate-400 block mt-1 ml-5 text-xs">{invoiceQuotaInfo}</small>
               )}
             </div>
           </>
         )}
       </Modal.Body>
 
-      <Modal.Footer className="d-flex justify-content-between flex-wrap gap-2">
-        <Button variant="secondary" onClick={onHide} disabled={submitting}>
-          Cancelar
-        </Button>
-
-        <div className="d-flex gap-2">
-          {items.length > 0 && deductSupplies && (
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={() => handleComplete(false)}
-              disabled={submitting || loading}
-            >
-              Completar sin descontar
-            </Button>
-          )}
-
-          <Button
-            variant="success"
-            onClick={() => handleComplete(true)}
-            disabled={submitting || loading}
-            className="d-flex align-items-center gap-1"
-          >
-            {submitting ? 'Procesando...' : '✅ Confirmar y Completar Cita'}
+      <Modal.Footer>
+        <div className="w-full flex justify-between items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onHide} disabled={submitting}>
+            Cancelar
           </Button>
+
+          <div className="flex gap-2">
+            {items.length > 0 && deductSupplies && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComplete(false)}
+                disabled={submitting || loading}
+                className="text-xs"
+              >
+                Completar sin descontar
+              </Button>
+            )}
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => handleComplete(true)}
+              disabled={submitting || loading}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-1.5 text-xs sm:text-sm"
+            >
+              {submitting ? 'Procesando...' : '✅ Confirmar y Completar Cita'}
+            </Button>
+          </div>
         </div>
       </Modal.Footer>
     </Modal>

@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import { Spinner } from './Spinner';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'link';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'link' | 'success' | 'warning';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -27,6 +27,10 @@ const variantClasses: Record<ButtonVariant, string> = {
     'text-bunny-text hover:bg-bunny-primary-light/60 focus-visible:ring-bunny-primary active:scale-[0.99]',
   link:
     'text-bunny-primary-dark hover:underline p-0 h-auto font-medium focus-visible:ring-bunny-primary',
+  success:
+    'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm focus-visible:ring-emerald-500 active:scale-[0.99]',
+  warning:
+    'bg-amber-500 hover:bg-amber-600 text-white shadow-sm focus-visible:ring-amber-500 active:scale-[0.99]',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

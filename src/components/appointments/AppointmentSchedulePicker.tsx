@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Form, Row, Col, Button, Badge, Alert, InputGroup } from 'react-bootstrap';
 import {
   format,
   isValid,
@@ -29,6 +28,7 @@ import {
   timeToMinutes,
   minutesToTime,
 } from '../../utils/unavailabilityUtils';
+import { Badge, Alert } from '@/components/ui';
 
 interface AppointmentSchedulePickerProps {
   selectedDate: string; // YYYY-MM-DD
@@ -60,7 +60,7 @@ const COMMON_SLOTS = [
   '21:00',
 ];
 
-const WEEK_DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps> = ({
   selectedDate,
@@ -68,29 +68,44 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   durationMinutes = 60,
   onDateChange,
   onTimeChange,
-  unavailabilities = [],
+  unavailabilities,
   unavailabilityColors = DEFAULT_UNAVAILABILITY_COLORS,
   appointments = [],
   required = true,
   minDate,
   allowPastDates = false,
 }) => {
-  const [showVisualCalendar, setShowVisualCalendar] = useState(true);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
-  const effectiveMinDate = minDate || (allowPastDates ? undefined : todayStr);
+  const effectiveMinDate = allowPastDates ? undefined : (minDate || todayStr);
 
-  // Parse current viewing month based on selected date or today
-  const initialMonth = useMemo(() => {
-    if (selectedDate && selectedDate.length >= 10) {
-      const parsed = new Date(`${selectedDate.slice(0, 10)}T00:00:00`);
-      if (isValid(parsed)) return parsed;
+  const [currentMonth, setCurrentMonth] = useState<Date>(() => {
+    if (selectedDate && isValid(new Date(`${selectedDate}T00:00:00`))) {
+      return new Date(`${selectedDate}T00:00:00`);
     }
     return new Date();
+  });
+
+  const [showVisualCalendar, setShowVisualCalendar] = useState<boolean>(true);
+
+  const formattedDateDisplay = useMemo(() => {
+    if (!selectedDate) return '';
+    try {
+      const parsed = new Date(`${selectedDate}T00:00:00`);
+      if (!isValid(parsed)) return selectedDate;
+      return format(parsed, "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+    } catch {
+      return selectedDate;
+    }
   }, [selectedDate]);
 
-  const [currentMonth, setCurrentMonth] = useState<Date>(initialMonth);
+  const calculatedEndTime = useMemo(() => {
+    if (!selectedTime) return '';
+    const startMin = timeToMinutes(selectedTime);
+    const endMin = startMin + durationMinutes;
+    return minutesToTime(endMin);
+  }, [selectedTime, durationMinutes]);
 
-  // Selected date status checks
   const fullDayBlock = useMemo(() => {
     if (!selectedDate) return { blocked: false };
     return isDateBlockedFullDay(selectedDate, unavailabilities);
@@ -101,34 +116,36 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
     return getTimeSlotBlocksForDate(selectedDate, unavailabilities);
   }, [selectedDate, unavailabilities]);
 
-  // Appointments on selected date (incluyendo confirmadas, pendientes y completadas)
+  const timeConflict = useMemo(() => {
+    if (!selectedDate || !selectedTime) return { hasConflict: false };
+    return checkTimeSlotConflict(selectedDate, selectedTime, durationMinutes, unavailabilities);
+  }, [selectedDate, selectedTime, durationMinutes, unavailabilities]);
+
   const dayAppointments = useMemo(() => {
     if (!selectedDate) return [];
-    return appointments.filter((apt) => {
-      const aptDate = apt.appointmentDate ? apt.appointmentDate.slice(0, 10) : '';
-      return (
-        aptDate === selectedDate &&
-        apt.status !== 'CANCELLED'
-      );
-    }).sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
+    return appointments
+      .filter((apt) => {
+        if (!apt.appointmentDate) return false;
+        const aptDateStr = typeof apt.appointmentDate === 'string'
+          ? apt.appointmentDate.slice(0, 10)
+          : format(new Date(apt.appointmentDate), 'yyyy-MM-dd');
+        return aptDateStr === selectedDate && apt.status !== 'CANCELLED';
+      })
+      .sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
   }, [selectedDate, appointments]);
 
-  // Funciones de ayuda para citas del día
   const getAptDuration = (apt: Appointment): number => {
-    if (apt.totalDurationMinutes && apt.totalDurationMinutes > 0) {
-      return apt.totalDurationMinutes;
-    }
+    if (apt.service?.durationMinutes) return apt.service.durationMinutes;
     if (apt.services && apt.services.length > 0) {
-      return apt.services.reduce((acc, s) => acc + (s.durationMinutes || 60), 0);
+      return apt.services.reduce((acc, s) => acc + (s.durationMinutes || 0), 0) || 60;
     }
-    return apt.service?.durationMinutes || 60;
+    return 60;
   };
 
   const getAptEndTime = (apt: Appointment): string => {
     if (!apt.appointmentTime) return '';
-    const startMin = timeToMinutes(apt.appointmentTime);
     const dur = getAptDuration(apt);
-    return minutesToTime(startMin + dur);
+    return minutesToTime(timeToMinutes(apt.appointmentTime) + dur);
   };
 
   const getAptServicesText = (apt: Appointment): string => {
@@ -139,90 +156,69 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   };
 
   const isAptCollidingWithSelected = (apt: Appointment): boolean => {
-    if (!selectedDate || !selectedTime || !apt.appointmentTime) return false;
-    const startMin = timeToMinutes(selectedTime);
-    const endMin = startMin + Math.max(1, durationMinutes);
+    if (!selectedTime || !apt.appointmentTime) return false;
+    const myStart = timeToMinutes(selectedTime);
+    const myEnd = myStart + durationMinutes;
     const aptStart = timeToMinutes(apt.appointmentTime);
     const aptEnd = aptStart + getAptDuration(apt);
-    return Math.max(startMin, aptStart) < Math.min(endMin, aptEnd);
+    return Math.max(myStart, aptStart) < Math.min(myEnd, aptEnd);
   };
 
-  // Time conflict detection with schedule unavailabilities
-  const timeConflict = useMemo(() => {
-    if (!selectedDate || !selectedTime) return { hasConflict: false };
-    return checkTimeSlotConflict(selectedDate, selectedTime, durationMinutes, unavailabilities);
-  }, [selectedDate, selectedTime, durationMinutes, unavailabilities]);
-
-  // Conflict with existing appointment
   const existingAptConflict = useMemo(() => {
-    if (!selectedDate || !selectedTime) return null;
-    return dayAppointments.find((apt) => isAptCollidingWithSelected(apt));
-  }, [selectedDate, selectedTime, durationMinutes, dayAppointments]);
+    if (!selectedDate || !selectedTime || dayAppointments.length === 0) return null;
+    return dayAppointments.find((apt) => isAptCollidingWithSelected(apt)) || null;
+  }, [selectedDate, selectedTime, dayAppointments, durationMinutes]);
 
-  // Estimated end time
-  const calculatedEndTime = useMemo(() => {
-    if (!selectedTime) return '';
-    const startMin = timeToMinutes(selectedTime);
-    return minutesToTime(startMin + Math.max(1, durationMinutes));
-  }, [selectedTime, durationMinutes]);
+  const appointmentsCountByDate = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const apt of appointments) {
+      if (!apt.appointmentDate || apt.status === 'CANCELLED') continue;
+      const dStr = typeof apt.appointmentDate === 'string'
+        ? apt.appointmentDate.slice(0, 10)
+        : format(new Date(apt.appointmentDate), 'yyyy-MM-dd');
+      map.set(dStr, (map.get(dStr) || 0) + 1);
+    }
+    return map;
+  }, [appointments]);
 
-  // Calendar cells generation
   const calendarCells = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const allDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-    const days = eachDayOfInterval({ start: calStart, end: calEnd });
-
-    return days.map((day) => {
-      const dayStr = format(day, 'yyyy-MM-dd');
-      const isSelected = selectedDate === dayStr;
-      const isCurrentMonth = isSameMonth(day, currentMonth);
-      const isPast = effectiveMinDate ? dayStr < effectiveMinDate : (!allowPastDates && dayStr < todayStr);
-      const fDayBlock = isDateBlockedFullDay(dayStr, unavailabilities);
-      const tSlotBlocks = getTimeSlotBlocksForDate(dayStr, unavailabilities);
-
-      const aptsCount = appointments.filter((apt) => {
-        const aptDate = apt.appointmentDate ? apt.appointmentDate.slice(0, 10) : '';
-        return aptDate === dayStr && apt.status !== 'CANCELLED';
-      }).length;
+    return allDays.map((d) => {
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const isPast = effectiveMinDate ? dateStr < effectiveMinDate : false;
+      const fullDay = isDateBlockedFullDay(dateStr, unavailabilities);
+      const slots = getTimeSlotBlocksForDate(dateStr, unavailabilities);
+      const aptCount = appointmentsCountByDate.get(dateStr) || 0;
 
       return {
-        date: day,
-        dateStr: dayStr,
-        dayNumber: format(day, 'd'),
-        isToday: isToday(day),
-        isSelected,
+        date: d,
+        dateStr,
+        dayNumber: format(d, 'd'),
+        isOutsideMonth: !isSameMonth(d, currentMonth),
+        isToday: isToday(d),
         isPast,
-        isOutsideMonth: !isCurrentMonth,
-        isFullDayBlocked: fDayBlock.blocked,
-        fullDayReason: fDayBlock.reason,
-        isTimeSlotBlocked: tSlotBlocks.length > 0,
-        timeSlotCount: tSlotBlocks.length,
-        timeSlotBlocks: tSlotBlocks,
-        appointmentCount: aptsCount,
+        isSelected: dateStr === selectedDate,
+        isFullDayBlocked: fullDay.blocked,
+        fullDayReason: fullDay.reason,
+        isTimeSlotBlocked: slots.length > 0,
+        timeSlotBlocks: slots,
+        appointmentCount: aptCount,
       };
     });
-  }, [currentMonth, selectedDate, unavailabilities, appointments, allowPastDates, todayStr, effectiveMinDate]);
-
-  const calendarRef = useRef<HTMLDivElement>(null);
-
-  // Formato legible en español para el campo de texto de fecha
-  const formattedDateDisplay = useMemo(() => {
-    if (!selectedDate) return '';
-    try {
-      const d = new Date(`${selectedDate.slice(0, 10)}T12:00:00`);
-      if (!isValid(d)) return selectedDate;
-      const formatted = format(d, "EEEE dd 'de' MMMM, yyyy", { locale: es });
-      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-    } catch {
-      return selectedDate;
-    }
-  }, [selectedDate]);
+  }, [currentMonth, selectedDate, unavailabilities, appointmentsCountByDate, effectiveMinDate]);
 
   const handleDateFieldClick = () => {
-    setShowVisualCalendar(true);
+    if (!showVisualCalendar) {
+      setShowVisualCalendar(true);
+      setTimeout(() => {
+        calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
   };
 
   const handleAdjustTimeMinutes = (delta: number) => {
@@ -242,17 +238,16 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   return (
     <div className="appointment-schedule-picker mb-3">
       {/* ─── FILA DE INPUTS DIRECTOS (Fecha y Hora) ─── */}
-      <Row className="g-2 mb-2 align-items-end">
-        <Col xs={12} sm={6}>
-          <Form.Group>
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <Form.Label className="fw-semibold small mb-0">
-                <FiCalendar className="me-1 text-primary" /> Fecha *
-              </Form.Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 items-end">
+        <div>
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-semibold text-xs text-slate-700 flex items-center gap-1 mb-0">
+                <FiCalendar className="text-bunny-primary" /> Fecha *
+              </label>
               <button
                 type="button"
-                className="btn btn-link p-0 text-decoration-none small text-primary fw-semibold"
-                style={{ fontSize: '11.5px' }}
+                className="text-xs text-bunny-primary hover:underline font-semibold"
                 onClick={() => setShowVisualCalendar(!showVisualCalendar)}
               >
                 {showVisualCalendar ? '▼ Ocultar calendario' : '▶ Ver calendario'}
@@ -268,146 +263,100 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   handleDateFieldClick();
                 }
               }}
-              className={`form-control d-flex align-items-center justify-content-between ${
-                fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr) ? 'is-invalid' : ''
+              className={`flex items-center justify-between border rounded-xl px-3 min-h-[38px] cursor-pointer select-none transition-colors ${
+                fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
+                  ? 'bg-rose-50 border-rose-400 text-rose-800'
+                  : selectedDate
+                  ? 'bg-bunny-light/10 border-bunny-accent/80 text-bunny-dark'
+                  : 'bg-white border-slate-300 text-slate-400'
               }`}
-              style={{
-                borderRadius: '8px',
-                cursor: 'pointer',
-                minHeight: '38px',
-                backgroundColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
-                  ? '#fff5f5'
-                  : selectedDate
-                  ? '#fdf8f6'
-                  : '#ffffff',
-                borderColor: fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
-                  ? '#dc3545'
-                  : selectedDate
-                  ? '#8c2a3e'
-                  : '#ced4da',
-                userSelect: 'none',
-                WebkitTapHighlightColor: 'transparent',
-              }}
               title="Toca para ver el calendario y seleccionar fecha"
             >
-              <span
-                style={{
-                  fontSize: '13.5px',
-                  fontWeight: selectedDate ? 600 : 400,
-                  color: selectedDate ? '#2d1a12' : '#6c757d',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <span className="text-xs sm:text-sm font-medium truncate">
                 {formattedDateDisplay || 'Toca un día en el calendario interactivo...'}
               </span>
               {selectedDate ? (
-                <span
-                  className="badge ms-2"
-                  style={{
-                    fontSize: '10.5px',
-                    backgroundColor: '#8c2a3e',
-                    color: '#fff',
-                    borderRadius: '6px',
-                    flexShrink: 0,
-                  }}
-                >
+                <span className="text-xs bg-bunny-primary text-white rounded-md px-2 py-0.5 ml-2 shrink-0">
                   📅 {selectedDate}
                 </span>
               ) : (
-                <span className="text-muted ms-2" style={{ fontSize: '13px', flexShrink: 0 }}>
+                <span className="text-slate-400 text-sm ml-2 shrink-0">
                   📅
                 </span>
               )}
             </div>
             <input type="hidden" name="appointmentDate" value={selectedDate} />
-          </Form.Group>
-        </Col>
+          </div>
+        </div>
 
-        <Col xs={12} sm={6}>
-          <Form.Group>
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <Form.Label className="fw-semibold small mb-0">
-                <FiClock className="me-1 text-primary" /> Hora *
-              </Form.Label>
+        <div>
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-semibold text-xs text-slate-700 flex items-center gap-1 mb-0">
+                <FiClock className="text-bunny-primary" /> Hora *
+              </label>
               {calculatedEndTime && (
-                <small className="text-muted" style={{ fontSize: '11px' }}>
-                  Termina: <strong>{calculatedEndTime} hrs</strong> ({durationMinutes} min)
+                <small className="text-slate-400 text-[11px]">
+                  Termina: <strong className="text-slate-700">{calculatedEndTime} hrs</strong> ({durationMinutes} min)
                 </small>
               )}
             </div>
-            <InputGroup>
-              <Form.Control
+            <div className="flex">
+              <input
                 type="time"
                 required={required}
                 value={selectedTime}
                 onChange={(e) => onTimeChange(e.target.value)}
-                className={timeConflict.hasConflict ? 'is-invalid' : ''}
-                style={{
-                  borderRadius: '8px 0 0 8px',
-                  borderColor: timeConflict.hasConflict ? '#dc3545' : '#ced4da',
-                  backgroundColor: timeConflict.hasConflict ? '#fff5f5' : '#fff',
-                  fontWeight: selectedTime ? 600 : 400,
-                  fontSize: '16px', // 16px previene el zoom automático de iOS Safari
-                }}
+                className={`flex-1 text-base sm:text-sm rounded-l-xl border p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary ${
+                  timeConflict.hasConflict ? 'bg-rose-50 border-rose-400 text-rose-800' : 'bg-white border-slate-300 text-slate-800'
+                }`}
               />
-              <Button
-                variant="outline-secondary"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => handleAdjustTimeMinutes(-15)}
                 title="Atrasar 15 minutos"
-                style={{ fontSize: '11px', borderColor: '#ced4da', fontWeight: 600 }}
+                className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 border-y border-r border-slate-300 text-slate-700 transition-colors"
               >
                 -15m
-              </Button>
-              <Button
-                variant="outline-secondary"
-                size="sm"
+              </button>
+              <button
+                type="button"
                 onClick={() => handleAdjustTimeMinutes(15)}
                 title="Adelantar 15 minutos"
-                style={{ fontSize: '11px', borderColor: '#ced4da', fontWeight: 600 }}
+                className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 border-y border-r border-slate-300 rounded-r-xl text-slate-700 transition-colors"
               >
                 +15m
-              </Button>
-            </InputGroup>
-          </Form.Group>
-        </Col>
-      </Row>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ─── CALENDARIO VISUAL INTERACTIVO ─── */}
       {showVisualCalendar && (
         <div
           ref={calendarRef}
-          className="p-3 rounded border mb-3 shadow-sm"
-          style={{
-            background: '#fffdfc',
-            borderColor: '#eed0c5',
-            borderRadius: '14px',
-          }}
+          className="p-3.5 rounded-2xl border border-bunny-accent/50 bg-[#fffdfc] shadow-sm mb-3"
         >
           {/* Navegación del mes */}
-          <div className="d-flex justify-content-between align-items-center mb-2">
+          <div className="flex justify-between items-center mb-2.5">
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary py-1 px-2"
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors"
               onClick={() => setCurrentMonth((prev) => subMonths(prev, 1))}
               aria-label="Mes anterior"
-              style={{ borderRadius: '6px' }}
             >
               <FaChevronLeft size={11} />
             </button>
 
-            <span className="fw-bold small text-capitalize text-dark" style={{ letterSpacing: '0.2px' }}>
+            <span className="font-bold text-xs sm:text-sm capitalize text-bunny-dark tracking-wide">
               {format(currentMonth, 'MMMM yyyy', { locale: es })}
             </span>
 
-            <div className="d-flex gap-1">
-              <Button
-                variant="outline-primary"
-                size="sm"
-                className="py-0 px-2 small"
-                style={{ fontSize: '11px', borderRadius: '6px' }}
+            <div className="flex gap-1">
+              <button
+                type="button"
+                className="px-2 py-1 rounded-lg border border-bunny-primary text-bunny-primary hover:bg-bunny-light/30 text-xs font-semibold"
                 onClick={() => {
                   const today = new Date();
                   setCurrentMonth(today);
@@ -415,13 +364,12 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 }}
               >
                 Hoy
-              </Button>
+              </button>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary py-1 px-2"
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors"
                 onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}
                 aria-label="Mes siguiente"
-                style={{ borderRadius: '6px' }}
               >
                 <FaChevronRight size={11} />
               </button>
@@ -429,24 +377,11 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           </div>
 
           {/* Días de la semana */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: '4px',
-              textAlign: 'center',
-              marginBottom: '4px',
-            }}
-          >
-            {WEEK_DAYS.map((d) => (
+          <div className="grid grid-cols-7 gap-1 text-center mb-1">
+            {WEEK_DAYS.map((d, idx) => (
               <div
-                key={d}
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: '#9e7b6e',
-                  padding: '2px 0',
-                }}
+                key={idx}
+                className="text-[11px] font-bold text-bunny-dark/70 py-0.5"
               >
                 {d}
               </div>
@@ -454,13 +389,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           </div>
 
           {/* Celdas del mes */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: '4px',
-            }}
-          >
+          <div className="grid grid-cols-7 gap-1">
             {calendarCells.map((cell) => {
               let cellBg = '#ffffff';
               let cellBorder = '#eef0f2';
@@ -517,7 +446,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <div className="d-flex justify-content-between align-items-center">
+                  <div className="flex justify-between items-center">
                     <span
                       style={{
                         fontSize: '11px',
@@ -543,57 +472,22 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   {/* Indicadores en la celda */}
                   <div>
                     {cell.isPast && (
-                      <div
-                        style={{
-                          fontSize: '8px',
-                          color: '#9ca3af',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                        }}
-                      >
+                      <div className="text-[8px] text-slate-400 font-bold leading-none">
                         Pasado
                       </div>
                     )}
                     {!cell.isPast && cell.isFullDayBlocked && (
-                      <div
-                        style={{
-                          fontSize: '8.5px',
-                          color: '#991b1b',
-                          fontWeight: 800,
-                          lineHeight: 1,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <div className="text-[8.5px] text-rose-800 font-bold leading-none truncate">
                         🚫 Cerrado
                       </div>
                     )}
                     {!cell.isPast && !cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
-                      <div
-                        style={{
-                          fontSize: '8px',
-                          color: '#92400e',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <div className="text-[8px] text-amber-800 font-bold leading-none truncate">
                         ⏰ Bloqueo
                       </div>
                     )}
                     {cell.appointmentCount > 0 && (
-                      <div
-                        style={{
-                          fontSize: '8px',
-                          color: '#0d6efd',
-                          fontWeight: 600,
-                          lineHeight: 1,
-                          marginTop: '1px',
-                        }}
-                      >
+                      <div className="text-[8px] text-sky-600 font-semibold leading-none mt-0.5">
                         • {cell.appointmentCount} {cell.appointmentCount === 1 ? 'cita' : 'citas'}
                       </div>
                     )}
@@ -604,24 +498,24 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           </div>
 
           {/* Leyenda del calendario */}
-          <div className="d-flex flex-wrap gap-2 mt-2 pt-2 border-top" style={{ fontSize: '10.5px' }}>
-            <span className="d-flex align-items-center gap-1 text-danger fw-semibold">
-              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f87171', display: 'inline-block' }} />
+          <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-slate-100 text-[10.5px]">
+            <span className="flex items-center gap-1 text-rose-600 font-semibold">
+              <span className="w-2 h-2 rounded-xs bg-rose-400 inline-block" />
               Día Cerrado
             </span>
-            <span className="d-flex align-items-center gap-1 text-warning-emphasis fw-semibold">
-              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f59e0b', display: 'inline-block' }} />
+            <span className="flex items-center gap-1 text-amber-700 font-semibold">
+              <span className="w-2 h-2 rounded-xs bg-amber-500 inline-block" />
               Horario Bloqueado
             </span>
-            <span className="d-flex align-items-center gap-1 text-primary fw-semibold">
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0d6efd', display: 'inline-block' }} />
+            <span className="flex items-center gap-1 text-sky-600 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />
               Citas Agendadas
             </span>
-            <span className="d-flex align-items-center gap-1 text-muted">
-              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#d1d5db', display: 'inline-block' }} />
+            <span className="flex items-center gap-1 text-slate-400">
+              <span className="w-2 h-2 rounded-xs bg-slate-300 inline-block" />
               Fechas Pasadas (Inactivas)
             </span>
-            <span className="d-flex align-items-center gap-1 text-muted ms-auto">
+            <span className="flex items-center gap-1 text-slate-400 ml-auto">
               Click en cualquier día futuro para seleccionarlo
             </span>
           </div>
@@ -633,14 +527,10 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         <>
           {/* CASO 0: FECHA EN EL PASADO */}
           {!allowPastDates && selectedDate < todayStr && (
-            <Alert
-              variant="danger"
-              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
-              style={{ borderRadius: '10px' }}
-            >
-              <FiAlertTriangle className="text-danger fs-5 flex-shrink-0 mt-1" />
-              <div style={{ fontSize: '13px' }}>
-                <strong className="d-block text-danger">FECHA EN EL PASADO</strong>
+            <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
+              <FiAlertTriangle className="text-rose-600 text-base shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-rose-800">FECHA EN EL PASADO</strong>
                 <span>
                   No está permitido agendar citas en fechas anteriores a hoy ({todayStr}).
                   Por favor selecciona hoy o una fecha posterior.
@@ -651,20 +541,16 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
           {/* CASO 1: DÍA COMPLETO CERRADO / BLOQUEADO */}
           {fullDayBlock.blocked && (
-            <Alert
-              variant="danger"
-              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
-              style={{ borderRadius: '10px' }}
-            >
-              <span className="fs-5 lh-1">🚫</span>
-              <div style={{ fontSize: '13px' }}>
-                <strong className="d-block text-danger">
+            <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
+              <span className="text-base leading-none">🚫</span>
+              <div>
+                <strong className="block text-rose-800">
                   DÍA CERRADO / BLOQUEADO: {fullDayBlock.reason || 'Sin motivo especificado'}
                 </strong>
                 <span>
                   Este día completo ({selectedDate}) está configurado como bloqueado o no laborable en la agenda.
                 </span>
-                <div className="small fw-semibold mt-1 text-danger">
+                <div className="font-semibold mt-1 text-rose-700">
                   ⚠️ No se recomienda agendar citas en esta fecha.
                 </div>
               </div>
@@ -673,66 +559,47 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
           {/* CASO 2: HORARIOS PARCIALES BLOQUEADOS EN LA FECHA */}
           {!fullDayBlock.blocked && slotBlocks.length > 0 && (
-            <Alert
-              variant="warning"
-              className="py-2 px-3 mb-2 shadow-sm"
-              style={{ borderRadius: '10px', background: '#fffbeb', borderColor: '#fde68a' }}
-            >
-              <div className="d-flex align-items-center gap-2 mb-1" style={{ fontSize: '13px', color: '#92400e' }}>
-                <span className="fs-6">⏰</span>
-                <strong>Horarios bloqueados registrados para este día:</strong>
+            <div className="p-3 mb-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+              <div className="flex items-center gap-1.5 mb-1.5 font-bold">
+                <span>⏰</span>
+                <span>Horarios bloqueados registrados para este día:</span>
               </div>
-              <div className="d-flex flex-wrap gap-2 ps-4">
+              <div className="flex flex-wrap gap-1.5 pl-4">
                 {slotBlocks.map((b) => (
                   <Badge
                     key={b.id}
-                    bg="warning"
-                    text="dark"
-                    className="py-1 px-2 fw-semibold border border-warning"
-                    style={{ fontSize: '11px' }}
+                    variant="warning"
+                    className="py-1 px-2 font-semibold text-xs border border-amber-300"
                   >
                     🚫 {b.startTime} a {b.endTime} hrs: {b.reason || 'Horario bloqueado'}
                   </Badge>
                 ))}
               </div>
-            </Alert>
+            </div>
           )}
 
           {/* CASO 2.5: CITAS YA AGENDADAS PARA ESTE DÍA */}
           {dayAppointments.length > 0 ? (
-            <div
-              className="p-3 mb-2 rounded-3 border shadow-sm"
-              style={{
-                background: '#f8fafc',
-                borderColor: '#cbd5e1',
-              }}
-            >
-              <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                <div className="d-flex align-items-center gap-2">
-                  <span style={{ fontSize: '1.2rem' }}>📋</span>
+            <div className="p-3 mb-2 rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📋</span>
                   <div>
-                    <strong className="text-dark" style={{ fontSize: '13px' }}>
+                    <strong className="text-slate-800 text-xs sm:text-sm block">
                       Citas agendadas para este día ({dayAppointments.length})
                     </strong>
-                    <div className="text-muted" style={{ fontSize: '11px' }}>
+                    <div className="text-slate-500 text-[11px]">
                       Revisa los horarios ocupados para organizar la nueva cita
                     </div>
                   </div>
                 </div>
-                <Badge
-                  bg="primary"
-                  className="px-2 py-1 fw-semibold"
-                  style={{ fontSize: '11px', borderRadius: '6px' }}
-                >
+                <Badge variant="primary" className="text-xs px-2 py-0.5">
                   {dayAppointments.length} {dayAppointments.length === 1 ? 'cita agendada' : 'citas agendadas'}
                 </Badge>
               </div>
 
               {/* Lista cronológica de citas del día */}
-              <div
-                className="d-flex flex-column gap-2"
-                style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '2px' }}
-              >
+              <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-0.5">
                 {dayAppointments.map((apt) => {
                   const aptEndTime = getAptEndTime(apt);
                   const dur = getAptDuration(apt);
@@ -742,57 +609,47 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   return (
                     <div
                       key={apt.id}
-                      className="p-2 rounded-2 border d-flex justify-content-between align-items-center flex-wrap gap-2"
-                      style={{
-                        background: isColliding ? '#fff1f2' : '#ffffff',
-                        borderColor: isColliding ? '#f87171' : '#e2e8f0',
-                        borderWidth: isColliding ? '1.5px' : '1px',
-                        boxShadow: isColliding ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : 'none',
-                        transition: 'all 0.15s ease',
-                      }}
+                      className={`p-2 rounded-xl border flex justify-between items-center flex-wrap gap-2 transition-all ${
+                        isColliding
+                          ? 'bg-rose-50 border-rose-300 ring-1 ring-rose-300'
+                          : 'bg-white border-slate-200'
+                      }`}
                     >
-                      <div className="d-flex align-items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <div
-                          style={{
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            background: isColliding ? '#fee2e2' : '#eff6ff',
-                            color: isColliding ? '#991b1b' : '#1e40af',
-                            fontWeight: 700,
-                            fontSize: '11.5px',
-                            minWidth: '105px',
-                            textAlign: 'center',
-                          }}
+                          className={`py-1 px-2 rounded-lg font-bold text-xs min-w-[105px] text-center ${
+                            isColliding ? 'bg-rose-100 text-rose-800' : 'bg-sky-50 text-sky-800'
+                          }`}
                         >
-                          <FiClock size={11} className="me-1" />
+                          <FiClock size={11} className="inline mr-1" />
                           {apt.appointmentTime} - {aptEndTime}
                         </div>
 
                         <div>
-                          <div className="fw-semibold text-dark d-flex align-items-center gap-1" style={{ fontSize: '12px' }}>
-                            <FiUser size={12} className="text-muted" />
+                          <div className="font-semibold text-slate-800 text-xs flex items-center gap-1">
+                            <FiUser size={12} className="text-slate-400" />
                             <span>{apt.customer?.fullName || 'Clienta'}</span>
                             {apt.customer?.phone && (
-                              <small className="text-muted fw-normal">
+                              <small className="text-slate-400 font-normal">
                                 ({apt.customer.phone})
                               </small>
                             )}
                           </div>
-                          <div className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
+                          <div className="text-slate-500 text-[11px] flex items-center gap-1">
                             <span>💅 {servicesText}</span>
-                            <span className="text-secondary fw-semibold">({dur} min)</span>
+                            <span className="text-slate-400 font-semibold">({dur} min)</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="d-flex align-items-center gap-1">
+                      <div className="flex items-center gap-1">
                         {isColliding && (
-                          <Badge bg="danger" className="py-1 px-2" style={{ fontSize: '10.5px' }}>
+                          <Badge variant="danger" className="text-[10.5px]">
                             ⚠️ Choca con tu hora
                           </Badge>
                         )}
                         <Badge
-                          bg={
+                          variant={
                             apt.status === 'CONFIRMED'
                               ? 'success'
                               : apt.status === 'COMPLETED'
@@ -801,9 +658,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                               ? 'warning'
                               : 'secondary'
                           }
-                          text={apt.status === 'PENDING' ? 'dark' : 'white'}
-                          className="py-1 px-2 fw-semibold"
-                          style={{ fontSize: '10.5px', borderRadius: '4px' }}
+                          className="text-[10.5px]"
                         >
                           {apt.status === 'CONFIRMED'
                             ? 'Confirmada'
@@ -822,16 +677,8 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           ) : (
             !fullDayBlock.blocked &&
             (!selectedDate || selectedDate >= todayStr || allowPastDates) && (
-              <div
-                className="py-2 px-3 mb-2 rounded-3 d-flex align-items-center gap-2 border"
-                style={{
-                  background: '#f0fdf4',
-                  borderColor: '#bbf7d0',
-                  color: '#166534',
-                  fontSize: '12px',
-                }}
-              >
-                <FiCheckCircle className="text-success fs-6 flex-shrink-0" />
+              <div className="py-2 px-3 mb-2 rounded-xl flex items-center gap-2 border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">
+                <FiCheckCircle className="text-emerald-600 shrink-0" />
                 <div>
                   <strong>Agenda despejada:</strong> No hay otras citas agendadas registradas para esta fecha.
                 </div>
@@ -841,14 +688,10 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
           {/* CASO 3: CONFLICTO ESPECÍFICO DE LA HORA SELECCIONADA CON BLOQUEO */}
           {timeConflict.hasConflict && (
-            <Alert
-              variant="danger"
-              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
-              style={{ borderRadius: '10px', background: '#fee2e2', borderColor: '#f87171' }}
-            >
-              <FiAlertTriangle className="text-danger fs-5 flex-shrink-0 mt-1" />
-              <div style={{ fontSize: '13px' }}>
-                <strong className="d-block text-danger">
+            <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
+              <FiAlertTriangle className="text-rose-600 text-base shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-rose-800">
                   CONFLICTO CON HORARIO BLOQUEADO
                 </strong>
                 <span>
@@ -856,7 +699,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   se superpone con el bloqueo registrado:{' '}
                   <strong>"{timeConflict.reason}"</strong> ({timeConflict.conflictSlot}).
                 </span>
-                <div className="small fw-bold text-danger mt-1">
+                <div className="font-bold text-rose-700 mt-1">
                   Por favor selecciona otro horario para no invadir el bloqueo de agenda.
                 </div>
               </div>
@@ -865,14 +708,10 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
           {/* CASO 4: ADVERTENCIA DE SUPERPOSICIÓN CON CITA EXISTENTE */}
           {!timeConflict.hasConflict && existingAptConflict && (
-            <Alert
-              variant="warning"
-              className="py-2 px-3 mb-2 shadow-sm d-flex align-items-start gap-2"
-              style={{ borderRadius: '10px' }}
-            >
-              <FiAlertTriangle className="text-warning-emphasis fs-5 flex-shrink-0 mt-1" />
-              <div style={{ fontSize: '12.5px' }}>
-                <strong className="text-dark">Aviso de superposición con otra cita:</strong>
+            <Alert variant="warning" className="mb-2 text-xs flex items-start gap-2">
+              <FiAlertTriangle className="text-amber-600 text-base shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-slate-800 block">Aviso de superposición con otra cita:</strong>
                 <div>
                   La hora seleccionada se superpone con la cita de{' '}
                   <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>{' '}
@@ -884,11 +723,8 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
           {/* CASO 5: DÍA Y HORA TOTALMENTE LIBRES */}
           {!fullDayBlock.blocked && !timeConflict.hasConflict && !existingAptConflict && selectedTime && (
-            <div
-              className="py-1 px-2 mb-2 rounded d-flex align-items-center gap-2 small text-success bg-success-subtle border border-success-subtle"
-              style={{ fontSize: '12px' }}
-            >
-              <FiCheckCircle />
+            <div className="py-1.5 px-3 mb-2 rounded-xl flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200">
+              <FiCheckCircle className="text-emerald-600" />
               <span>Horario disponible: {selectedTime} a {calculatedEndTime} hrs sin conflictos.</span>
             </div>
           )}
@@ -896,15 +732,15 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           {/* ─── SUGERENCIAS RÁPIDAS DE HORAS (SLOTS HABITUALES) ─── */}
           {!fullDayBlock.blocked && !(selectedDate && !allowPastDates && selectedDate < todayStr) && (
             <div className="mb-2">
-              <div className="d-flex justify-content-between align-items-center mb-1">
-                <small className="text-muted fw-semibold" style={{ fontSize: '11px' }}>
+              <div className="flex justify-between items-center mb-1.5">
+                <small className="text-slate-500 font-semibold text-[11px]">
                   Atajos de horarios comunes:
                 </small>
-                <small className="text-muted" style={{ fontSize: '10.5px' }}>
+                <small className="text-slate-400 text-[10.5px]">
                   👤 = Ocupado por otra cita · 🚫 = Bloqueado
                 </small>
               </div>
-              <div className="d-flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {COMMON_SLOTS.map((slot) => {
                   const check = checkTimeSlotConflict(selectedDate, slot, durationMinutes, unavailabilities);
                   const isBlocked = check.hasConflict;
@@ -928,24 +764,17 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                       type="button"
                       disabled={isBlocked}
                       onClick={() => onTimeChange(slot)}
-                      className={`btn btn-sm py-1 px-2 ${
+                      className={`text-[11px] py-1 px-2 rounded-lg border transition-all ${
                         isCurrent
                           ? isAptOccupied
-                            ? 'btn-danger'
-                            : 'btn-primary'
+                            ? 'bg-rose-600 text-white border-rose-600 font-semibold'
+                            : 'bg-bunny-primary text-white border-bunny-primary font-semibold'
                           : isBlocked
-                          ? 'btn-outline-danger disabled text-decoration-line-through'
+                          ? 'border-rose-200 bg-rose-50 text-rose-400 line-through cursor-not-allowed opacity-60'
                           : isAptOccupied
-                          ? 'btn-outline-warning text-dark'
-                          : 'btn-outline-secondary'
+                          ? 'border-dashed border-amber-400 bg-amber-50 text-amber-900 font-semibold'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                       }`}
-                      style={{
-                        fontSize: '11px',
-                        borderRadius: '6px',
-                        opacity: isBlocked ? 0.6 : 1,
-                        borderStyle: isAptOccupied && !isCurrent ? 'dashed' : 'solid',
-                        fontWeight: isCurrent || isAptOccupied ? 600 : 400,
-                      }}
                       title={
                         isBlocked
                           ? `Bloqueado por agenda: ${check.reason}`
@@ -966,3 +795,5 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
     </div>
   );
 };
+
+export default AppointmentSchedulePicker;

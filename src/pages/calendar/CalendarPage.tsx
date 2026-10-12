@@ -1,11 +1,10 @@
 /**
  * Página de Calendario
  * Vista mensual tipo grid con indicadores de citas (dots)
- * Basado en el diseño del sistema monolito
+ * Basado en el diseño del sistema BunnyCure
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Container, Card, Badge, Spinner, Button, Table, Dropdown, Alert, Modal } from 'react-bootstrap';
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -48,6 +47,7 @@ import {
   isDateBlockedFullDay,
   getDateUnavailabilities,
 } from '../../utils/unavailabilityUtils';
+import { Button, Badge, Card, Spinner, Alert, Modal } from '@/components/ui';
 import './CalendarPage.css';
 
 interface CalendarDayCell {
@@ -99,54 +99,79 @@ export default function CalendarPage() {
   const [unavailabilities, setUnavailabilities] = useState<ScheduleUnavailability[]>(loadCachedUnavailabilities);
   const [unavailabilityColors, setUnavailabilityColors] = useState<UnavailabilityColorConfig>(loadCachedUnavailabilityColors);
   const [unavailabilityNotifications, setUnavailabilityNotifications] = useState<UnavailabilityNotificationConfig>(loadCachedUnavailabilityNotifications);
+  const [openDropdownAptId, setOpenDropdownAptId] = useState<number | null>(null);
 
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
-  const activeUnavailabilitiesCount = useMemo(() => {
-    return unavailabilities.filter((u) => (u.endDate || u.startDate) >= todayStr).length;
-  }, [unavailabilities, todayStr]);
 
   useEffect(() => {
+    fetchAppointments();
+    settingsApi.getAll()
+      .then((data) => {
+        if (data.unavailabilities && data.unavailabilities.length > 0) {
+          setUnavailabilities(data.unavailabilities);
+        }
+        if (data.unavailabilityColors) {
+          setUnavailabilityColors(data.unavailabilityColors);
+        }
+        if (data.unavailabilityNotifications) {
+          setUnavailabilityNotifications(data.unavailabilityNotifications);
+        }
+      })
+      .catch((err: unknown) => console.error('Error cargando configuraciones de calendario:', err));
+  }, [fetchAppointments]);
+
+  // Si viene con parámetro ?date=YYYY-MM-DD
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const parsed = new Date(`${dateParam}T00:00:00`);
+      if (isValid(parsed)) {
+        setSelectedDate(parsed);
+        setCurrentMonth(parsed);
+      }
+    }
+
     if (searchParams.get('manageBlocks') === '1' || searchParams.get('block') === '1') {
       setShowBlocksModal(true);
     }
   }, [searchParams]);
 
+  // Cerrar dropdown al hacer click afuera
   useEffect(() => {
-    fetchAppointments();
-    settingsApi.getAll().then((data) => {
-      if (data.unavailabilities && data.unavailabilities.length > 0) {
-        setUnavailabilities(data.unavailabilities);
-      }
-      if (data.unavailabilityColors) setUnavailabilityColors(data.unavailabilityColors);
-      if (data.unavailabilityNotifications) setUnavailabilityNotifications(data.unavailabilityNotifications);
-    }).catch((err) => console.error('Error loading unavailabilities in calendar:', err));
-  }, [fetchAppointments]);
+    const handleClickOutside = () => setOpenDropdownAptId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const activeUnavailabilitiesCount = useMemo(() => {
+    return unavailabilities.length;
+  }, [unavailabilities]);
 
   const handleUnavailabilitiesChange = async (updated: ScheduleUnavailability[]) => {
     setUnavailabilities(updated);
     try {
       await settingsApi.saveAll({ unavailabilities: updated });
-      toast.success('✅ Bloqueos de agenda actualizados');
+      toast.success('Bloqueos guardados');
     } catch {
-      toast.error('Error al guardar bloqueos en el servidor');
+      toast.error('Error al guardar bloqueos');
     }
   };
 
-  const handleColorsChange = async (updatedColors: UnavailabilityColorConfig) => {
-    setUnavailabilityColors(updatedColors);
+  const handleColorsChange = async (updated: UnavailabilityColorConfig) => {
+    setUnavailabilityColors(updated);
     try {
-      await settingsApi.saveAll({ unavailabilityColors: updatedColors });
-      toast.success('✅ Colores de calendario actualizados');
+      await settingsApi.saveAll({ unavailabilityColors: updated });
+      toast.success('Colores guardados');
     } catch {
       toast.error('Error al guardar colores');
     }
   };
 
-  const handleNotificationsChange = async (updatedNotifs: UnavailabilityNotificationConfig) => {
-    setUnavailabilityNotifications(updatedNotifs);
+  const handleNotificationsChange = async (updated: UnavailabilityNotificationConfig) => {
+    setUnavailabilityNotifications(updated);
     try {
-      await settingsApi.saveAll({ unavailabilityNotifications: updatedNotifs });
-      toast.success('✅ Configuración de notificaciones PWA guardada');
+      await settingsApi.saveAll({ unavailabilityNotifications: updated });
+      toast.success('Notificaciones guardadas');
     } catch {
       toast.error('Error al guardar notificaciones');
     }
@@ -200,9 +225,6 @@ export default function CalendarPage() {
   const calendarCells = useMemo((): CalendarDayCell[] => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    
-    // Obtener el inicio y fin del calendario (incluyendo días de meses adyacentes)
-    // weekStartsOn: 1 = Monday
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
     
@@ -210,15 +232,12 @@ export default function CalendarPage() {
     
     return days.map(day => {
       const dayAppointments = appointments.filter(apt => {
-        // Parsear fecha del backend (puede venir como "2026-04-07" o "2026-04-07T00:00:00")
         const aptDateStr = apt.appointmentDate;
         let aptDate: Date;
         
-        // Si la fecha incluye 'T', es ISO completo, sino solo fecha
         if (aptDateStr.includes('T')) {
           aptDate = new Date(aptDateStr);
         } else {
-          // Agregar timezone local para evitar problemas de UTC
           aptDate = new Date(aptDateStr + 'T00:00:00');
         }
         
@@ -263,7 +282,6 @@ export default function CalendarPage() {
         return isSameDay(aptDate, selectedDate);
       })
       .sort((a, b) => {
-        // Ordenar por hora
         return a.appointmentTime.localeCompare(b.appointmentTime);
       });
   }, [appointments, selectedDate]);
@@ -310,102 +328,106 @@ export default function CalendarPage() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <Container fluid className="bunny-page">
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-3 text-muted">Cargando calendario...</p>
-          </div>
-        </Container>
+        <div className="text-center py-16">
+          <Spinner size="lg" className="border-bunny-primary mx-auto" />
+          <p className="mt-3 text-slate-500 text-sm">Cargando calendario...</p>
+        </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <Container fluid className="bunny-page">
+      <div className="space-y-5">
         {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="mb-1">📅 Calendario de Citas</h2>
-            <p className="text-muted mb-0">Vista mensual de todas las citas programadas</p>
-            <div className="calendar-time-legend mt-2 d-flex flex-wrap gap-2">
-              <span><i style={{ background: calendarDisplayConfig.morning.color }} /> {calendarDisplayConfig.morning.start}–{calendarDisplayConfig.morning.end}</span>
-              <span><i style={{ background: calendarDisplayConfig.afternoon.color }} /> {calendarDisplayConfig.afternoon.start}–{calendarDisplayConfig.afternoon.end}</span>
-              <span><i style={{ background: calendarDisplayConfig.night.color }} /> {calendarDisplayConfig.night.start}–{calendarDisplayConfig.night.end}</span>
-              <span style={{ background: unavailabilityColors.fullDayColor, borderColor: '#f87171', color: '#991b1b', fontWeight: 600 }}>
+            <h1 className="text-2xl font-bold text-bunny-dark tracking-tight mb-1">
+              📅 Calendario de Citas
+            </h1>
+            <p className="text-slate-500 text-sm">Vista mensual de todas las citas programadas</p>
+            <div className="calendar-time-legend mt-2 flex flex-wrap gap-2 text-xs">
+              <span className="flex items-center gap-1"><i style={{ background: calendarDisplayConfig.morning.color }} /> {calendarDisplayConfig.morning.start}–{calendarDisplayConfig.morning.end}</span>
+              <span className="flex items-center gap-1"><i style={{ background: calendarDisplayConfig.afternoon.color }} /> {calendarDisplayConfig.afternoon.start}–{calendarDisplayConfig.afternoon.end}</span>
+              <span className="flex items-center gap-1"><i style={{ background: calendarDisplayConfig.night.color }} /> {calendarDisplayConfig.night.start}–{calendarDisplayConfig.night.end}</span>
+              <span className="flex items-center gap-1 rounded px-1.5 py-0.5 border" style={{ background: unavailabilityColors.fullDayColor, borderColor: '#f87171', color: '#991b1b', fontWeight: 600 }}>
                 <i style={{ background: '#f87171' }} /> Día Cerrado
               </span>
-              <span style={{ background: unavailabilityColors.timeSlotColor, borderColor: '#f59e0b', color: '#92400e', fontWeight: 600 }}>
+              <span className="flex items-center gap-1 rounded px-1.5 py-0.5 border" style={{ background: unavailabilityColors.timeSlotColor, borderColor: '#f59e0b', color: '#92400e', fontWeight: 600 }}>
                 <i style={{ background: '#f59e0b' }} /> Horario Bloqueado
               </span>
             </div>
           </div>
-          <div className="d-flex gap-2 flex-wrap align-items-center">
+          <div className="flex gap-2 flex-wrap items-center">
             <Button
-              variant="outline-danger"
+              variant="outline"
               size="sm"
               onClick={() => setShowBlocksModal(true)}
-              className="d-flex align-items-center gap-2 px-3 py-2 shadow-sm"
-              style={{ borderRadius: '10px', fontWeight: 600, fontSize: '0.85rem' }}
+              className="flex items-center gap-2 border-rose-300 text-rose-700 hover:bg-rose-50 font-semibold text-xs py-2 px-3 shadow-sm"
             >
               <FiSlash /> Bloquear Agenda ({activeUnavailabilitiesCount})
             </Button>
             {Object.entries(statusLabels).map(([status, label]) => (
-              <Badge
+              <span
                 key={status}
                 style={{
                   backgroundColor: statusColors[status as AppointmentStatus],
                   color: 'white',
-                  padding: '8px 10px',
+                  padding: '6px 10px',
                   borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 600,
                 }}
               >
                 {label}
-              </Badge>
+              </span>
             ))}
           </div>
         </div>
 
         {/* Calendario */}
-        <Card>
-          <Card.Body className="p-3">
+        <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+          <Card.Body className="p-3.5 sm:p-4">
             {/* Navegación del mes */}
-            <div className="calendar-header">
-              <div className="month-navigation">
+            <div className="calendar-header mb-3">
+              <div className="month-navigation flex items-center gap-3">
                 <button 
-                  className="nav-button" 
+                  type="button"
+                  className="nav-button p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" 
                   onClick={handlePrevMonth}
                   aria-label="Mes anterior"
                 >
-                  <FaChevronLeft />
+                  <FaChevronLeft size={13} />
                 </button>
                 
-                <h3 className="month-title">
+                <h3 className="month-title text-base sm:text-lg font-bold text-bunny-dark capitalize m-0">
                   {format(currentMonth, 'MMMM yyyy', { locale: es })}
                 </h3>
                 
                 <button 
-                  className="nav-button" 
+                  type="button"
+                  className="nav-button p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" 
                   onClick={handleNextMonth}
                   aria-label="Mes siguiente"
                 >
-                  <FaChevronRight />
+                  <FaChevronRight size={13} />
                 </button>
               </div>
               
               <Button 
-                variant="outline-primary" 
+                variant="outline" 
                 size="sm"
                 onClick={handleToday}
+                className="text-xs"
               >
                 Hoy
               </Button>
             </div>
 
             {/* Cabecera de días de la semana */}
-            <div className="month-week-header">
+            <div className="month-week-header mb-1">
               {weekDayNames.map(day => (
-                <div key={day}>{day}</div>
+                <div key={day} className="text-center font-bold text-xs text-bunny-dark/70 py-1">{day}</div>
               ))}
             </div>
 
@@ -437,13 +459,13 @@ export default function CalendarPage() {
                       }`}
                       style={cellCustomStyle}
                     >
-                      <div className="month-day-number">
+                      <div className="month-day-number text-xs font-semibold">
                         {format(cell.date, 'd')}
                       </div>
 
                       {/* Tag de Día Completo Bloqueado */}
                       {cell.isFullDayBlocked && (
-                        <div className="month-day-block-tag" title={`Cerrado: ${cell.blockReason}`}>
+                        <div className="month-day-block-tag text-[9px]" title={`Cerrado: ${cell.blockReason}`}>
                           🚫 {cell.blockReason}
                         </div>
                       )}
@@ -451,7 +473,7 @@ export default function CalendarPage() {
                       {/* Tag de Horario Parcial Bloqueado */}
                       {!cell.isFullDayBlocked && cell.isTimeSlotBlocked && (
                         <div
-                          className="month-day-slot-tag"
+                          className="month-day-slot-tag text-[9px]"
                           title={cell.timeSlotBlocks.map(b => `${b.startTime}-${b.endTime}: ${b.reason}`).join(' | ')}
                         >
                           ⏰ {cell.timeSlotBlocks[0]?.reason}
@@ -469,7 +491,7 @@ export default function CalendarPage() {
                       
                       {/* Label de cantidad */}
                       {cell.appointmentCount > 0 && (
-                        <div className="month-day-mini-label">
+                        <div className="month-day-mini-label text-[9px]">
                           {cell.appointmentCount === 1 
                             ? '1 cita' 
                             : `${cell.appointmentCount} citas`}
@@ -485,52 +507,52 @@ export default function CalendarPage() {
 
         {/* Citas del día seleccionado */}
         {selectedDate && (
-          <Card className="mt-3 selected-day-section">
-            <div className="selected-day-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <span>Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}</span>
+          <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+            <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center flex-wrap gap-2">
+              <span className="font-bold text-sm sm:text-base text-slate-800">
+                Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}
+              </span>
               {isDateBlockedFullDay(selectedDate, unavailabilities).blocked ? (
-                <Badge bg="danger" className="py-2 px-3 fw-bold d-flex align-items-center gap-1 shadow-sm">
+                <Badge variant="danger" className="py-1 px-2.5 font-bold flex items-center gap-1 text-xs">
                   🚫 Día Cerrado ({isDateBlockedFullDay(selectedDate, unavailabilities).reason || 'Bloqueado'}) - No disponible
                 </Badge>
               ) : format(selectedDate, 'yyyy-MM-dd') < todayStr ? (
-                <Badge bg="secondary" className="py-2 px-3 fw-medium d-flex align-items-center gap-1 shadow-sm">
+                <Badge variant="secondary" className="py-1 px-2.5 font-medium flex items-center gap-1 text-xs">
                   ⏳ Fecha Pasada (No disponible para agendar)
                 </Badge>
               ) : (
                 <Button
                   variant="primary"
                   size="sm"
-                  className="d-flex align-items-center gap-1 shadow-sm py-1 px-3"
-                  style={{ background: '#8c2a3e', borderColor: '#8c2a3e', borderRadius: '8px', fontWeight: 600 }}
+                  className="flex items-center gap-1 bg-bunny-primary hover:bg-bunny-dark text-white font-semibold text-xs py-1.5 px-3"
                   onClick={() => navigate(`/appointments?create=1&date=${format(selectedDate, 'yyyy-MM-dd')}`)}
                 >
                   <FiPlus /> Agendar Cita en este día
                 </Button>
               )}
-            </div>
+            </Card.Header>
 
             {/* Alertas de Bloqueos para el día seleccionado */}
             {selectedDayUnavailabilities.length > 0 && (
-              <div className="p-3 pb-1">
+              <div className="p-3 pb-1 space-y-2">
                 {selectedDayUnavailabilities.map((u) => (
                   <Alert
                     key={u.id}
                     variant={u.type === 'FULL_DAY' ? 'danger' : 'warning'}
-                    className="d-flex align-items-center justify-content-between mb-2 py-2 px-3 shadow-sm"
-                    style={{ borderRadius: '10px' }}
+                    className="flex items-center justify-between py-2 px-3 text-xs"
                   >
-                    <div className="d-flex align-items-center gap-2">
-                      <span style={{ fontSize: '1.2rem' }}>{u.type === 'FULL_DAY' ? '🚫' : '⏰'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{u.type === 'FULL_DAY' ? '🚫' : '⏰'}</span>
                       <div>
-                        <div className="fw-bold small">
+                        <div className="font-bold">
                           {u.type === 'FULL_DAY'
                             ? 'Día Completo Cerrado / No Disponible'
                             : `Horario Bloqueado: ${u.startTime} a ${u.endTime} hrs`}
                         </div>
-                        <small className="text-muted">{u.reason}</small>
+                        <small className="text-slate-500">{u.reason}</small>
                       </div>
                     </div>
-                    <Badge bg={u.type === 'FULL_DAY' ? 'danger' : 'warning'} text={u.type === 'FULL_DAY' ? 'white' : 'dark'}>
+                    <Badge variant={u.type === 'FULL_DAY' ? 'danger' : 'warning'}>
                       {u.type === 'FULL_DAY' ? 'CERRADO' : 'BLOQUEO'}
                     </Badge>
                   </Alert>
@@ -539,137 +561,176 @@ export default function CalendarPage() {
             )}
             
             {selectedDayAppointments.length === 0 ? (
-              <Card.Body>
-                <p className="no-appointments-message mb-0">
-                  No hay citas programadas para este día
-                </p>
+              <Card.Body className="p-6 text-center text-slate-400 text-sm">
+                No hay citas programadas para este día
               </Card.Body>
             ) : (
               <Card.Body className="p-0">
-                <Table hover responsive className="mb-0 appointments-table">
-                  <thead>
-                    <tr>
-                      <th>Hora</th>
-                      <th>Cliente</th>
-                      <th>Servicio</th>
-                      <th>Estado</th>
-                      <th className="text-end">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedDayAppointments.map(apt => (
-                      <tr key={apt.id}>
-                        <td>
-                          <span className="appointment-time">
-                            {apt.appointmentTime}
-                          </span>
-                        </td>
-                        <td>
-                          <div>
-                            <a
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                navigate(`/customers/${apt.customer.id}`);
-                              }}
-                              className="text-decoration-none fw-bold d-block"
-                            >
-                              {apt.customer.fullName}
-                            </a>
-                            <small className="text-muted d-block" style={{ fontSize: '0.8rem' }}>
-                              🪪 {apt.customer.rut?.trim() ? apt.customer.rut.trim() : 'No tiene'}
-                            </small>
-                          </div>
-                        </td>
-                        <td>{getAppointmentServiceLabel(apt)}</td>
-                        <td>
-                          <span className={`status-badge ${apt.status}`}>
-                            {statusLabels[apt.status]}
-                          </span>
-                        </td>
-                        <td className="text-end">
-                          <div className="d-flex gap-1 justify-content-end">
-                            {/* Dropdown de notificaciones y WhatsApp */}
-                            <Dropdown>
-                              <Dropdown.Toggle size="sm" variant="info" id={`cal-dropdown-${apt.id}`}>
-                                📧
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu align="end">
-                                <Dropdown.Item onClick={() => handleSendNotification(apt.id)}>
-                                  <FaBell className="me-2" />
-                                  Enviar Notificación
-                                </Dropdown.Item>
-                                <Dropdown.Item onClick={() => handleSendWhatsAppConfirmation(apt.id)}>
-                                  <FaWhatsapp className="me-2 text-success" />
-                                  Confirmar por WhatsApp
-                                </Dropdown.Item>
-                                <Dropdown.Item onClick={() => handleSendWhatsAppReminder(apt.id)}>
-                                  <FaEnvelope className="me-2 text-primary" />
-                                  Recordatorio WhatsApp
-                                </Dropdown.Item>
-                                <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => setSelectedNotificationsApt(apt)}>
-                                  <FaHistory className="me-2 text-info" />
-                                  Historial de Mensajes
-                                </Dropdown.Item>
-                                <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => handleWhatsAppHandoff(apt.id)}>
-                                  <FaWhatsapp className="me-2 text-success" />
-                                  Traspaso a Humano
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
-                            
-                            {/* Botón ver detalles */}
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => navigate('/appointments')}
-                            >
-                              Ver detalles
-                            </Button>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
+                      <tr>
+                        <th className="py-3 px-4">Hora</th>
+                        <th className="py-3 px-4">Cliente</th>
+                        <th className="py-3 px-4">Servicio</th>
+                        <th className="py-3 px-4">Estado</th>
+                        <th className="py-3 px-4 text-right">Acciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {selectedDayAppointments.map(apt => (
+                        <tr key={apt.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-800">
+                            {apt.appointmentTime}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/customers/${apt.customer.id}`)}
+                                className="font-bold text-bunny-dark hover:underline text-left block"
+                              >
+                                {apt.customer.fullName}
+                              </button>
+                              <small className="text-slate-400 block text-xs">
+                                🪪 {apt.customer.rut?.trim() ? apt.customer.rut.trim() : 'No tiene'}
+                              </small>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-medium text-slate-700">{getAppointmentServiceLabel(apt)}</td>
+                          <td className="py-3 px-4">
+                            <span className={`status-badge ${apt.status}`}>
+                              {statusLabels[apt.status]}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex gap-1.5 justify-end items-center relative">
+                              {/* Dropdown de notificaciones y WhatsApp */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdownAptId(openDropdownAptId === apt.id ? null : apt.id);
+                                  }}
+                                  className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+                                  title="Acciones y notificaciones"
+                                >
+                                  📧
+                                </button>
+                                {openDropdownAptId === apt.id && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50 text-xs"
+                                  >
+                                    <button
+                                      type="button"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      onClick={() => {
+                                        setOpenDropdownAptId(null);
+                                        handleSendNotification(apt.id);
+                                      }}
+                                    >
+                                      <FaBell className="text-amber-500" /> Enviar Notificación
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      onClick={() => {
+                                        setOpenDropdownAptId(null);
+                                        handleSendWhatsAppConfirmation(apt.id);
+                                      }}
+                                    >
+                                      <FaWhatsapp className="text-emerald-500" /> Confirmar por WhatsApp
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      onClick={() => {
+                                        setOpenDropdownAptId(null);
+                                        handleSendWhatsAppReminder(apt.id);
+                                      }}
+                                    >
+                                      <FaEnvelope className="text-sky-500" /> Recordatorio WhatsApp
+                                    </button>
+                                    <div className="border-t border-slate-100 my-1"></div>
+                                    <button
+                                      type="button"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      onClick={() => {
+                                        setOpenDropdownAptId(null);
+                                        setSelectedNotificationsApt(apt);
+                                      }}
+                                    >
+                                      <FaHistory className="text-sky-600" /> Historial de Mensajes
+                                    </button>
+                                    <div className="border-t border-slate-100 my-1"></div>
+                                    <button
+                                      type="button"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      onClick={() => {
+                                        setOpenDropdownAptId(null);
+                                        handleWhatsAppHandoff(apt.id);
+                                      }}
+                                    >
+                                      <FaWhatsapp className="text-emerald-500" /> Traspaso a Humano
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Botón ver detalles */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate('/appointments')}
+                                className="text-xs"
+                              >
+                                Ver detalles
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </Card.Body>
             )}
           </Card>
         )}
 
         {/* Resumen estadístico del mes en curso */}
-        <Card className="mt-3 shadow-sm border-0" style={{ borderRadius: '12px' }}>
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h6 className="mb-0 fw-bold">
+        <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+          <Card.Body className="p-4">
+            <div className="flex justify-between items-center mb-3">
+              <h6 className="font-bold text-sm text-slate-800 mb-0">
                 📊 Resumen del Mes ({format(currentMonth, 'MMMM yyyy', { locale: es })})
               </h6>
-              <Badge bg="light" text="dark" className="border">
+              <Badge variant="secondary" className="text-xs">
                 Total Histórico: {appointments.length} citas
               </Badge>
             </div>
-            <div className="row text-center">
-              <div className="col">
-                <div className="h3 mb-0 fw-bold text-dark">{currentMonthAppointments.length}</div>
-                <div className="small text-muted">Citas del Mes</div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="text-2xl font-bold text-slate-800">{currentMonthAppointments.length}</div>
+                <div className="text-xs text-slate-500 mt-0.5">Citas del Mes</div>
               </div>
-              <div className="col">
-                <div className="h3 mb-0 fw-bold text-primary">{monthConfirmed}</div>
-                <div className="small text-muted">Confirmadas</div>
+              <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-100">
+                <div className="text-2xl font-bold text-sky-700">{monthConfirmed}</div>
+                <div className="text-xs text-sky-600 mt-0.5">Confirmadas</div>
               </div>
-              <div className="col">
-                <div className="h3 mb-0 fw-bold text-warning">{monthPending}</div>
-                <div className="small text-muted">Pendientes</div>
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                <div className="text-2xl font-bold text-amber-700">{monthPending}</div>
+                <div className="text-xs text-amber-600 mt-0.5">Pendientes</div>
               </div>
-              <div className="col">
-                <div className="h3 mb-0 fw-bold text-success">{monthCompleted}</div>
-                <div className="small text-muted">Completadas</div>
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                <div className="text-2xl font-bold text-emerald-700">{monthCompleted}</div>
+                <div className="text-xs text-emerald-600 mt-0.5">Completadas</div>
               </div>
-              <div className="col">
-                <div className="h3 mb-0 fw-bold text-danger">{monthCancelled}</div>
-                <div className="small text-muted">Canceladas</div>
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-100 col-span-2 sm:col-span-1">
+                <div className="text-2xl font-bold text-rose-700">{monthCancelled}</div>
+                <div className="text-xs text-rose-600 mt-0.5">Canceladas</div>
               </div>
             </div>
           </Card.Body>
@@ -690,12 +751,14 @@ export default function CalendarPage() {
           size="lg" 
           centered
         >
-          <Modal.Header closeButton style={{ background: '#fdf4f2', borderBottom: '1px solid #eed0c5' }}>
-            <Modal.Title className="d-flex align-items-center gap-2" style={{ color: '#422314', fontSize: '1.1rem', fontWeight: 700 }}>
-              <FiCalendar /> Gestión de Bloqueos de Agenda y Días No Laborables
+          <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
+            <Modal.Title>
+              <div className="flex items-center gap-2 text-bunny-dark text-base sm:text-lg font-bold">
+                <FiCalendar /> Gestión de Bloqueos de Agenda y Días No Laborables
+              </div>
             </Modal.Title>
           </Modal.Header>
-          <Modal.Body className="p-2" style={{ background: '#fff' }}>
+          <Modal.Body className="p-3 bg-white">
             <ScheduleUnavailabilitySection
               unavailabilities={unavailabilities}
               colors={unavailabilityColors}
@@ -715,7 +778,7 @@ export default function CalendarPage() {
           customerPhone={selectedNotificationsApt?.customer?.phone}
           onClose={() => setSelectedNotificationsApt(null)}
         />
-      </Container>
+      </div>
     </DashboardLayout>
   );
 }

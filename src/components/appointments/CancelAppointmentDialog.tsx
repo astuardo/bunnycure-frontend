@@ -4,8 +4,8 @@
  */
 
 import { useState } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
 import { AlertCircle } from 'lucide-react';
+import { Modal, Button } from '@/components/ui';
 
 export type CancelledByOption = 'CUSTOMER' | 'MANICURIST';
 
@@ -76,69 +76,54 @@ export function CancelAppointmentDialog({
   };
 
   return (
-    <Modal show={show} onHide={handleClose} centered className="bunny-modal">
-      <Modal.Header closeButton className="border-0" style={{ paddingBottom: '0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-          <AlertCircle size={22} style={{ color: '#be4d4d', flexShrink: 0 }} />
-          <Modal.Title style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
-            Cancelar Cita
-          </Modal.Title>
-        </div>
+    <Modal show={show} onHide={handleClose} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>
+          <div className="flex items-center gap-2.5">
+            <AlertCircle size={22} className="text-rose-600 shrink-0" />
+            <span className="text-base font-semibold text-slate-800">
+              Cancelar Cita
+            </span>
+          </div>
+        </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body style={{ paddingTop: '20px' }}>
+      <Modal.Body className="space-y-4">
         {/* Appointment Details */}
-        <div
-          style={{
-            background: '#fce4e4',
-            border: '1px solid #f5bfbf',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '16px',
-            fontSize: '13px',
-            color: '#7c1c1c',
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: '4px' }}>{customerName}</div>
-          <div style={{ opacity: 0.9 }}>
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs sm:text-sm text-rose-900">
+          <div className="font-semibold mb-0.5">{customerName}</div>
+          <div className="opacity-90">
             {appointmentDate} a las {appointmentTime}
           </div>
         </div>
 
         {/* Sección de restitución de GiftCard si la cita fue pagada con GiftCard */}
         {giftCardInfo && (
-          <div
-            style={{
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: '8px',
-              padding: '12px 14px',
-              marginBottom: '16px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '18px' }}>🎁</span>
-              <strong style={{ fontSize: '13.5px', color: '#166534' }}>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs sm:text-sm">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-lg">🎁</span>
+              <strong className="text-emerald-800">
                 Pago con GiftCard detectado ({giftCardInfo.code})
               </strong>
             </div>
-            <div style={{ fontSize: '12.5px', color: '#15803d', marginBottom: '8px' }}>
+            <div className="text-emerald-700 text-xs mb-2">
               Esta cita utilizó saldo de la GiftCard <strong>{giftCardInfo.code}</strong>
               {giftCardInfo.servicesText ? ` (${giftCardInfo.servicesText})` : ''}.
             </div>
-            <Form.Check
-              type="checkbox"
-              id="revert-giftcard-checkbox"
-              label={
-                <span style={{ fontWeight: 600, fontSize: '13px', color: '#14532d', cursor: 'pointer' }}>
-                  Restituir saldo a la GiftCard automáticamente
-                </span>
-              }
-              checked={revertGiftCard}
-              onChange={(e) => setRevertGiftCard(e.target.checked)}
-              disabled={isLoading}
-            />
-            <div style={{ fontSize: '11.5px', color: '#4b5563', marginTop: '4px', marginLeft: '24px' }}>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                id="revert-giftcard-checkbox"
+                checked={revertGiftCard}
+                onChange={(e) => setRevertGiftCard(e.target.checked)}
+                disabled={isLoading}
+                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="font-semibold text-xs text-emerald-900">
+                Restituir saldo a la GiftCard automáticamente
+              </span>
+            </label>
+            <div className="text-[11px] text-slate-500 mt-1 ml-5">
               {revertGiftCard
                 ? '✓ El servicio canjeado volverá a estar disponible en la GiftCard de la clienta al cancelar.'
                 : '⚠️ El saldo no se devolverá a la GiftCard (quedará como consumido).'}
@@ -148,45 +133,34 @@ export function CancelAppointmentDialog({
 
         {/* Checkbox Origen de Cancelación */}
         <div
-          style={{
-            background: isManicurist ? '#fff8f0' : '#f8f9fa',
-            border: `1px solid ${isManicurist ? '#f5cfb3' : '#e9ecef'}`,
-            borderRadius: '8px',
-            padding: '12px 14px',
-            marginBottom: '16px',
-            transition: 'all 0.2s ease',
-          }}
+          className={`p-3 rounded-xl border transition-colors ${
+            isManicurist ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-50 border-slate-200'
+          }`}
         >
-          <Form.Check
-            type="checkbox"
-            id="cancel-by-manicurist-checkbox"
-            label={
-              <span
-                style={{
-                  fontWeight: 600,
-                  fontSize: '13.5px',
-                  color: isManicurist ? '#9a3412' : '#374151',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancelación por parte de la manicurista / salón
-              </span>
-            }
-            checked={isManicurist}
-            onChange={(e) => {
-              setIsManicurist(e.target.checked);
-              if (error) setError('');
-            }}
-            disabled={isLoading}
-          />
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              id="cancel-by-manicurist-checkbox"
+              checked={isManicurist}
+              onChange={(e) => {
+                setIsManicurist(e.target.checked);
+                if (error) setError('');
+              }}
+              disabled={isLoading}
+              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+            />
+            <span
+              className={`font-semibold text-xs sm:text-sm ${
+                isManicurist ? 'text-amber-900' : 'text-slate-700'
+              }`}
+            >
+              Cancelación por parte de la manicurista / salón
+            </span>
+          </label>
           <div
-            style={{
-              fontSize: '12px',
-              color: isManicurist ? '#b45309' : '#6c757d',
-              marginTop: '4px',
-              marginLeft: '24px',
-              lineHeight: '1.4',
-            }}
+            className={`text-xs mt-1 ml-5 leading-relaxed ${
+              isManicurist ? 'text-amber-800' : 'text-slate-500'
+            }`}
           >
             {isManicurist
               ? '⚠️ Cancelación atribuida a la manicurista o al salón. No penalizará el historial ni alertas de la clienta.'
@@ -195,20 +169,11 @@ export function CancelAppointmentDialog({
         </div>
 
         {/* Chips de motivos frecuentes */}
-        <div style={{ marginBottom: '14px' }}>
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#6c757d',
-              marginBottom: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
             Motivos frecuentes ({isManicurist ? '💅 Manicurista / Salón' : '👤 Clienta'}):
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          <div className="flex flex-wrap gap-1.5">
             {(isManicurist ? MANICURIST_REASONS : CUSTOMER_REASONS).map((quick) => {
               const isSelected = reason === quick;
               return (
@@ -220,31 +185,13 @@ export function CancelAppointmentDialog({
                     setReason(quick);
                     if (error) setError('');
                   }}
-                  style={{
-                    background: isSelected
+                  className={`px-2.5 py-1 rounded-full text-xs transition-all border ${
+                    isSelected
                       ? isManicurist
-                        ? '#fed7aa'
-                        : '#fce4e4'
-                      : '#fff',
-                    border: `1px solid ${
-                      isSelected
-                        ? isManicurist
-                          ? '#ea580c'
-                          : '#dc3545'
-                        : '#dee2e6'
-                    }`,
-                    color: isSelected
-                      ? isManicurist
-                        ? '#7c2d12'
-                        : '#7c1c1c'
-                      : '#4b5563',
-                    borderRadius: '999px',
-                    padding: '3px 10px',
-                    fontSize: '11.5px',
-                    fontWeight: isSelected ? 600 : 400,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
+                        ? 'bg-amber-100 border-amber-400 text-amber-900 font-semibold'
+                        : 'bg-rose-100 border-rose-400 text-rose-900 font-semibold'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
                 >
                   {quick}
                 </button>
@@ -255,28 +202,17 @@ export function CancelAppointmentDialog({
 
         {/* Error Message */}
         {error && (
-          <div
-            style={{
-              background: '#f8d7da',
-              border: '1px solid #f5c6cb',
-              borderRadius: '6px',
-              padding: '10px 12px',
-              marginBottom: '16px',
-              fontSize: '13px',
-              color: '#721c24',
-            }}
-          >
+          <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
             {error}
           </div>
         )}
 
         {/* Reason Field */}
-        <Form.Group>
-          <Form.Label style={{ fontWeight: 600, fontSize: '13px', marginBottom: '8px' }}>
+        <div>
+          <label className="block font-semibold text-xs text-slate-700 mb-1">
             Motivo de cancelación *
-          </Form.Label>
-          <Form.Control
-            as="textarea"
+          </label>
+          <textarea
             rows={3}
             placeholder={
               isManicurist
@@ -288,46 +224,39 @@ export function CancelAppointmentDialog({
               setReason(e.target.value);
               if (error) setError('');
             }}
-            style={{
-              fontSize: '13px',
-              fontFamily: 'inherit',
-              borderColor: error ? '#dc3545' : '#ddd',
-              borderRadius: '6px',
-              minHeight: '80px',
-              resize: 'vertical',
-            }}
             disabled={isLoading}
+            className={`w-full text-xs sm:text-sm rounded-lg border p-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500 ${
+              error ? 'border-rose-500' : 'border-slate-300'
+            }`}
           />
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#6c757d',
-              marginTop: '6px',
-            }}
-          >
+          <div className="text-[11px] text-slate-400 mt-1">
             {reason.length} caracteres
           </div>
-        </Form.Group>
+        </div>
       </Modal.Body>
 
-      <Modal.Footer style={{ borderTop: '1px solid var(--bc-border)', paddingTop: '16px' }}>
-        <Button
-          variant="secondary"
-          onClick={handleClose}
-          disabled={isLoading}
-          style={{ fontSize: '13px' }}
-        >
-          Cerrar
-        </Button>
-        <Button
-          variant="danger"
-          onClick={handleConfirm}
-          disabled={isLoading || !reason.trim()}
-          style={{ fontSize: '13px' }}
-        >
-          {isLoading ? 'Cancelando...' : 'Confirmar Cancelación'}
-        </Button>
+      <Modal.Footer>
+        <div className="w-full flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleClose}
+            disabled={isLoading}
+          >
+            Cerrar
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleConfirm}
+            disabled={isLoading || !reason.trim()}
+          >
+            {isLoading ? 'Cancelando...' : 'Confirmar Cancelación'}
+          </Button>
+        </div>
       </Modal.Footer>
     </Modal>
   );
 }
+
+export default CancelAppointmentDialog;
