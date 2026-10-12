@@ -18,6 +18,7 @@ import {
 import { loyaltyCardApi } from '@/api/loyaltyCard.api';
 import { LoyaltyCardPublicDto } from '@/types/loyaltyCard.types';
 import { useToast } from '@/hooks/useToast';
+import { copyToClipboard, openWhatsApp, shareNative } from '@/utils/shareUtils';
 
 export default function PublicLoyaltyCardPage() {
   const { publicId } = useParams<{ publicId: string }>();
@@ -66,20 +67,35 @@ export default function PublicLoyaltyCardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicId]);
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    toast.success('¡Enlace de tarjeta copiado!');
-    setTimeout(() => setCopied(false), 2500);
+    const ok = await copyToClipboard(url);
+    if (ok) {
+      setCopied(true);
+      toast.success('¡Enlace de tarjeta copiado!');
+      setTimeout(() => setCopied(false), 2500);
+    } else {
+      toast.error('No se pudo copiar el enlace');
+    }
   };
 
   const handleShareWhatsApp = () => {
     if (!card) return;
-    const text = encodeURIComponent(
-      `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅): ${window.location.href}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅): ${window.location.href}`;
+    openWhatsApp(undefined, text);
+  };
+
+  const handleShareNative = async () => {
+    if (!card) return;
+    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅)`;
+    const shared = await shareNative({
+      title: 'Bunny Pass Club',
+      text,
+      url: window.location.href,
+    });
+    if (!shared) {
+      handleShareWhatsApp();
+    }
   };
 
   if (loading) {
@@ -157,9 +173,9 @@ export default function PublicLoyaltyCardPage() {
               {copied ? <Check className="w-4 h-4 text-[#4B856E]" /> : <Copy className="w-4 h-4" />}
             </button>
             <button
-              onClick={handleShareWhatsApp}
+              onClick={handleShareNative}
               className="p-2 rounded-full hover:bg-[#FDF0EC] text-[#9E7B6E] transition-colors"
-              title="Compartir en WhatsApp"
+              title="Compartir tarjeta"
             >
               <Share2 className="w-4 h-4" />
             </button>

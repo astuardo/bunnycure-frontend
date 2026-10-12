@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Award, Plus, Minus, Gift, QrCode, Smartphone, Share2, ExternalLink, Copy, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Award, Plus, Minus, Gift, QrCode, Smartphone, Share2, ExternalLink, Copy, Check, Eye } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
 import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, Alert, Badge, Button, Modal } from '../ui';
+import { copyToClipboard, openWhatsApp, openExternalUrl, shareNative } from '../../utils/shareUtils';
 
 interface StampCardProps {
   customerId?: number;
@@ -29,6 +31,7 @@ export default function StampCard({
 }: StampCardProps) {
   const { rewards, fetchRewards } = useLoyaltyStore();
   const toast = useToast();
+  const navigate = useNavigate();
   const maxStamps = 10;
 
   const [walletUrl, setWalletUrl] = useState<string>('');
@@ -43,25 +46,50 @@ export default function StampCard({
     ? `${window.location.origin}/mi-tarjeta/${publicId}`
     : '';
 
-  const handleCopyPassLink = () => {
+  const canShareNatively = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  const handleCopyPassLink = async () => {
     if (!passUrl) return;
-    navigator.clipboard.writeText(passUrl);
-    setCopiedPass(true);
-    toast.success('¡Enlace de tarjeta copiado!');
-    setTimeout(() => setCopiedPass(false), 2500);
+    const ok = await copyToClipboard(passUrl);
+    if (ok) {
+      setCopiedPass(true);
+      toast.success('¡Enlace de tarjeta copiado!');
+      setTimeout(() => setCopiedPass(false), 2500);
+    } else {
+      toast.error('No se pudo copiar el enlace al portapapeles');
+    }
   };
 
   const handleSendWhatsApp = () => {
     if (!passUrl) return;
-    const cleanPhone = customerPhone ? customerPhone.replace(/[^0-9]/g, '') : '';
     const name = customerName ? customerName.split(' ')[0] : 'Clienta';
-    const text = encodeURIComponent(
-      `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass con tus sellos actualizados (${loyaltyStamps}/10): ${passUrl}`
-    );
-    const waUrl = cleanPhone
-      ? `https://wa.me/${cleanPhone}?text=${text}`
-      : `https://wa.me/?text=${text}`;
-    window.open(waUrl, '_blank');
+    const message = `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass con tus sellos actualizados (${loyaltyStamps}/10): ${passUrl}`;
+    openWhatsApp(customerPhone, message);
+  };
+
+  const handleShareNative = async () => {
+    if (!passUrl) return;
+    const name = customerName ? customerName.split(' ')[0] : 'Clienta';
+    const message = `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass: ${passUrl}`;
+    const shared = await shareNative({
+      title: 'Bunny Pass Club',
+      text: message,
+      url: passUrl,
+    });
+    if (!shared) {
+      handleSendWhatsApp();
+    }
+  };
+
+  const handleOpenCard = () => {
+    if (!publicId) return;
+    setShowPassModal(false);
+    navigate(`/mi-tarjeta/${publicId}`);
+  };
+
+  const handleOpenBrowser = () => {
+    if (!passUrl) return;
+    openExternalUrl(passUrl);
   };
 
   useEffect(() => {
@@ -298,7 +326,57 @@ export default function StampCard({
               </div>
             )}
 
-            <div className="flex flex-col gap-2 pt-2">
+            {passUrl && (
+              <div className="mt-2 text-left">
+                <label className="text-[11px] font-semibold text-bunny-text-muted block mb-1">
+                  Enlace directo de la clienta:
+                </label>
+                <div className="flex items-center gap-1 bg-[#FDFCF8] border border-bunny-border rounded-xl px-2.5 py-1.5">
+                  <input
+                    type="text"
+                    readOnly
+                    value={passUrl}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full bg-transparent text-[11px] font-mono text-bunny-cocoa border-0 outline-hidden select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyPassLink}
+                    className="text-bunny-primary hover:text-bunny-primary-hover p-1"
+                    title="Copiar"
+                  >
+                    {copiedPass ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              {/* Opción 1: Menú nativo Compartir (si el dispositivo lo soporta) */}
+              {canShareNatively && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleShareNative}
+                  leftIcon={<Share2 className="w-4 h-4" />}
+                  className="w-full justify-center bg-bunny-primary hover:bg-bunny-primary-hover text-white"
+                >
+                  Compartir (WhatsApp / AirDrop)
+                </Button>
+              )}
+
+              {/* Opción 2: Enviar directo por WhatsApp */}
+              <Button
+                variant={canShareNatively ? 'outline' : 'primary'}
+                size="sm"
+                onClick={handleSendWhatsApp}
+                leftIcon={<Share2 className="w-4 h-4 text-emerald-600" />}
+                className={`w-full justify-center ${!canShareNatively ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+              >
+                Enviar por WhatsApp
+              </Button>
+
+              {/* Opción 3: Copiar enlace */}
               <Button
                 variant="outline"
                 size="sm"
@@ -309,25 +387,26 @@ export default function StampCard({
                 {copiedPass ? '¡Enlace Copiado!' : 'Copiar Enlace de Tarjeta'}
               </Button>
 
+              {/* Opción 4: Ver tarjeta directamente en la app */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleSendWhatsApp}
-                leftIcon={<Share2 className="w-4 h-4 text-emerald-600" />}
+                onClick={handleOpenCard}
+                leftIcon={<Eye className="w-4 h-4 text-bunny-primary" />}
                 className="w-full justify-center"
               >
-                Enviar por WhatsApp
+                Ver Tarjeta en Pantalla Completa
               </Button>
 
+              {/* Opción 5: Abrir en navegador externo */}
               {passUrl && (
-                <a
-                  href={passUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1"
+                <button
+                  type="button"
+                  onClick={handleOpenBrowser}
+                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1 border-0 bg-transparent cursor-pointer"
                 >
                   Abrir Tarjeta en navegador <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                </button>
               )}
             </div>
           </Modal.Body>
