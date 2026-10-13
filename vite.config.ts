@@ -42,7 +42,7 @@ export default defineConfig({
                 theme_color: '#FDFCF8',
                 background_color: '#FDFCF8',
                 display: 'standalone',
-                scope: cardPath,
+                scope: '/',
                 start_url: cardPath,
                 orientation: 'portrait',
                 icons: [

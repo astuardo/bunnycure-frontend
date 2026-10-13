@@ -19,7 +19,7 @@ export default function handler(req, res) {
     description: `Tarjeta de fidelización digital BunnyCure Club de ${firstName}`,
     theme_color: '#FDFCF8',
     background_color: '#FDFCF8',
-    scope: cardPath,
+    scope: '/',
     start_url: cardPath,
     orientation: 'portrait',
     icons: [

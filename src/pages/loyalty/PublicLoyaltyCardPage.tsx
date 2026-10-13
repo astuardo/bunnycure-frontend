@@ -34,13 +34,17 @@ export default function PublicLoyaltyCardPage() {
   const [error, setError] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
   const [instructionsTab, setInstructionsTab] = useState<'ios' | 'android'>('ios');
+  const [isInAppBrowser, setIsInAppBrowser] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Detectar plataforma (iOS vs Android) y capturar evento nativo de instalación PWA
+  // Detectar plataforma (iOS vs Android), navegadores internos (WhatsApp/Instagram) y capturar evento nativo PWA
   useEffect(() => {
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const ua = navigator.userAgent || '';
+    const isIos = /iphone|ipad|ipod/i.test(ua);
     setInstructionsTab(isIos ? 'ios' : 'android');
+    const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line|Twitter|Snapchat|BytedanceWebview/i.test(ua);
+    setIsInAppBrowser(inApp);
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -591,6 +595,17 @@ export default function PublicLoyaltyCardPage() {
                 Android (Chrome)
               </button>
             </div>
+
+            {isInAppBrowser && (
+              <div className="p-3 rounded-2xl bg-[#FFF4EC] border border-[#F5D5C5] text-[#8F4738] space-y-1 animate-in fade-in duration-200">
+                <p className="font-bold text-xs flex items-center gap-1.5">
+                  <span>⚠️</span> Estás dentro del visor de WhatsApp / Instagram
+                </p>
+                <p className="text-[11px] leading-relaxed">
+                  Para guardar el acceso directo en tu inicio, primero toca los <strong>tres puntos (⋮)</strong> o compartir de WhatsApp y selecciona <strong>"Abrir en el navegador"</strong> ({instructionsTab === 'ios' ? 'Safari' : 'Chrome'}).
+                </p>
+              </div>
+            )}
 
             <p className="text-xs text-[#9E7B6E] leading-relaxed">
               Agrega tu Bunny Pass a tu pantalla de inicio en 3 simples pasos:

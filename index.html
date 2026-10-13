@@ -16,6 +16,16 @@
     <!-- PWA & Mobile Theme Meta Tags -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf6f3" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2b1814" />
+    <link rel="manifest" id="app-manifest" href="/manifest.json" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" id="app-apple-title" content="BunnyCure" />
+    <meta name="application-name" id="app-pwa-name" content="BunnyCure" />
+
     <!-- Early Card PWA Manifest & Canonical Synchronizer -->
     <script>
       (function() {
@@ -25,11 +35,13 @@
           if (match && match[1]) {
             var publicId = match[1];
             localStorage.setItem('bunny_my_loyalty_public_id', publicId);
-            var manifestTag = document.querySelector('link[rel="manifest"]');
+
+            var manifestTag = document.getElementById('app-manifest');
             var cardManifestUrl = '/manifest-card.json?id=' + encodeURIComponent(publicId) + '&name=Club';
             if (manifestTag) {
               manifestTag.setAttribute('href', cardManifestUrl);
             }
+
             var canonicalTag = document.querySelector('link[rel="canonical"]');
             var cardCanonical = window.location.origin + '/mi-tarjeta/' + publicId;
             if (!canonicalTag) {
@@ -38,23 +50,20 @@
               document.head.appendChild(canonicalTag);
             }
             canonicalTag.setAttribute('href', cardCanonical);
+
             document.title = 'Bunny Pass Club';
-            var appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            var appleTitle = document.getElementById('app-apple-title');
             if (appleTitle) {
               appleTitle.setAttribute('content', 'Bunny Pass');
+            }
+            var appName = document.getElementById('app-pwa-name');
+            if (appName) {
+              appName.setAttribute('content', 'Bunny Pass');
             }
           }
         } catch (e) {}
       })();
     </script>
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="BunnyCure" />
     
     <!-- Google Fonts for GiftCards and UI -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
