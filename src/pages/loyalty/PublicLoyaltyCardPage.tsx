@@ -57,14 +57,18 @@ export default function PublicLoyaltyCardPage() {
     };
   }, []);
 
-  // Persistir inmediatamente el ID de la tarjeta y actualizar el manifest en el DOM lo antes posible
+  // Persistir inmediatamente el ID de la tarjeta en localStorage si no está
   if (publicId && typeof window !== 'undefined') {
     try {
       localStorage.setItem('bunny_my_loyalty_public_id', publicId);
       const earlyManifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
-      const targetEarlyHref = `/manifest-card.json?id=${encodeURIComponent(publicId)}&name=${encodeURIComponent(card?.firstName || 'Club')}`;
-      if (earlyManifestLink && earlyManifestLink.getAttribute('href') !== targetEarlyHref) {
-        earlyManifestLink.setAttribute('href', targetEarlyHref);
+      const currentHref = earlyManifestLink?.getAttribute('href') || '';
+      // Solo sobreescribir si NO hay un manifest-card ya configurado (preservando el inyectado por SSR)
+      if (!currentHref.includes(`/manifest-card.json?id=${encodeURIComponent(publicId)}`)) {
+        const targetEarlyHref = `/manifest-card.json?id=${encodeURIComponent(publicId)}&name=${encodeURIComponent(card?.firstName || 'Club')}`;
+        if (earlyManifestLink) {
+          earlyManifestLink.setAttribute('href', targetEarlyHref);
+        }
       }
     } catch {
       // ignore storage quota errors
@@ -93,7 +97,15 @@ export default function PublicLoyaltyCardPage() {
 
     const prevTitle = document.title;
     const clientName = card?.firstName;
-    const cardTitle = clientName ? `Bunny Pass - ${clientName}` : 'Bunny Pass Club';
+    // Si no tenemos clientName aún, pero document.title ya viene inyectado por SSR (ej: Bunny Pass - Alfredo), preservarlo
+    let cardTitle = '';
+    if (clientName) {
+      cardTitle = `Bunny Pass - ${clientName}`;
+    } else if (document.title && document.title.startsWith('Bunny Pass - ') && !document.title.includes('Club')) {
+      cardTitle = document.title;
+    } else {
+      cardTitle = 'Bunny Pass Club';
+    }
     document.title = cardTitle;
 
     // 1. Meta apple-mobile-web-app-title (determina el nombre por defecto en iOS Safari al anclar)
@@ -130,45 +142,42 @@ export default function PublicLoyaltyCardPage() {
     }
     canonicalLink.href = canonicalUrl;
 
-    // 4. Manifest HTTP dinámico: Android Chrome exige HTTP/HTTPS y re-evalúa al recrear la etiqueta
-    const manifestHttpUrl = `/manifest-card.json?id=${encodeURIComponent(activePublicId)}&name=${encodeURIComponent(clientName || 'Club')}`;
-    const existingManifests = document.querySelectorAll('link[rel="manifest"]');
-    existingManifests.forEach((el) => el.remove());
-    const newManifestTag = document.createElement('link');
-    newManifestTag.rel = 'manifest';
-    newManifestTag.href = manifestHttpUrl;
-    document.head.appendChild(newManifestTag);
+    // 4. Manifest HTTP dinámico: solo actualizar si tenemos el nombre real o si no existe aún el manifest de la tarjeta
+    const currentManifestHref = document.querySelector('link[rel="manifest"]')?.getAttribute('href') || '';
+    if (clientName || !currentManifestHref.includes('/manifest-card.json')) {
+      const manifestHttpUrl = `/manifest-card.json?id=${encodeURIComponent(activePublicId)}&name=${encodeURIComponent(clientName || 'Club')}`;
+      if (currentManifestHref !== manifestHttpUrl) {
+        const existingManifests = document.querySelectorAll('link[rel="manifest"]');
+        existingManifests.forEach((el) => el.remove());
+        const newManifestTag = document.createElement('link');
+        newManifestTag.rel = 'manifest';
+        newManifestTag.href = manifestHttpUrl;
+        document.head.appendChild(newManifestTag);
+      }
+    }
 
     return () => {
-      document.title = prevTitle;
-      if (appleTitleMeta) {
-        if (createdAppleTitle) {
-          appleTitleMeta.remove();
-        } else if (prevAppleTitle !== undefined) {
+      // Restaurar manifest global de BunnyCure solo si salimos efectivamente de la ruta de la tarjeta
+      const currentPath = window.location.pathname;
+      const isCardRoute = currentPath.startsWith('/mi-tarjeta') || currentPath.startsWith('/tarjeta') || currentPath.startsWith('/pass');
+      if (!isCardRoute) {
+        document.title = prevTitle;
+        if (appleTitleMeta && !createdAppleTitle && prevAppleTitle !== undefined) {
           appleTitleMeta.content = prevAppleTitle;
         }
-      }
-      if (appNameMeta) {
-        if (createdAppName) {
-          appNameMeta.remove();
-        } else if (prevAppName !== undefined) {
+        if (appNameMeta && !createdAppName && prevAppName !== undefined) {
           appNameMeta.content = prevAppName;
         }
-      }
-      if (canonicalLink) {
-        if (createdCanonical) {
-          canonicalLink.remove();
-        } else if (prevCanonicalHref !== undefined) {
+        if (canonicalLink && !createdCanonical && prevCanonicalHref !== undefined) {
           canonicalLink.href = prevCanonicalHref;
         }
+        const cardManifests = document.querySelectorAll('link[rel="manifest"]');
+        cardManifests.forEach((el) => el.remove());
+        const defaultManifest = document.createElement('link');
+        defaultManifest.rel = 'manifest';
+        defaultManifest.href = '/manifest.json';
+        document.head.appendChild(defaultManifest);
       }
-      // Restaurar manifest global de BunnyCure al desmontar
-      const cardManifests = document.querySelectorAll('link[rel="manifest"]');
-      cardManifests.forEach((el) => el.remove());
-      const defaultManifest = document.createElement('link');
-      defaultManifest.rel = 'manifest';
-      defaultManifest.href = '/manifest.json';
-      document.head.appendChild(defaultManifest);
     };
   }, [card, publicId]);
 
@@ -241,10 +250,12 @@ export default function PublicLoyaltyCardPage() {
 
   const handleShareNative = async () => {
     if (!card) return;
-    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅): ${window.location.href}`;
+    const cardTitle = card.firstName ? `Bunny Pass - ${card.firstName}` : 'Bunny Pass Club';
+    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅):`;
     const shared = await shareNative({
-      title: 'Bunny Pass Club',
+      title: cardTitle,
       text,
+      url: window.location.href,
     });
     if (!shared) {
       handleShareWhatsApp();

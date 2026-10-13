@@ -4,7 +4,7 @@
  * Incluye chequeo automÃ¡tico de citas prÃ³ximas para notificaciones
  */
 
-const CACHE_NAME = 'bunnycure-v3';
+const CACHE_NAME = 'bunnycure-v4';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -102,12 +102,12 @@ self.addEventListener('fetch', (event) => {
     const cardManifest = {
       id: cardPath,
       name: `Bunny Pass - ${firstName}`,
-      short_name: 'Bunny Pass',
+      short_name: `Bunny Pass - ${firstName}`,
       description: `Tarjeta de fidelización digital BunnyCure Club de ${firstName}`,
       theme_color: '#FDFCF8',
       background_color: '#FDFCF8',
       display: 'standalone',
-      scope: '/',
+      scope: publicId ? `/mi-tarjeta/${publicId}` : '/mi-tarjeta/',
       start_url: cardPath,
       orientation: 'portrait',
       icons: [
@@ -144,10 +144,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // No interceptar llamadas API ni peticiones autenticadas
+  // No interceptar llamadas API, peticiones autenticadas ni rutas de tarjetas públicas
   const isApiRequest = requestUrl.pathname.startsWith('/api/');
   const hasAuthHeader = event.request.headers.has('authorization');
-  if (isApiRequest || hasAuthHeader) {
+  const isCardRoute = /^\/(?:mi-tarjeta|tarjeta|pass)\//.test(requestUrl.pathname);
+  if (isApiRequest || hasAuthHeader || isCardRoute) {
     return;
   }
 
