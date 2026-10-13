@@ -42,7 +42,7 @@ export default defineConfig({
                 theme_color: '#FDFCF8',
                 background_color: '#FDFCF8',
                 display: 'standalone',
-                scope: '/',
+                scope: cardPath,
                 start_url: cardPath,
                 orientation: 'portrait',
                 icons: [
@@ -78,37 +78,7 @@ export default defineConfig({
       injectRegister: false,
       registerType: 'autoUpdate',
       includeAssets: ['favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'BunnyCure - Gestión de Centro Estético',
-        short_name: 'BunnyCure',
-        description: 'Sistema de gestión de reservas, agenda y seguimiento de clientas para centro estético',
-        theme_color: '#ff6b9d',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        orientation: 'portrait',
-        icons: [
-          {
-            src: '/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: '/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: '/icon-maskable-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      },
+      manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,

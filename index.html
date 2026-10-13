@@ -16,7 +16,37 @@
     <!-- PWA & Mobile Theme Meta Tags -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf6f3" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2b1814" />
-    <meta name="color-scheme" content="light dark" />
+    <!-- Early Card PWA Manifest & Canonical Synchronizer -->
+    <script>
+      (function() {
+        try {
+          var path = window.location.pathname;
+          var match = path.match(/^\/(?:mi-tarjeta|tarjeta|pass)\/([a-zA-Z0-9-]+)/);
+          if (match && match[1]) {
+            var publicId = match[1];
+            localStorage.setItem('bunny_my_loyalty_public_id', publicId);
+            var manifestTag = document.querySelector('link[rel="manifest"]');
+            var cardManifestUrl = '/manifest-card.json?id=' + encodeURIComponent(publicId) + '&name=Club';
+            if (manifestTag) {
+              manifestTag.setAttribute('href', cardManifestUrl);
+            }
+            var canonicalTag = document.querySelector('link[rel="canonical"]');
+            var cardCanonical = window.location.origin + '/mi-tarjeta/' + publicId;
+            if (!canonicalTag) {
+              canonicalTag = document.createElement('link');
+              canonicalTag.rel = 'canonical';
+              document.head.appendChild(canonicalTag);
+            }
+            canonicalTag.setAttribute('href', cardCanonical);
+            document.title = 'Bunny Pass Club';
+            var appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (appleTitle) {
+              appleTitle.setAttribute('content', 'Bunny Pass');
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="manifest" href="/manifest.json" />
     
     <!-- Apple Touch Icon -->

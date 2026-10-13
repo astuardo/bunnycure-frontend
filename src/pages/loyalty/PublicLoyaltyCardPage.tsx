@@ -126,17 +126,14 @@ export default function PublicLoyaltyCardPage() {
     }
     canonicalLink.href = canonicalUrl;
 
-    // 4. Manifest HTTP dinámico: Android Chrome exige HTTP/HTTPS (data: scheme es ignorado)
+    // 4. Manifest HTTP dinámico: Android Chrome exige HTTP/HTTPS y re-evalúa al recrear la etiqueta
     const manifestHttpUrl = `/manifest-card.json?id=${encodeURIComponent(activePublicId)}&name=${encodeURIComponent(clientName || 'Club')}`;
-    let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
-    const prevManifestHref = manifestLink?.href || '/manifest.json';
-    const createdManifest = !manifestLink;
-    if (!manifestLink) {
-      manifestLink = document.createElement('link');
-      manifestLink.rel = 'manifest';
-      document.head.appendChild(manifestLink);
-    }
-    manifestLink.href = manifestHttpUrl;
+    const existingManifests = document.querySelectorAll('link[rel="manifest"]');
+    existingManifests.forEach((el) => el.remove());
+    const newManifestTag = document.createElement('link');
+    newManifestTag.rel = 'manifest';
+    newManifestTag.href = manifestHttpUrl;
+    document.head.appendChild(newManifestTag);
 
     return () => {
       document.title = prevTitle;
@@ -161,13 +158,13 @@ export default function PublicLoyaltyCardPage() {
           canonicalLink.href = prevCanonicalHref;
         }
       }
-      if (manifestLink) {
-        if (createdManifest) {
-          manifestLink.remove();
-        } else {
-          manifestLink.href = prevManifestHref;
-        }
-      }
+      // Restaurar manifest global de BunnyCure al desmontar
+      const cardManifests = document.querySelectorAll('link[rel="manifest"]');
+      cardManifests.forEach((el) => el.remove());
+      const defaultManifest = document.createElement('link');
+      defaultManifest.rel = 'manifest';
+      defaultManifest.href = '/manifest.json';
+      document.head.appendChild(defaultManifest);
     };
   }, [card, publicId]);
 
