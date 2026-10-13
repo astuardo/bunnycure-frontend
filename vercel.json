@@ -9,10 +9,27 @@
       "destination": "/api/manifest-card.js"
     },
     {
+      "source": "/mi-tarjeta/:publicId",
+      "destination": "/api/card-page.js?publicId=:publicId"
+    },
+    {
+      "source": "/tarjeta/:publicId",
+      "destination": "/api/card-page.js?publicId=:publicId"
+    },
+    {
+      "source": "/pass/:publicId",
+      "destination": "/api/card-page.js?publicId=:publicId"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
+  "functions": {
+    "api/card-page.js": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "headers": [
     {
       "source": "/(sw\\.js|pwa-sw\\.js|service-worker\\.js)",
