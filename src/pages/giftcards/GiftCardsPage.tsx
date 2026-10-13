@@ -15,10 +15,7 @@ import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 import { matchRutSearch } from '@/utils/rutUtils';
 import {
   GIFTCARD_BACKGROUND_TEMPLATE,
-  downloadGiftCardPng,
-  printOrDownloadGiftCardPdf,
   isBlankGiftCardBeneficiary,
-  sendGiftCardWhatsApp,
   shareGiftCardPng,
 } from '@/utils/giftcardRenderer';
 import { Button } from '@/components/ui/Button';
@@ -140,7 +137,6 @@ export default function GiftCardsPage() {
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [generatedPins, setGeneratedPins] = useState<Record<number, string>>(loadStoredPins);
   const [sharingGiftCard, setSharingGiftCard] = useState(false);
-  const [downloadingPng, setDownloadingPng] = useState(false);
   const [giftCardToCancelFromList, setGiftCardToCancelFromList] = useState<GiftCard | null>(null);
   const [cancellingFromList, setCancellingFromList] = useState(false);
 
@@ -474,72 +470,6 @@ export default function GiftCardsPage() {
       onInfo: (msg) => toast.info(msg),
     });
     setSharingGiftCard(false);
-  };
-
-  const handleSendWhatsAppBeneficiary = () => {
-    if (!currentGiftCard) return;
-
-    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
-    const expiry = currentGiftCard.expiresOn || '-';
-    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
-    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
-
-    sendGiftCardWhatsApp({
-      data: {
-        beneficiaryName: beneficiary,
-        code: currentGiftCard.code,
-        pin: pinValue,
-        expiresOn: expiry,
-        publicUrl,
-      },
-      beneficiaryPhone: currentGiftCard.beneficiaryPhone,
-      onError: (msg) => toast.error(msg),
-    });
-  };
-
-  const handleDownloadPng = async () => {
-    if (!currentGiftCard) return;
-    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
-    const expiry = currentGiftCard.expiresOn || '-';
-    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
-    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
-
-    setDownloadingPng(true);
-    try {
-      await downloadGiftCardPng({
-        beneficiaryName: beneficiary,
-        code: currentGiftCard.code,
-        pin: pinValue,
-        expiresOn: expiry,
-        publicUrl,
-      });
-      toast.success('PNG descargado correctamente');
-    } catch {
-      toast.error('No se pudo descargar la imagen PNG');
-    } finally {
-      setDownloadingPng(false);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!currentGiftCard) return;
-    const pinValue = currentGiftCard.plainPin || generatedPins[currentGiftCard.id] || 'No disponible';
-    const expiry = currentGiftCard.expiresOn || '-';
-    const beneficiary = currentGiftCard.beneficiaryName || 'Beneficiaria';
-    const publicUrl = normalizeGiftCardPublicUrl(currentGiftCard.publicUrl, currentGiftCard.code);
-
-    try {
-      await printOrDownloadGiftCardPdf({
-        beneficiaryName: beneficiary,
-        code: currentGiftCard.code,
-        pin: pinValue,
-        expiresOn: expiry,
-        publicUrl,
-      });
-      toast.success('Abriendo vista de impresión / PDF');
-    } catch {
-      toast.error('No se pudo generar el documento PDF');
-    }
   };
 
   return (
@@ -1224,28 +1154,14 @@ export default function GiftCardsPage() {
                   🌐 Abrir URL pública
                 </a>
                 <Button
-                  variant="outline"
+                  variant="primary"
                   size="sm"
                   onClick={handleShareGiftCard}
                   disabled={sharingGiftCard}
                   isLoading={sharingGiftCard}
+                  className="bg-bunny-primary hover:bg-bunny-primary-hover text-white font-semibold"
                 >
                   🎁 Generar y compartir PNG
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadPng}
-                  disabled={downloadingPng}
-                  isLoading={downloadingPng}
-                >
-                  📥 Descargar PNG
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-                  📄 Imprimir / PDF
-                </Button>
-                <Button variant="success" size="sm" onClick={handleSendWhatsAppBeneficiary}>
-                  📱 Enviar WhatsApp
                 </Button>
               </div>
 

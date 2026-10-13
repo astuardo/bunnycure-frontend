@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Award, Plus, Minus, Gift, QrCode, Smartphone, Share2, ExternalLink, Copy, Check, Eye } from 'lucide-react';
+import { Award, Plus, Minus, Gift, QrCode, Share2, Copy, Check, Eye } from 'lucide-react';
 import { useLoyaltyStore } from '../../stores/loyaltyStore';
 import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, Alert, Badge, Button, Modal } from '../ui';
-import { copyToClipboard, openWhatsApp, shareNative, openExternalUrl } from '../../utils/shareUtils';
+import { copyToClipboard, openWhatsApp, shareNative } from '../../utils/shareUtils';
 import { normalizeLoyaltyCardPublicUrl, buildLoyaltyCardWhatsAppMessage } from '../../utils/loyaltyUrl';
 
 interface StampCardProps {
@@ -36,13 +36,9 @@ export default function StampCard({
   const maxStamps = 10;
 
   const [walletUrl, setWalletUrl] = useState<string>('');
-  const [walletQrUrl, setWalletQrUrl] = useState<string>('');
-  const [showQR, setShowQR] = useState(false);
-  const [loadingQR, setLoadingQR] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
-  const walletUrlLikelyTooLongForQr = walletQrUrl.length > 2900;
 
   const effectivePublicId = publicId || (customerId ? String(customerId) : '');
   // URL pública oficial universal (apunta siempre a https://app.bunnycure.cl/mi-tarjeta/:publicId)
@@ -65,7 +61,7 @@ export default function StampCard({
     }
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsAppFallback = () => {
     if (!effectivePublicId) {
       toast.error('Identificador de tarjeta no disponible');
       return;
@@ -99,11 +95,11 @@ export default function StampCard({
       }
     }
 
-    // Si no es móvil o el usuario prefiere WhatsApp o modal:
+    // Fallback si no es compatible con Web Share nativo:
     if (customerPhone) {
-      handleSendWhatsApp();
+      handleSendWhatsAppFallback();
     } else {
-      setShowPassModal(true);
+      handleCopyPassLink();
     }
   };
 
@@ -113,49 +109,18 @@ export default function StampCard({
     navigate(`/mi-tarjeta/${effectivePublicId}`);
   };
 
-  const handleOpenCardInNewTab = () => {
-    if (!passUrl) return;
-    openExternalUrl(passUrl);
-  };
-
   useEffect(() => {
     fetchRewards();
   }, [fetchRewards]);
 
   useEffect(() => {
     setWalletUrl('');
-    setWalletQrUrl('');
   }, [loyaltyStamps, currentRewardIndex]);
 
   const fetchWalletLinks = async (id: number) => {
     const links = await customersApi.getGoogleWalletLinks(id);
     setWalletUrl(links.openUrl);
-    setWalletQrUrl(links.qrUrl);
     return links;
-  };
-
-  const handleShowQR = async () => {
-    if (!customerId) return;
-
-    if (walletQrUrl) {
-      setShowQR(true);
-      return;
-    }
-
-    setLoadingQR(true);
-    try {
-      const links = await fetchWalletLinks(customerId);
-      if (links.qrUrl) {
-        setShowQR(true);
-      } else {
-        toast.error('No se pudo generar el enlace de Google Wallet');
-      }
-    } catch (error) {
-      console.error('Error getting Google Wallet link:', error);
-      toast.error('Error al conectar con Google Wallet');
-    } finally {
-      setLoadingQR(false);
-    }
   };
 
   const handleAddToGoogleWallet = async () => {
@@ -305,21 +270,11 @@ export default function StampCard({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleSendWhatsApp}
-                    leftIcon={<Share2 className="w-4 h-4 text-emerald-600" />}
-                    className="h-10 rounded-full px-4 border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-semibold"
-                  >
-                    Enviar WhatsApp
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
                     onClick={() => setShowPassModal(true)}
-                    leftIcon={<Smartphone className="w-4 h-4 text-bunny-primary" />}
-                    className="h-10 rounded-full px-4"
+                    leftIcon={<QrCode className="w-4 h-4 text-bunny-primary" />}
+                    className="h-10 rounded-full px-4 font-semibold text-bunny-cocoa hover:text-bunny-primary"
                   >
-                    Ver QR / Opciones
+                    Ver Código QR
                   </Button>
                 </>
               )}
@@ -336,32 +291,21 @@ export default function StampCard({
                   className="h-10"
                 />
               </button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShowQR}
-                disabled={loadingQR}
-                leftIcon={<QrCode className="w-4 h-4" />}
-                className="h-10 rounded-full px-4"
-              >
-                {loadingQR ? 'Cargando...' : 'Ver QR Google'}
-              </Button>
             </div>
           )}
         </div>
 
-        {/* Modal para Tarjeta Digital PWA Pass */}
+        {/* Modal para Tarjeta Digital Bunny Pass / Código QR */}
         <Modal show={showPassModal} onHide={() => setShowPassModal(false)} size="sm" centered>
           <Modal.Header closeButton>
             <Modal.Title className="flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-bunny-primary" />
-              Tarjeta Digital BunnyCure
+              <QrCode className="w-5 h-5 text-bunny-primary" />
+              Código QR - Bunny Pass
             </Modal.Title>
           </Modal.Header>
           <Modal.Body className="text-center py-4 space-y-4">
             <p className="text-xs text-bunny-text-muted mb-2">
-              Compatible con iPhone (Safari / Pantalla de inicio) y Android.
+              La clienta puede escanear este código con su teléfono para abrir o guardar su tarjeta digital.
             </p>
 
             {effectivePublicId && (
@@ -378,7 +322,7 @@ export default function StampCard({
             {effectivePublicId && (
               <div className="mt-2 text-left">
                 <label className="text-[11px] font-semibold text-bunny-text-muted block mb-1">
-                  Enlace directo oficial de la clienta:
+                  Enlace directo oficial:
                 </label>
                 <div className="flex items-center gap-1 bg-[#FDFCF8] border border-bunny-border rounded-xl px-2.5 py-1.5">
                   <input
@@ -391,7 +335,7 @@ export default function StampCard({
                   <button
                     type="button"
                     onClick={handleCopyPassLink}
-                    className="text-bunny-primary hover:text-bunny-primary-hover p-1"
+                    className="text-bunny-primary hover:text-bunny-primary-hover p-1 cursor-pointer"
                     title="Copiar"
                   >
                     {copiedPass ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -400,43 +344,7 @@ export default function StampCard({
               </div>
             )}
 
-            <div className="flex flex-col gap-2.5 pt-2">
-              {/* Opción 1: Enviar directo por WhatsApp (idéntico a GiftCard) */}
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleSendWhatsApp}
-                leftIcon={<Share2 className="w-4 h-4" />}
-                className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-              >
-                Enviar por WhatsApp
-              </Button>
-
-              {/* Opción 2: Menú nativo Compartir (si el dispositivo lo soporta) */}
-              {canShareNatively && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleShareCard}
-                  leftIcon={<Share2 className="w-4 h-4 text-bunny-primary" />}
-                  className="w-full justify-center"
-                >
-                  Compartir (Móvil / AirDrop)
-                </Button>
-              )}
-
-              {/* Opción 3: Copiar enlace */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyPassLink}
-                leftIcon={copiedPass ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                className="w-full justify-center"
-              >
-                {copiedPass ? '¡Enlace Copiado!' : 'Copiar Enlace de Tarjeta'}
-              </Button>
-
-              {/* Opción 4: Ver tarjeta directamente en la app */}
+            <div className="pt-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -446,53 +354,10 @@ export default function StampCard({
               >
                 Ver Tarjeta en Pantalla Completa
               </Button>
-
-              {/* Opción 5: Abrir en navegador externo */}
-              {effectivePublicId && (
-                <button
-                  type="button"
-                  onClick={handleOpenCardInNewTab}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1 border-0 bg-transparent cursor-pointer"
-                >
-                  Abrir Tarjeta en nueva pestaña <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="outline" size="sm" onClick={() => setShowPassModal(false)} fullWidth>
-              Cerrar
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
-        {/* Modal para el Código QR de Google Wallet */}
-        <Modal show={showQR} onHide={() => setShowQR(false)} size="sm" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Escanea para Google Wallet</Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="text-center py-4">
-            {walletQrUrl &&
-              (walletUrlLikelyTooLongForQr ? (
-                <Alert variant="warning" className="text-left mb-3">
-                  El enlace es demasiado largo para generar un QR escaneable. Usa el botón de Google Wallet.
-                </Alert>
-              ) : (
-                <div className="bg-white p-3 inline-block rounded-xl border border-bunny-border shadow-xs">
-                  <QRCodeSVG
-                    value={walletQrUrl}
-                    size={200}
-                    level="L"
-                    includeMargin={true}
-                  />
-                </div>
-              ))}
-            <p className="mt-3 mb-0 text-xs text-bunny-text-muted">
-              Pide a la clienta que escanee este código para guardar su pase BunnyCure en Google Wallet.
-            </p>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="outline" size="sm" onClick={() => setShowQR(false)} fullWidth>
               Cerrar
             </Button>
           </Modal.Footer>

@@ -13,9 +13,7 @@ import { Customer, NotificationPreference } from '../../types/customer.types';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { GiftCard } from '../../types/giftcard.types';
 import {
-  downloadGiftCardPng,
-  printOrDownloadGiftCardPdf,
-  sendGiftCardWhatsApp,
+  shareGiftCardPng,
   toWhatsAppPhone,
 } from '../../utils/giftcardRenderer';
 import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
@@ -613,10 +611,10 @@ export default function CustomerDetailsPage() {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      title="Enviar por WhatsApp"
+                                      variant="primary"
+                                      title="Generar y compartir PNG (WhatsApp)"
                                       onClick={() =>
-                                        sendGiftCardWhatsApp({
+                                        shareGiftCardPng({
                                           data: {
                                             beneficiaryName: gc.beneficiaryName,
                                             code: gc.code,
@@ -625,55 +623,14 @@ export default function CustomerDetailsPage() {
                                             publicUrl,
                                           },
                                           beneficiaryPhone: gc.beneficiaryPhone,
+                                          onSuccess: (msg) => toast.success(msg),
                                           onError: (msg) => toast.error(msg),
+                                          onInfo: (msg) => toast.info(msg),
                                         })
                                       }
-                                      className="p-1.5 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                                      className="text-xs px-2.5 py-1 bg-bunny-primary hover:bg-bunny-primary-hover text-white font-semibold"
                                     >
-                                      📱
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      title="Descargar Imagen PNG"
-                                      onClick={async () => {
-                                        try {
-                                          await downloadGiftCardPng({
-                                            beneficiaryName: gc.beneficiaryName,
-                                            code: gc.code,
-                                            pin: gc.plainPin || 'No disponible',
-                                            expiresOn: gc.expiresOn,
-                                            publicUrl,
-                                          });
-                                          toast.success('PNG descargado');
-                                        } catch {
-                                          toast.error('Error al descargar PNG');
-                                        }
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      📥 PNG
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      title="Imprimir / Guardar PDF"
-                                      onClick={async () => {
-                                        try {
-                                          await printOrDownloadGiftCardPdf({
-                                            beneficiaryName: gc.beneficiaryName,
-                                            code: gc.code,
-                                            pin: gc.plainPin || 'No disponible',
-                                            expiresOn: gc.expiresOn,
-                                            publicUrl,
-                                          });
-                                        } catch {
-                                          toast.error('Error al generar PDF');
-                                        }
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      📄 PDF
+                                      🎁 Compartir PNG
                                     </Button>
                                     <a
                                       className="px-2 py-1 text-xs rounded-lg border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors"

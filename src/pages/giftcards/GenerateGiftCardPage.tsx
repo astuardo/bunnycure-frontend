@@ -10,10 +10,7 @@ import { useToast } from '@/hooks/useToast';
 import { normalizeGiftCardPublicUrl } from '@/utils/giftcardUrl';
 import {
   GIFTCARD_BACKGROUND_TEMPLATE,
-  downloadGiftCardPng,
-  printOrDownloadGiftCardPdf,
   isBlankGiftCardBeneficiary,
-  sendGiftCardWhatsApp,
   shareGiftCardPng,
 } from '@/utils/giftcardRenderer';
 import { Button } from '@/components/ui/Button';
@@ -80,7 +77,6 @@ export default function GenerateGiftCardPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [sharingGiftCard, setSharingGiftCard] = useState(false);
-  const [downloadingPng, setDownloadingPng] = useState(false);
 
   useEffect(() => {
     fetchServices(true);
@@ -230,56 +226,6 @@ export default function GenerateGiftCardPage() {
     setSharingGiftCard(false);
   };
 
-  const handleSendWhatsApp = () => {
-    if (!createdInfo) return;
-    sendGiftCardWhatsApp({
-      data: {
-        beneficiaryName: createdInfo.beneficiaryName,
-        code: createdInfo.code,
-        pin: createdInfo.plainPin || 'No disponible',
-        expiresOn: createdInfo.expiresOn,
-        publicUrl: createdInfo.publicUrl,
-      },
-      beneficiaryPhone: createdInfo.beneficiaryPhone,
-      onError: (msg) => toast.error(msg),
-    });
-  };
-
-  const handleDownloadPng = async () => {
-    if (!createdInfo) return;
-    setDownloadingPng(true);
-    try {
-      await downloadGiftCardPng({
-        beneficiaryName: createdInfo.beneficiaryName,
-        code: createdInfo.code,
-        pin: createdInfo.plainPin || 'No disponible',
-        expiresOn: createdInfo.expiresOn,
-        publicUrl: createdInfo.publicUrl,
-      });
-      toast.success('PNG descargado correctamente');
-    } catch {
-      toast.error('No se pudo descargar la imagen PNG');
-    } finally {
-      setDownloadingPng(false);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!createdInfo) return;
-    try {
-      await printOrDownloadGiftCardPdf({
-        beneficiaryName: createdInfo.beneficiaryName,
-        code: createdInfo.code,
-        pin: createdInfo.plainPin || 'No disponible',
-        expiresOn: createdInfo.expiresOn,
-        publicUrl: createdInfo.publicUrl,
-      });
-      toast.success('Abriendo vista de impresión / PDF');
-    } catch {
-      toast.error('No se pudo generar el documento PDF');
-    }
-  };
-
   return (
     <DashboardLayout>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -368,30 +314,6 @@ export default function GenerateGiftCardPage() {
                 isLoading={sharingGiftCard}
               >
                 🎁 Generar y compartir PNG
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSendWhatsApp}
-                className="border-emerald-300 text-emerald-800 hover:bg-emerald-100"
-              >
-                📱 Enviar a WhatsApp
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadPng}
-                disabled={downloadingPng}
-                isLoading={downloadingPng}
-              >
-                📥 Descargar PNG
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadPdf}
-              >
-                📄 Imprimir / PDF
               </Button>
               <a
                 href={createdInfo.publicUrl}
