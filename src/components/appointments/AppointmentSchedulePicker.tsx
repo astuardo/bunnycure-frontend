@@ -245,7 +245,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   return (
     <div className="appointment-schedule-picker mb-3">
       {/* ─── FILA DE INPUTS DIRECTOS (Fecha y Hora) ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2 items-start">
         <div>
           <div>
             <div className="flex justify-between items-center mb-1">
@@ -320,7 +320,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 </small>
               )}
             </div>
-            <div className="flex">
+            <div className="flex mb-2">
               <input
                 type="time"
                 required={required}
@@ -347,6 +347,67 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 +15m
               </button>
             </div>
+
+            {/* ─── HORAS RÁPIDAS (DEBAJO DEL SELECTOR PREDETERMINADO) ─── */}
+            {!fullDayBlock.blocked && !(selectedDate && !allowPastDates && selectedDate < todayStr) && (
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div className="flex justify-between items-center mb-1.5">
+                  <small className="text-slate-600 font-bold text-[11px] flex items-center gap-1">
+                    <span>⚡</span> Horas rápidas:
+                  </small>
+                  <small className="text-slate-400 text-[10px]">
+                    👤 Cita · 🚫 Bloqueado
+                  </small>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  {COMMON_SLOTS.map((slot) => {
+                    const check = checkTimeSlotConflict(selectedDate, slot, durationMinutes, unavailabilities);
+                    const isBlocked = check.hasConflict;
+
+                    const conflictingApt = dayAppointments.find((apt) => {
+                      if (!apt.appointmentTime) return false;
+                      const aptStart = timeToMinutes(apt.appointmentTime);
+                      const aptDur = getAptDuration(apt);
+                      const aptEnd = aptStart + aptDur;
+                      const slotStart = timeToMinutes(slot);
+                      const slotEnd = slotStart + durationMinutes;
+                      return Math.max(slotStart, aptStart) < Math.min(slotEnd, aptEnd);
+                    });
+                    const isAptOccupied = !!conflictingApt;
+                    const isCurrent = selectedTime === slot;
+
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        disabled={isBlocked}
+                        onClick={() => onTimeChange(slot)}
+                        className={`text-[11px] py-1 px-1 rounded-lg border text-center transition-all ${
+                          isCurrent
+                            ? isAptOccupied
+                              ? 'bg-rose-600 text-white border-rose-600 font-semibold shadow-xs'
+                              : 'bg-bunny-primary text-white border-bunny-primary font-semibold shadow-xs'
+                            : isBlocked
+                            ? 'border-rose-200 bg-rose-50 text-rose-400 line-through cursor-not-allowed opacity-60'
+                            : isAptOccupied
+                            ? 'border-dashed border-amber-400 bg-amber-50 text-amber-900 font-semibold'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                        title={
+                          isBlocked
+                            ? `Bloqueado por agenda: ${check.reason}`
+                            : isAptOccupied
+                            ? `Ocupado por cita de ${conflictingApt.customer?.fullName || 'Clienta'} (${conflictingApt.appointmentTime} a ${getAptEndTime(conflictingApt)})`
+                            : `Seleccionar ${slot} (Disponible)`
+                        }
+                      >
+                        {slot} {isBlocked ? '🚫' : isAptOccupied ? '👤' : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -544,63 +605,53 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         </div>
       )}
 
-      {/* ─── ALERTAS Y AVISOS DE DISPONIBILIDAD PARA EL DÍA SELECCIONADO ─── */}
+      {/* ─── ALERTAS Y DETALLE DE CITAS PARA EL DÍA SELECCIONADO ─── */}
       {selectedDate && (
         <>
-          {/* CASO 0: FECHA EN EL PASADO */}
-          {!allowPastDates && selectedDate < todayStr && (
+          {/* CASO 3: CONFLICTO ESPECÍFICO DE LA HORA SELECCIONADA CON BLOQUEO */}
+          {timeConflict.hasConflict && (
             <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
               <FiAlertTriangle className="text-rose-600 text-base shrink-0 mt-0.5" />
               <div>
-                <strong className="block text-rose-800">FECHA EN EL PASADO</strong>
-                <span>
-                  No está permitido agendar citas en fechas anteriores a hoy ({todayStr}).
-                  Por favor selecciona hoy o una fecha posterior.
-                </span>
-              </div>
-            </Alert>
-          )}
-
-          {/* CASO 1: DÍA COMPLETO CERRADO / BLOQUEADO */}
-          {fullDayBlock.blocked && (
-            <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
-              <span className="text-base leading-none">🚫</span>
-              <div>
                 <strong className="block text-rose-800">
-                  DÍA CERRADO / BLOQUEADO: {fullDayBlock.reason || 'Sin motivo especificado'}
+                  CONFLICTO CON HORARIO BLOQUEADO
                 </strong>
                 <span>
-                  Este día completo ({selectedDate}) está configurado como bloqueado o no laborable en la agenda.
+                  La cita seleccionada (<strong>{selectedTime} a {calculatedEndTime}</strong> hrs)
+                  se superpone con el bloqueo registrado:{' '}
+                  <strong>"{timeConflict.reason}"</strong> ({timeConflict.conflictSlot}).
                 </span>
-                <div className="font-semibold mt-1 text-rose-700">
-                  ⚠️ No se recomienda agendar citas en esta fecha.
+                <div className="font-bold text-rose-700 mt-1">
+                  Por favor selecciona otro horario para no invadir el bloqueo de agenda.
                 </div>
               </div>
             </Alert>
           )}
 
-          {/* CASO 2: HORARIOS PARCIALES BLOQUEADOS EN LA FECHA */}
-          {!fullDayBlock.blocked && slotBlocks.length > 0 && (
-            <div className="p-3 mb-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-              <div className="flex items-center gap-1.5 mb-1.5 font-bold">
-                <span>⏰</span>
-                <span>Horarios bloqueados registrados para este día:</span>
+          {/* CASO 4: ADVERTENCIA DE SUPERPOSICIÓN CON CITA EXISTENTE */}
+          {!timeConflict.hasConflict && existingAptConflict && (
+            <Alert variant="warning" className="mb-2 text-xs flex items-start gap-2">
+              <FiAlertTriangle className="text-amber-600 text-base shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-slate-800 block">Aviso de superposición con otra cita:</strong>
+                <div>
+                  La hora seleccionada se superpone con la cita de{' '}
+                  <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>{' '}
+                  ({existingAptConflict.appointmentTime} a {getAptEndTime(existingAptConflict)} hrs).
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 pl-4">
-                {slotBlocks.map((b) => (
-                  <Badge
-                    key={b.id}
-                    variant="warning"
-                    className="py-1 px-2 font-semibold text-xs border border-amber-300"
-                  >
-                    🚫 {b.startTime} a {b.endTime} hrs: {b.reason || 'Horario bloqueado'}
-                  </Badge>
-                ))}
-              </div>
+            </Alert>
+          )}
+
+          {/* CASO 5: DÍA Y HORA TOTALMENTE LIBRES */}
+          {!fullDayBlock.blocked && !timeConflict.hasConflict && !existingAptConflict && selectedTime && (
+            <div className="py-1.5 px-3 mb-2 rounded-xl flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200">
+              <FiCheckCircle className="text-emerald-600 shrink-0" />
+              <span>Horario disponible: {selectedTime} a {calculatedEndTime} hrs sin conflictos.</span>
             </div>
           )}
 
-          {/* CASO 2.5: CITAS YA AGENDADAS PARA ESTE DÍA */}
+          {/* ─── DETALLE DE CITAS PARA EL DÍA ─── */}
           {dayAppointments.length > 0 ? (
             <div className="p-3 mb-2 rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
               <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
@@ -708,107 +759,55 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
             )
           )}
 
-          {/* CASO 3: CONFLICTO ESPECÍFICO DE LA HORA SELECCIONADA CON BLOQUEO */}
-          {timeConflict.hasConflict && (
+          {/* CASO 0: FECHA EN EL PASADO */}
+          {!allowPastDates && selectedDate < todayStr && (
             <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
               <FiAlertTriangle className="text-rose-600 text-base shrink-0 mt-0.5" />
               <div>
+                <strong className="block text-rose-800">FECHA EN EL PASADO</strong>
+                <span>
+                  No está permitido agendar citas en fechas anteriores a hoy ({todayStr}).
+                  Por favor selecciona hoy o una fecha posterior.
+                </span>
+              </div>
+            </Alert>
+          )}
+
+          {/* CASO 1: DÍA COMPLETO CERRADO / BLOQUEADO */}
+          {fullDayBlock.blocked && (
+            <Alert variant="danger" className="mb-2 text-xs flex items-start gap-2">
+              <span className="text-base leading-none">🚫</span>
+              <div>
                 <strong className="block text-rose-800">
-                  CONFLICTO CON HORARIO BLOQUEADO
+                  DÍA CERRADO / BLOQUEADO: {fullDayBlock.reason || 'Sin motivo especificado'}
                 </strong>
                 <span>
-                  La cita seleccionada (<strong>{selectedTime} a {calculatedEndTime}</strong> hrs)
-                  se superpone con el bloqueo registrado:{' '}
-                  <strong>"{timeConflict.reason}"</strong> ({timeConflict.conflictSlot}).
+                  Este día completo ({selectedDate}) está configurado como bloqueado o no laborable en la agenda.
                 </span>
-                <div className="font-bold text-rose-700 mt-1">
-                  Por favor selecciona otro horario para no invadir el bloqueo de agenda.
+                <div className="font-semibold mt-1 text-rose-700">
+                  ⚠️ No se recomienda agendar citas en esta fecha.
                 </div>
               </div>
             </Alert>
           )}
 
-          {/* CASO 4: ADVERTENCIA DE SUPERPOSICIÓN CON CITA EXISTENTE */}
-          {!timeConflict.hasConflict && existingAptConflict && (
-            <Alert variant="warning" className="mb-2 text-xs flex items-start gap-2">
-              <FiAlertTriangle className="text-amber-600 text-base shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-slate-800 block">Aviso de superposición con otra cita:</strong>
-                <div>
-                  La hora seleccionada se superpone con la cita de{' '}
-                  <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>{' '}
-                  ({existingAptConflict.appointmentTime} a {getAptEndTime(existingAptConflict)} hrs).
-                </div>
+          {/* CASO 2: HORARIOS PARCIALES BLOQUEADOS EN LA FECHA */}
+          {!fullDayBlock.blocked && slotBlocks.length > 0 && (
+            <div className="p-3 mb-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+              <div className="flex items-center gap-1.5 mb-1.5 font-bold">
+                <span>⏰</span>
+                <span>Horarios bloqueados registrados para este día:</span>
               </div>
-            </Alert>
-          )}
-
-          {/* CASO 5: DÍA Y HORA TOTALMENTE LIBRES */}
-          {!fullDayBlock.blocked && !timeConflict.hasConflict && !existingAptConflict && selectedTime && (
-            <div className="py-1.5 px-3 mb-2 rounded-xl flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200">
-              <FiCheckCircle className="text-emerald-600" />
-              <span>Horario disponible: {selectedTime} a {calculatedEndTime} hrs sin conflictos.</span>
-            </div>
-          )}
-
-          {/* ─── SUGERENCIAS RÁPIDAS DE HORAS (SLOTS HABITUALES) ─── */}
-          {!fullDayBlock.blocked && !(selectedDate && !allowPastDates && selectedDate < todayStr) && (
-            <div className="mb-2">
-              <div className="flex justify-between items-center mb-1.5">
-                <small className="text-slate-500 font-semibold text-[11px]">
-                  Atajos de horarios comunes:
-                </small>
-                <small className="text-slate-400 text-[10.5px]">
-                  👤 = Ocupado por otra cita · 🚫 = Bloqueado
-                </small>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {COMMON_SLOTS.map((slot) => {
-                  const check = checkTimeSlotConflict(selectedDate, slot, durationMinutes, unavailabilities);
-                  const isBlocked = check.hasConflict;
-
-                  // Verificar si el slot choca con una cita agendada
-                  const conflictingApt = dayAppointments.find((apt) => {
-                    if (!apt.appointmentTime) return false;
-                    const aptStart = timeToMinutes(apt.appointmentTime);
-                    const aptDur = getAptDuration(apt);
-                    const aptEnd = aptStart + aptDur;
-                    const slotStart = timeToMinutes(slot);
-                    const slotEnd = slotStart + durationMinutes;
-                    return Math.max(slotStart, aptStart) < Math.min(slotEnd, aptEnd);
-                  });
-                  const isAptOccupied = !!conflictingApt;
-                  const isCurrent = selectedTime === slot;
-
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      disabled={isBlocked}
-                      onClick={() => onTimeChange(slot)}
-                      className={`text-[11px] py-1 px-2 rounded-lg border transition-all ${
-                        isCurrent
-                          ? isAptOccupied
-                            ? 'bg-rose-600 text-white border-rose-600 font-semibold'
-                            : 'bg-bunny-primary text-white border-bunny-primary font-semibold'
-                          : isBlocked
-                          ? 'border-rose-200 bg-rose-50 text-rose-400 line-through cursor-not-allowed opacity-60'
-                          : isAptOccupied
-                          ? 'border-dashed border-amber-400 bg-amber-50 text-amber-900 font-semibold'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
-                      title={
-                        isBlocked
-                          ? `Bloqueado por agenda: ${check.reason}`
-                          : isAptOccupied
-                          ? `Ocupado por cita de ${conflictingApt.customer?.fullName || 'Clienta'} (${conflictingApt.appointmentTime} a ${getAptEndTime(conflictingApt)})`
-                          : `Seleccionar ${slot} (Disponible)`
-                      }
-                    >
-                      {slot} {isBlocked ? '🚫' : isAptOccupied ? '👤' : ''}
-                    </button>
-                  );
-                })}
+              <div className="flex flex-wrap gap-1.5 pl-4">
+                {slotBlocks.map((b) => (
+                  <Badge
+                    key={b.id}
+                    variant="warning"
+                    className="py-1 px-2 font-semibold text-xs border border-amber-300"
+                  >
+                    🚫 {b.startTime} a {b.endTime} hrs: {b.reason || 'Horario bloqueado'}
+                  </Badge>
+                ))}
               </div>
             </div>
           )}
