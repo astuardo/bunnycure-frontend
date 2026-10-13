@@ -16,6 +16,63 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'dynamic-card-manifest',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url && (req.url.startsWith('/manifest-card.json') || req.url.startsWith('/api/manifest-card'))) {
+            const url = new URL(req.url, 'http://localhost');
+            const id = url.searchParams.get('id') || '';
+            const nameParam = url.searchParams.get('name') || 'Club';
+            let firstName = 'Club';
+            try {
+              firstName = decodeURIComponent(nameParam);
+            } catch {
+              firstName = nameParam;
+            }
+            const cardPath = id ? `/mi-tarjeta/${id}` : '/';
+
+            res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+            res.end(
+              JSON.stringify({
+                id: cardPath,
+                name: `Bunny Pass - ${firstName}`,
+                short_name: 'Bunny Pass',
+                description: `Tarjeta de fidelización digital BunnyCure Club de ${firstName}`,
+                theme_color: '#FDFCF8',
+                background_color: '#FDFCF8',
+                display: 'standalone',
+                scope: '/',
+                start_url: cardPath,
+                orientation: 'portrait',
+                icons: [
+                  {
+                    src: '/icon-192.png',
+                    sizes: '192x192',
+                    type: 'image/png',
+                    purpose: 'any',
+                  },
+                  {
+                    src: '/icon-512.png',
+                    sizes: '512x512',
+                    type: 'image/png',
+                    purpose: 'any',
+                  },
+                  {
+                    src: '/icon-maskable-512.png',
+                    sizes: '512x512',
+                    type: 'image/png',
+                    purpose: 'maskable',
+                  },
+                ],
+              })
+            );
+            return;
+          }
+          next();
+        });
+      },
+    },
     VitePWA({
       filename: 'pwa-sw.js',
       injectRegister: false,

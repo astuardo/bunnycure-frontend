@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { FiX } from 'react-icons/fi';
+import { isPublicPath } from '../utils/publicRoutes';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -61,7 +62,8 @@ export function InstallPWA() {
     }
   }, []);
 
-  if (!deferredPrompt || !showToast) return null;
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (isPublicPath(pathname) || !deferredPrompt || !showToast) return null;
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] max-w-sm w-[calc(100vw-2rem)]">

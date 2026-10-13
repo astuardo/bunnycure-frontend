@@ -4,7 +4,7 @@
  * Incluye chequeo automÃ¡tico de citas prÃ³ximas para notificaciones
  */
 
-const CACHE_NAME = 'bunnycure-v2';
+const CACHE_NAME = 'bunnycure-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -84,6 +84,63 @@ self.addEventListener('fetch', (event) => {
 
   // Ignorar esquemas no soportados por Cache API (chrome-extension, data:, etc.)
   if (!requestUrl.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Servir manifiesto PWA dinámico para tarjetas Bunny Pass de clientas
+  if (requestUrl.pathname === '/manifest-card.json' || requestUrl.pathname === '/api/manifest-card') {
+    const publicId = requestUrl.searchParams.get('id') || '';
+    const nameParam = requestUrl.searchParams.get('name') || 'Club';
+    let firstName = 'Club';
+    try {
+      firstName = decodeURIComponent(nameParam);
+    } catch {
+      firstName = nameParam;
+    }
+    const cardPath = publicId ? `/mi-tarjeta/${publicId}` : '/';
+
+    const cardManifest = {
+      id: cardPath,
+      name: `Bunny Pass - ${firstName}`,
+      short_name: 'Bunny Pass',
+      description: `Tarjeta de fidelización digital BunnyCure Club de ${firstName}`,
+      theme_color: '#FDFCF8',
+      background_color: '#FDFCF8',
+      display: 'standalone',
+      scope: '/',
+      start_url: cardPath,
+      orientation: 'portrait',
+      icons: [
+        {
+          src: '/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/icon-maskable-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
+    };
+
+    event.respondWith(
+      new Response(JSON.stringify(cardManifest), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/manifest+json; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      })
+    );
     return;
   }
 

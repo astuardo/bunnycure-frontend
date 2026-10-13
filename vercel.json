@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/manifest-card.json",
+      "destination": "/api/manifest-card.js"
+    },
+    {
+      "source": "/api/manifest-card",
+      "destination": "/api/manifest-card.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

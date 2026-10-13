@@ -53,10 +53,15 @@ export default function PublicLoyaltyCardPage() {
     };
   }, []);
 
-  // Persistir inmediatamente el ID de la tarjeta en localStorage para accesos directos desde la pantalla de inicio
+  // Persistir inmediatamente el ID de la tarjeta y actualizar el manifest en el DOM lo antes posible
   if (publicId && typeof window !== 'undefined') {
     try {
       localStorage.setItem('bunny_my_loyalty_public_id', publicId);
+      const earlyManifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+      const targetEarlyHref = `/manifest-card.json?id=${encodeURIComponent(publicId)}&name=${encodeURIComponent(card?.firstName || 'Club')}`;
+      if (earlyManifestLink && earlyManifestLink.getAttribute('href') !== targetEarlyHref) {
+        earlyManifestLink.setAttribute('href', targetEarlyHref);
+      }
     } catch {
       // ignore storage quota errors
     }
@@ -71,83 +76,100 @@ export default function PublicLoyaltyCardPage() {
     }
   }, [publicId]);
 
-  // Sincronizar título, meta tag Apple y PWA Manifest dinámico con start_url directo a la tarjeta
+  // Sincronizar título, meta tag Apple, Canonical URL y PWA Manifest HTTP dinámico
   useEffect(() => {
-    if (!card) return;
+    const activePublicId = card?.publicId || publicId;
+    if (!activePublicId) return;
 
     try {
-      localStorage.setItem('bunny_my_loyalty_public_id', card.publicId);
+      localStorage.setItem('bunny_my_loyalty_public_id', activePublicId);
     } catch {
       // ignore
     }
 
     const prevTitle = document.title;
-    document.title = `Bunny Pass - ${card.firstName}`;
+    const clientName = card?.firstName;
+    const cardTitle = clientName ? `Bunny Pass - ${clientName}` : 'Bunny Pass Club';
+    document.title = cardTitle;
 
+    // 1. Meta apple-mobile-web-app-title (determina el nombre por defecto en iOS Safari al anclar)
     let appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]') as HTMLMetaElement | null;
     const prevAppleTitle = appleTitleMeta?.content;
+    const createdAppleTitle = !appleTitleMeta;
     if (!appleTitleMeta) {
       appleTitleMeta = document.createElement('meta');
       appleTitleMeta.name = 'apple-mobile-web-app-title';
       document.head.appendChild(appleTitleMeta);
     }
-    appleTitleMeta.content = 'Bunny Pass';
+    appleTitleMeta.content = cardTitle;
 
-    // Manifest dinámico específico para que al "Agregar a inicio" se abra directo la tarjeta
-    const cardManifest = {
-      name: `Bunny Pass - ${card.firstName}`,
-      short_name: 'Bunny Pass',
-      description: `Tarjeta de fidelización digital BunnyCure Club de ${card.firstName}`,
-      theme_color: '#FDFCF8',
-      background_color: '#FDFCF8',
-      display: 'standalone',
-      scope: '/',
-      start_url: `/mi-tarjeta/${card.publicId}`,
-      orientation: 'portrait',
-      icons: [
-        {
-          src: '/icon-192.png',
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any',
-        },
-        {
-          src: '/icon-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any',
-        },
-        {
-          src: '/icon-maskable-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'maskable',
-        },
-      ],
-    };
+    // 2. Meta application-name (para Chrome/Android y otros navegadores móviles)
+    let appNameMeta = document.querySelector('meta[name="application-name"]') as HTMLMetaElement | null;
+    const prevAppName = appNameMeta?.content;
+    const createdAppName = !appNameMeta;
+    if (!appNameMeta) {
+      appNameMeta = document.createElement('meta');
+      appNameMeta.name = 'application-name';
+      document.head.appendChild(appNameMeta);
+    }
+    appNameMeta.content = cardTitle;
 
-    const manifestDataUrl = `data:application/manifest+json;charset=utf-8,${encodeURIComponent(JSON.stringify(cardManifest))}`;
+    // 3. Canonical Link: iOS Safari utiliza prioritariamente la etiqueta canonical al agregar a inicio
+    const canonicalUrl = `${window.location.origin}/mi-tarjeta/${activePublicId}`;
+    let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    const prevCanonicalHref = canonicalLink?.href;
+    const createdCanonical = !canonicalLink;
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = 'canonical';
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.href = canonicalUrl;
 
+    // 4. Manifest HTTP dinámico: Android Chrome exige HTTP/HTTPS (data: scheme es ignorado)
+    const manifestHttpUrl = `/manifest-card.json?id=${encodeURIComponent(activePublicId)}&name=${encodeURIComponent(clientName || 'Club')}`;
     let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
     const prevManifestHref = manifestLink?.href || '/manifest.json';
-
+    const createdManifest = !manifestLink;
     if (!manifestLink) {
       manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
       document.head.appendChild(manifestLink);
     }
-    manifestLink.href = manifestDataUrl;
+    manifestLink.href = manifestHttpUrl;
 
     return () => {
       document.title = prevTitle;
-      if (appleTitleMeta && prevAppleTitle !== undefined) {
-        appleTitleMeta.content = prevAppleTitle;
+      if (appleTitleMeta) {
+        if (createdAppleTitle) {
+          appleTitleMeta.remove();
+        } else if (prevAppleTitle !== undefined) {
+          appleTitleMeta.content = prevAppleTitle;
+        }
+      }
+      if (appNameMeta) {
+        if (createdAppName) {
+          appNameMeta.remove();
+        } else if (prevAppName !== undefined) {
+          appNameMeta.content = prevAppName;
+        }
+      }
+      if (canonicalLink) {
+        if (createdCanonical) {
+          canonicalLink.remove();
+        } else if (prevCanonicalHref !== undefined) {
+          canonicalLink.href = prevCanonicalHref;
+        }
       }
       if (manifestLink) {
-        manifestLink.href = prevManifestHref;
+        if (createdManifest) {
+          manifestLink.remove();
+        } else {
+          manifestLink.href = prevManifestHref;
+        }
       }
     };
-  }, [card]);
+  }, [card, publicId]);
 
   const fetchCard = async (isRefresh = false) => {
     if (!publicId) {
@@ -608,9 +630,14 @@ export default function PublicLoyaltyCardPage() {
                   <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
                     3
                   </span>
-                  <p>
-                    Presiona <strong>"Agregar"</strong> arriba a la derecha. ¡Tu tarjeta quedará guardada como una app lista para usar!
-                  </p>
+                  <div>
+                    <p>
+                      Presiona <strong>"Agregar"</strong> arriba a la derecha.
+                    </p>
+                    <p className="text-[11px] text-[#9E7B6E] mt-1">
+                      💡 <em>Nota: Safari mostrará "app.bunnycure.cl" debajo del título por seguridad, pero tu acceso directo abrirá directamente tu Bunny Pass{card?.firstName ? ` de ${card.firstName}` : ''}.</em>
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -620,7 +647,7 @@ export default function PublicLoyaltyCardPage() {
                     1
                   </span>
                   <p>
-                    En <strong>Chrome</strong>, presiona los <strong>tres puntos (⋮)</strong> en la esquina superior derecha.
+                    En <strong>Chrome</strong>, presiona el botón <strong>Guardar en mi Móvil</strong> o los <strong>tres puntos (⋮)</strong> en la esquina superior derecha.
                   </p>
                 </div>
 
@@ -637,9 +664,14 @@ export default function PublicLoyaltyCardPage() {
                   <span className="w-6 h-6 rounded-full bg-[#C9897A] text-white font-bold flex items-center justify-center shrink-0">
                     3
                   </span>
-                  <p>
-                    Confirma <strong>"Instalar"</strong> o <strong>"Agregar"</strong>. ¡Tu Bunny Pass quedará en tu inicio con acceso directo!
-                  </p>
+                  <div>
+                    <p>
+                      Confirma <strong>"Instalar"</strong> o <strong>"Agregar"</strong>.
+                    </p>
+                    <p className="text-[11px] text-[#9E7B6E] mt-1">
+                      💡 <em>Tu Bunny Pass quedará anclado en tu pantalla de inicio y abrirá directamente tus sellos sin pedir iniciar sesión.</em>
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
