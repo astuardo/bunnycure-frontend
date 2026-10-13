@@ -42,6 +42,7 @@ interface AppointmentSchedulePickerProps {
   required?: boolean;
   minDate?: string;
   allowPastDates?: boolean;
+  collapseOnDateSelect?: boolean;
 }
 
 const COMMON_SLOTS = [
@@ -74,6 +75,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
   required = true,
   minDate,
   allowPastDates = false,
+  collapseOnDateSelect = true,
 }) => {
   const calendarRef = useRef<HTMLDivElement>(null);
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
@@ -218,6 +220,8 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
       setTimeout(() => {
         calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 50);
+    } else {
+      setShowVisualCalendar(false);
     }
   };
 
@@ -233,6 +237,9 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
       return;
     }
     onDateChange(dateStr);
+    if (collapseOnDateSelect) {
+      setShowVisualCalendar(false);
+    }
   };
 
   return (
@@ -250,7 +257,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 className="text-xs text-bunny-primary hover:underline font-semibold"
                 onClick={() => setShowVisualCalendar(!showVisualCalendar)}
               >
-                {showVisualCalendar ? '▼ Ocultar calendario' : '▶ Ver calendario'}
+                {showVisualCalendar ? '▲ Ocultar calendario' : '▶ Cambiar / Ver calendario'}
               </button>
             </div>
             {/* Contenedor interactivo no-input: nunca activa zoom en iOS/Android */}
@@ -267,17 +274,17 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 fullDayBlock.blocked || (selectedDate && !allowPastDates && selectedDate < todayStr)
                   ? 'bg-rose-50 border-rose-400 text-rose-800'
                   : selectedDate
-                  ? 'bg-bunny-light/10 border-bunny-accent/80 text-bunny-dark'
-                  : 'bg-white border-slate-300 text-slate-400'
+                  ? 'bg-bunny-light/10 border-bunny-accent/80 text-bunny-dark hover:border-bunny-primary'
+                  : 'bg-white border-slate-300 text-slate-400 hover:border-bunny-primary'
               }`}
-              title="Toca para ver el calendario y seleccionar fecha"
+              title={showVisualCalendar ? 'Toca para ocultar el calendario' : 'Toca para abrir el calendario y cambiar fecha'}
             >
               <span className="text-xs sm:text-sm font-medium truncate">
                 {formattedDateDisplay || 'Toca un día en el calendario interactivo...'}
               </span>
               {selectedDate ? (
-                <span className="text-xs bg-bunny-primary text-white rounded-md px-2 py-0.5 ml-2 shrink-0">
-                  📅 {selectedDate}
+                <span className="text-xs bg-bunny-primary text-white rounded-md px-2 py-0.5 ml-2 shrink-0 flex items-center gap-1">
+                  📅 {selectedDate} <span className="text-[10px] opacity-80">{showVisualCalendar ? '▲' : '▼'}</span>
                 </span>
               ) : (
                 <span className="text-slate-400 text-sm ml-2 shrink-0">
@@ -285,6 +292,18 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 </span>
               )}
             </div>
+            {!showVisualCalendar && selectedDate && (
+              <div className="flex items-center justify-between mt-1 px-1 text-[11px] text-slate-500">
+                <span>✓ Fecha seleccionada</span>
+                <button
+                  type="button"
+                  onClick={() => setShowVisualCalendar(true)}
+                  className="text-bunny-primary font-medium hover:underline text-[11px]"
+                >
+                  Cambiar fecha 📅
+                </button>
+              </div>
+            )}
             <input type="hidden" name="appointmentDate" value={selectedDate} />
           </div>
         </div>
@@ -361,6 +380,9 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   const today = new Date();
                   setCurrentMonth(today);
                   onDateChange(format(today, 'yyyy-MM-dd'));
+                  if (collapseOnDateSelect) {
+                    setShowVisualCalendar(false);
+                  }
                 }}
               >
                 Hoy

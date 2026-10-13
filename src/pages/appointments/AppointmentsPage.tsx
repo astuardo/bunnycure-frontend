@@ -1649,10 +1649,11 @@ export default function AppointmentsPage() {
       <Modal
         show={showCreateAppointmentModal}
         onHide={closeCreateModal}
-        size="lg"
+        size="xl"
         centered
+        className="max-h-[92vh] flex flex-col"
       >
-        <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40">
+        <Modal.Header closeButton className="bg-bunny-creamy/30 border-b border-bunny-accent/40 shrink-0">
           <Modal.Title>
             <span className="text-bunny-dark font-bold text-lg">
               {createStep === 'form' ? '✨ Nueva Cita' : '📋 Resumen de Nueva Cita'}
@@ -1660,8 +1661,8 @@ export default function AppointmentsPage() {
           </Modal.Title>
         </Modal.Header>
         {createStep === 'form' ? (
-          <form onSubmit={handleGoToCreateSummary}>
-            <Modal.Body className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <form onSubmit={handleGoToCreateSummary} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <Modal.Body className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Selector de Cliente */}
                 <div>
@@ -1856,19 +1857,52 @@ export default function AppointmentsPage() {
                 />
               </div>
             </Modal.Body>
-            <Modal.Footer className="border-t border-slate-100 flex justify-end gap-2 p-4">
+            <Modal.Footer className="border-t border-slate-100 flex justify-end gap-2 p-4 shrink-0 bg-white">
               <Button variant="secondary" onClick={closeCreateModal}>
                 Cancelar
               </Button>
               <Button variant="primary" type="submit">
-                Continuar al resumen
+                Continuar al resumen &rarr;
               </Button>
             </Modal.Footer>
           </form>
         ) : (
-          <>
-            <Modal.Body className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <Alert variant="info">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <Modal.Body className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Tarjeta de Resumen Rápido Superior */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-bunny-creamy/50 via-white to-pink-50/40 border border-bunny-accent/60 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-bunny-mid">Cliente</span>
+                      <strong className="text-slate-800 text-sm">{selectedCreateCustomer?.fullName || 'Sin cliente'}</strong>
+                      {selectedCreateCustomer?.phone && (
+                        <span className="text-slate-500 text-xs">({selectedCreateCustomer.phone})</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                      <span>📅 <strong>{formData.appointmentDate}</strong></span>
+                      <span>·</span>
+                      <span>⏰ <strong>{formData.appointmentTime} hrs</strong></span>
+                      <span>·</span>
+                      <span>⏱️ {createDuration} min</span>
+                      <span>·</span>
+                      <span>💅 {selectedCreateServices.length} servicio(s)</span>
+                    </div>
+                  </div>
+
+                  <div className="sm:text-right p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total a cobrar en local</div>
+                    <div className={`text-lg font-black ${createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0 ? 'text-emerald-700' : 'text-bunny-dark'}`}>
+                      {createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0
+                        ? '$0 (100% Cubierto)'
+                        : formatCurrency(createUseGiftCardChoice === 'YES' ? createNetTotalToPay : createFinalTotal)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Alert variant="info" className="py-2.5 text-xs">
                 Revisa el detalle antes de crear la cita. Desde aquí puedes ajustar servicios y agregar cargos extra.
               </Alert>
 
@@ -2191,22 +2225,46 @@ export default function AppointmentsPage() {
                 </div>
               </div>
             </Modal.Body>
-            <Modal.Footer className="border-t border-slate-100 flex justify-end gap-2 p-4">
-              <Button variant="outline" onClick={() => setCreateStep('form')} disabled={isCreatingAppointment}>
-                Volver a editar datos
-              </Button>
-              <Button variant="secondary" onClick={closeCreateModal} disabled={isCreatingAppointment}>
-                Cancelar
-              </Button>
+            <Modal.Footer className="border-t border-slate-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 p-4 shrink-0 bg-white">
               <Button
-                variant="primary"
-                onClick={handleConfirmCreateAppointment}
-                disabled={formData.serviceIds.length === 0 || isCreatingAppointment}
+                variant="outline"
+                onClick={() => setCreateStep('form')}
+                disabled={isCreatingAppointment}
+                className="text-xs sm:text-sm font-medium"
               >
-                {isCreatingAppointment ? 'Creando cita...' : 'Crear cita'}
+                &larr; Volver a editar
               </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={closeCreateModal}
+                  disabled={isCreatingAppointment}
+                  className="text-xs sm:text-sm"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleConfirmCreateAppointment}
+                  disabled={formData.serviceIds.length === 0 || isCreatingAppointment}
+                  className="text-xs sm:text-sm font-bold shadow-xs flex items-center gap-1.5"
+                >
+                  {isCreatingAppointment ? (
+                    'Creando cita...'
+                  ) : (
+                    <>
+                      <span>✨ Crear cita</span>
+                      <span className="opacity-90 font-normal text-xs">
+                        ({createUseGiftCardChoice === 'YES' && createNetTotalToPay === 0
+                          ? '$0'
+                          : formatCurrency(createUseGiftCardChoice === 'YES' ? createNetTotalToPay : createFinalTotal)})
+                      </span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </Modal.Footer>
-          </>
+          </div>
         )}
       </Modal>
 
