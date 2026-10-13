@@ -4,6 +4,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import { usePageViewTracking } from '../hooks/usePageViewTracking';
 import { useAuthStore } from '../stores/authStore';
+import { getSavedPassId } from '../utils/publicRoutes';
 
 // ─── Carga Perezosa (Lazy Loading) de Páginas ──────────────────────────────
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
@@ -74,8 +75,8 @@ function BunnyRouteLoading() {
 /**
  * Redirección inteligente en la raíz (/):
  * - Si el usuario ya tiene sesión activa o es personal del salón: va a /dashboard
- * - Si es una clienta que escaneó/guardó su tarjeta Bunny Pass en este dispositivo: va a /mi-tarjeta/:publicId
- * - Si no: va a /dashboard (que redirige ordenadamente a /login para el personal)
+ * - Si es una clienta que escaneó/guardó su tarjeta Bunny Pass en este dispositivo (PWA): va a /mi-tarjeta/:publicId directamente sin pedir login
+ * - Si no: va a /login para el personal del salón
  */
 function RootRedirect() {
     const { isAuthenticated, user } = useAuthStore();
@@ -84,17 +85,12 @@ function RootRedirect() {
         return <Navigate to="/dashboard" replace />;
     }
 
-    const hasStaffSession = typeof window !== 'undefined' && Boolean(localStorage.getItem('bunnycure-auth-build-id'));
-    if (hasStaffSession) {
-        return <Navigate to="/dashboard" replace />;
-    }
-
-    const savedPassId = typeof window !== 'undefined' ? localStorage.getItem('bunny_my_loyalty_public_id') : null;
+    const savedPassId = getSavedPassId();
     if (savedPassId) {
         return <Navigate to={`/mi-tarjeta/${savedPassId}`} replace />;
     }
 
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" replace />;
 }
 
 /**

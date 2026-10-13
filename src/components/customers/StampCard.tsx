@@ -6,7 +6,8 @@ import { customersApi } from '../../api/customers.api';
 import { useToast } from '../../hooks/useToast';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, Alert, Badge, Button, Modal } from '../ui';
-import { copyToClipboard, openWhatsApp, shareNative } from '../../utils/shareUtils';
+import { copyToClipboard, openWhatsApp, shareNative, openExternalUrl } from '../../utils/shareUtils';
+import { normalizeLoyaltyCardPublicUrl, buildLoyaltyCardWhatsAppMessage } from '../../utils/loyaltyUrl';
 
 interface StampCardProps {
   customerId?: number;
@@ -40,17 +41,17 @@ export default function StampCard({
   const [loadingQR, setLoadingQR] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
+  const [sharingCard, setSharingCard] = useState(false);
   const walletUrlLikelyTooLongForQr = walletQrUrl.length > 2900;
 
   const effectivePublicId = publicId || (customerId ? String(customerId) : '');
-  const passUrl = effectivePublicId
-    ? `${window.location.origin}/mi-tarjeta/${effectivePublicId}`
-    : '';
+  // URL pública oficial universal (apunta siempre a https://app.bunnycure.cl/mi-tarjeta/:publicId)
+  const passUrl = normalizeLoyaltyCardPublicUrl(effectivePublicId);
 
   const canShareNatively = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const handleCopyPassLink = async () => {
-    if (!passUrl) {
+    if (!effectivePublicId) {
       toast.error('Identificador de tarjeta no disponible');
       return;
     }
@@ -65,29 +66,44 @@ export default function StampCard({
   };
 
   const handleSendWhatsApp = () => {
-    if (!passUrl) {
+    if (!effectivePublicId) {
       toast.error('Identificador de tarjeta no disponible');
       return;
     }
-    const name = customerName ? customerName.split(' ')[0] : 'Clienta';
-    const message = `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass con tus sellos actualizados (${loyaltyStamps}/10): ${passUrl}`;
+    const message = buildLoyaltyCardWhatsAppMessage(customerName, loyaltyStamps, effectivePublicId);
     openWhatsApp(customerPhone, message);
+    toast.info('Abriendo WhatsApp...');
   };
 
-  const handleShareNative = async () => {
-    if (!passUrl) {
+  const handleShareCard = async () => {
+    if (!effectivePublicId) {
       toast.error('Identificador de tarjeta no disponible');
       return;
     }
-    const name = customerName ? customerName.split(' ')[0] : 'Clienta';
-    const message = `¡Hola ${name}! 💅 Aquí tienes tu Tarjeta Digital BunnyCure Pass: ${passUrl}`;
-    const shared = await shareNative({
-      title: 'Bunny Pass Club',
-      text: message,
-      url: passUrl,
-    });
-    if (!shared) {
+    const message = buildLoyaltyCardWhatsAppMessage(customerName, loyaltyStamps, effectivePublicId);
+
+    if (canShareNatively) {
+      setSharingCard(true);
+      try {
+        const shared = await shareNative({
+          title: `Bunny Pass - ${customerName || 'Clienta'}`,
+          text: message,
+          url: passUrl,
+        });
+        if (shared) {
+          toast.success('Tarjeta compartida');
+          return;
+        }
+      } finally {
+        setSharingCard(false);
+      }
+    }
+
+    // Si no es móvil o el usuario prefiere WhatsApp o modal:
+    if (customerPhone) {
       handleSendWhatsApp();
+    } else {
+      setShowPassModal(true);
     }
   };
 
@@ -95,6 +111,11 @@ export default function StampCard({
     if (!effectivePublicId) return;
     setShowPassModal(false);
     navigate(`/mi-tarjeta/${effectivePublicId}`);
+  };
+
+  const handleOpenCardInNewTab = () => {
+    if (!passUrl) return;
+    openExternalUrl(passUrl);
   };
 
   useEffect(() => {
@@ -273,11 +294,12 @@ export default function StampCard({
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => setShowPassModal(true)}
-                    leftIcon={<Smartphone className="w-4 h-4" />}
+                    onClick={handleShareCard}
+                    disabled={sharingCard}
+                    leftIcon={<Share2 className="w-4 h-4" />}
                     className="h-10 rounded-full px-4 bg-bunny-primary hover:bg-bunny-primary-hover text-white shadow-xs font-semibold"
                   >
-                    Tarjeta Digital (PWA)
+                    {sharingCard ? 'Compartiendo...' : 'Compartir Tarjeta'}
                   </Button>
 
                   <Button
@@ -288,6 +310,16 @@ export default function StampCard({
                     className="h-10 rounded-full px-4 border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-semibold"
                   >
                     Enviar WhatsApp
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPassModal(true)}
+                    leftIcon={<Smartphone className="w-4 h-4 text-bunny-primary" />}
+                    className="h-10 rounded-full px-4"
+                  >
+                    Ver QR / Opciones
                   </Button>
                 </>
               )}
@@ -332,7 +364,7 @@ export default function StampCard({
               Compatible con iPhone (Safari / Pantalla de inicio) y Android.
             </p>
 
-            {passUrl && (
+            {effectivePublicId && (
               <div className="bg-white p-3 inline-block rounded-2xl border border-bunny-border shadow-xs">
                 <QRCodeSVG
                   value={passUrl}
@@ -343,10 +375,10 @@ export default function StampCard({
               </div>
             )}
 
-            {passUrl && (
+            {effectivePublicId && (
               <div className="mt-2 text-left">
                 <label className="text-[11px] font-semibold text-bunny-text-muted block mb-1">
-                  Enlace directo de la clienta:
+                  Enlace directo oficial de la clienta:
                 </label>
                 <div className="flex items-center gap-1 bg-[#FDFCF8] border border-bunny-border rounded-xl px-2.5 py-1.5">
                   <input
@@ -385,11 +417,11 @@ export default function StampCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleShareNative}
+                  onClick={handleShareCard}
                   leftIcon={<Share2 className="w-4 h-4 text-bunny-primary" />}
                   className="w-full justify-center"
                 >
-                  Más opciones (Compartir / AirDrop)
+                  Compartir (Móvil / AirDrop)
                 </Button>
               )}
 
@@ -415,16 +447,15 @@ export default function StampCard({
                 Ver Tarjeta en Pantalla Completa
               </Button>
 
-              {/* Opción 5: Abrir en navegador externo (enlace nativo idéntico a GiftCard) */}
-              {passUrl && (
-                <a
-                  href={passUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1"
+              {/* Opción 5: Abrir en navegador externo */}
+              {effectivePublicId && (
+                <button
+                  type="button"
+                  onClick={handleOpenCardInNewTab}
+                  className="inline-flex items-center justify-center gap-1.5 text-xs text-bunny-primary hover:underline font-semibold pt-1 border-0 bg-transparent cursor-pointer"
                 >
-                  Abrir Tarjeta en navegador <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                  Abrir Tarjeta en nueva pestaña <ExternalLink className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
           </Modal.Body>

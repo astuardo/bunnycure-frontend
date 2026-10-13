@@ -6,6 +6,7 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { refreshAccessToken } from './authSession';
 import { setInMemoryToken, getInMemoryToken } from './tokenStore';
+import { isPublicPath } from '../utils/publicRoutes';
 
 interface RetryableRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
@@ -109,7 +110,8 @@ apiClient.interceptors.response.use(
       }
     }
 
-    if (isAuthError && !isAuthRequest && !isRedirecting && window.location.pathname !== '/login') {
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (isAuthError && !isAuthRequest && !isRedirecting && !isPublicPath(currentPath)) {
       isRedirecting = true;
       const { useAuthStore } = await import('../stores/authStore');
       useAuthStore.getState().handleSessionExpired();

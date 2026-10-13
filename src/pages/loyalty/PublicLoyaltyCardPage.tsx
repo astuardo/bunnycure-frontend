@@ -53,17 +53,33 @@ export default function PublicLoyaltyCardPage() {
     };
   }, []);
 
-  // Persistir el ID de la tarjeta en localStorage para accesos directos desde la pantalla de inicio
+  // Persistir inmediatamente el ID de la tarjeta en localStorage para accesos directos desde la pantalla de inicio
+  if (publicId && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('bunny_my_loyalty_public_id', publicId);
+    } catch {
+      // ignore storage quota errors
+    }
+  }
+
   useEffect(() => {
     if (!publicId) return;
-    localStorage.setItem('bunny_my_loyalty_public_id', publicId);
+    try {
+      localStorage.setItem('bunny_my_loyalty_public_id', publicId);
+    } catch {
+      // ignore
+    }
   }, [publicId]);
 
   // Sincronizar título, meta tag Apple y PWA Manifest dinámico con start_url directo a la tarjeta
   useEffect(() => {
     if (!card) return;
 
-    localStorage.setItem('bunny_my_loyalty_public_id', card.publicId);
+    try {
+      localStorage.setItem('bunny_my_loyalty_public_id', card.publicId);
+    } catch {
+      // ignore
+    }
 
     const prevTitle = document.title;
     document.title = `Bunny Pass - ${card.firstName}`;
@@ -110,8 +126,7 @@ export default function PublicLoyaltyCardPage() {
       ],
     };
 
-    const blob = new Blob([JSON.stringify(cardManifest)], { type: 'application/manifest+json' });
-    const manifestBlobUrl = URL.createObjectURL(blob);
+    const manifestDataUrl = `data:application/manifest+json;charset=utf-8,${encodeURIComponent(JSON.stringify(cardManifest))}`;
 
     let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
     const prevManifestHref = manifestLink?.href || '/manifest.json';
@@ -121,7 +136,7 @@ export default function PublicLoyaltyCardPage() {
       manifestLink.rel = 'manifest';
       document.head.appendChild(manifestLink);
     }
-    manifestLink.href = manifestBlobUrl;
+    manifestLink.href = manifestDataUrl;
 
     return () => {
       document.title = prevTitle;
@@ -131,7 +146,6 @@ export default function PublicLoyaltyCardPage() {
       if (manifestLink) {
         manifestLink.href = prevManifestHref;
       }
-      URL.revokeObjectURL(manifestBlobUrl);
     };
   }, [card]);
 

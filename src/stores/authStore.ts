@@ -8,6 +8,7 @@ import type { User } from '../api/auth.api';
 import * as authApi from '../api/auth.api';
 import { getAppBuildId } from '../config/buildInfo';
 import { trackLogin, setUserProperties } from '../utils/analytics';
+import { isPublicPath } from '../utils/publicRoutes';
 
 const APP_BUILD_ID = getAppBuildId();
 const AUTH_BUILD_KEY = 'bunnycure-auth-build-id';
@@ -217,7 +218,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
     });
     setForceReloginMarker(null);
 
-    const currentPath = window.location.pathname;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (isPublicPath(currentPath)) {
+      console.info('[authStore] Error de sesión en ruta pública; omitiendo redirección a /login');
+      return;
+    }
+
     if (currentPath !== '/login' && currentPath !== '/') {
       sessionStorage.setItem('redirectAfterLogin', currentPath);
     }
@@ -226,7 +232,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   handleVersionMismatch: () => {
-    console.warn('♻️ Nueva versión detectada - forzando re-login');
+    console.warn('♻️ Nueva versión detectada - forzando actualización');
 
     set({
       user: null,
@@ -239,9 +245,15 @@ export const useAuthStore = create<AuthState>()((set) => ({
     setForceReloginMarker(APP_BUILD_ID);
     sessionStorage.removeItem('redirectAfterLogin');
 
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (isPublicPath(currentPath)) {
+      console.info('[authStore] Cambio de versión en ruta pública; no se redirige a /login');
+      return;
+    }
+
     void authApi.logout();
 
-    if (window.location.pathname !== '/login') {
+    if (currentPath !== '/login') {
       window.location.href = '/login?version=true';
     }
   },

@@ -4,8 +4,8 @@
  */
 
 /**
- * Copia texto al portapapeles de manera 100% compatible con móviles y PWAs standalone.
- * Combina la API moderna `navigator.clipboard` con un fallback universal usando un elemento `<textarea>`.
+ * Copia texto al portapapeles de manera 100% compatible con móviles (iOS Safari, Android) y PWAs standalone.
+ * Combina la API moderna `navigator.clipboard` con un fallback universal usando `<textarea>` adaptado para iOS.
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
@@ -16,11 +16,11 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       await navigator.clipboard.writeText(text);
       return true;
     } catch (err) {
-      console.warn('[copyToClipboard] navigator.clipboard falló, usando fallback legacy:', err);
+      console.warn('[copyToClipboard] navigator.clipboard falló o bloqueado, usando fallback universal:', err);
     }
   }
 
-  // 2. Fallback universal con textarea invisible
+  // 2. Fallback universal compatible con iOS Safari y Android
   try {
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -34,7 +34,12 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     textArea.style.outline = 'none';
     textArea.style.boxShadow = 'none';
     textArea.style.background = 'transparent';
-    textArea.setAttribute('readonly', '');
+    textArea.style.opacity = '0';
+
+    // ¡CRÍTICO PARA iOS SAFARI!:
+    // NO asignar textArea.setAttribute('readonly', '') porque iOS Safari no permite copiar de elementos readonly con execCommand.
+    textArea.contentEditable = 'true';
+    textArea.readOnly = false;
 
     document.body.appendChild(textArea);
     textArea.focus();
@@ -52,13 +57,18 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 /**
  * Normaliza un número telefónico al formato internacional de WhatsApp (ej. 56912345678)
- * Idéntico a toWhatsAppPhone en giftcardRenderer.ts
+ * Idéntico a toWhatsAppPhone en giftcardRenderer.ts pero cubre variaciones de 8, 9, 10 y 11 dígitos.
  */
 export const toWhatsAppPhone = (value?: string): string => {
   const digits = (value || '').replace(/\D/g, '');
   if (!digits) return '';
-  if (digits.startsWith('56')) return digits;
+  if (digits.startsWith('56')) {
+    if (digits.length === 11) return digits;
+    if (digits.length === 10 && !digits.startsWith('569')) return `569${digits.slice(2)}`;
+    return digits;
+  }
   if (digits.length === 9 && digits.startsWith('9')) return `56${digits}`;
+  if (digits.length === 8) return `569${digits}`;
   return digits;
 };
 
@@ -79,41 +89,76 @@ export function buildWhatsAppUrl(phone?: string, text?: string): string {
 }
 
 /**
- * Abre WhatsApp de forma directa (idéntico a sendGiftCardWhatsApp en giftcardRenderer.ts)
+ * Abre WhatsApp de forma directa evitando popup blockers en móviles y PWAs instaladas.
  */
 export function openWhatsApp(phone?: string, text?: string): void {
   const waUrl = buildWhatsAppUrl(phone, text);
-  window.open(waUrl, '_blank', 'noopener,noreferrer');
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    // En móviles o PWAs standalone, un enlace <a> temporal disparado directamente en el evento
+    // asegura la apertura fluida de la app WhatsApp sin ventanas en blanco o bloqueo de popups.
+    const a = document.createElement('a');
+    a.href = waUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (document.body.contains(a)) {
+        document.body.removeChild(a);
+      }
+    }, 150);
+  } else {
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+  }
 }
 
 /**
- * Abre una URL de forma segura en una nueva pestaña (idéntico a GiftCard)
+ * Abre una URL de forma segura en una nueva pestaña
  */
 export function openExternalUrl(url: string): void {
   if (!url) return;
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    if (document.body.contains(a)) {
+      document.body.removeChild(a);
+    }
+  }, 150);
 }
 
 /**
- * Intenta invocar el menú nativo para compartir (Web Share API) en iPhone / Android.
- * IMPORTANTE: Solo pasa `title` y `text` (donde el link ya viene incluido en `text`).
- * Esto es idéntico a shareGiftCardPng y evita que WhatsApp o iOS descarten el texto/enlace.
+ * Invoca el menú nativo para compartir (Web Share API) en iPhone y Android.
+ * Soporta de manera fluida WhatsApp, Mensajes, AirDrop, etc.
  */
 export async function shareNative(data: { title: string; text?: string; url?: string }): Promise<boolean> {
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
-      // El mensaje completo con la URL incluida si se pasó separada
-      const fullText = data.text && data.url && !data.text.includes(data.url)
-        ? `${data.text} ${data.url}`
-        : (data.text || data.url || '');
-
-      const sharePayload = {
+      const sharePayload: ShareData = {
         title: data.title,
-        text: fullText,
+        text: data.text,
+        url: data.url,
       };
 
-      const nav = navigator as Navigator & { canShare?: (payload: any) => boolean };
+      const nav = navigator as Navigator & { canShare?: (payload: ShareData) => boolean };
       if (typeof nav.canShare === 'function' && !nav.canShare(sharePayload)) {
+        // Fallback si la plataforma no acepta url separada
+        const fallbackText = data.text && data.url && !data.text.includes(data.url)
+          ? `${data.text}\n${data.url}`
+          : (data.text || data.url || '');
+        const fallbackPayload: ShareData = {
+          title: data.title,
+          text: fallbackText,
+        };
+        if (nav.canShare(fallbackPayload)) {
+          await navigator.share(fallbackPayload);
+          return true;
+        }
         return false;
       }
 
@@ -121,10 +166,10 @@ export async function shareNative(data: { title: string; text?: string; url?: st
       return true;
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        // Usuario canceló el modal nativo
+        // Cancelado voluntariamente por la usuaria
         return true;
       }
-      console.warn('[shareNative] Falló navigator.share:', err);
+      console.warn('[shareNative] Error en navigator.share:', err);
     }
   }
   return false;
