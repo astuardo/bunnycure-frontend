@@ -28,4 +28,5 @@ export interface ServiceFormData {
   price: number;
   displayOrder: number;
   imageUrl?: string;
+  active?: boolean;
 }

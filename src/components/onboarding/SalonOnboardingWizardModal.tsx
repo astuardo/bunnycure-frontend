@@ -16,12 +16,14 @@ import {
   CheckCircle2,
   Plus,
   Trash2,
-  CalendarCheck
+  CalendarCheck,
+  Loader2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTenant } from '../../context/TenantContext';
 import { settingsApi, SettingsData } from '../../api/settings.api';
 import { servicesApi } from '../../api/services.api';
+import { usersApi } from '../../api/users.api';
 import { useToast } from '../../hooks/useToast';
 import { ServiceFormData } from '../../types/service.types';
 
@@ -108,6 +110,7 @@ export default function SalonOnboardingWizardModal({
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
 
   // ─── Paso 1: Identidad ───
@@ -141,12 +144,130 @@ export default function SalonOnboardingWizardModal({
   ]);
   const [newSpecialistName, setNewSpecialistName] = useState('');
 
-  // Sincronizar datos si tenant se actualiza
+  // Cargar configuraciones reales, servicios reales y colaboradores al abrir el asistente
   useEffect(() => {
-    if (tenant?.name && !businessName) {
-      setBusinessName(tenant.name);
-    }
-  }, [tenant, businessName]);
+    if (!isOpen) return;
+
+    let isMounted = true;
+    setIsLoadingInitialData(true);
+
+    const loadInitialData = async () => {
+      try {
+        const [settingsRes, servicesRes, usersRes] = await Promise.allSettled([
+          settingsApi.getAll(),
+          servicesApi.list(false),
+          usersApi.list(),
+        ]);
+
+        if (!isMounted) return;
+
+        // 1. Configuraciones de identidad y horarios del negocio
+        if (settingsRes.status === 'fulfilled' && settingsRes.value) {
+          const data = settingsRes.value;
+
+          if (data.businessName) {
+            setBusinessName(data.businessName);
+          } else if (tenant?.name) {
+            setBusinessName(tenant.name);
+          }
+
+          if (data.businessPhone) {
+            setBusinessPhone(data.businessPhone);
+          } else if (tenant?.phone) {
+            setBusinessPhone(tenant.phone);
+          }
+
+          if (data.businessAddress) {
+            setBusinessAddress(data.businessAddress);
+          } else if (tenant?.address) {
+            setBusinessAddress(tenant.address);
+          }
+
+          if (data.appointmentDuration) {
+            setAppointmentDuration(data.appointmentDuration);
+          }
+
+          setDaysConfig((prev) => ({
+            monday: {
+              enabled: data.mondayEnabled ?? prev.monday.enabled,
+              start: data.mondayStart || prev.monday.start,
+              end: data.mondayEnd || prev.monday.end,
+            },
+            tuesday: {
+              enabled: data.tuesdayEnabled ?? prev.tuesday.enabled,
+              start: data.tuesdayStart || prev.tuesday.start,
+              end: data.tuesdayEnd || prev.tuesday.end,
+            },
+            wednesday: {
+              enabled: data.wednesdayEnabled ?? prev.wednesday.enabled,
+              start: data.wednesdayStart || prev.wednesday.start,
+              end: data.wednesdayEnd || prev.wednesday.end,
+            },
+            thursday: {
+              enabled: data.thursdayEnabled ?? prev.thursday.enabled,
+              start: data.thursdayStart || prev.thursday.start,
+              end: data.thursdayEnd || prev.thursday.end,
+            },
+            friday: {
+              enabled: data.fridayEnabled ?? prev.friday.enabled,
+              start: data.fridayStart || prev.friday.start,
+              end: data.fridayEnd || prev.friday.end,
+            },
+            saturday: {
+              enabled: data.saturdayEnabled ?? prev.saturday.enabled,
+              start: data.saturdayStart || prev.saturday.start,
+              end: data.saturdayEnd || prev.saturday.end,
+            },
+            sunday: {
+              enabled: data.sundayEnabled ?? prev.sunday.enabled,
+              start: data.sundayStart || prev.sunday.start,
+              end: data.sundayEnd || prev.sunday.end,
+            },
+          }));
+        } else if (tenant) {
+          if (tenant.name) setBusinessName(tenant.name);
+          if (tenant.phone) setBusinessPhone(tenant.phone);
+          if (tenant.address) setBusinessAddress(tenant.address);
+        }
+
+        // 2. Servicios ya configurados en la base de datos
+        if (servicesRes.status === 'fulfilled' && servicesRes.value && servicesRes.value.length > 0) {
+          const loaded: PresetService[] = servicesRes.value.map((s) => ({
+            id: String(s.id),
+            name: s.name,
+            category: 'Servicio',
+            durationMinutes: s.durationMinutes,
+            price: Number(s.price),
+            description: s.description || '',
+            selected: s.active,
+          }));
+          setPresetServices(loaded);
+        }
+
+        // 3. Especialistas existentes
+        if (usersRes.status === 'fulfilled' && usersRes.value && usersRes.value.length > 0) {
+          const userNames = usersRes.value
+            .map((u) => u.fullName?.trim() || u.username?.trim())
+            .filter((n): n is string => Boolean(n && n.length > 0));
+          if (userNames.length > 0) {
+            setSpecialists(userNames);
+          }
+        }
+      } catch (err) {
+        console.warn('Error al cargar datos en asistente de salón:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingInitialData(false);
+        }
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, tenant]);
 
   if (!isOpen) return null;
 
@@ -183,8 +304,9 @@ export default function SalonOnboardingWizardModal({
       thursday: { ...prev.thursday, start: monday.start, end: monday.end },
       friday: { ...prev.friday, start: monday.start, end: monday.end },
       saturday: { ...prev.saturday, start: monday.start, end: monday.end },
+      sunday: { ...prev.sunday, start: monday.start, end: monday.end },
     }));
-    toast.success('Horario aplicado de martes a sábado');
+    toast.success('Horario de lunes aplicado a toda la semana');
   };
 
   // ─── Handlers de Servicios ───
@@ -265,24 +387,43 @@ export default function SalonOnboardingWizardModal({
 
       await settingsApi.saveAll(settingsPayload);
 
-      // 2. Crear los servicios seleccionados si no existen
-      const selectedServices = presetServices.filter((s) => s.selected);
-      let createdCount = 0;
+      // 2. Crear o actualizar servicios seleccionados
+      let syncedCount = 0;
+      for (let i = 0; i < presetServices.length; i++) {
+        const s = presetServices[i];
+        const numId = Number(s.id);
+        const isExisting = !isNaN(numId) && numId > 0;
 
-      for (let i = 0; i < selectedServices.length; i++) {
-        const s = selectedServices[i];
-        const payload: ServiceFormData = {
-          name: s.name,
-          description: s.description,
-          durationMinutes: s.durationMinutes,
-          price: s.price,
-          displayOrder: i + 1,
-        };
-        try {
-          await servicesApi.create(payload);
-          createdCount++;
-        } catch (err) {
-          console.warn(`No se pudo crear automáticamente el servicio ${s.name}:`, err);
+        if (isExisting) {
+          const payload: ServiceFormData = {
+            name: s.name,
+            description: s.description,
+            durationMinutes: s.durationMinutes,
+            price: s.price,
+            displayOrder: i + 1,
+            active: s.selected,
+          };
+          try {
+            await servicesApi.update(numId, payload);
+            syncedCount++;
+          } catch (err) {
+            console.warn(`No se pudo actualizar servicio ${s.name}:`, err);
+          }
+        } else if (s.selected) {
+          const payload: ServiceFormData = {
+            name: s.name,
+            description: s.description,
+            durationMinutes: s.durationMinutes,
+            price: s.price,
+            displayOrder: i + 1,
+            active: true,
+          };
+          try {
+            await servicesApi.create(payload);
+            syncedCount++;
+          } catch (err) {
+            console.warn(`No se pudo crear automáticamente el servicio ${s.name}:`, err);
+          }
         }
       }
 
@@ -294,7 +435,7 @@ export default function SalonOnboardingWizardModal({
       await refreshTenant();
 
       toast.success(
-        `¡Salón configurado con éxito! Se cargaron ${createdCount} servicios y los horarios del negocio.`
+        `¡Salón configurado con éxito! Se sincronizaron ${syncedCount} servicios y los horarios del negocio.`
       );
 
       if (onCompleted) {
@@ -404,6 +545,13 @@ export default function SalonOnboardingWizardModal({
 
         {/* ─── Contenedor Scrollable del Paso Actual ─── */}
         <div className="p-5 sm:p-7 overflow-y-auto space-y-6 flex-1 text-sm text-[#5C3D2E]">
+          {isLoadingInitialData && (
+            <div className="flex items-center gap-2.5 p-3 bg-[#FAF4F0] border border-[#E8D5CE] rounded-xl text-xs text-[#7A5B50] animate-pulse">
+              <Loader2 className="w-4 h-4 animate-spin text-[#C9897A] shrink-0" />
+              <span>Cargando configuración actual y servicios registrados...</span>
+            </div>
+          )}
+
           {/* PASO 1: IDENTIDAD */}
           {currentStep === 1 && (
             <div className="space-y-4 animate-fadeIn">
