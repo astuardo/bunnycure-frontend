@@ -178,6 +178,15 @@ export default function LoginPage() {
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
+
+                            <div className="text-center pt-3 mt-1 border-t border-bunny-border/50">
+                                <Link
+                                    to="/demo"
+                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-bunny-primary hover:text-bunny-primary-hover transition-colors"
+                                >
+                                    <span>✨</span> Conoce las funciones y planes del software ↗
+                                </Link>
+                            </div>
                         </form>
                     </CardBody>
 
