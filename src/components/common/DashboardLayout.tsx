@@ -5,12 +5,14 @@ import Sidebar from './Sidebar';
 import { SpotlightSearchModal } from './SpotlightSearchModal';
 import { CashClosingModal } from '../finances/CashClosingModal';
 import { CamiLoveModal } from './CamiLoveModal';
+import { useTenant } from '../../context/TenantContext';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { tenant } = useTenant();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [showCashClosing, setShowCashClosing] = useState(false);
@@ -68,7 +70,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white border-r border-bunny-border shadow-bunny-lg flex flex-col z-10 animate-fade-in">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-bunny-border/70 bg-bunny-paper/50">
               <span className="font-bold text-bunny-cocoa text-base flex items-center gap-2">
-                <span>🐰</span> BunnyCure
+                {tenant.logoUrl && tenant.logoUrl !== '/images/logo.png' ? (
+                  <img
+                    src={tenant.logoUrl}
+                    alt={tenant.name}
+                    className="h-6 w-auto object-contain rounded"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <span>💅</span>
+                )}
+                <span className="truncate">{tenant.name || 'BunnyCure'}</span>
               </span>
               <button
                 type="button"

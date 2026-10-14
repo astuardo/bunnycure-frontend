@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../../hooks/useAuth';
+import { useTenant } from '../../context/TenantContext';
 import { APP_BUILD_ID_SHORT } from '../../config/buildInfo';
 import { Card, CardBody, CardFooter, Button, Input, Alert } from '../../components/ui';
 
@@ -21,6 +22,7 @@ export default function LoginPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+    const { tenant } = useTenant();
     const [dismissedSessionExpired, setDismissedSessionExpired] = useState(false);
     const [dismissedVersionChanged, setDismissedVersionChanged] = useState(false);
     const [dismissedErrorMessage, setDismissedErrorMessage] = useState<string | null>(null);
@@ -77,8 +79,24 @@ export default function LoginPage() {
                 <Card className="shadow-bunny-lg border-bunny-border">
                     <CardBody className="p-6 sm:p-8">
                         <div className="text-center mb-6">
-                            <h2 className="text-3xl font-extrabold text-bunny-primary tracking-tight">💅 BunnyCure</h2>
-                            <p className="text-sm font-medium text-bunny-text-muted mt-1">Sistema de Gestión y Citas</p>
+                            {tenant.logoUrl && tenant.logoUrl !== '/images/logo.png' ? (
+                                <div className="mb-3 flex justify-center">
+                                    <img
+                                        src={tenant.logoUrl}
+                                        alt={tenant.name}
+                                        className="h-16 w-auto max-h-16 object-contain rounded-xl shadow-xs"
+                                        onError={(e) => {
+                                            (e.currentTarget as HTMLElement).style.display = 'none';
+                                        }}
+                                    />
+                                </div>
+                            ) : null}
+                            <h2 className="text-3xl font-extrabold text-bunny-primary tracking-tight">
+                                💅 {tenant.name || 'BunnyCure'}
+                            </h2>
+                            <p className="text-sm font-medium text-bunny-text-muted mt-1">
+                                {tenant.slogan || 'Sistema de Gestión y Citas'}
+                            </p>
                         </div>
 
                         {sessionExpired && !dismissedSessionExpired && (
@@ -176,7 +194,7 @@ export default function LoginPage() {
 
                     <CardFooter className="text-center py-3.5 bg-bunny-paper/80 border-t border-bunny-border">
                         <p className="mb-0 text-xs text-bunny-text-muted font-medium">
-                            BunnyCure v1.0 - PWA | Build {APP_BUILD_ID_SHORT}
+                            {tenant.name || 'BunnyCure'} v1.0 - PWA | Build {APP_BUILD_ID_SHORT}
                         </p>
                     </CardFooter>
                 </Card>

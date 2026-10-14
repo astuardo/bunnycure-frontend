@@ -30,9 +30,15 @@ import {
   Alert,
   ProgressBar,
 } from '../../components/ui';
+import { useTenant } from '../../context/TenantContext';
 
 export const PublicBookingPage: React.FC = () => {
-  const isEnabled = getPublicBookingEnabled();
+  const { tenant } = useTenant();
+  const salonName = tenant.name || 'BunnyCure';
+  const salonSlogan = tenant.slogan || 'Estudio de Manicure & Cuidado de Uñas';
+  const officialPhone = (tenant.whatsappNumber || tenant.phone || OFFICIAL_WHATSAPP_PHONE).replace(/\D/g, '');
+  const officialPhoneDisplay = tenant.phone || OFFICIAL_WHATSAPP_DISPLAY;
+  const isEnabled = tenant.bookingEnabled ?? getPublicBookingEnabled();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [services, setServices] = useState<ServiceCatalog[]>([]);
@@ -140,9 +146,9 @@ export const PublicBookingPage: React.FC = () => {
   };
 
   const timeBlockLabels: Record<string, string> = {
-    MANANA: 'Mañana (10:00 - 13:30)',
-    TARDE: 'Tarde (14:30 - 18:00)',
-    NOCHE: 'Noche (18:30 - 20:30)',
+    MANANA: `Mañana (${tenant.morningBlock || '10:00 - 13:30'})`,
+    TARDE: `Tarde (${tenant.afternoonBlock || '14:30 - 18:00'})`,
+    NOCHE: `Noche (${tenant.nightBlock || '18:30 - 20:30'})`,
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,16 +235,35 @@ export const PublicBookingPage: React.FC = () => {
   return (
     <div className="min-h-screen min-h-[100dvh] py-8 px-4 bg-gradient-to-b from-bunny-bg to-bunny-blush/40 text-bunny-text flex flex-col justify-center">
       <div className="w-full max-w-xl mx-auto">
-        {/* Cabecera de Marca BunnyCure */}
+        {/* Cabecera de Marca Dinámica */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-bunny border-2 border-bunny-border-strong text-3xl mb-2">
-            🐰
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-bunny border-2 border-bunny-border-strong text-3xl mb-2 overflow-hidden">
+            {tenant.logoUrl && tenant.logoUrl !== '/images/logo.png' ? (
+              <img
+                src={tenant.logoUrl}
+                alt={salonName}
+                className="w-full h-full object-contain p-1.5"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                  const fallback = e.currentTarget.parentElement?.querySelector('.tenant-booking-fallback') as HTMLElement | null;
+                  if (fallback) fallback.style.display = 'inline';
+                }}
+              />
+            ) : null}
+            <span
+              className="tenant-booking-fallback"
+              style={{
+                display: tenant.logoUrl && tenant.logoUrl !== '/images/logo.png' ? 'none' : 'inline',
+              }}
+            >
+              💅
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-bunny-primary-dark tracking-tight">
-            BunnyCure
+            {salonName}
           </h1>
           <p className="text-sm text-bunny-text-muted mt-0.5">
-            Estudio de Manicure &amp; Cuidado de Uñas
+            {salonSlogan}
           </p>
         </div>
 
@@ -260,10 +285,9 @@ export const PublicBookingPage: React.FC = () => {
               </p>
 
               <a
-                href={`https://wa.me/${OFFICIAL_WHATSAPP_PHONE.replace(
-                  /\D/g,
-                  ''
-                )}?text=Hola%20BunnyCure!%20%F0%9F%90%B0%20Quisiera%20consultar%20por%20disponibilidad%20de%20horas%20para%20manicure.`}
+                href={`https://wa.me/${officialPhone}?text=Hola%20${encodeURIComponent(
+                  salonName
+                )}!%20Quisiera%20consultar%20por%20disponibilidad%20de%20horas.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-4 rounded-xl font-bold text-white flex items-center justify-center gap-2.5 shadow-sm bg-[#25D366] hover:bg-[#20ba59] transition-colors"
@@ -271,7 +295,7 @@ export const PublicBookingPage: React.FC = () => {
                 <FaWhatsapp className="text-xl" /> Escribir al WhatsApp Oficial
               </a>
               <p className="text-xs text-bunny-text-muted mt-2">
-                Atención directa al {OFFICIAL_WHATSAPP_DISPLAY}
+                Atención directa al {officialPhoneDisplay}
               </p>
             </Card.Body>
           </Card>
@@ -316,10 +340,9 @@ export const PublicBookingPage: React.FC = () => {
               </div>
 
               <a
-                href={`https://wa.me/${OFFICIAL_WHATSAPP_PHONE.replace(
-                  /\D/g,
-                  ''
-                )}?text=Hola%20BunnyCure!%20Acabo%20de%20enviar%20mi%20solicitud%20de%20reserva%20%23${createdRequestId}%20a%20nombre%20de%20${encodeURIComponent(
+                href={`https://wa.me/${officialPhone}?text=Hola%20${encodeURIComponent(
+                  salonName
+                )}!%20Acabo%20de%20enviar%20mi%20solicitud%20de%20reserva%20%23${createdRequestId}%20a%20nombre%20de%20${encodeURIComponent(
                   fullName
                 )}.`}
                 target="_blank"

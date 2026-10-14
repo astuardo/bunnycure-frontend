@@ -8,6 +8,14 @@ export interface TenantInfo {
   address?: string;
   logoUrl?: string;
   primaryColor?: string;
+  secondaryColor?: string;
+  slogan?: string;
+  whatsappNumber?: string;
+  instagramHandle?: string;
+  bookingEnabled?: boolean;
+  morningBlock?: string;
+  afternoonBlock?: string;
+  nightBlock?: string;
   active: boolean;
   planTier: string;
 }
@@ -22,6 +30,14 @@ export const DEFAULT_TENANT: TenantInfo = {
   address: 'Santiago, Chile',
   logoUrl: '/images/logo.png',
   primaryColor: '#d48b70',
+  secondaryColor: '#6B4C38',
+  slogan: 'Arte en tus manos ✨',
+  whatsappNumber: '+56988873031',
+  instagramHandle: '@bunny.cure',
+  bookingEnabled: true,
+  morningBlock: '09:00 – 13:00',
+  afternoonBlock: '15:00 – 18:00',
+  nightBlock: '19:00 – 22:00',
   active: true,
   planTier: 'PRO',
 };

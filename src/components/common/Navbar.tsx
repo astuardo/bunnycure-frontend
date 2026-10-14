@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
+import { useTenant } from '../../context/TenantContext';
 import { isCamiUser } from '../../services/loveNotes.service';
 
 interface NavbarProps {
@@ -19,6 +20,7 @@ export default function Navbar({
     isSidebarOpen = false,
 }: NavbarProps) {
     const { user, logout } = useAuth();
+    const { tenant } = useTenant();
     const [open, setOpen] = useState(false);
     const dropRef = useRef<HTMLDivElement>(null);
 
@@ -70,10 +72,30 @@ export default function Navbar({
                         )}
                     </button>
                 )}
-                <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', flexShrink: 0 }}>
-                    <span style={{ fontSize: '22px' }}>🐰</span>
+                <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', flexShrink: 0 }}>
+                    {tenant.logoUrl && tenant.logoUrl !== '/images/logo.png' ? (
+                        <img
+                            src={tenant.logoUrl}
+                            alt={tenant.name}
+                            style={{ height: '28px', width: 'auto', maxHeight: '28px', objectFit: 'contain', borderRadius: '6px' }}
+                            onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                                const fallback = e.currentTarget.parentElement?.querySelector('.tenant-navbar-fallback') as HTMLElement | null;
+                                if (fallback) fallback.style.display = 'inline';
+                            }}
+                        />
+                    ) : null}
+                    <span
+                        className="tenant-navbar-fallback"
+                        style={{
+                            fontSize: '22px',
+                            display: tenant.logoUrl && tenant.logoUrl !== '/images/logo.png' ? 'none' : 'inline',
+                        }}
+                    >
+                        💅
+                    </span>
                     <span style={{ fontWeight: 700, fontSize: '18px', color: '#5c3d2e', letterSpacing: '-0.3px' }} className="hidden sm:inline">
-                        BunnyCure
+                        {tenant.name || 'BunnyCure'}
                     </span>
                 </a>
             </div>

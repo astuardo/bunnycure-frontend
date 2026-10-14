@@ -57,6 +57,26 @@ apiClient.interceptors.request.use(
       config.headers['X-XSRF-TOKEN'] = csrfToken;
       config.headers['X-CSRF-TOKEN'] = csrfToken;
     }
+
+    // Propagación de Tenant (Multi-Tenant SaaS)
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const querySlug = urlParams.get('salon') || urlParams.get('tenant');
+        const storedSlug = sessionStorage.getItem('bunny_tenant_slug');
+        const tenantSlug = querySlug || storedSlug;
+        if (tenantSlug && !config.headers['X-Tenant-Slug']) {
+          config.headers['X-Tenant-Slug'] = tenantSlug;
+        }
+
+        const storedTenantId = sessionStorage.getItem('bunny_tenant_id');
+        if (storedTenantId && !config.headers['X-Tenant-ID']) {
+          config.headers['X-Tenant-ID'] = storedTenantId;
+        }
+      } catch {
+        // Ignorar excepciones al acceder a storage o location
+      }
+    }
     
     return config;
   },
