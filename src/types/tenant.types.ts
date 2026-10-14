@@ -41,3 +41,70 @@ export const DEFAULT_TENANT: TenantInfo = {
   active: true,
   planTier: 'PRO',
 };
+
+export interface TenantAdmin {
+  id: number;
+  name: string;
+  slug: string;
+  customDomain?: string | null;
+  rut?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  active: boolean;
+  planTier: string;
+  whatsappPhoneId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userCount: number;
+  appointmentCount: number;
+  customerCount: number;
+}
+
+export interface TenantSummary {
+  id: number;
+  name: string;
+  slug: string;
+  customDomain?: string | null;
+  active: boolean;
+  planTier: string;
+  primaryColor?: string | null;
+  logoUrl?: string | null;
+}
+
+export interface TenantCreateFormData {
+  name: string;
+  slug: string;
+  customDomain?: string;
+  rut?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  planTier?: string;
+  whatsappPhoneId?: string;
+  whatsappToken?: string;
+  initialAdminUsername?: string;
+  initialAdminPassword?: string;
+  initialAdminFullName?: string;
+  initialAdminEmail?: string;
+}
+
+export interface TenantUpdateFormData {
+  name: string;
+  customDomain?: string;
+  rut?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  planTier?: string;
+  whatsappPhoneId?: string;
+  whatsappToken?: string;
+  active?: boolean;
+}
+

@@ -224,6 +224,25 @@ export default function Navbar({
                                     {user?.email || user?.fullName || 'Sin email'}
                                 </div>
                             </div>
+                            {(user?.role === 'SUPER_ADMIN' || (user?.role === 'ADMIN' && (!user?.tenantId || user.tenantId === 1))) && (
+                                <a
+                                    href="/admin/tenants"
+                                    style={{
+                                        width: '100%', textAlign: 'left',
+                                        padding: '10px 14px',
+                                        background: 'none', border: 'none',
+                                        borderBottom: '1px solid #fdf0eb',
+                                        cursor: 'pointer', fontSize: '13px',
+                                        color: '#5c3d2e', fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                        textDecoration: 'none',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = '#fdf6f3')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                >
+                                    🏢 Salones SaaS
+                                </a>
+                            )}
                             {isCamiUser(user?.username) && onOpenCamiLoveModal && (
                                 <button
                                     onClick={() => {

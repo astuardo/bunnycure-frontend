@@ -121,6 +121,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN'],
     },
     {
+      path: '/admin/tenants',
+      icon: '🏢',
+      label: 'Salones SaaS',
+      description: 'Gestión de salones',
+      allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    },
+    {
       path: '/settings',
       icon: '⚙️',
       label: 'Configuración',
@@ -132,6 +139,9 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   const hasAccess = (item: MenuItem) => {
     if (!item.allowedRoles) return true;
     if (isSuperAdmin(userRole)) return true;
+    if (item.path === '/admin/tenants') {
+      return isSuperAdmin(userRole) || (isSalonAdmin(userRole) && (!user?.tenantId || user.tenantId === 1));
+    }
     if (
       isSalonAdmin(userRole) &&
       item.allowedRoles.some((r) => r === 'SALON_ADMIN' || r === 'ADMIN')
