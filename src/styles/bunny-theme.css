@@ -1,5 +1,28 @@
 :root {
-  --bc-page-bg: #fdf0ec;
+  /* ═══════════════════════════════════════════════════════════
+     1. TOKENS BASE DE LA PLATAFORMA SAAS (Lienzo Neutral Elegante)
+     ═══════════════════════════════════════════════════════════ */
+  --platform-bg-dark: #0c0b0e;
+  --platform-card-dark: #141318;
+  --platform-card-dark-hover: #1c1a22;
+  --platform-border-dark: #272630;
+  --platform-text-main: #fbf8f5;
+  --platform-text-muted: #9b98a6;
+  --platform-accent-glow: rgba(231, 111, 81, 0.15);
+
+  /* ═══════════════════════════════════════════════════════════
+     2. TOKENS DINÁMICOS DEL TENANT (Salón 1 / BunnyCure por defecto)
+     ═══════════════════════════════════════════════════════════ */
+  --tenant-primary: #d48b70;
+  --tenant-primary-rgb: 212, 139, 112;
+  --tenant-secondary: #6B4C38;
+  --tenant-secondary-rgb: 107, 76, 56;
+  --tenant-surface: #fdf0ec;
+
+  /* ═══════════════════════════════════════════════════════════
+     3. COMPATIBILIDAD CON SISTEMA DE DISEÑO EXISTENTE
+     ═══════════════════════════════════════════════════════════ */
+  --bc-page-bg: var(--tenant-surface);
   --bc-surface: rgba(255, 255, 255, 0.9);
   --bc-surface-strong: #ffffff;
   --bc-border: #f0e0d8;
@@ -8,11 +31,13 @@
   --bc-text-muted: #9e7b6e;
   --bc-shadow: 0 2px 12px rgba(180, 120, 100, 0.08);
 
-  /* Sobrescribir variables núcleo de Bootstrap para toda la aplicación */
-  --bs-primary: #c9897a;
-  --bs-primary-rgb: 201, 137, 122;
-  --bs-secondary: #6b4c38;
-  --bs-secondary-rgb: 107, 76, 56;
+  /* Sobrescribir variables núcleo de Bootstrap vinculadas al Tenant */
+  --primary-color: var(--tenant-primary);
+  --secondary-color: var(--tenant-secondary);
+  --bs-primary: var(--tenant-primary);
+  --bs-primary-rgb: var(--tenant-primary-rgb);
+  --bs-secondary: var(--tenant-secondary);
+  --bs-secondary-rgb: var(--tenant-secondary-rgb);
   --bs-success: #4b856e;
   --bs-success-rgb: 75, 133, 110;
   --bs-danger: #be4d4d;
@@ -22,10 +47,10 @@
   --bs-info: #8c5b76;
   --bs-info-rgb: 140, 91, 118;
   --bs-body-color: #5c3d2e;
-  --bs-body-bg: #fdf0ec;
+  --bs-body-bg: var(--tenant-surface);
   --bs-border-color: #f0e0d8;
-  --bs-link-color: #7c3a2d;
-  --bs-link-hover-color: #5c3d2e;
+  --bs-link-color: var(--tenant-secondary);
+  --bs-link-hover-color: var(--tenant-primary);
 }
 
 #root {

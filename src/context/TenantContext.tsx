@@ -37,11 +37,29 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     if (tenantData.primaryColor) {
+      document.documentElement.style.setProperty('--tenant-primary', tenantData.primaryColor);
       document.documentElement.style.setProperty('--primary-color', tenantData.primaryColor);
       document.documentElement.style.setProperty('--bs-primary', tenantData.primaryColor);
+
+      // Si es formato hex #rrggbb, extraer RGB para opacidades
+      if (/^#[0-9A-Fa-f]{6}$/.test(tenantData.primaryColor)) {
+        const r = parseInt(tenantData.primaryColor.slice(1, 3), 16);
+        const g = parseInt(tenantData.primaryColor.slice(3, 5), 16);
+        const b = parseInt(tenantData.primaryColor.slice(5, 7), 16);
+        document.documentElement.style.setProperty('--tenant-primary-rgb', `${r}, ${g}, ${b}`);
+        document.documentElement.style.setProperty('--bs-primary-rgb', `${r}, ${g}, ${b}`);
+      }
     }
     if (tenantData.secondaryColor) {
+      document.documentElement.style.setProperty('--tenant-secondary', tenantData.secondaryColor);
       document.documentElement.style.setProperty('--secondary-color', tenantData.secondaryColor);
+      if (/^#[0-9A-Fa-f]{6}$/.test(tenantData.secondaryColor)) {
+        const r = parseInt(tenantData.secondaryColor.slice(1, 3), 16);
+        const g = parseInt(tenantData.secondaryColor.slice(3, 5), 16);
+        const b = parseInt(tenantData.secondaryColor.slice(5, 7), 16);
+        document.documentElement.style.setProperty('--tenant-secondary-rgb', `${r}, ${g}, ${b}`);
+        document.documentElement.style.setProperty('--bs-secondary-rgb', `${r}, ${g}, ${b}`);
+      }
     }
   }, []);
 
