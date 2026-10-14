@@ -24,6 +24,7 @@ const RemindersPage = lazy(() => import('../pages/reminders/RemindersPage'));
 const MarketingCampaignsPage = lazy(() => import('../pages/marketing/MarketingCampaignsPage'));
 const AnalyticsPage = lazy(() => import('../pages/analytics/AnalyticsPage'));
 const InvoicesPage = lazy(() => import('../pages/invoices/InvoicesPage'));
+const CommissionsPage = lazy(() => import('../pages/commissions/CommissionsPage'));
 const UsersPage = lazy(() => import('../pages/users/UsersPage'));
 const TenantsPage = lazy(() => import('../pages/admin/TenantsPage'));
 const GiftCardsPage = lazy(() => import('../pages/giftcards/GiftCardsPage'));
@@ -257,6 +258,15 @@ function RoutesWithTracking() {
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
                             <InvoicesPage />
+                        </RoleProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/commissions"
+                    element={
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
+                            <CommissionsPage />
                         </RoleProtectedRoute>
                     }
                 />

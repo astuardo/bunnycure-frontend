@@ -74,6 +74,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'],
     },
     {
+      path: '/commissions',
+      icon: '💰',
+      label: 'Comisiones',
+      description: 'Honorarios y pagos',
+      allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN'],
+    },
+    {
       path: '/customers',
       icon: '👥',
       label: isSpecialist(userRole) ? 'Mis Clientas' : 'Clientes',
