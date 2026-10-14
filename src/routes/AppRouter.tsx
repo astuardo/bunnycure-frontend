@@ -4,7 +4,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import { usePageViewTracking } from '../hooks/usePageViewTracking';
 import { useAuthStore } from '../stores/authStore';
-import { getSavedPassId } from '../utils/publicRoutes';
+import { getSavedPassId, isStaffDevice } from '../utils/publicRoutes';
 
 // ─── Carga Perezosa (Lazy Loading) de Páginas ──────────────────────────────
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
@@ -86,9 +86,16 @@ function RootRedirect() {
         return <Navigate to="/dashboard" replace />;
     }
 
-    const savedPassId = getSavedPassId();
-    if (savedPassId) {
-        return <Navigate to={`/mi-tarjeta/${savedPassId}`} replace />;
+    // En la plataforma de gestión (app.*, admin.*) o en dispositivos de personal,
+    // la raíz siempre redirige al inicio de sesión administrativo
+    const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+    const isAppHost = hostname.startsWith('app.') || hostname.startsWith('admin.') || hostname === 'localhost';
+
+    if (!isAppHost && !isStaffDevice()) {
+        const savedPassId = getSavedPassId();
+        if (savedPassId) {
+            return <Navigate to={`/mi-tarjeta/${savedPassId}`} replace />;
+        }
     }
 
     return <Navigate to="/login" replace />;
@@ -266,7 +273,7 @@ function RoutesWithTracking() {
                 <Route
                     path="/admin/tenants"
                     element={
-                        <RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+                        <RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} requireRootTenant>
                             <TenantsPage />
                         </RoleProtectedRoute>
                     }

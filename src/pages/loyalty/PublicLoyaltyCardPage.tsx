@@ -244,14 +244,16 @@ export default function PublicLoyaltyCardPage() {
 
   const handleShareWhatsApp = () => {
     if (!card) return;
-    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅): ${window.location.href}`;
+    const sName = card.salonName || 'Nail Studio';
+    const text = `¡Hola! Esta es mi Tarjeta de Fidelización ${sName} (${card.loyaltyStamps}/10 sellos acumulados 💅): ${window.location.href}`;
     openWhatsApp(undefined, text);
   };
 
   const handleShareNative = async () => {
     if (!card) return;
-    const cardTitle = card.firstName ? `Bunny Pass - ${card.firstName}` : 'Bunny Pass Club';
-    const text = `¡Hola! Esta es mi Tarjeta de Fidelización BunnyCure Club (${card.loyaltyStamps}/10 sellos acumulados 💅):`;
+    const sName = card.salonName || 'Club';
+    const cardTitle = card.firstName ? `${sName} Pass - ${card.firstName}` : `${sName} Pass`;
+    const text = `¡Hola! Esta es mi Tarjeta de Fidelización ${sName} (${card.loyaltyStamps}/10 sellos acumulados 💅):`;
     const shared = await shareNative({
       title: cardTitle,
       text,
@@ -317,7 +319,7 @@ export default function PublicLoyaltyCardPage() {
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#4B856E] animate-pulse" />
             <span className="text-xs font-semibold tracking-wider text-[#9E7B6E] uppercase">
-              BunnyCure Club Pass
+              {card.salonName || 'Club'} Pass
             </span>
           </div>
 
@@ -360,11 +362,11 @@ export default function PublicLoyaltyCardPage() {
               <div className="flex items-center gap-1.5 text-rose-200">
                 <Sparkles className="w-4 h-4" />
                 <span className="text-[11px] font-bold tracking-widest uppercase">
-                  BunnyCure Nail Studio
+                  {card.salonName || 'Nail Studio'}
                 </span>
               </div>
               <h1 className="text-xl font-extrabold tracking-tight mt-0.5">
-                BUNNY PASS
+                {card.salonName ? `${card.salonName.toUpperCase()} PASS` : 'CLUB PASS'}
               </h1>
             </div>
 
@@ -548,17 +550,19 @@ export default function PublicLoyaltyCardPage() {
 
         {/* Salon Footer Info */}
         <div className="pt-6 border-t border-[#F0E0D8]/60 text-center text-xs text-[#9E7B6E] space-y-1">
-          <p className="font-semibold text-[#5C3D2E]">BunnyCure Nail Studio</p>
+          <p className="font-semibold text-[#5C3D2E]">{card.salonName || 'Nail Studio'}</p>
           <p>Las visitas 1 a 10 acumulan sellos • La visita #11 es de premio especial</p>
-          <p className="pt-2 text-[11px] text-[#9E7B6E]/80">
-            Instagram: <a href="https://instagram.com/bunnycure.cl" target="_blank" rel="noreferrer" className="text-[#C9897A] hover:underline">@bunnycure.cl</a>
-          </p>
+          {card.salonInstagram && (
+            <p className="pt-2 text-[11px] text-[#9E7B6E]/80">
+              Instagram: <a href={`https://instagram.com/${card.salonInstagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-[#C9897A] hover:underline">{card.salonInstagram}</a>
+            </p>
+          )}
           <div className="pt-4">
             <Link
               to="/login"
               className="inline-flex items-center gap-1 text-[11px] text-[#9E7B6E]/70 hover:text-[#5C3D2E] underline transition-colors"
             >
-              Acceso Personal BunnyCure
+              Acceso Personal
             </Link>
           </div>
         </div>

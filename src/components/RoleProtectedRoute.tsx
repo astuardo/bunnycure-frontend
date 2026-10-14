@@ -7,14 +7,24 @@ import { isSalonAdmin, isSpecialist, isReceptionist, isSuperAdmin } from '../typ
 interface RoleProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles: string[];
+  requireRootTenant?: boolean;
 }
 
-export default function RoleProtectedRoute({ children, allowedRoles }: RoleProtectedRouteProps) {
+export default function RoleProtectedRoute({ children, allowedRoles, requireRootTenant = false }: RoleProtectedRouteProps) {
   const { user } = useAuth();
 
   const hasAccess = () => {
     if (!user || !user.role) return false;
     const role = user.role.replace('ROLE_', '').toUpperCase();
+
+    // Si requiere ser super admin o raíz (tenant 1)
+    if (requireRootTenant) {
+      const isSuper = isSuperAdmin(role);
+      const isRootAdmin = isSalonAdmin(role) && (!user.tenantId || user.tenantId === 1);
+      if (!isSuper && !isRootAdmin) {
+        return false;
+      }
+    }
 
     // Si la lista de roles permitidos incluye ADMIN/SALON_ADMIN y el usuario es admin
     if (allowedRoles.some(r => r === 'SALON_ADMIN' || r === 'ADMIN') && isSalonAdmin(role)) {

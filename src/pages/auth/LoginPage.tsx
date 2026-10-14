@@ -178,17 +178,6 @@ export default function LoginPage() {
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
-
-                            {typeof window !== 'undefined' && localStorage.getItem('bunny_my_loyalty_public_id') && (
-                                <div className="text-center pt-3 border-t border-bunny-border/50">
-                                    <Link
-                                        to={`/mi-tarjeta/${localStorage.getItem('bunny_my_loyalty_public_id')}`}
-                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-bunny-primary hover:text-bunny-primary-hover transition-colors"
-                                    >
-                                        <span>💅</span> Ver mi Tarjeta Bunny Pass Club
-                                    </Link>
-                                </div>
-                            )}
                         </form>
                     </CardBody>
 
