@@ -19,6 +19,8 @@ export interface User {
   email: string | null;
   role: string;
   enabled: boolean;
+  tenantId?: number;
+  tenantSlug?: string;
 }
 
 export interface LoginResponse {
