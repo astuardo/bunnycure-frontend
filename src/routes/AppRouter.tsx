@@ -34,6 +34,8 @@ const PublicLoyaltyCardPage = lazy(() => import('../pages/loyalty/PublicLoyaltyC
 const InstallPage = lazy(() => import('../pages/InstallPage'));
 const TestApiPage = lazy(() => import('../pages/TestApiPage'));
 const DemoLandingPage = lazy(() => import('../pages/demo/DemoLandingPage'));
+const TermsOfServicePage = lazy(() => import('../pages/legal/TermsOfServicePage'));
+const PrivacyPolicyPage = lazy(() => import('../pages/legal/PrivacyPolicyPage'));
 
 /**
  * Pantalla de carga con estilo elegante BunnyCure para transiciones de ruta
@@ -126,6 +128,10 @@ function RoutesWithTracking() {
                 <Route path="/demo" element={<DemoLandingPage />} />
                 <Route path="/presentacion" element={<DemoLandingPage />} />
                 <Route path="/landing" element={<DemoLandingPage />} />
+                <Route path="/terminos" element={<TermsOfServicePage />} />
+                <Route path="/terms" element={<TermsOfServicePage />} />
+                <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
                 {/* Rutas Protegidas Universales */}
                 <Route

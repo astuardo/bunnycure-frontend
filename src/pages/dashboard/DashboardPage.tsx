@@ -18,6 +18,7 @@ import {
     AlertTriangle,
     Trash2,
     Inbox,
+    Sparkles,
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { whatsappMessagesApi, IncomingWhatsAppMessageDto } from '@/api/whatsappMessages.api';
@@ -55,6 +56,8 @@ import { useToast } from '@/hooks/useToast';
 import { trackAppointmentCancelled } from '@/utils/analytics';
 import { getAppointmentTotal } from '@/utils/appointmentUtils';
 import { formatRutWithDots } from '@/utils/rutUtils';
+import { useTenant } from '@/context/TenantContext';
+import SalonOnboardingWizardModal from '@/components/onboarding/SalonOnboardingWizardModal';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -219,6 +222,13 @@ const weekDayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 export default function DashboardPage() {
     const navigate = useNavigate();
     const toast = useToast();
+    const { tenant } = useTenant();
+    const [showOnboardingModal, setShowOnboardingModal] = useState<boolean>(false);
+    const onboardingStorageKey = `bunny_onboarding_completed_${tenant?.slug || 'mi-salon'}`;
+    const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return true;
+        return localStorage.getItem(onboardingStorageKey) === 'true';
+    });
     const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus, updateAppointment } = useAppointmentsStore();
     const { customers, fetchCustomers } = useCustomersStore();
     const { giftCards, fetchGiftCards, revertGiftCardRedeem } = useGiftCardsStore();
@@ -665,6 +675,65 @@ export default function DashboardPage() {
 
             <div className="bunny-page" style={{ minHeight: '100vh', background: PAGE_BG, padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
+                {/* ══ Banner: Asistente de Configuración Inicial (Onboarding) ═══════ */}
+                {!isOnboardingCompleted && (
+                    <DashCard style={{
+                        padding: '18px 22px',
+                        border: '1.5px solid #F0E0D8',
+                        background: 'linear-gradient(135deg, #fff7f4 0%, #ffffff 100%)',
+                        boxShadow: '0 4px 16px rgba(201, 137, 122, 0.12)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                <div style={{
+                                    width: '46px',
+                                    height: '46px',
+                                    borderRadius: '14px',
+                                    background: '#FDF0EC',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '24px',
+                                    border: '1px solid #E8CFC4',
+                                    flexShrink: 0
+                                }}>
+                                    ✨
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '15px', color: '#5C3D2E' }}>
+                                        ¡Bienvenida a {tenant?.name || 'BunnyCure'}! Configura tu salón en 3 minutos
+                                    </div>
+                                    <div style={{ fontSize: '12.5px', color: '#9E7B6E', marginTop: '3px' }}>
+                                        Establece tus horarios de atención, carga los primeros servicios y obtén tu código QR de reservas listo para compartir.
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowOnboardingModal(true)}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: '#C9897A',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    padding: '10px 18px',
+                                    fontWeight: 700,
+                                    fontSize: '12.5px',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 8px rgba(201, 137, 122, 0.35)',
+                                    transition: 'all 0.15s ease'
+                                }}
+                            >
+                                <Sparkles size={15} />
+                                <span>Iniciar Asistente Inicial</span>
+                            </button>
+                        </div>
+                    </DashCard>
+                )}
+
                 {/* ══ 1. Clientes Activos ══════════════════════════════════ */}
                 <DashCard style={{ padding: CARD_PAD, textAlign: 'center' }}>
                     <SectionTitle>Clientes Activos</SectionTitle>
@@ -694,6 +763,7 @@ export default function DashboardPage() {
                         <ActionButton icon={<CalendarOff size={22} />} label="Bloquear Agenda"      to="/calendar?manageBlocks=1"                        variant="rose" />
                         <ActionButton icon={<CalendarDays size={22} />} label="Calendario"          to="/calendar"                                       variant="beige" />
                         <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky"  />
+                        <ActionButton icon={<Sparkles   size={22} />} label="Asistente Salón"      onClick={() => setShowOnboardingModal(true)}         variant="rose" />
                     </div>
                 </DashCard>
 
@@ -2155,6 +2225,17 @@ export default function DashboardPage() {
             <CashClosingModal
                 show={showCashClosingModal}
                 onHide={() => setShowCashClosingModal(false)}
+            />
+
+            {/* Modal de Configuración Inicial (Onboarding Wizard) */}
+            <SalonOnboardingWizardModal
+                isOpen={showOnboardingModal}
+                onClose={() => setShowOnboardingModal(false)}
+                onCompleted={async () => {
+                    setIsOnboardingCompleted(true);
+                    await fetchAppointments();
+                    await fetchCustomers();
+                }}
             />
         </DashboardLayout>
     );

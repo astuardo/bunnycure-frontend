@@ -1086,9 +1086,11 @@ export default function DemoLandingPage() {
             <span>• {PLATFORM_CONFIG.slogan}</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <Link to="/login" className="hover:text-white transition-colors">Portal Administrativo</Link>
             <Link to="/reservar" className="hover:text-white transition-colors">Portal de Reservas</Link>
+            <Link to="/terminos" className="hover:text-white transition-colors">Términos</Link>
+            <Link to="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
             <a
               href="https://bunnycure.cl"
               target="_blank"

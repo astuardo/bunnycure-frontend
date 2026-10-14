@@ -190,10 +190,19 @@ export default function LoginPage() {
                         </form>
                     </CardBody>
 
-                    <CardFooter className="text-center py-3.5 bg-bunny-paper/80 border-t border-bunny-border">
+                    <CardFooter className="text-center py-3.5 bg-bunny-paper/80 border-t border-bunny-border space-y-1">
                         <p className="mb-0 text-xs text-bunny-text-muted font-medium">
                             {tenant.name || 'BunnyCure'} v1.0 - PWA | Build {APP_BUILD_ID_SHORT}
                         </p>
+                        <div className="flex justify-center items-center gap-3 text-[11px] text-bunny-text-muted pt-0.5">
+                            <Link to="/terminos" className="hover:text-bunny-primary transition-colors underline-offset-2 hover:underline">
+                                Términos del Servicio
+                            </Link>
+                            <span>•</span>
+                            <Link to="/privacidad" className="hover:text-bunny-primary transition-colors underline-offset-2 hover:underline">
+                                Privacidad (Ley 19.628)
+                            </Link>
+                        </div>
                     </CardFooter>
                 </Card>
             </div>
