@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies (clean install)
         run: npm ci
 
+      - name: Run Unit Tests (Vitest)
+        run: npm run test
+
       - name: TypeScript Typecheck & Production Build
         run: npm run build
 

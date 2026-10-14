@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Badge, Modal, Alert, Spinner } from '@/components/ui';
-import { FaWhatsapp, FaBell, FaEnvelope, FaSearch, FaTimes, FaCalendarAlt, FaSyncAlt, FaCalendarDay, FaHistory } from 'react-icons/fa';
+import { FaWhatsapp, FaBell, FaEnvelope, FaHistory } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { CancelAppointmentDialog, CancelledByOption } from '../../components/appointments/CancelAppointmentDialog';
@@ -16,7 +16,7 @@ import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { AppointmentStatus, AppointmentCreateRequest, AppointmentUpdateRequest, Appointment } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
-import { format, parseISO, addDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/useToast';
 import { trackAppointmentCancelled } from '../../utils/analytics';
@@ -26,6 +26,7 @@ import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { GiftCard, GiftCardCreateRequest, GiftCardItem, GiftCardRedeemItemRequest } from '../../types/giftcard.types';
 import { toWhatsAppPhone } from '../../utils/giftcardRenderer';
 import { AppointmentSchedulePicker } from '../../components/appointments/AppointmentSchedulePicker';
+import { AppointmentFiltersBar } from '../../components/appointments/AppointmentFiltersBar';
 import {
   settingsApi,
   loadCachedUnavailabilities,
@@ -1212,115 +1213,17 @@ export default function AppointmentsPage() {
         {/* Barra de Búsqueda y Filtros */}
         <Card className="border border-slate-200/80 shadow-xs bg-white">
           <Card.Body className="p-4 sm:p-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
-              {/* Buscador de texto */}
-              <div className="lg:col-span-5">
-                <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
-                  <FaSearch className="text-bunny-mid" /> Búsqueda
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Clienta, RUT, teléfono, servicio o notas..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                      onClick={() => setSearchQuery('')}
-                      title="Limpiar búsqueda"
-                    >
-                      <FaTimes />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Selector de Fecha */}
-              <div className="sm:col-span-1 lg:col-span-3">
-                <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
-                  <FaCalendarAlt className="text-bunny-mid" /> Fecha
-                </label>
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
-                />
-                <div className="flex gap-1.5 mt-2">
-                  <Button
-                    size="sm"
-                    variant={dateFilter === format(new Date(), 'yyyy-MM-dd') ? 'primary' : 'outline'}
-                    className="py-0.5 px-2 text-xs"
-                    onClick={() => setDateFilter(format(new Date(), 'yyyy-MM-dd'))}
-                  >
-                    Hoy
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={dateFilter === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'primary' : 'outline'}
-                    className="py-0.5 px-2 text-xs"
-                    onClick={() => setDateFilter(format(addDays(new Date(), 1), 'yyyy-MM-dd'))}
-                  >
-                    Mañana
-                  </Button>
-                  {dateFilter && (
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      className="py-0.5 px-2 text-xs"
-                      onClick={() => setDateFilter('')}
-                    >
-                      Todas
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Selector de Estado */}
-              <div className="sm:col-span-1 lg:col-span-2">
-                <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
-                  <FaCalendarDay className="text-bunny-mid" /> Estado
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as AppointmentStatusFilter)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
-                >
-                  <option value="ACTIVE">⚡ Pendientes, confirmadas y reprogramar</option>
-                  <option value="ALL">📋 Todas las citas</option>
-                  <option value={AppointmentStatus.PENDING}>⏳ Pendiente</option>
-                  <option value={AppointmentStatus.CONFIRMED}>✅ Confirmada</option>
-                  <option value={AppointmentStatus.RESCHEDULE_REQUESTED}>🔄 Reprogramar</option>
-                  <option value={AppointmentStatus.COMPLETED}>🎉 Completada</option>
-                  <option value={AppointmentStatus.CANCELLED}>❌ Cancelada</option>
-                </select>
-              </div>
-
-              {/* Botones de acción */}
-              <div className="sm:col-span-2 lg:col-span-2 flex items-end gap-2">
-                <Button
-                  variant="primary"
-                  className="flex-1 flex items-center justify-center gap-1 text-sm py-2"
-                  onClick={handleApplyFilters}
-                  title="Actualizar citas desde el servidor"
-                >
-                  <FaSyncAlt className={isLoading ? 'animate-spin' : ''} />
-                  <span>Filtrar</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-sm py-2 px-3"
-                  onClick={handleClearFilters}
-                  title="Restablecer todos los filtros"
-                >
-                  Limpiar
-                </Button>
-              </div>
-            </div>
+            <AppointmentFiltersBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              dateFilter={dateFilter}
+              onDateFilterChange={setDateFilter}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              onApplyFilters={handleApplyFilters}
+              onClearFilters={handleClearFilters}
+              isLoading={isLoading}
+            />
           </Card.Body>
         </Card>
 
