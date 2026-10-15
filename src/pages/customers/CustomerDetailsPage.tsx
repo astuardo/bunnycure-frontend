@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -6,7 +6,6 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import StampCard from '../../components/customers/StampCard';
 import NailGalleryTab from '../../components/customers/nailProfile/NailGalleryTab';
 import { useCustomersStore } from '../../stores/customersStore';
-import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { useToast } from '../../hooks/useToast';
 import { Customer, NotificationPreference } from '../../types/customer.types';
@@ -18,6 +17,7 @@ import {
 } from '../../utils/giftcardRenderer';
 import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
 import { customersApi } from '../../api/customers.api';
+import { appointmentsApi } from '../../api/appointments.api';
 import { Button, Badge, Card, Spinner, Alert } from '@/components/ui';
 
 export default function CustomerDetailsPage() {
@@ -33,9 +33,10 @@ export default function CustomerDetailsPage() {
     syncCustomerVisits
   } = useCustomersStore();
 
-  const { appointments, isLoading: appointmentsLoading, fetchAppointments } = useAppointmentsStore();
   const { giftCards, loading: giftCardsLoading, fetchGiftCards } = useGiftCardsStore();
 
+  const [customerAppointments, setCustomerAppointments] = useState<Appointment[]>([]);
+  const [customerAppointmentsLoading, setCustomerAppointmentsLoading] = useState(false);
   const [directCustomer, setDirectCustomer] = useState<Customer | null>(null);
   const [directCustomerLoading, setDirectCustomerLoading] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
@@ -64,6 +65,24 @@ export default function CustomerDetailsPage() {
     return format(date, pattern, { locale: es });
   };
 
+  const loadCustomerAppointments = useCallback(async (cId: number) => {
+    setCustomerAppointmentsLoading(true);
+    try {
+      const apts = await appointmentsApi.list({ customerId: cId });
+      const safeTimestamp = (value: unknown): number => {
+        const date = parseDateSafe(value);
+        return date ? date.getTime() : Number.NEGATIVE_INFINITY;
+      };
+      setCustomerAppointments(
+        apts.slice().sort((a, b) => safeTimestamp(b.appointmentDate) - safeTimestamp(a.appointmentDate))
+      );
+    } catch (err) {
+      console.error('Error cargando historial de citas del cliente:', err);
+    } finally {
+      setCustomerAppointmentsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (id) {
       const cId = Number(id);
@@ -73,12 +92,13 @@ export default function CustomerDetailsPage() {
           .then((res) => setDirectCustomer(res))
           .catch((err) => console.error('Error cargando cliente por ID:', err))
           .finally(() => setDirectCustomerLoading(false));
+
+        loadCustomerAppointments(cId);
       }
       fetchCustomers();
-      fetchAppointments();
       fetchGiftCards();
     }
-  }, [id, fetchCustomers, fetchAppointments, fetchGiftCards]);
+  }, [id, fetchCustomers, fetchGiftCards, loadCustomerAppointments]);
 
   const customerId = Number(id);
   const storeCustomer = useMemo<Customer | null>(() => {
@@ -93,18 +113,6 @@ export default function CustomerDetailsPage() {
     if (storeCustomer) return storeCustomer;
     return null;
   }, [storeCustomer, directCustomer]);
-
-  const customerAppointments = useMemo<Appointment[]>(() => {
-    if (!customer) return [];
-    const safeTimestamp = (value: unknown): number => {
-      const date = parseDateSafe(value);
-      return date ? date.getTime() : Number.NEGATIVE_INFINITY;
-    };
-    return appointments
-      .filter((apt) => apt.customer.id === customer.id)
-      .slice()
-      .sort((a, b) => safeTimestamp(b.appointmentDate) - safeTimestamp(a.appointmentDate));
-  }, [appointments, customer]);
 
   const customerGiftCards = useMemo<GiftCard[]>(() => {
     if (!customer) return [];
@@ -142,6 +150,7 @@ export default function CustomerDetailsPage() {
       const updated = await adjustCustomerLoyalty(customer.id, delta);
       if (updated) {
         setDirectCustomer(updated);
+        await loadCustomerAppointments(customer.id);
       }
     }
   };
@@ -152,6 +161,7 @@ export default function CustomerDetailsPage() {
       const updated = await syncCustomerVisits(customer.id);
       if (updated) {
         setDirectCustomer(updated);
+        await loadCustomerAppointments(customer.id);
       }
     }
   };
@@ -179,7 +189,7 @@ export default function CustomerDetailsPage() {
     return services.map((service) => service.name).join(' + ');
   };
 
-  if ((customersLoading || appointmentsLoading || directCustomerLoading) && !customer) {
+  if ((customersLoading || customerAppointmentsLoading || directCustomerLoading) && !customer) {
     return (
       <DashboardLayout>
         <div className="text-center py-16">
