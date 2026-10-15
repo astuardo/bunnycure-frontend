@@ -19,6 +19,7 @@ export const giftcardsApi = {
     search?: string;
     status?: GiftCardStatus;
     expiringBefore?: string;
+    customerId?: number;
   }): Promise<GiftCard[]> => {
     const response = await apiClient.get<ApiResponse<GiftCard[]>>('/api/giftcards', { params });
     return (response.data.data || []).map(mapGiftCard);

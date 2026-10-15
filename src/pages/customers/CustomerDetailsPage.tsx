@@ -6,7 +6,6 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import StampCard from '../../components/customers/StampCard';
 import NailGalleryTab from '../../components/customers/nailProfile/NailGalleryTab';
 import { useCustomersStore } from '../../stores/customersStore';
-import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { useToast } from '../../hooks/useToast';
 import { Customer, NotificationPreference } from '../../types/customer.types';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
@@ -18,6 +17,7 @@ import {
 import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
 import { customersApi } from '../../api/customers.api';
 import { appointmentsApi } from '../../api/appointments.api';
+import { giftcardsApi } from '../../api/giftcards.api';
 import { Button, Badge, Card, Spinner, Alert } from '@/components/ui';
 
 export default function CustomerDetailsPage() {
@@ -26,17 +26,14 @@ export default function CustomerDetailsPage() {
   const toast = useToast();
 
   const { 
-    customers, 
-    loading: customersLoading, 
-    fetchCustomers,
     adjustCustomerLoyalty,
     syncCustomerVisits
   } = useCustomersStore();
 
-  const { giftCards, loading: giftCardsLoading, fetchGiftCards } = useGiftCardsStore();
-
   const [customerAppointments, setCustomerAppointments] = useState<Appointment[]>([]);
   const [customerAppointmentsLoading, setCustomerAppointmentsLoading] = useState(false);
+  const [customerGiftCards, setCustomerGiftCards] = useState<GiftCard[]>([]);
+  const [customerGiftCardsLoading, setCustomerGiftCardsLoading] = useState(false);
   const [directCustomer, setDirectCustomer] = useState<Customer | null>(null);
   const [directCustomerLoading, setDirectCustomerLoading] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
@@ -83,6 +80,18 @@ export default function CustomerDetailsPage() {
     }
   }, []);
 
+  const loadCustomerGiftCards = useCallback(async (cId: number) => {
+    setCustomerGiftCardsLoading(true);
+    try {
+      const cards = await giftcardsApi.list({ customerId: cId });
+      setCustomerGiftCards(cards);
+    } catch (err) {
+      console.error('Error cargando GiftCards del cliente:', err);
+    } finally {
+      setCustomerGiftCardsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (id) {
       const cId = Number(id);
@@ -94,36 +103,12 @@ export default function CustomerDetailsPage() {
           .finally(() => setDirectCustomerLoading(false));
 
         loadCustomerAppointments(cId);
+        loadCustomerGiftCards(cId);
       }
-      fetchCustomers();
-      fetchGiftCards();
     }
-  }, [id, fetchCustomers, fetchGiftCards, loadCustomerAppointments]);
+  }, [id, loadCustomerAppointments, loadCustomerGiftCards]);
 
-  const customerId = Number(id);
-  const storeCustomer = useMemo<Customer | null>(() => {
-    if (!Number.isFinite(customerId)) return null;
-    return customers.find((c) => c.id === customerId) ?? null;
-  }, [customers, customerId]);
-
-  const customer = useMemo<Customer | null>(() => {
-    if (directCustomer && directCustomer.publicId) return directCustomer;
-    if (storeCustomer && storeCustomer.publicId) return storeCustomer;
-    if (directCustomer) return directCustomer;
-    if (storeCustomer) return storeCustomer;
-    return null;
-  }, [storeCustomer, directCustomer]);
-
-  const customerGiftCards = useMemo<GiftCard[]>(() => {
-    if (!customer) return [];
-    const customerPhoneNormalized = toWhatsAppPhone(customer.phone);
-    return giftCards.filter((gc) => {
-      const isBeneficiaryId = gc.beneficiaryCustomerId === customer.id;
-      const isBeneficiaryPhone = Boolean(customerPhoneNormalized && toWhatsAppPhone(gc.beneficiaryPhone) === customerPhoneNormalized);
-      const isBuyerPhone = Boolean(customerPhoneNormalized && toWhatsAppPhone(gc.buyerPhone || '') === customerPhoneNormalized);
-      return isBeneficiaryId || isBeneficiaryPhone || isBuyerPhone;
-    });
-  }, [giftCards, customer]);
+  const customer = directCustomer;
 
   const activeCustomerGiftCards = useMemo(() => {
     return customerGiftCards.filter((gc) => gc.status === 'ACTIVE' || gc.status === 'PARTIAL');
@@ -189,7 +174,7 @@ export default function CustomerDetailsPage() {
     return services.map((service) => service.name).join(' + ');
   };
 
-  if ((customersLoading || customerAppointmentsLoading || directCustomerLoading) && !customer) {
+  if ((directCustomerLoading || customerAppointmentsLoading) && !customer) {
     return (
       <DashboardLayout>
         <div className="text-center py-16">
@@ -559,7 +544,7 @@ export default function CustomerDetailsPage() {
                   </Button>
                 </Card.Header>
                 <Card.Body className="p-0">
-                  {giftCardsLoading ? (
+                  {customerGiftCardsLoading ? (
                     <div className="text-center py-6 text-slate-400 text-xs">Cargando GiftCards...</div>
                   ) : customerGiftCards.length === 0 ? (
                     <div className="p-4 text-slate-500 text-xs">
