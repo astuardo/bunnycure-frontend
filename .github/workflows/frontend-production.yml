@@ -1,0 +1,38 @@
+name: Frontend Production - Quality Gatekeeper
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gatekeeper:
+    name: 🛡️ Lint, Typecheck & Tests (Production Gatekeeper)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+
+      - name: Run ESLint Verification
+        run: npm run lint
+
+      - name: TypeScript Typecheck
+        run: npx tsc --noEmit
+
+      - name: Run Unit Tests (Vitest)
+        run: npm run test
