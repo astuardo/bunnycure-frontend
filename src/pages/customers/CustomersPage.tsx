@@ -156,10 +156,10 @@ export default function CustomersPage() {
         if (!pref || pref === NotificationPreference.BOTH || pref === 'BOTH') {
             return <Badge variant="primary" className="text-[11px]">📧💬 WhatsApp + Email</Badge>;
         }
-        if (pref === NotificationPreference.WHATSAPP || pref === 'WHATSAPP') {
+        if (pref === NotificationPreference.WHATSAPP_ONLY || pref === 'WHATSAPP_ONLY' || pref === 'WHATSAPP') {
             return <Badge variant="success" className="text-[11px]">💬 Solo WhatsApp</Badge>;
         }
-        if (pref === NotificationPreference.EMAIL || pref === 'EMAIL') {
+        if (pref === NotificationPreference.EMAIL_ONLY || pref === 'EMAIL_ONLY' || pref === 'EMAIL') {
             return <Badge variant="info" className="text-[11px]">📧 Solo Email</Badge>;
         }
         if (pref === NotificationPreference.NONE || pref === 'NONE') {

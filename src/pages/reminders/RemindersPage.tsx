@@ -46,7 +46,7 @@ export default function RemindersPage() {
   const toast = useToast();
   const { appointments, isLoading, fetchAppointments } = useAppointmentsStore();
   const [stats, setStats] = useState<ReminderStats | null>(null);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [sendingBulk, setSendingBulk] = useState(false);
   const [sendingIds, setSendingIds] = useState<Set<number>>(new Set());
 
@@ -54,7 +54,6 @@ export default function RemindersPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadStats = useCallback(async () => {
-    setLoadingStats(true);
     try {
       const data = await remindersApi.getStats();
       setStats(data);
@@ -71,7 +70,9 @@ export default function RemindersPage() {
   }, [fetchAppointments, loadStats]);
 
   useEffect(() => {
-    loadData();
+    void (async () => {
+      await loadData();
+    })();
   }, [loadData]);
 
   // Citas activas futuras o de hoy

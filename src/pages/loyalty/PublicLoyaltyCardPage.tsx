@@ -20,6 +20,11 @@ import { LoyaltyCardPublicDto } from '@/types/loyaltyCard.types';
 import { useToast } from '@/hooks/useToast';
 import { copyToClipboard, openWhatsApp, shareNative } from '@/utils/shareUtils';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export default function PublicLoyaltyCardPage() {
   const { publicId } = useParams<{ publicId: string }>();
   const toast = useToast();
@@ -33,22 +38,22 @@ export default function PublicLoyaltyCardPage() {
   const [loading, setLoading] = useState<boolean>(!card);
   const [error, setError] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
-  const [instructionsTab, setInstructionsTab] = useState<'ios' | 'android'>('ios');
-  const [isInAppBrowser, setIsInAppBrowser] = useState<boolean>(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [instructionsTab, setInstructionsTab] = useState<'ios' | 'android'>(() => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    return /iphone|ipad|ipod/i.test(ua) ? 'ios' : 'android';
+  });
+  const [isInAppBrowser] = useState<boolean>(() => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    return /FBAN|FBAV|Instagram|WhatsApp|Line|Twitter|Snapchat|BytedanceWebview/i.test(ua);
+  });
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Detectar plataforma (iOS vs Android), navegadores internos (WhatsApp/Instagram) y capturar evento nativo PWA
+  // Capturar evento nativo PWA beforeinstallprompt
   useEffect(() => {
-    const ua = navigator.userAgent || '';
-    const isIos = /iphone|ipad|ipod/i.test(ua);
-    setInstructionsTab(isIos ? 'ios' : 'android');
-    const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line|Twitter|Snapchat|BytedanceWebview/i.test(ua);
-    setIsInAppBrowser(inApp);
-
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -209,7 +214,9 @@ export default function PublicLoyaltyCardPage() {
   };
 
   useEffect(() => {
-    fetchCard();
+    void (async () => {
+      await fetchCard();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicId]);
 

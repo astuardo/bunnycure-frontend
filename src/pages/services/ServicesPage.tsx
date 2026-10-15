@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { FiLayers, FiPlus, FiEdit2, FiTrash2, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useServicesStore } from '../../stores/servicesStore';
@@ -45,7 +45,7 @@ export default function ServicesPage() {
     displayOrder: 0,
   });
 
-  const loadSuppliesAndProducts = async () => {
+  const loadSuppliesAndProducts = useCallback(async () => {
     try {
       const [prods, costs] = await Promise.all([
         inventoryApi.listProducts().catch(() => []),
@@ -56,12 +56,14 @@ export default function ServicesPage() {
     } catch (err) {
       console.error('Error loading supplies data in services page:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchServices();
-    loadSuppliesAndProducts();
-  }, [fetchServices]);
+    void (async () => {
+      await loadSuppliesAndProducts();
+    })();
+  }, [fetchServices, loadSuppliesAndProducts]);
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);

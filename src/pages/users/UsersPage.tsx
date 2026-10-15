@@ -45,7 +45,6 @@ export default function UsersPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await usersApi.list();
       setUsers(data);
     } catch (err: unknown) {
@@ -57,7 +56,9 @@ export default function UsersPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchUsers();
+    void (async () => {
+      await fetchUsers();
+    })();
   }, [fetchUsers]);
 
   const filteredUsers = useMemo(() => {

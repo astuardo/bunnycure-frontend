@@ -3,8 +3,6 @@
  */
 
 export enum NotificationPreference {
-  EMAIL = 'EMAIL_ONLY',
-  WHATSAPP = 'WHATSAPP_ONLY',
   EMAIL_ONLY = 'EMAIL_ONLY',
   WHATSAPP_ONLY = 'WHATSAPP_ONLY',
   BOTH = 'BOTH',

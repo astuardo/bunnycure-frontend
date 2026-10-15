@@ -108,34 +108,10 @@ export default defineConfig({
               }
             }
           },
-          // API de autenticación - NetworkOnly (nunca cachear)
+          // APIs del backend - NetworkOnly (nunca servir desde caché obsoleta en citas, caja, inventario, etc.)
           {
-            urlPattern: /\/api\/auth\/(login|logout|me)/i,
-            handler: 'NetworkOnly'
-          },
-          // Otras APIs - NetworkFirst con timeout corto
-          {
-            urlPattern: /\/api\/.*\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 2 // Solo 2 minutos para evitar datos stale
-              },
-              networkTimeoutSeconds: 5, // Timeout más corto
-              plugins: [
-                {
-                  cacheWillUpdate: async ({ response }: { response: Response }) => {
-                    // Solo cachear respuestas exitosas
-                    if (response.status === 200) {
-                      return response;
-                    }
-                    return null;
-                  },
-                },
-              ],
-            }
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkOnly',
           },
           // Páginas de la app - NetworkFirst para tener siempre última versión
           {

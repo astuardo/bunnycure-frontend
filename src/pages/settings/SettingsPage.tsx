@@ -195,7 +195,6 @@ export default function SettingsPage() {
   };
 
   const loadSettings = useCallback(async () => {
-    setInitialLoading(true);
     try {
       const data = await settingsApi.getAll();
       
@@ -291,10 +290,12 @@ export default function SettingsPage() {
   }, [tenant, toast]);
 
   useEffect(() => {
-    loadSettings();
+    void (async () => {
+      await loadSettings();
+    })();
   }, [loadSettings]);
 
-  const handleChange = (field: keyof BusinessSettings, value: any) => {
+  const handleChange = <K extends keyof BusinessSettings>(field: K, value: BusinessSettings[K]) => {
     setSettings(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
@@ -302,7 +303,7 @@ export default function SettingsPage() {
   const handleWorkingHoursChange = (
     day: keyof BusinessSettings['workingHours'],
     field: 'start' | 'end' | 'enabled',
-    value: any
+    value: string | boolean
   ) => {
     setSettings(prev => ({
       ...prev,

@@ -72,7 +72,7 @@ export default function MarketingCampaignsPage() {
   // Parámetro dinámico para {{2}} (Beneficio / Servicio / Oferta)
   const [customBenefit, setCustomBenefit] = useState('');
 
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
 
@@ -118,7 +118,6 @@ export default function MarketingCampaignsPage() {
 
   // Cargar plantillas y leer query params
   const loadTemplates = useCallback(async () => {
-    setLoadingTemplates(true);
     try {
       const data = await marketingApi.getTemplates();
       setTemplates(data);
@@ -155,19 +154,26 @@ export default function MarketingCampaignsPage() {
   // Cargar lista completa de clientas para el selector manual
   useEffect(() => {
     if (selectedAudience === 'SPECIFIC_CUSTOMERS' && allCustomers.length === 0 && !loadingCustomers) {
-      setLoadingCustomers(true);
-      customersApi
-        .list()
-        .then((data) => {
-          setAllCustomers(data);
-        })
-        .catch((err) => {
+      let isMounted = true;
+      void (async () => {
+        setLoadingCustomers(true);
+        try {
+          const data = await customersApi.list();
+          if (isMounted) {
+            setAllCustomers(data);
+          }
+        } catch (err) {
           console.error('Error al cargar clientes:', err);
           toast.error('Error al cargar la lista de clientas');
-        })
-        .finally(() => {
-          setLoadingCustomers(false);
-        });
+        } finally {
+          if (isMounted) {
+            setLoadingCustomers(false);
+          }
+        }
+      })();
+      return () => {
+        isMounted = false;
+      };
     }
   }, [selectedAudience, allCustomers.length, loadingCustomers, toast]);
 
@@ -188,15 +194,19 @@ export default function MarketingCampaignsPage() {
   );
 
   useEffect(() => {
-    loadTemplates();
+    void (async () => {
+      await loadTemplates();
+    })();
   }, [loadTemplates]);
 
   useEffect(() => {
-    if (selectedAudience === 'SPECIFIC_CUSTOMERS') {
-      loadAudiencePreview('SPECIFIC_CUSTOMERS', selectedCustomerIds);
-    } else {
-      loadAudiencePreview(selectedAudience);
-    }
+    void (async () => {
+      if (selectedAudience === 'SPECIFIC_CUSTOMERS') {
+        await loadAudiencePreview('SPECIFIC_CUSTOMERS', selectedCustomerIds);
+      } else {
+        await loadAudiencePreview(selectedAudience);
+      }
+    })();
   }, [selectedAudience, selectedCustomerIds, loadAudiencePreview]);
 
   // Clientas filtradas por el buscador
