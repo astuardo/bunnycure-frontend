@@ -11,7 +11,7 @@ import {
     BarChart3,
     TrendingUp,
     Users,
-    DollarSign,
+    CalendarPlus,
     Check,
     CheckCheck,
     RefreshCw,
@@ -151,13 +151,81 @@ function DashCard({ children, style = {} }: { children: React.ReactNode; style?:
     );
 }
 
-// Botón de acción — texto siempre dentro, ícono arriba en móvil si es necesario
-type ActionVariant = 'rose' | 'mint' | 'beige' | 'sky';
-const variantStyles: Record<ActionVariant, { bg: string; hover: string; text: string; icon: string }> = {
-    rose:  { bg: '#fce8e4', hover: '#f9d5cf', text: '#7c3a2d', icon: '#c9897a' },
-    mint:  { bg: '#e8f5f0', hover: '#d4ede6', text: '#2d6b55', icon: '#5a9e82' },
-    beige: { bg: '#f5ede8', hover: '#eeddd6', text: '#6b4c38', icon: '#b07a5e' },
-    sky:   { bg: '#e8f0f8', hover: '#d4e4f2', text: '#2d4f7c', icon: '#5a7eb0' },
+// Botón de acción — texto siempre dentro, paleta semántica armoniosa
+type ActionVariant = 'emerald' | 'mint' | 'indigo' | 'blue' | 'sky' | 'purple' | 'amber' | 'rose' | 'beige';
+const variantStyles: Record<ActionVariant, { bg: string; hover: string; text: string; icon: string; border: string; shadow: string }> = {
+    emerald: {
+        bg: '#ecfdf5',
+        hover: '#d1fae5',
+        text: '#065f46',
+        icon: '#059669',
+        border: 'rgba(16, 185, 129, 0.25)',
+        shadow: 'rgba(16, 185, 129, 0.18)',
+    },
+    mint: {
+        bg: '#f0fdf4',
+        hover: '#dcfce7',
+        text: '#166534',
+        icon: '#16a34a',
+        border: 'rgba(34, 197, 94, 0.25)',
+        shadow: 'rgba(34, 197, 94, 0.18)',
+    },
+    indigo: {
+        bg: '#eef2ff',
+        hover: '#e0e7ff',
+        text: '#3730a3',
+        icon: '#4f46e5',
+        border: 'rgba(99, 102, 241, 0.25)',
+        shadow: 'rgba(99, 102, 241, 0.18)',
+    },
+    blue: {
+        bg: '#eff6ff',
+        hover: '#dbeafe',
+        text: '#1e40af',
+        icon: '#2563eb',
+        border: 'rgba(59, 130, 246, 0.25)',
+        shadow: 'rgba(59, 130, 246, 0.18)',
+    },
+    sky: {
+        bg: '#f0f9ff',
+        hover: '#e0f2fe',
+        text: '#0369a1',
+        icon: '#0284c7',
+        border: 'rgba(14, 165, 233, 0.25)',
+        shadow: 'rgba(14, 165, 233, 0.18)',
+    },
+    purple: {
+        bg: '#faf5ff',
+        hover: '#f3e8ff',
+        text: '#6b21a8',
+        icon: '#9333ea',
+        border: 'rgba(168, 85, 247, 0.25)',
+        shadow: 'rgba(168, 85, 247, 0.18)',
+    },
+    amber: {
+        bg: '#fffbeb',
+        hover: '#fef3c7',
+        text: '#92400e',
+        icon: '#d97706',
+        border: 'rgba(245, 158, 11, 0.28)',
+        shadow: 'rgba(245, 158, 11, 0.18)',
+    },
+    rose: {
+        bg: '#fff1f2',
+        hover: '#ffe4e6',
+        text: '#9f1239',
+        icon: '#e11d48',
+        border: 'rgba(244, 63, 94, 0.25)',
+        shadow: 'rgba(244, 63, 94, 0.18)',
+    },
+    beige: {
+        bg: '#f5ede8',
+        hover: '#eeddd6',
+        text: '#6b4c38',
+        icon: '#b07a5e',
+        border: 'rgba(176, 122, 94, 0.25)',
+        shadow: 'rgba(176, 122, 94, 0.18)',
+    },
 };
 
 function ActionButton({ icon, label, to, onClick, variant }: {
@@ -175,7 +243,7 @@ function ActionButton({ icon, label, to, onClick, variant }: {
             style={{
                 width: '100%',
                 background: hover ? st.hover : st.bg,
-                border: 'none',
+                border: `1px solid ${st.border}`,
                 borderRadius: '14px',
                 padding: '12px 8px',
                 cursor: 'pointer',
@@ -189,10 +257,10 @@ function ActionButton({ icon, label, to, onClick, variant }: {
                 fontSize: '12px',
                 lineHeight: 1.2,
                 textAlign: 'center',
-                transition: 'background 0.15s, transform 0.1s',
-                transform: hover ? 'translateY(-1px)' : 'none',
-                boxShadow: hover ? '0 3px 8px rgba(180,120,100,0.15)' : 'none',
-                minHeight: '72px',
+                transition: 'all 0.18s ease-in-out',
+                transform: hover ? 'translateY(-2px)' : 'none',
+                boxShadow: hover ? `0 4px 12px ${st.shadow}` : '0 1px 2px rgba(0,0,0,0.03)',
+                minHeight: '74px',
             }}
         >
             <span style={{ color: st.icon, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -757,13 +825,13 @@ export default function DashboardPage() {
                     </SectionTitle>
                     {/* Grid responsivo para acciones rápidas */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-                        <ActionButton icon={<CalendarDays size={22} />} label="Nueva Cita"          to="/appointments?create=1&returnTo=%2Fdashboard"    variant="rose" />
-                        <ActionButton icon={<UserPlus    size={22} />} label="Nuevo Cliente"        to="/customers?create=1&returnTo=%2Fdashboard"       variant="mint" />
-                        <ActionButton icon={<DollarSign  size={22} />} label="Cierre de Caja"       onClick={() => setShowCashClosingModal(true)}         variant="mint" />
-                        <ActionButton icon={<CalendarOff size={22} />} label="Bloquear Agenda"      to="/calendar?manageBlocks=1"                        variant="rose" />
-                        <ActionButton icon={<CalendarDays size={22} />} label="Calendario"          to="/calendar"                                       variant="beige" />
-                        <ActionButton icon={<Scissors   size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky"  />
-                        <ActionButton icon={<Sparkles   size={22} />} label="Asistente Salón"      onClick={() => setShowOnboardingModal(true)}         variant="rose" />
+                        <ActionButton icon={<CalendarPlus size={22} />} label="Nueva Cita"          to="/appointments?create=1&returnTo=%2Fdashboard"    variant="emerald" />
+                        <ActionButton icon={<UserPlus     size={22} />} label="Nuevo Cliente"        to="/customers?create=1&returnTo=%2Fdashboard"       variant="mint" />
+                        <ActionButton icon={<Users        size={22} />} label="Clientes"             to="/customers"                                      variant="indigo" />
+                        <ActionButton icon={<CalendarOff  size={22} />} label="Bloquear Agenda"      to="/calendar?manageBlocks=1"                        variant="amber" />
+                        <ActionButton icon={<CalendarDays size={22} />} label="Calendario"          to="/calendar"                                       variant="purple" />
+                        <ActionButton icon={<Scissors     size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky" />
+                        <ActionButton icon={<Sparkles     size={22} />} label="Asistente Salón"      onClick={() => setShowOnboardingModal(true)}         variant="purple" />
                     </div>
                 </DashCard>
 
