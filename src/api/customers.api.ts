@@ -89,10 +89,13 @@ export const customersApi = {
    * Listar clientes (opcionalmente con búsqueda)
    */
   list: async (search?: string): Promise<Customer[]> => {
-    const response = await apiClient.get<ApiResponse<Customer[]>>('/api/customers', {
+    const response = await apiClient.get<ApiResponse<Customer[] | { content: Customer[] }>>('/api/customers', {
       params: search ? { search } : undefined
     });
-    return response.data.data || [];
+    const data = response.data.data;
+    if (Array.isArray(data)) return data;
+    if (data && 'content' in data && Array.isArray(data.content)) return data.content;
+    return [];
   },
 
   /**

@@ -23,8 +23,11 @@ export const appointmentsApi = {
     status?: AppointmentStatus;
     customerId?: number;
   }): Promise<Appointment[]> => {
-    const response = await apiClient.get<ApiResponse<Appointment[]>>('/api/appointments', { params });
-    return response.data.data || [];
+    const response = await apiClient.get<ApiResponse<Appointment[] | { content: Appointment[] }>>('/api/appointments', { params });
+    const data = response.data.data;
+    if (Array.isArray(data)) return data;
+    if (data && 'content' in data && Array.isArray(data.content)) return data.content;
+    return [];
   },
 
   /**
