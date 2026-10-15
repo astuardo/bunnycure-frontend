@@ -76,7 +76,7 @@ export default function DashboardPage() {
     };
 
     const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus, updateAppointment } = useAppointmentsStore();
-    const { customers, fetchCustomers } = useCustomersStore();
+    const { customers, totalCustomers, fetchCustomers } = useCustomersStore();
     const { giftCards, fetchGiftCards, revertGiftCardRedeem } = useGiftCardsStore();
 
     const [statsLoading, setStatsLoading] = useState(true);
@@ -323,7 +323,7 @@ export default function DashboardPage() {
                 {/* 6. Métricas: Clientes Activos, Resumen Semanal e Insights */}
                 <DashboardMetricsGrid
                     statsLoading={statsLoading}
-                    customerCount={customers.length}
+                    customerCount={dashboardStats?.totalCustomers ?? (totalCustomers > 0 ? totalCustomers : customers.length)}
                     thisWeekAppointmentsCount={thisWeekAppointments.length}
                     weekStats={weekStats}
                     dashboardStats={dashboardStats}

@@ -86,15 +86,26 @@ const buildPhoneLookupCandidates = (phone: string): string[] => {
 
 export const customersApi = {
   /**
-   * Listar clientes (opcionalmente con búsqueda)
+   * Listar clientes (opcionalmente con búsqueda y paginación)
    */
-  list: async (search?: string): Promise<Customer[]> => {
-    const response = await apiClient.get<ApiResponse<Customer[] | { content: Customer[] }>>('/api/customers', {
-      params: search ? { search } : undefined
+  list: async (search?: string, params?: { page?: number; size?: number }): Promise<Customer[]> => {
+    const response = await apiClient.get<ApiResponse<Customer[] | { content: Customer[]; totalElements?: number }>>('/api/customers', {
+      params: {
+        ...(search ? { search } : {}),
+        ...(params || {})
+      }
     });
     const data = response.data.data;
-    if (Array.isArray(data)) return data;
-    if (data && 'content' in data && Array.isArray(data.content)) return data.content;
+    if (Array.isArray(data)) {
+      const arr = data as Customer[] & { totalElements?: number };
+      arr.totalElements = data.length;
+      return arr;
+    }
+    if (data && 'content' in data && Array.isArray(data.content)) {
+      const arr = [...data.content] as Customer[] & { totalElements?: number };
+      arr.totalElements = typeof data.totalElements === 'number' ? data.totalElements : data.content.length;
+      return arr;
+    }
     return [];
   },
 

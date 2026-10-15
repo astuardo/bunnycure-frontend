@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 
 interface CustomersState {
     customers: Customer[];
+    totalCustomers: number;
     currentCustomer: Customer | null;
     loading: boolean;
     error: string | null;
@@ -24,6 +25,7 @@ interface CustomersState {
 
 export const useCustomersStore = create<CustomersState>((set) => ({
     customers: [],
+    totalCustomers: 0,
     currentCustomer: null,
     loading: false,
     error: null,
@@ -33,8 +35,9 @@ export const useCustomersStore = create<CustomersState>((set) => ({
         try {
             console.log('📡 Fetching customers...', search ? `search="${search}"` : 'all');
             const customers = await customersApi.list(search);
-            console.log(`✅ Loaded ${customers.length} customers`);
-            set({ customers, loading: false });
+            const totalCustomers = (customers as any).totalElements ?? customers.length;
+            console.log(`✅ Loaded ${customers.length} (total: ${totalCustomers}) customers`);
+            set({ customers, totalCustomers, loading: false });
         } catch (error) {
             const err = error as { response?: { status?: number; data?: { message?: string } } };
             const errorMessage = err.response?.data?.message || 'Error al cargar clientes';

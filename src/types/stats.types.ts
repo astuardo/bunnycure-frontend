@@ -21,6 +21,7 @@ export interface DashboardStats {
   totalAppointmentsMonth: number;
   completedAppointmentsMonth?: number;
   pendingOrConfirmedAppointmentsMonth?: number;
+  totalCustomers?: number;
   topServices: ServiceStat[];
   topCustomer: CustomerStat | null;
 }

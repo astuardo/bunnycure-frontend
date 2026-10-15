@@ -29,6 +29,7 @@ export default function CustomersPage() {
     
     const { 
         customers, 
+        totalCustomers,
         loading, 
         error, 
         fetchCustomers, 
@@ -350,7 +351,9 @@ export default function CustomersPage() {
                                 <div className="flex items-center gap-2">
                                     {loading && <Spinner size="sm" className="border-bunny-primary" />}
                                     <Badge variant="secondary">
-                                        {customers.length === 1 ? '1 cliente' : `${customers.length} clientes`}
+                                        {totalCustomers > customers.length
+                                            ? `Mostrando ${customers.length} de ${totalCustomers} clientas`
+                                            : (totalCustomers === 1 || customers.length === 1 ? '1 clienta' : `${totalCustomers || customers.length} clientas`)}
                                     </Badge>
                                 </div>
                             </Card.Header>

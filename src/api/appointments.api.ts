@@ -22,6 +22,8 @@ export const appointmentsApi = {
     endDate?: string;
     status?: AppointmentStatus;
     customerId?: number;
+    size?: number;
+    page?: number;
   }): Promise<Appointment[]> => {
     const response = await apiClient.get<ApiResponse<Appointment[] | { content: Appointment[] }>>('/api/appointments', { params });
     const data = response.data.data;

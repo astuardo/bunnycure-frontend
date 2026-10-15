@@ -7,8 +7,7 @@
  * - Eliminado triple API call con caché por rango de fechas.
  */
 
-import apiClient from './client';
-import { ApiResponse } from '../types/api.types';
+import { appointmentsApi } from './appointments.api';
 import { Appointment } from '../types/appointment.types';
 import {
   AnalyticsData,
@@ -34,11 +33,11 @@ async function fetchAppointmentsCached(startDate: string, endDate: string): Prom
   const key = `${startDate}_${endDate}`;
   if (cachedAppointments?.key === key) return cachedAppointments.data;
 
-  const data = await apiClient
-    .get<ApiResponse<Appointment[]>>('/api/appointments', {
-      params: { startDate, endDate },
-    })
-    .then((res) => res.data.data || []);
+  const data = await appointmentsApi.list({
+    startDate,
+    endDate,
+    size: 2000,
+  });
 
   cachedAppointments = { key, data };
   return data;
