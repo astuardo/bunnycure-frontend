@@ -87,9 +87,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Servir manifiesto PWA dinámico para tarjetas Bunny Pass de clientas
-  if (requestUrl.pathname === '/manifest-card.json' || requestUrl.pathname === '/api/manifest-card') {
-    const publicId = requestUrl.searchParams.get('id') || '';
+  // Servir manifiesto PWA dinámico para tarjetas Bunny Pass de clientas (NetworkFirst con fallback offline)
+  const isManifestCardJson = requestUrl.pathname === '/manifest-card.json' || requestUrl.pathname === '/api/manifest-card';
+  const isPublicLoyaltyManifest = requestUrl.pathname.startsWith('/api/public/loyalty-card/') && requestUrl.pathname.endsWith('/manifest.json');
+
+  if (isManifestCardJson || isPublicLoyaltyManifest) {
+    let publicId = '';
+    if (isPublicLoyaltyManifest) {
+      const parts = requestUrl.pathname.split('/');
+      publicId = parts.length >= 5 ? parts[4] : '';
+    } else {
+      publicId = requestUrl.searchParams.get('id') || '';
+    }
+
     const nameParam = requestUrl.searchParams.get('name') || 'Club';
     let firstName = 'Club';
     try {
@@ -133,13 +143,28 @@ self.addEventListener('fetch', (event) => {
     };
 
     event.respondWith(
-      new Response(JSON.stringify(cardManifest), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/manifest+json; charset=utf-8',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
-      })
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            return networkResponse;
+          }
+          return new Response(JSON.stringify(cardManifest), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/manifest+json; charset=utf-8',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          });
+        })
+        .catch(() => {
+          return new Response(JSON.stringify(cardManifest), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/manifest+json; charset=utf-8',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          });
+        })
     );
     return;
   }

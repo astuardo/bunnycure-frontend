@@ -68,9 +68,10 @@ export default function PublicLoyaltyCardPage() {
       localStorage.setItem('bunny_my_loyalty_public_id', publicId);
       const earlyManifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
       const currentHref = earlyManifestLink?.getAttribute('href') || '';
-      // Solo sobreescribir si NO hay un manifest-card ya configurado (preservando el inyectado por SSR)
-      if (!currentHref.includes(`/manifest-card.json?id=${encodeURIComponent(publicId)}`)) {
-        const targetEarlyHref = `/manifest-card.json?id=${encodeURIComponent(publicId)}&name=${encodeURIComponent(card?.firstName || 'Club')}`;
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const targetEarlyHref = `${apiBase}/api/public/loyalty-card/${encodeURIComponent(publicId)}/manifest.json`;
+      // Solo sobreescribir si no está ya configurado
+      if (!currentHref.includes(`/loyalty-card/${encodeURIComponent(publicId)}/manifest.json`)) {
         if (earlyManifestLink) {
           earlyManifestLink.setAttribute('href', targetEarlyHref);
         }
@@ -147,18 +148,17 @@ export default function PublicLoyaltyCardPage() {
     }
     canonicalLink.href = canonicalUrl;
 
-    // 4. Manifest HTTP dinámico: solo actualizar si tenemos el nombre real o si no existe aún el manifest de la tarjeta
+    // 4. Manifest HTTP dinámico: sincronizar con endpoint canónico de Spring Boot
     const currentManifestHref = document.querySelector('link[rel="manifest"]')?.getAttribute('href') || '';
-    if (clientName || !currentManifestHref.includes('/manifest-card.json')) {
-      const manifestHttpUrl = `/manifest-card.json?id=${encodeURIComponent(activePublicId)}&name=${encodeURIComponent(clientName || 'Club')}`;
-      if (currentManifestHref !== manifestHttpUrl) {
-        const existingManifests = document.querySelectorAll('link[rel="manifest"]');
-        existingManifests.forEach((el) => el.remove());
-        const newManifestTag = document.createElement('link');
-        newManifestTag.rel = 'manifest';
-        newManifestTag.href = manifestHttpUrl;
-        document.head.appendChild(newManifestTag);
-      }
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+    const manifestHttpUrl = `${apiBase}/api/public/loyalty-card/${encodeURIComponent(activePublicId)}/manifest.json`;
+    if (currentManifestHref !== manifestHttpUrl) {
+      const existingManifests = document.querySelectorAll('link[rel="manifest"]');
+      existingManifests.forEach((el) => el.remove());
+      const newManifestTag = document.createElement('link');
+      newManifestTag.rel = 'manifest';
+      newManifestTag.href = manifestHttpUrl;
+      document.head.appendChild(newManifestTag);
     }
 
     return () => {
