@@ -1,4 +1,6 @@
-import QRCode from 'qrcode';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { QRCodeSVG } from 'qrcode.react';
 import { normalizeGiftCardPublicUrl } from './giftcardUrl';
 
 export const GIFTCARD_BACKGROUND_TEMPLATE = '/giftcard_fondo.png';
@@ -183,15 +185,17 @@ const drawGiftCardInfoWithQr = async (
   // 4. Renderizar Código QR compacto a la derecha
   if (data.publicUrl) {
     try {
-      const qrDataUrl = await QRCode.toDataURL(data.publicUrl, {
-        errorCorrectionLevel: 'M',
-        margin: 1,
-        color: {
-          dark: '#382015',
-          light: '#ffffff',
-        },
-        width: 260,
-      });
+      const svgMarkup = renderToStaticMarkup(
+        React.createElement(QRCodeSVG, {
+          value: data.publicUrl,
+          size: 260,
+          fgColor: '#382015',
+          bgColor: '#ffffff',
+          level: 'M',
+          marginSize: 1,
+        })
+      );
+      const qrDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
 
       const qrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
