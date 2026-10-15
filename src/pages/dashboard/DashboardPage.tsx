@@ -19,6 +19,7 @@ import {
     Trash2,
     Inbox,
     Sparkles,
+    X,
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { whatsappMessagesApi, IncomingWhatsAppMessageDto } from '@/api/whatsappMessages.api';
@@ -57,6 +58,8 @@ import { trackAppointmentCancelled } from '@/utils/analytics';
 import { getAppointmentTotal } from '@/utils/appointmentUtils';
 import { formatRutWithDots } from '@/utils/rutUtils';
 import { useTenant } from '@/context/TenantContext';
+import { useAuth } from '@/hooks/useAuth';
+import { isSalonAdmin } from '@/types/user.types';
 import SalonOnboardingWizardModal from '@/components/onboarding/SalonOnboardingWizardModal';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -291,12 +294,22 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const toast = useToast();
     const { tenant } = useTenant();
+    const { user } = useAuth();
+    const userRole = user?.role ? user.role.replace('ROLE_', '').toUpperCase() : 'SPECIALIST';
+    const canAdmin = isSalonAdmin(userRole);
+
     const [showOnboardingModal, setShowOnboardingModal] = useState<boolean>(false);
     const onboardingStorageKey = `bunny_onboarding_completed_${tenant?.slug || 'mi-salon'}`;
     const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean>(() => {
         if (typeof window === 'undefined') return true;
         return localStorage.getItem(onboardingStorageKey) === 'true';
     });
+
+    const handleDismissAndKeepConfig = () => {
+        localStorage.setItem(onboardingStorageKey, 'true');
+        setIsOnboardingCompleted(true);
+        toast.success('Configuración actual del salón mantenida. Puedes relanzar el Asistente en cualquier momento desde Acciones Rápidas.');
+    };
     const { appointments, isLoading: appointmentsLoading, fetchAppointments, updateAppointmentStatus, updateAppointment } = useAppointmentsStore();
     const { customers, fetchCustomers } = useCustomersStore();
     const { giftCards, fetchGiftCards, revertGiftCardRedeem } = useGiftCardsStore();
@@ -744,15 +757,40 @@ export default function DashboardPage() {
             <div className="bunny-page" style={{ minHeight: '100vh', background: PAGE_BG, padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
                 {/* ══ Banner: Asistente de Configuración Inicial (Onboarding) ═══════ */}
-                {!isOnboardingCompleted && (
+                {canAdmin && !isOnboardingCompleted && (
                     <DashCard style={{
-                        padding: '18px 22px',
+                        position: 'relative',
+                        padding: '18px 24px',
                         border: '1.5px solid #F0E0D8',
                         background: 'linear-gradient(135deg, #fff7f4 0%, #ffffff 100%)',
                         boxShadow: '0 4px 16px rgba(201, 137, 122, 0.12)'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        {/* Botón de cierre rápido para mantener la configuración actual */}
+                        <button
+                            type="button"
+                            onClick={handleDismissAndKeepConfig}
+                            title="Cerrar y mantener configuración actual"
+                            aria-label="Cerrar banner"
+                            style={{
+                                position: 'absolute',
+                                top: '12px',
+                                right: '12px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#B09489',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '6px',
+                                transition: 'color 0.15s',
+                            }}
+                        >
+                            <X size={16} />
+                        </button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', maxWidth: '620px' }}>
                                 <div style={{
                                     width: '46px',
                                     height: '46px',
@@ -771,33 +809,77 @@ export default function DashboardPage() {
                                     <div style={{ fontWeight: 800, fontSize: '15px', color: '#5C3D2E' }}>
                                         ¡Bienvenida a {tenant?.name || 'BunnyCure'}! Configura tu salón en 3 minutos
                                     </div>
-                                    <div style={{ fontSize: '12.5px', color: '#9E7B6E', marginTop: '3px' }}>
+                                    <div style={{ fontSize: '12.5px', color: '#9E7B6E', marginTop: '3px', lineHeight: 1.4 }}>
                                         Establece tus horarios de atención, carga los primeros servicios y obtén tu código QR de reservas listo para compartir.
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setShowOnboardingModal(true)}
-                                style={{
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowOnboardingModal(true)}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            background: '#C9897A',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            padding: '9px 16px',
+                                            fontWeight: 700,
+                                            fontSize: '12.5px',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 8px rgba(201, 137, 122, 0.35)',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <Sparkles size={15} />
+                                        <span>Iniciar Asistente</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleDismissAndKeepConfig}
+                                        title="Mantener servicios, horarios y ajustes actuales sin reiniciar de cero"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            background: '#ffffff',
+                                            color: '#5C3D2E',
+                                            border: '1px solid #E8CFC4',
+                                            borderRadius: '10px',
+                                            padding: '9px 14px',
+                                            fontWeight: 600,
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <Check size={14} style={{ color: '#16a34a' }} />
+                                        <span>Mantener Configuración Actual</span>
+                                    </button>
+                                </div>
+                                <label style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    background: '#C9897A',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    padding: '10px 18px',
-                                    fontWeight: 700,
-                                    fontSize: '12.5px',
+                                    gap: '6px',
+                                    fontSize: '11.5px',
+                                    color: '#8C6858',
                                     cursor: 'pointer',
-                                    boxShadow: '0 2px 8px rgba(201, 137, 122, 0.35)',
-                                    transition: 'all 0.15s ease'
-                                }}
-                            >
-                                <Sparkles size={15} />
-                                <span>Iniciar Asistente Inicial</span>
-                            </button>
+                                    userSelect: 'none'
+                                }}>
+                                    <input
+                                        type="checkbox"
+                                        onChange={(e) => {
+                                            if (e.target.checked) handleDismissAndKeepConfig();
+                                        }}
+                                        style={{ cursor: 'pointer', accentColor: '#C9897A' }}
+                                    />
+                                    <span>Ya está configurado (no volver a mostrar)</span>
+                                </label>
+                            </div>
                         </div>
                     </DashCard>
                 )}
@@ -831,7 +913,9 @@ export default function DashboardPage() {
                         <ActionButton icon={<CalendarOff  size={22} />} label="Bloquear Agenda"      to="/calendar?manageBlocks=1"                        variant="amber" />
                         <ActionButton icon={<CalendarDays size={22} />} label="Calendario"          to="/calendar"                                       variant="purple" />
                         <ActionButton icon={<Scissors     size={22} />} label="Gestionar Servicios"  to="/services"                                       variant="sky" />
-                        <ActionButton icon={<Sparkles     size={22} />} label="Asistente Salón"      onClick={() => setShowOnboardingModal(true)}         variant="purple" />
+                        {canAdmin && (
+                            <ActionButton icon={<Sparkles     size={22} />} label="Asistente Salón"      onClick={() => setShowOnboardingModal(true)}         variant="purple" />
+                        )}
                     </div>
                 </DashCard>
 
