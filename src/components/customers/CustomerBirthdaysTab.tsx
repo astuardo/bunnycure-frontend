@@ -51,6 +51,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
 
   // Computar todas las cumpleañeras
   const { birthdayCustomers, metrics } = useMemo(() => {
+    void refreshTrigger;
     return computeBirthdayCustomers(customers);
   }, [customers, refreshTrigger]);
 

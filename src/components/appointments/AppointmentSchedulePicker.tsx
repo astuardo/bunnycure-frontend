@@ -157,19 +157,19 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
     return apt.service?.name || 'Servicio';
   };
 
-  const isAptCollidingWithSelected = (apt: Appointment): boolean => {
+  const isAptCollidingWithSelected = React.useCallback((apt: Appointment): boolean => {
     if (!selectedTime || !apt.appointmentTime) return false;
     const myStart = timeToMinutes(selectedTime);
     const myEnd = myStart + durationMinutes;
     const aptStart = timeToMinutes(apt.appointmentTime);
     const aptEnd = aptStart + getAptDuration(apt);
     return Math.max(myStart, aptStart) < Math.min(myEnd, aptEnd);
-  };
+  }, [selectedTime, durationMinutes]);
 
   const existingAptConflict = useMemo(() => {
     if (!selectedDate || !selectedTime || dayAppointments.length === 0) return null;
     return dayAppointments.find((apt) => isAptCollidingWithSelected(apt)) || null;
-  }, [selectedDate, selectedTime, dayAppointments, durationMinutes]);
+  }, [selectedDate, selectedTime, dayAppointments, isAptCollidingWithSelected]);
 
   const appointmentsCountByDate = useMemo(() => {
     const map = new Map<string, number>();

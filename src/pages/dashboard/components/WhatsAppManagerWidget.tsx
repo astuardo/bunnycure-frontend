@@ -130,6 +130,7 @@ export const WhatsAppManagerWidget: React.FC = () => {
     useEffect(() => {
         loadWhatsAppMessages('UNREAD');
         loadOutboxMessages();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleRetryOne = async (id: number) => {

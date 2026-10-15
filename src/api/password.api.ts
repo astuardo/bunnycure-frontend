@@ -33,7 +33,7 @@ export const passwordApi = {
         params: { token }
       });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   },

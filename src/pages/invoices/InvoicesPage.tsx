@@ -194,6 +194,7 @@ export default function InvoicesPage() {
   useEffect(() => {
     loadSummary();
     loadPending();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload period dependent data
@@ -201,6 +202,7 @@ export default function InvoicesPage() {
     if (activeTab === 'issued') {
       loadIssued();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedPeriod]);
 
   // Reset contrast data when changing period to avoid showing stale data from previous period

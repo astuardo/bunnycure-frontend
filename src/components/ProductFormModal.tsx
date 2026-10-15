@@ -72,7 +72,7 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
         saved = await inventoryApi.createProduct(payload);
         toast.success('Producto creado');
       }
-      onSaved && onSaved(saved);
+      onSaved?.(saved);
       onHide();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };

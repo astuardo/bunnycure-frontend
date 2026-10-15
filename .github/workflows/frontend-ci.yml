@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies (clean install)
         run: npm ci
 
+      - name: Run ESLint Verification
+        run: npm run lint
+
       - name: Run Unit Tests (Vitest)
         run: npm run test
 

@@ -32,7 +32,7 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBase, setFilterBase] = useState<string>('ALL');
 
-  const records = profile.records || [];
+  const records = useMemo(() => profile.records || [], [profile.records]);
 
   const filteredRecords = useMemo(() => {
     return records.filter((rec) => {

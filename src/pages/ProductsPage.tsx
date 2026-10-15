@@ -85,6 +85,7 @@ export default function ProductsPage() {
     loadProducts();
     loadProjections();
     loadSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleAutoConsumption = async (enabled: boolean) => {

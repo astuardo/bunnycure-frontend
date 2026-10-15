@@ -53,7 +53,7 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
     try {
       await inventoryApi.registerPurchase(data);
       toast.success('✅ Compra registrada y stock actualizado');
-      onPurchased && onPurchased();
+      onPurchased?.();
       onHide();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } }; message?: string };

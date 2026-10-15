@@ -125,7 +125,7 @@ export const ServiceSuppliesModal: React.FC<Props> = ({
         }))
       );
       toast.success('✅ Insumos del servicio guardados correctamente');
-      onSaved && onSaved();
+      onSaved?.();
       onHide();
     } catch (err: unknown) {
       const error = err as { message?: string };

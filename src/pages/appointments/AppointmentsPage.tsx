@@ -209,6 +209,7 @@ export default function AppointmentsPage() {
         }, { replace: true });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, appointments, setSearchParams]);
 
   const filteredCustomers = useMemo(() => {

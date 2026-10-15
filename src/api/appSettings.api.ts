@@ -102,7 +102,7 @@ export const appSettingsApi = {
     try {
       const response = await apiClient.get<ApiResponse<{ key: string; value: string }>>(`/api/settings/${key}`);
       return response.data.data?.value || null;
-    } catch (error) {
+    } catch {
       console.warn(`Setting ${key} not found`);
       return null;
     }

@@ -36,7 +36,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
       const rewards = await loyaltyApi.list();
       set({ rewards });
       toast.success('Premio agregado');
-    } catch (error) {
+    } catch {
       toast.error('Error al agregar premio');
     }
   },
@@ -47,7 +47,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
       const rewards = await loyaltyApi.list();
       set({ rewards });
       toast.success('Premio actualizado');
-    } catch (error) {
+    } catch {
       toast.error('Error al actualizar premio');
     }
   },
@@ -58,7 +58,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
       const rewards = await loyaltyApi.list();
       set({ rewards });
       toast.success('Premio eliminado');
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar premio');
     }
   },
@@ -68,7 +68,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
       await loyaltyApi.reorder(ids);
       const rewards = await loyaltyApi.list();
       set({ rewards });
-    } catch (error) {
+    } catch {
       toast.error('Error al reordenar premios');
     }
   },

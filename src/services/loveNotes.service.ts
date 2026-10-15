@@ -182,7 +182,7 @@ export const fetchDailyLoveNote = async (): Promise<LoveNote> => {
         };
       }
     }
-  } catch (err) {
+  } catch {
     // Si falla o hay timeout/cors, fallback silencioso e instantáneo a la colección en español
   }
 

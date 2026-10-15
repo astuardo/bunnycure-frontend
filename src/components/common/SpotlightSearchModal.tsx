@@ -66,6 +66,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
         inputRef.current?.focus();
       }, 50);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show]);
 
   // Lista de Acciones Rápidas del Salón
