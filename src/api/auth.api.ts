@@ -100,7 +100,12 @@ export const refreshSession = async (): Promise<void> => {
 
 /**
  * Obtiene el token CSRF y fuerza la creación de la cookie XSRF-TOKEN.
+ * En arquitectura Stateless JWT, el fallo de CSRF nunca debe bloquear el login ni la sesión.
  */
 export const getCsrfToken = async (): Promise<void> => {
-  await apiClient.get('/api/auth/csrf');
+  try {
+    await apiClient.get('/api/auth/csrf');
+  } catch (error) {
+    console.warn('[CSRF] Non-critical error fetching CSRF token in stateless mode:', error);
+  }
 };
