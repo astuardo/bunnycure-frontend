@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import * as Sentry from '@sentry/react'
 import './index.css'
 import App from './App.tsx'
 import './styles/mobile.css';
@@ -7,6 +8,25 @@ import './styles/bunny-theme.css';
 import apiClient from './api/client';
 import { initializeGA } from './utils/analytics';
 import { getWebPushPublicKey, urlBase64ToUint8Array, WEB_PUSH_SYNC_KEY } from './api/webPush.api';
+
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: import.meta.env.MODE || 'production',
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: false,
+        blockAllMedia: false,
+      }),
+    ],
+    tracesSampleRate: 1.0,
+    tracePropagationTargets: ['localhost', 'api.bunnycure.cl', /^\/api/],
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+}
 
 const registerWebPushSubscription = async (registration: ServiceWorkerRegistration) => {
   if (!('PushManager' in window) || !('Notification' in window)) return;
