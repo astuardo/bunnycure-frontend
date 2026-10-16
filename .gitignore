@@ -37,3 +37,6 @@ client_secret_*.json
 test-results/
 playwright-report/
 
+
+# Documentos legales de la plataforma: se importan en el build (PlatformLegalPage)
+!src/legal/*.md
