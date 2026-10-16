@@ -13,7 +13,7 @@ const urlsToCache = [
 ];
 
 const API_BASE_URL = 'https://api.bunnycure.cl';
-const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
+const CHECK_INTERVAL = 15 * 60 * 1000; // 5 minutos
 const NOTIFICATION_WINDOW_HOURS = 2; // Notificar 2 horas antes
 const NOTIFIED_APPOINTMENTS_KEY = 'notified_appointments';
 const TEMPLATES_CACHE_KEY = 'notification_templates';
@@ -185,7 +185,7 @@ self.addEventListener('fetch', (event) => {
           if (response && response.status === 200 && response.type === 'basic') {
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache).catch(() => {});
+              cache.put(event.request, responseToCache).catch(() => { });
             });
           }
           return response;
@@ -202,7 +202,7 @@ self.addEventListener('fetch', (event) => {
 // Manejo de notificaciones push
 self.addEventListener('push', (event) => {
   console.log('[SW] Push recibido:', event);
-  
+
   let notificationData = {
     title: 'Recordatorio de Agenda',
     body: 'Nueva notificaciÃ³n',
@@ -258,7 +258,7 @@ function sanitizePushText(text) {
 // Manejo de clicks en notificaciones
 self.addEventListener('notificationclick', (event) => {
   console.log('[SW] Click en notificación:', event);
-  
+
   event.notification.close();
 
   if (event.action === 'close') {
@@ -302,17 +302,17 @@ function startPeriodicCheck() {
   console.log('[SW-AUTO] â•‘  Intervalo: cada 5 minutos                 â•‘');
   console.log('[SW-AUTO] â•‘  Ventana: 2 horas antes de la cita         â•‘');
   console.log('[SW-AUTO] â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
-  
+
   // Ejecutar inmediatamente
   console.log('[SW-AUTO] â° Ejecutando primer chequeo inmediato...');
   checkUpcomingAppointments();
-  
+
   // Luego cada 5 minutos
   const intervalId = setInterval(() => {
     console.log('[SW-AUTO] â° Ejecutando chequeo programado (5 min)...');
     checkUpcomingAppointments();
   }, CHECK_INTERVAL);
-  
+
   console.log(`[SW-AUTO] âœ… Interval ID: ${intervalId} - Service Worker activo`);
 }
 
@@ -325,18 +325,18 @@ async function checkUpcomingAppointments() {
   console.log(`[SW-AUTO] â•‘  ðŸ” CHEQUEO AUTOMÃTICO DE CITAS           â•‘`);
   console.log(`[SW-AUTO] â•‘  ${now}                  â•‘`);
   console.log(`[SW-AUTO] â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•`);
-  
+
   try {
     const token = await getAuthToken();
-    
+
     if (!token) {
       console.warn('[SW-AUTO] âŒ NO HAY TOKEN - Usuario no autenticado');
       console.warn('[SW-AUTO] ðŸ’¡ SoluciÃ³n: Abrir app y hacer login');
       return;
     }
-    
+
     console.log('[SW-AUTO] âœ… Token obtenido, haciendo request...');
-    
+
     // Consultar API
     const response = await fetch(
       `${API_BASE_URL}/api/appointments/upcoming-in-window?hours=${NOTIFICATION_WINDOW_HOURS}`,
@@ -347,32 +347,32 @@ async function checkUpcomingAppointments() {
         },
       }
     );
-    
+
     if (!response.ok) {
       console.error(`[SW-AUTO] âŒ Error en request: ${response.status} ${response.statusText}`);
       return;
     }
-    
+
     const result = await response.json();
     const appointments = result.data || [];
-    
+
     console.log(`[SW-AUTO] ðŸ“Š Respuesta del servidor:`);
     console.log(`[SW-AUTO]    â€¢ Citas en ventana de ${NOTIFICATION_WINDOW_HOURS}h: ${appointments.length}`);
-    
+
     if (appointments.length === 0) {
       console.log('[SW-AUTO] âœ… No hay citas prÃ³ximas en las prÃ³ximas 2 horas');
       return;
     }
-    
+
     console.log(`[SW-AUTO] ðŸ”” Procesando ${appointments.length} cita(s)...`);
-    
+
     // Procesar cada cita
     for (const appointment of appointments) {
       await processAppointment(appointment);
     }
-    
+
     console.log('[SW-AUTO] âœ… Chequeo completado exitosamente');
-    
+
   } catch (error) {
     console.error('[SW-AUTO] âŒ ERROR CRÃTICO en chequeo automÃ¡tico:');
     console.error('[SW-AUTO]', error);
@@ -386,28 +386,28 @@ async function processAppointment(appointment) {
   const appointmentId = appointment.id;
   const customerName = resolveCustomerName(appointment);
   const serviceName = resolveServiceName(appointment);
-  
+
   console.log(`[SW-AUTO] â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”`);
   console.log(`[SW-AUTO] ðŸ“… Procesando cita ID: ${appointmentId}`);
   console.log(`[SW-AUTO]    Cliente: ${customerName}`);
   console.log(`[SW-AUTO]    Servicio: ${serviceName}`);
   console.log(`[SW-AUTO]    Fecha/Hora: ${appointment.appointmentDate} ${appointment.appointmentTime}`);
-  
+
   // Verificar si ya notificamos esta cita
   const notifiedIds = await getNotifiedAppointments();
   if (notifiedIds.includes(appointmentId)) {
     console.log(`[SW-AUTO] â­ï¸  Cita ${appointmentId} ya fue notificada (skip)`);
     return;
   }
-  
+
   // Calcular tiempo restante
   const appointmentDateTime = new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}`);
   const now = new Date();
   const hoursUntil = (appointmentDateTime - now) / (1000 * 60 * 60);
   const minutesUntil = Math.round(hoursUntil * 60);
-  
+
   console.log(`[SW-AUTO]    â° Tiempo restante: ${hoursUntil.toFixed(2)}h (${minutesUntil} min)`);
-  
+
   // Si estÃ¡ dentro de la ventana de 2 horas, notificar
   if (hoursUntil <= NOTIFICATION_WINDOW_HOURS && hoursUntil > 0) {
     console.log(`[SW-AUTO]    âœ… DENTRO DE VENTANA â†’ Mostrando notificaciÃ³n`);
@@ -428,14 +428,14 @@ async function showAppointmentNotification(appointment, hoursUntil) {
   const firstName = customerName.split(' ')[0] || customerName;
   const serviceName = resolveServiceName(appointment);
   const appointmentTime = resolveAppointmentTime(appointment);
-  
+
   // Obtener templates del backend
   const templates = await getNotificationTemplates();
-  
+
   // Usar template de 2 horas si estÃ¡ en ventana
   const titleTemplate = templates.twoHourTitle;
   const bodyTemplate = templates.twoHourBody;
-  
+
   // Parsear variables
   const variables = {
     customerName,
@@ -448,12 +448,12 @@ async function showAppointmentNotification(appointment, hoursUntil) {
     businessName: 'BunnyCure',
     totalPrice: formatCurrency(getAppointmentTotal(appointment)),
   };
-  
+
   const title = sanitizePushTitle(parseTemplate(titleTemplate, variables));
   const body = parseTemplate(bodyTemplate, variables);
-  
+
   console.log(`[SW-AUTO] Mostrando notificación para cita ${appointment.id}`);
-  
+
   await self.registration.showNotification(title, {
     body,
     icon: '/icon-192.png',
@@ -502,7 +502,7 @@ async function getAuthToken() {
     const token = result.data?.token || null;
     cachedToken = token;
     return cachedToken;
-    
+
   } catch (error) {
     console.error('[SW-AUTO] Error obteniendo token:', error);
     return null;
@@ -568,38 +568,38 @@ async function getNotificationTemplates() {
       console.log('[SW-AUTO] Usando templates desde cache');
       return cached.data;
     }
-    
+
     // Obtener del backend
     const token = await getAuthToken();
     if (!token) {
       console.log('[SW-AUTO] No hay token, usando templates default');
       return DEFAULT_TEMPLATES;
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/settings`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!response.ok) {
       console.warn('[SW-AUTO] Error obteniendo templates del backend, usando default');
       return DEFAULT_TEMPLATES;
     }
-    
+
     const result = await response.json();
     const templates = result.data?.notificationTemplates || DEFAULT_TEMPLATES;
-    
+
     // Cachear templates
     await saveToIndexedDB(TEMPLATES_CACHE_KEY, {
       timestamp: Date.now(),
       data: templates,
     });
-    
+
     console.log('[SW-AUTO] Templates obtenidos del backend y cacheados');
     return templates;
-    
+
   } catch (error) {
     console.error('[SW-AUTO] Error obteniendo templates:', error);
     return DEFAULT_TEMPLATES;
@@ -611,12 +611,12 @@ async function getNotificationTemplates() {
  */
 function parseTemplate(template, variables) {
   let result = template;
-  
+
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{${key}}`;
     result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
   }
-  
+
   return result;
 }
 
