@@ -1,7 +1,9 @@
 import apiClient from './client';
 import { ApiResponse } from '../types/api.types';
 
-export const WEB_PUSH_SYNC_KEY = 'webpush_subscription_synced_endpoint';
+// v2: las suscripciones anteriores (anónimas) se desactivaron en el backend (V69);
+// el cambio de clave fuerza a cada dispositivo a re-registrarse con su usuario.
+export const WEB_PUSH_SYNC_KEY = 'webpush_subscription_synced_endpoint_v2';
 
 export interface WebPushSubscriptionRequest {
   endpoint: string;

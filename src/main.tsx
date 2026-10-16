@@ -8,6 +8,7 @@ import './styles/bunny-theme.css';
 import apiClient from './api/client';
 import { initializeGA } from './utils/analytics';
 import { getWebPushPublicKey, urlBase64ToUint8Array, WEB_PUSH_SYNC_KEY } from './api/webPush.api';
+import { getInMemoryToken } from './api/tokenStore';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn) {
@@ -31,6 +32,8 @@ if (sentryDsn) {
 const registerWebPushSubscription = async (registration: ServiceWorkerRegistration) => {
   if (!('PushManager' in window) || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
+  // El backend solo acepta suscripciones de usuarios autenticados (avisos de administración del salón).
+  if (!getInMemoryToken()) return;
 
   try {
     const publicKey = await getWebPushPublicKey();
@@ -112,6 +115,11 @@ if ('serviceWorker' in navigator) {
         });
 
         window.addEventListener('bunnycure-access-token-changed', () => {
+          // Al cerrar sesión se olvida el registro: el próximo usuario lo vuelve a ligar a su cuenta.
+          if (!getInMemoryToken()) {
+            localStorage.removeItem(WEB_PUSH_SYNC_KEY);
+            return;
+          }
           registerWebPushSubscription(registration);
         });
       })
