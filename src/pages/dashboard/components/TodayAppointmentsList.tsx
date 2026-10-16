@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CalendarDays } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -39,6 +39,14 @@ export const TodayAppointmentsList: React.FC<TodayAppointmentsListProps> = ({
     onCancelAppointment,
 }) => {
     const navigate = useNavigate();
+
+    const sortedAppointments = useMemo(() => {
+        return [...todayAppointments].sort((a, b) => {
+            const timeA = a.appointmentTime || '';
+            const timeB = b.appointmentTime || '';
+            return timeA.localeCompare(timeB);
+        });
+    }, [todayAppointments]);
 
     const todayTotalRevenue = todayAppointments
         .filter(apt => apt.status !== 'CANCELLED')
@@ -188,7 +196,7 @@ export const TodayAppointmentsList: React.FC<TodayAppointmentsListProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {todayAppointments.slice(0, 5).map((apt: Appointment, idx: number) => (
+                            {sortedAppointments.slice(0, 5).map((apt: Appointment, idx: number) => (
                                 <tr
                                     key={apt.id}
                                     style={{

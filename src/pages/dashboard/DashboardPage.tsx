@@ -216,9 +216,11 @@ export default function DashboardPage() {
     };
 
     const todayAppointments = useMemo(() => {
-        return appointments.filter(
-            (apt: Appointment) => apt.appointmentDate && isToday(parseISO(apt.appointmentDate))
-        );
+        return appointments
+            .filter(
+                (apt: Appointment) => apt.appointmentDate && isToday(parseISO(apt.appointmentDate))
+            )
+            .sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
     }, [appointments]);
 
     const todayUnavailabilities = useMemo(() => {
