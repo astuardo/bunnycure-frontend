@@ -40,6 +40,7 @@ import {
 import { useCalendarDisplayConfig } from '@/hooks/useCalendarDisplayConfig';
 import { getDayDotColors } from '@/utils/calendarDisplay';
 import { useToast } from '@/hooks/useToast';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { trackAppointmentCancelled } from '@/utils/analytics';
 import { useTenant } from '@/context/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,6 +58,7 @@ import { MonthCalendarPreview, MonthCalendarCell } from './components/MonthCalen
 
 export default function DashboardPage() {
     const toast = useToast();
+    const { hasFeature } = usePlanFeatures();
     const { tenant } = useTenant();
     const { user } = useAuth();
     const userRole = user?.role ? user.role.replace('ROLE_', '').toUpperCase() : 'SPECIALIST';
@@ -309,8 +311,8 @@ export default function DashboardPage() {
                     rescheduleRequestedAppointments={rescheduleRequestedAppointments}
                 />
 
-                {/* 4. Gestión de WhatsApp */}
-                <WhatsAppManagerWidget />
+                {/* 4. Gestión de WhatsApp (solo planes con WhatsApp) */}
+                {hasFeature('WHATSAPP_AUTOMATION') && <WhatsAppManagerWidget />}
 
                 {/* 5. Agenda del Día: Citas de Hoy */}
                 <TodayAppointmentsList
@@ -318,7 +320,21 @@ export default function DashboardPage() {
                     todayStats={todayStats}
                     todayUnavailabilities={todayUnavailabilities}
                     appointmentsLoading={appointmentsLoading}
-                    onCompleteAppointment={(aptId) => setCompleteDialog({ show: true, appointmentId: aptId })}
+                    onCompleteAppointment={async (aptId) => {
+                        if (hasFeature('INVENTORY')) {
+                            setCompleteDialog({ show: true, appointmentId: aptId });
+                            return;
+                        }
+                        // Sin inventario en el plan: se completa sin descontar insumos
+                        try {
+                            await updateAppointmentStatus(aptId, AppointmentStatus.COMPLETED);
+                            toast.success('Cita completada');
+                            await fetchAppointments();
+                            setDashboardStats(await statsApi.getDashboardStats());
+                        } catch {
+                            toast.error('No se pudo completar la cita');
+                        }
+                    }}
                     onCancelAppointment={handleCancelAppointment}
                 />
 

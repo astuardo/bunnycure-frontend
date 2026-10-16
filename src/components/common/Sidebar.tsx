@@ -9,6 +9,8 @@ import {
   ROLE_BADGE_VARIANTS,
 } from '../../types/user.types';
 import { Badge, BadgeVariant } from '../ui';
+import { PlanFeature } from '../../types/billing.types';
+import { FEATURE_MIN_PLAN, usePlanFeatures } from '../../hooks/usePlanFeatures';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -20,10 +22,13 @@ interface MenuItem {
   label: string;
   description: string;
   allowedRoles?: string[];
+  /** Funcionalidad de pago: si el plan no la incluye se muestra con candado. */
+  feature?: PlanFeature;
 }
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const { user } = useAuth();
+  const { hasFeature } = usePlanFeatures();
   const userRole = user?.role ? user.role.replace('ROLE_', '').toUpperCase() : 'SPECIALIST';
 
   const menuItems: MenuItem[] = [
@@ -58,6 +63,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       label: 'Campañas',
       description: 'Difusión WhatsApp',
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN'],
+      feature: 'MARKETING_CAMPAIGNS',
     },
     {
       path: '/analytics',
@@ -72,6 +78,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       label: 'Boletas SII',
       description: 'Trazabilidad BHE',
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'],
+      feature: 'SII_INVOICING',
     },
     {
       path: '/commissions',
@@ -79,6 +86,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       label: 'Comisiones',
       description: 'Honorarios y pagos',
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN'],
+      feature: 'COMMISSIONS',
     },
     {
       path: '/customers',
@@ -99,6 +107,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       label: 'Inventario',
       description: 'Productos y stock',
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN'],
+      feature: 'INVENTORY',
     },
     {
       path: '/giftcards',
@@ -106,6 +115,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       label: 'GiftCards',
       description: 'Venta y canje',
       allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'],
+      feature: 'GIFT_CARDS',
     },
     {
       path: '/booking-requests',
@@ -133,6 +143,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       label: 'Salones SaaS',
       description: 'Gestión de salones',
       allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    },
+    {
+      path: '/suscripcion',
+      icon: '💳',
+      label: 'Mi suscripción',
+      description: 'Plan y pagos',
+      allowedRoles: ['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN'],
     },
     {
       path: '/settings',
@@ -201,7 +218,17 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             >
               <span className="text-lg shrink-0 leading-none">{item.icon}</span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium leading-tight truncate">{item.label}</div>
+                <div className="text-sm font-medium leading-tight truncate flex items-center gap-1.5">
+                  <span className="truncate">{item.label}</span>
+                  {item.feature && !hasFeature(item.feature) && (
+                    <span
+                      className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-bunny-blush text-bunny-cocoa border border-bunny-border"
+                      title={`Disponible desde el plan ${FEATURE_MIN_PLAN[item.feature].name}`}
+                    >
+                      🔒 {FEATURE_MIN_PLAN[item.feature].name}
+                    </span>
+                  )}
+                </div>
                 <span className="block text-[11px] text-bunny-text-muted font-normal truncate mt-0.5">
                   {item.description}
                 </span>

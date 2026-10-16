@@ -16,6 +16,7 @@ import DashboardLayout from '../../components/common/DashboardLayout';
 import { tenantsApi } from '../../api/tenants.api';
 import { TenantAdmin, TenantCreateFormData, TenantUpdateFormData } from '../../types/tenant.types';
 import { TenantFormModal } from '../../components/admin/TenantFormModal';
+import { TenantBillingModal } from '../../components/admin/TenantBillingModal';
 import { useToast } from '../../hooks/useToast';
 import { Card, Button, Badge, BadgeVariant, Spinner, Modal, Input } from '../../components/ui';
 
@@ -32,6 +33,7 @@ export default function TenantsPage() {
   const [editingTenant, setEditingTenant] = useState<TenantAdmin | null>(null);
 
   const [statusCandidate, setStatusCandidate] = useState<TenantAdmin | null>(null);
+  const [billingTenant, setBillingTenant] = useState<TenantAdmin | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchTenants = useCallback(async () => {
@@ -381,6 +383,10 @@ export default function TenantsPage() {
                       </button>
                     )}
 
+                    <Button variant="outline" size="sm" onClick={() => setBillingTenant(t)}>
+                      💳 Suscripción
+                    </Button>
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -405,6 +411,18 @@ export default function TenantsPage() {
           onHide={() => setShowModal(false)}
           onSave={handleCreateOrUpdate}
         />
+
+        {/* Cobro manual y ajustes de suscripción */}
+        {billingTenant && (
+          <TenantBillingModal
+            tenantId={billingTenant.id}
+            tenantName={billingTenant.name}
+            onHide={() => {
+              setBillingTenant(null);
+              fetchTenants();
+            }}
+          />
+        )}
 
         {/* Modal de Confirmación de Cambio de Estado */}
         {statusCandidate && (

@@ -14,6 +14,8 @@ export interface ErrorResponse {
   message: string;
   errorCode: string;
   fieldErrors?: FieldError[];
+  /** Datos adicionales (p.ej. plan requerido en errores 402). */
+  details?: Record<string, unknown>;
 }
 
 export interface FieldError {

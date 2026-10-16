@@ -6,12 +6,14 @@ import { ServiceCatalog, ServiceFormData } from '../../types/service.types';
 import { Product, ServiceCostSummary } from '@/types/inventory.types';
 import { inventoryApi } from '@/api/inventory.api';
 import ServiceSuppliesModal from '@/components/services/ServiceSuppliesModal';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input, Textarea } from '@/components/ui';
 
 export default function ServicesPage() {
   const toast = useToast();
+  const canUseInventory = usePlanFeatures().hasFeature('INVENTORY');
   const {
     services,
     isLoading,
@@ -60,10 +62,13 @@ export default function ServicesPage() {
 
   useEffect(() => {
     fetchServices();
+    if (!canUseInventory) {
+      return; // insumos y costos solo en planes con inventario
+    }
     void (async () => {
       await loadSuppliesAndProducts();
     })();
-  }, [fetchServices, loadSuppliesAndProducts]);
+  }, [fetchServices, loadSuppliesAndProducts, canUseInventory]);
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);

@@ -4,9 +4,28 @@
  */
 
 import axios, { type AxiosRequestConfig } from 'axios';
+import { toast } from 'react-toastify';
 import { refreshAccessToken } from './authSession';
 import { setInMemoryToken, getInMemoryToken } from './tokenStore';
 import { isPublicPath } from '../utils/publicRoutes';
+
+/**
+ * Respuesta 402 del backend (PlanAccessInterceptor):
+ * - SUBSCRIPTION_SUSPENDED: lleva a "Mi suscripción" (accesible aunque esté suspendida).
+ * - PLAN_FEATURE_REQUIRED / PLAN_LIMIT_REACHED: aviso con el mensaje del backend.
+ * Un único toast por código para no repetirlo si varias peticiones fallan a la vez.
+ */
+const handlePaymentRequired = (apiError?: { message?: string; errorCode?: string }) => {
+  if (typeof window === 'undefined') return;
+  const code = apiError?.errorCode || 'PAYMENT_REQUIRED';
+  if (code === 'SUBSCRIPTION_SUSPENDED') {
+    if (!window.location.pathname.startsWith('/suscripcion')) {
+      window.location.href = '/suscripcion';
+    }
+    return;
+  }
+  toast.warn(apiError?.message || 'Esta función no está incluida en el plan de tu salón.', { toastId: code });
+};
 
 interface RetryableRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
@@ -94,6 +113,12 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // 402: el plan o la suscripción del salón no permiten la operación
+    if (error.response?.status === 402) {
+      handlePaymentRequired(error.response.data?.error);
+      return Promise.reject(error);
+    }
+
     // Solo manejar errores de autenticación en requests que NO son login/checkAuth
     const isAuthRequest = error.config?.url?.includes('/api/auth/login') || 
                           error.config?.url?.includes('/api/auth/me') ||

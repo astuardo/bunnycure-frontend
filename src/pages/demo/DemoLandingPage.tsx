@@ -719,14 +719,12 @@ export default function DemoLandingPage() {
                 </ul>
               </div>
 
-              <a
-                href={whatsappDemoLink}
-                target="_blank"
-                rel="noreferrer"
+              <Link
+                to="/registro?plan=STANDARD"
                 className="w-full text-center py-3 rounded-full border border-[#EAD8D0] text-[#5C3D2E] text-xs font-bold hover:bg-[#F5ECE7] transition-all"
               >
-                Contratar Plan Emprendedora
-              </a>
+                Probar Emprendedora gratis 14 días
+              </Link>
             </div>
 
             {/* Plan 2: Studio Pro (DESTACADO) */}
@@ -787,14 +785,12 @@ export default function DemoLandingPage() {
                 </ul>
               </div>
 
-              <a
-                href={whatsappDemoLink}
-                target="_blank"
-                rel="noreferrer"
+              <Link
+                to="/registro?plan=PRO"
                 className="w-full text-center py-3.5 rounded-full bg-white text-[#3B2219] text-xs font-bold hover:bg-[#F5ECE7] active:scale-95 transition-all shadow-md"
               >
-                Comenzar con Studio Pro ↗
-              </a>
+                Probar Studio Pro gratis 14 días
+              </Link>
             </div>
 
             {/* Plan 3: Franquicia / Multi-Salón */}

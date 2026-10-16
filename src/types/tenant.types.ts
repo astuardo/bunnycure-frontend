@@ -18,6 +18,11 @@ export interface TenantInfo {
   nightBlock?: string;
   active: boolean;
   planTier: string;
+  /** Nombre comercial del plan (Emprendedora, Studio Pro, Franquicias). */
+  planName?: string;
+  /** Funcionalidades de pago incluidas; undefined en backends anteriores (= todas). */
+  features?: string[];
+  subscriptionStatus?: string;
 }
 
 export const DEFAULT_TENANT: TenantInfo = {

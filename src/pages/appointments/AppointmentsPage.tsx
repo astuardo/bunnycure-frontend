@@ -23,6 +23,7 @@ import { trackAppointmentCancelled } from '../../utils/analytics';
 import { getAppointmentTotal, getAppointmentServices, extractAppointmentGiftCardInfo } from '../../utils/appointmentUtils';
 import { matchRutSearch } from '../../utils/rutUtils';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
+import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { GiftCard, GiftCardCreateRequest, GiftCardItem, GiftCardRedeemItemRequest } from '../../types/giftcard.types';
 import { toWhatsAppPhone } from '../../utils/giftcardRenderer';
 import { AppointmentSchedulePicker } from '../../components/appointments/AppointmentSchedulePicker';
@@ -70,6 +71,8 @@ export default function AppointmentsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
+  const { hasFeature } = usePlanFeatures();
+  const canUseGiftCards = hasFeature('GIFT_CARDS');
   const {
     appointments,
     isLoading,
@@ -164,7 +167,9 @@ export default function AppointmentsPage() {
     fetchAppointments();
     fetchCustomers();
     fetchServices(true);
-    fetchGiftCards();
+    if (canUseGiftCards) {
+      fetchGiftCards();
+    }
 
     settingsApi.getAll().then((data) => {
       if (data.unavailabilities && data.unavailabilities.length > 0) {
@@ -174,7 +179,7 @@ export default function AppointmentsPage() {
         setUnavailabilityColors(data.unavailabilityColors);
       }
     }).catch((err) => console.error('Error fetching unavailabilities in AppointmentsPage:', err));
-  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards]);
+  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards, canUseGiftCards]);
 
   // Efecto para abrir el modal de edición o agendar próxima cita automáticamente si viene el ID en la URL
   useEffect(() => {
@@ -930,8 +935,19 @@ export default function AppointmentsPage() {
 
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
     if (status === AppointmentStatus.COMPLETED) {
-      setCompletingAppointmentId(id);
-      setShowCompleteModal(true);
+      if (hasFeature('INVENTORY')) {
+        setCompletingAppointmentId(id);
+        setShowCompleteModal(true);
+        return;
+      }
+      // Sin inventario en el plan: se completa sin descontar insumos (mismo cierre en el backend)
+      try {
+        await updateAppointmentStatus(id, status);
+        toast.success('Cita completada');
+        fetchAppointments();
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, 'Error al completar la cita'));
+      }
       return;
     }
 

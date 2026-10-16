@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import PlanFeatureGate from '../components/billing/PlanFeatureGate';
 import { usePageViewTracking } from '../hooks/usePageViewTracking';
 import { useAuthStore } from '../stores/authStore';
 import { getSavedPassId, isStaffDevice } from '../utils/publicRoutes';
@@ -37,6 +38,10 @@ const TestApiPage = lazy(() => import('../pages/TestApiPage'));
 const DemoLandingPage = lazy(() => import('../pages/demo/DemoLandingPage'));
 const TermsOfServicePage = lazy(() => import('../pages/legal/TermsOfServicePage'));
 const PrivacyPolicyPage = lazy(() => import('../pages/legal/PrivacyPolicyPage'));
+const PlatformLegalPage = lazy(() => import('../pages/legal/PlatformLegalPage'));
+const SignupPage = lazy(() => import('../pages/signup/SignupPage'));
+const VerifyEmailPage = lazy(() => import('../pages/signup/VerifyEmailPage'));
+const SubscriptionPage = lazy(() => import('../pages/billing/SubscriptionPage'));
 
 /**
  * Pantalla de carga con estilo elegante BunnyCure para transiciones de ruta
@@ -133,6 +138,10 @@ function RoutesWithTracking() {
                 <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route path="/privacidad" element={<PrivacyPolicyPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                {/* Registro autoservicio y documentos legales de la plataforma (relación plataforma ↔ salón) */}
+                <Route path="/registro" element={<SignupPage />} />
+                <Route path="/registro/verificar" element={<VerifyEmailPage />} />
+                <Route path="/plataforma/:document" element={<PlatformLegalPage />} />
 
                 {/* Rutas Protegidas Universales */}
                 <Route
@@ -203,7 +212,7 @@ function RoutesWithTracking() {
                     path="/giftcards"
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
-                            <GiftCardsPage />
+                            <PlanFeatureGate feature="GIFT_CARDS"><GiftCardsPage /></PlanFeatureGate>
                         </RoleProtectedRoute>
                     }
                 />
@@ -212,7 +221,7 @@ function RoutesWithTracking() {
                     path="/giftcards/generar"
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
-                            <GenerateGiftCardPage />
+                            <PlanFeatureGate feature="GIFT_CARDS"><GenerateGiftCardPage /></PlanFeatureGate>
                         </RoleProtectedRoute>
                     }
                 />
@@ -239,7 +248,7 @@ function RoutesWithTracking() {
                     path="/marketing"
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
-                            <MarketingCampaignsPage />
+                            <PlanFeatureGate feature="MARKETING_CAMPAIGNS"><MarketingCampaignsPage /></PlanFeatureGate>
                         </RoleProtectedRoute>
                     }
                 />
@@ -257,7 +266,7 @@ function RoutesWithTracking() {
                     path="/invoices"
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST']}>
-                            <InvoicesPage />
+                            <PlanFeatureGate feature="SII_INVOICING"><InvoicesPage /></PlanFeatureGate>
                         </RoleProtectedRoute>
                     }
                 />
@@ -266,7 +275,7 @@ function RoutesWithTracking() {
                     path="/commissions"
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
-                            <CommissionsPage />
+                            <PlanFeatureGate feature="COMMISSIONS"><CommissionsPage /></PlanFeatureGate>
                         </RoleProtectedRoute>
                     }
                 />
@@ -276,7 +285,7 @@ function RoutesWithTracking() {
                     path="/products"
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
-                            <ProductsPage />
+                            <PlanFeatureGate feature="INVENTORY"><ProductsPage /></PlanFeatureGate>
                         </RoleProtectedRoute>
                     }
                 />
@@ -286,6 +295,15 @@ function RoutesWithTracking() {
                     element={
                         <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
                             <UsersPage />
+                        </RoleProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/suscripcion"
+                    element={
+                        <RoleProtectedRoute allowedRoles={['SALON_ADMIN', 'ADMIN', 'SUPER_ADMIN']}>
+                            <SubscriptionPage />
                         </RoleProtectedRoute>
                     }
                 />

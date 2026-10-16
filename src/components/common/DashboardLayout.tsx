@@ -6,6 +6,7 @@ import { SpotlightSearchModal } from './SpotlightSearchModal';
 import { CashClosingModal } from '../finances/CashClosingModal';
 import { CamiLoveModal } from './CamiLoveModal';
 import { useTenant } from '../../context/TenantContext';
+import SubscriptionBanner from '../billing/SubscriptionBanner';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -109,6 +110,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Main content con scroll independiente y contención de overscroll */}
         <main className="flex-1 min-w-0 w-full md:w-[calc(100%-250px)] h-full overflow-x-hidden md:overflow-y-auto md:overscroll-contain custom-scrollbar pb-4 md:pb-0">
+          <SubscriptionBanner />
           {children}
         </main>
       </div>

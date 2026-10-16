@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTenant } from '../../context/TenantContext';
 import { APP_BUILD_ID_SHORT } from '../../config/buildInfo';
 import { Card, CardBody, CardFooter, Button, Input, Alert } from '../../components/ui';
+import { billingApi } from '../../api/billing.api';
 
 const loginSchema = yup.object({
     username: yup.string().required('El usuario es requerido'),
@@ -27,9 +28,12 @@ export default function LoginPage() {
     const [dismissedVersionChanged, setDismissedVersionChanged] = useState(false);
     const [dismissedErrorMessage, setDismissedErrorMessage] = useState<string | null>(null);
 
+    const [verificationResent, setVerificationResent] = useState(false);
+
     const {
         register,
         handleSubmit,
+        getValues,
         formState: { errors, isSubmitting },
     } = useForm<LoginFormData>({
         resolver: yupResolver(loginSchema),
@@ -133,6 +137,20 @@ export default function LoginPage() {
                                 className="mb-4"
                             >
                                 {error}
+                                {/* Registro autoservicio sin verificar (EMAIL_NOT_VERIFIED) */}
+                                {error.startsWith('Confirma tu email') && (
+                                    <button
+                                        type="button"
+                                        className="block mt-2 text-xs font-semibold underline"
+                                        disabled={verificationResent}
+                                        onClick={async () => {
+                                            await billingApi.resendVerification(getValues('username')).catch(() => undefined);
+                                            setVerificationResent(true);
+                                        }}
+                                    >
+                                        {verificationResent ? 'Te enviamos un nuevo enlace' : 'Reenviar el enlace de verificación'}
+                                    </button>
+                                )}
                             </Alert>
                         )}
 
@@ -186,6 +204,14 @@ export default function LoginPage() {
                                 >
                                     <span>✨</span> Conoce las funciones y planes del software ↗
                                 </Link>
+                                <div className="mt-2">
+                                    <Link
+                                        to="/registro"
+                                        className="text-xs font-medium text-bunny-text-muted hover:text-bunny-primary underline-offset-4 hover:underline"
+                                    >
+                                        ¿Tienes un salón? Crea tu cuenta gratis
+                                    </Link>
+                                </div>
                             </div>
                         </form>
                     </CardBody>

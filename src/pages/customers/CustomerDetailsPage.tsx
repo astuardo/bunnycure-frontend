@@ -18,6 +18,7 @@ import { normalizeGiftCardPublicUrl } from '../../utils/giftcardUrl';
 import { customersApi } from '../../api/customers.api';
 import { appointmentsApi } from '../../api/appointments.api';
 import { giftcardsApi } from '../../api/giftcards.api';
+import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { Button, Badge, Card, Spinner, Alert } from '@/components/ui';
 
 export default function CustomerDetailsPage() {
@@ -29,6 +30,7 @@ export default function CustomerDetailsPage() {
     adjustCustomerLoyalty,
     syncCustomerVisits
   } = useCustomersStore();
+  const canUseGiftCards = usePlanFeatures().hasFeature('GIFT_CARDS');
 
   const [customerAppointments, setCustomerAppointments] = useState<Appointment[]>([]);
   const [customerAppointmentsLoading, setCustomerAppointmentsLoading] = useState(false);
@@ -103,10 +105,12 @@ export default function CustomerDetailsPage() {
           .finally(() => setDirectCustomerLoading(false));
 
         loadCustomerAppointments(cId);
-        loadCustomerGiftCards(cId);
+        if (canUseGiftCards) {
+          loadCustomerGiftCards(cId);
+        }
       }
     }
-  }, [id, loadCustomerAppointments, loadCustomerGiftCards]);
+  }, [id, loadCustomerAppointments, loadCustomerGiftCards, canUseGiftCards]);
 
   const customer = directCustomer;
 
