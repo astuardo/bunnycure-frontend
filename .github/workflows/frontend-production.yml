@@ -37,6 +37,9 @@ jobs:
       - name: Run Unit Tests (Vitest)
         run: npm run test
 
+      - name: Build Production Bundle (Vite)
+        run: npm run build
+
       - name: Install Playwright Browsers with dependencies
         run: npx playwright install --with-deps
 

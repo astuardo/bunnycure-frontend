@@ -21,7 +21,7 @@ if (sentryDsn) {
         blockAllMedia: true,
       }),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.1,
     tracePropagationTargets: ['localhost', 'api.bunnycure.cl', /^\/api/],
     replaysSessionSampleRate: 0.0,
     replaysOnErrorSampleRate: 1.0,
