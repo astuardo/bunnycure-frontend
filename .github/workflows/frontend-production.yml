@@ -32,7 +32,7 @@ jobs:
         run: npm run lint
 
       - name: TypeScript Typecheck
-        run: npx tsc --noEmit
+        run: npx tsc -b --noEmit
 
       - name: Run Unit Tests (Vitest)
         run: npm run test
@@ -50,3 +50,46 @@ jobs:
           name: playwright-report-production
           path: playwright-report/
           retention-days: 14
+
+  deploy:
+    name: 🚀 Deploy to Vercel Production
+    needs: gatekeeper
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Vercel secrets are configured
+        run: |
+          for var in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Missing repository secret $var"
+              exit 1
+            fi
+          done
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment (production)
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=$VERCEL_TOKEN
+
+      - name: Deploy Prebuilt Artifacts to Vercel Production
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          echo "### 🚀 Frontend Producción Desplegado a Vercel!" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL:** $url" >> $GITHUB_STEP_SUMMARY

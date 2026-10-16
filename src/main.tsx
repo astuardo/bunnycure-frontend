@@ -17,13 +17,13 @@ if (sentryDsn) {
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
+        maskAllText: true,
+        blockAllMedia: true,
       }),
     ],
     tracesSampleRate: 1.0,
     tracePropagationTargets: ['localhost', 'api.bunnycure.cl', /^\/api/],
-    replaysSessionSampleRate: 0.1,
+    replaysSessionSampleRate: 0.0,
     replaysOnErrorSampleRate: 1.0,
   });
 }

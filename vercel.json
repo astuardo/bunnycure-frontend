@@ -1,5 +1,21 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
   "rewrites": [
+    {
+      "source": "/mi-tarjeta/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Twitterbot|TelegramBot|Slackbot|LinkedInBot).*"
+        }
+      ],
+      "destination": "https://api.bunnycure.cl/mi-tarjeta/:id"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
