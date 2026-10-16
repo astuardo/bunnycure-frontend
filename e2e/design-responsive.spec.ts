@@ -93,8 +93,13 @@ async function setupAuthenticatedSession(page: Page) {
     });
   });
 
-  await page.addInitScript(() => {
-    window.localStorage.setItem('bunnycure-access-token', 'mock-valid-jwt-token');
+  // La sesión se recupera desde la cookie HttpOnly de refresh (el access token vive solo en memoria)
+  await page.route('**/api/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { token: 'mock-valid-jwt-token' } }),
+    });
   });
 
   page.on('pageerror', (err) => console.log('PAGE ERROR:', err.message));

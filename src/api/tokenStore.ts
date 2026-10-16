@@ -1,7 +1,24 @@
-const ACCESS_TOKEN_KEY = 'bunnycure-access-token';
+/**
+ * Access token (JWT de vida corta) SOLO en memoria.
+ *
+ * No se persiste en localStorage: cualquier script inyectado (XSS) podría leerlo y llevárselo.
+ * Al recargar la página, la sesión se recupera desde la cookie de refresh (HttpOnly, Secure,
+ * inaccesible desde JavaScript): authStore.checkAuth → /api/auth/refresh → nuevo access token.
+ */
 
-let memoryToken: string | null =
-  typeof window !== 'undefined' ? window.localStorage.getItem(ACCESS_TOKEN_KEY) : null;
+/** Clave usada por versiones anteriores, que guardaban el token en localStorage. */
+const LEGACY_ACCESS_TOKEN_KEY = 'bunnycure-access-token';
+
+// Limpieza única: elimina el token que dejaron versiones anteriores en el navegador.
+if (typeof window !== 'undefined') {
+  try {
+    window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+  } catch {
+    // Storage no disponible (modo privado estricto): no hay nada que limpiar
+  }
+}
+
+let memoryToken: string | null = null;
 
 const notifyTokenChange = () => {
   if (typeof window !== 'undefined') {
@@ -11,34 +28,12 @@ const notifyTokenChange = () => {
 
 export const setInMemoryToken = (token: string | null) => {
   memoryToken = token;
-  if (typeof window !== 'undefined') {
-    if (token) {
-      window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
-    } else {
-      window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-    }
-  }
   notifyTokenChange();
 };
 
-export const getInMemoryToken = (): string | null => {
-  if (memoryToken) return memoryToken;
-
-  if (typeof window !== 'undefined') {
-    const stored = window.localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (stored) {
-      memoryToken = stored;
-      return stored;
-    }
-  }
-
-  return null;
-};
+export const getInMemoryToken = (): string | null => memoryToken;
 
 export const clearInMemoryToken = () => {
   memoryToken = null;
-  if (typeof window !== 'undefined') {
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  }
   notifyTokenChange();
 };
