@@ -4,7 +4,7 @@
  * Incluye chequeo automÃ¡tico de citas prÃ³ximas para notificaciones
  */
 
-const CACHE_NAME = 'bunnycure-v4';
+const CACHE_NAME = 'bunnycure-v5';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -13,7 +13,7 @@ const urlsToCache = [
 ];
 
 const API_BASE_URL = 'https://api.bunnycure.cl';
-const CHECK_INTERVAL = 15 * 60 * 1000; // 5 minutos
+const CHECK_INTERVAL = 15 * 60 * 1000; // 15 minutos
 const NOTIFICATION_WINDOW_HOURS = 2; // Notificar 2 horas antes
 const NOTIFIED_APPOINTMENTS_KEY = 'notified_appointments';
 const TEMPLATES_CACHE_KEY = 'notification_templates';
@@ -299,7 +299,7 @@ self.addEventListener('notificationclose', (event) => {
 function startPeriodicCheck() {
   console.log('[SW-AUTO] â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
   console.log('[SW-AUTO] â•‘  Iniciando chequeo periÃ³dico de citas     â•‘');
-  console.log('[SW-AUTO] â•‘  Intervalo: cada 5 minutos                 â•‘');
+  console.log('[SW-AUTO] â•‘  Intervalo: cada 15 minutos                â•‘');
   console.log('[SW-AUTO] â•‘  Ventana: 2 horas antes de la cita         â•‘');
   console.log('[SW-AUTO] â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
 
