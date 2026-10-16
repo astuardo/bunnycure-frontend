@@ -47,7 +47,7 @@ test.describe('Pruebas de Regresión Visual Pixel-Perfect (Visual Snapshots)', (
     await page.evaluate(() => document.fonts.ready);
 
     // Capturar snapshot visual de la tarjeta de login
-    const loginCard = page.locator('.card');
+    const loginCard = page.locator('.shadow-bunny-lg').first();
     await expect(loginCard).toBeVisible();
     await expect(loginCard).toHaveScreenshot('login-card.png', {
       animations: 'disabled',
@@ -59,12 +59,12 @@ test.describe('Pruebas de Regresión Visual Pixel-Perfect (Visual Snapshots)', (
     await page.goto('/reservar');
 
     // Esperar a que el catálogo esté montado y las fuentes listas
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible();
     await expect(page.getByText('Manicure Rusa con Esmaltado Permanente')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
 
     // Capturar snapshot del contenedor principal del portal
-    const bookingContainer = page.locator('.container').first();
+    const bookingContainer = page.locator('.max-w-xl').first();
     await expect(bookingContainer).toBeVisible();
     await expect(bookingContainer).toHaveScreenshot('booking-step-1.png', {
       animations: 'disabled',
@@ -75,7 +75,7 @@ test.describe('Pruebas de Regresión Visual Pixel-Perfect (Visual Snapshots)', (
   test('Snapshot: Portal Público de Reservas - Paso 2 Horarios', async ({ page }) => {
     await page.goto('/reservar');
 
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible();
     await expect(page.getByText('Manicure Rusa con Esmaltado Permanente')).toBeVisible();
 
     const nextBtn = page.getByRole('button', { name: /continuar a fecha y hora/i });
@@ -85,7 +85,7 @@ test.describe('Pruebas de Regresión Visual Pixel-Perfect (Visual Snapshots)', (
     await expect(page.getByRole('heading', { name: /¿cuándo te gustaría venir\?/i })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
 
-    const bookingContainer = page.locator('.container').first();
+    const bookingContainer = page.locator('.max-w-xl').first();
     await expect(bookingContainer).toHaveScreenshot('booking-step-2.png', {
       animations: 'disabled',
       maxDiffPixelRatio: 0.03,

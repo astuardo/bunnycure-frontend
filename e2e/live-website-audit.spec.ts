@@ -2,7 +2,10 @@ import { test, expect } from '@playwright/test';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const ARTIFACTS_DIR = 'C:/Users/alfre/.gemini/antigravity-ide/brain/6a630742-457d-4c04-bc8e-19a44e95022a';
+const ARTIFACTS_DIR = process.env.ARTIFACTS_DIR || path.join(process.cwd(), 'scratch');
+if (!fs.existsSync(ARTIFACTS_DIR)) {
+  fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
+}
 
 test.describe('Auditoría Integral en Vivo de www.bunnycure.cl', () => {
   test('audita la landing page en vivo, captura pantallas y revisa enlaces', async ({ page }, testInfo) => {

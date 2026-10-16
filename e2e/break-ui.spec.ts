@@ -48,7 +48,7 @@ test.describe('Adversarial UI Stress Testing (break-ui)', () => {
     });
 
     await page.goto('/reservar');
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible();
 
     // 1. Verificar que el precio de $1.250.000 sea visible y no se rompa
     await expect(page.getByText('$1.250.000', { exact: true })).toBeVisible();
@@ -61,15 +61,15 @@ test.describe('Adversarial UI Stress Testing (break-ui)', () => {
 
     // 3. Evaluar integridad visual de las tarjetas de servicios (que el checkbox y el precio no se compriman a 0)
     const cardMetrics = await page.evaluate(() => {
-      const cards = document.querySelectorAll('.card-body .d-flex.justify-content-between');
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
       const results: { text: string; priceWidth: number; priceVisible: boolean }[] = [];
-      cards.forEach((card) => {
-        const checkbox = card.querySelector('input[type="checkbox"]');
-        const price = card.querySelector('.text-end');
+      checkboxes.forEach((checkbox) => {
+        const card = checkbox.closest('.cursor-pointer') || checkbox.closest('div.border');
+        const price = card?.querySelector('.shrink-0') || card?.querySelector('span.font-bold');
         if (checkbox && price) {
           const width = price.getBoundingClientRect().width;
           results.push({
-            text: (card.textContent || '').slice(0, 30),
+            text: (card?.textContent || '').slice(0, 30),
             priceWidth: width,
             priceVisible: width > 10,
           });
@@ -101,7 +101,7 @@ test.describe('Adversarial UI Stress Testing (break-ui)', () => {
     });
 
     await page.goto('/reservar');
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible();
 
     // Avanzar a Paso 2
     const step1Next = page.getByRole('button', { name: /continuar a fecha y hora/i });
@@ -150,7 +150,7 @@ test.describe('Adversarial UI Stress Testing (break-ui)', () => {
     });
 
     await page.goto('/reservar');
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible();
 
     // Mensaje de estado vacío
     await expect(page.getByText(/no hay servicios disponibles en este momento/i)).toBeVisible();

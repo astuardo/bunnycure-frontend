@@ -43,7 +43,7 @@ test.describe('Flujo Público de Reservas (/reservar)', () => {
     await page.goto('/reservar');
 
     // Esperar a que el componente lazy monte y muestre la cabecera BunnyCure
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible({ timeout: 10000 });
 
     // Debe mostrar la selección del paso 1
     await expect(page.getByRole('heading', { name: /selecciona el servicio que deseas/i })).toBeVisible();
@@ -58,7 +58,7 @@ test.describe('Flujo Público de Reservas (/reservar)', () => {
     await page.goto('/reservar');
 
     // Esperar a que el componente lazy monte
-    await expect(page.getByText(/estudio de manicure & cuidado de uñas/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /bunnycure/i })).toBeVisible({ timeout: 10000 });
 
     // Paso 1: Servicios ya cargados y primer servicio preseleccionado
     const step1Next = page.getByRole('button', { name: /continuar a fecha y hora/i });
