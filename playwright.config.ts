@@ -12,7 +12,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Runners de GitHub tienen 4 vCPU; 2 workers acortan la suite sin saturar el servidor de desarrollo
+  workers: process.env.CI ? 2 : undefined,
   reporter: [
     ['html', { open: 'never' }],
     ['list']

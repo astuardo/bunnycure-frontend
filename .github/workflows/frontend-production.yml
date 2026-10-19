@@ -31,17 +31,32 @@ jobs:
       - name: Run ESLint Verification
         run: npm run lint
 
-      - name: TypeScript Typecheck
-        run: npx tsc -b --noEmit
-
       - name: Run Unit Tests (Vitest)
         run: npm run test
 
-      - name: Build Production Bundle (Vite)
+      # npm run build ya ejecuta tsc -b (typecheck) antes de vite build
+      - name: Typecheck & Build Production Bundle (Vite)
         run: npm run build
 
-      - name: Install Playwright Browsers with dependencies
-        run: npx playwright install --with-deps
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-chromium
+
+      # Los proyectos E2E solo usan Chromium (Desktop Chrome y Pixel 7)
+      - name: Install Playwright Chromium with dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies (browsers cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Run Playwright E2E Tests
         run: npm run test:e2e
@@ -82,7 +97,7 @@ jobs:
           done
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@64.5.0
 
       - name: Pull Vercel Environment (production)
         run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
