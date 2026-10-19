@@ -68,6 +68,20 @@ export function extractCancellationReason(apt: Appointment): string {
 }
 
 /**
+ * Quita de las notas los bloques que agrega el sistema y que pertenecen solo a esa cita
+ * (bloque "--- CANCELACIÓN ---" y etiquetas "[Pago con GiftCard ...]"), para no heredarlos
+ * al agendar la próxima cita de la clienta.
+ */
+export function stripSystemNoteBlocks(notes?: string | null): string {
+  if (!notes) return '';
+  return notes
+    .replace(/---\s*CANCELACI[ÓO]N\s*---[\s\S]*?(?=\n\s*\n|$)/gi, '')
+    .replace(/\[Pago con GiftCard[^\]]*\]/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
  * Extrae el originador de la cancelación (Manicurista / Salón vs Cliente) desde las notas
  */
 export function extractCancellationInitiator(apt: Appointment): CancellationInitiator {

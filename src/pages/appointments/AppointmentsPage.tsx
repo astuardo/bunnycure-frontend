@@ -11,7 +11,7 @@ import { CancelAppointmentDialog, CancelledByOption } from '../../components/app
 import { AppointmentsList } from '../../components/appointments/AppointmentsList';
 import { CompleteAppointmentWithSuppliesModal } from '../../components/appointments/CompleteAppointmentWithSuppliesModal';
 import { AppointmentNotificationsModal } from '../../components/appointments/AppointmentNotificationsModal';
-import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { useAppointmentsStore, AppointmentListFilters } from '../../stores/appointmentsStore';
 import { useCustomersStore } from '../../stores/customersStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { AppointmentStatus, AppointmentCreateRequest, AppointmentUpdateRequest, Appointment } from '../../types/appointment.types';
@@ -19,7 +19,7 @@ import { appointmentsApi } from '../../api/appointments.api';
 import { format } from 'date-fns';
 import { useToast } from '../../hooks/useToast';
 import { trackAppointmentCancelled } from '../../utils/analytics';
-import { getAppointmentTotal, getAppointmentServices, extractAppointmentGiftCardInfo } from '../../utils/appointmentUtils';
+import { getAppointmentTotal, getAppointmentServices, extractAppointmentGiftCardInfo, stripSystemNoteBlocks } from '../../utils/appointmentUtils';
 import { matchRutSearch } from '../../utils/rutUtils';
 import { useGiftCardsStore } from '../../stores/giftcardsStore';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
@@ -47,6 +47,12 @@ import { AppointmentFormState, CustomChargeItem, CreateStep, formatCurrency, App
 
 
 type AppointmentStatusFilter = AppointmentStatus | 'ACTIVE' | 'ALL';
+
+const ACTIVE_STATUSES: AppointmentStatus[] = [
+  AppointmentStatus.PENDING,
+  AppointmentStatus.CONFIRMED,
+  AppointmentStatus.RESCHEDULE_REQUESTED,
+];
 
 
 export default function AppointmentsPage() {
@@ -145,8 +151,29 @@ export default function AppointmentsPage() {
     return fallback;
   };
 
+  // Filtros de estado y fecha se aplican en el servidor: así las citas completadas/canceladas
+  // y el historial antiguo no quedan fuera de la página de 50 que devuelve la API por defecto.
+  const buildServerFilters = (status: AppointmentStatusFilter, date: string): AppointmentListFilters => {
+    const filters: AppointmentListFilters = { order: 'nearest', size: 200 };
+    if (status === 'ACTIVE') {
+      filters.statuses = ACTIVE_STATUSES;
+    } else if (status !== 'ALL') {
+      filters.status = status;
+    }
+    if (date) {
+      filters.startDate = date;
+      filters.endDate = date;
+    }
+    return filters;
+  };
+
+  const reloadAppointments = () => fetchAppointments(buildServerFilters(statusFilter, dateFilter));
+
   useEffect(() => {
-    fetchAppointments();
+    fetchAppointments(buildServerFilters(statusFilter, dateFilter)).catch(() => {});
+  }, [fetchAppointments, statusFilter, dateFilter]);
+
+  useEffect(() => {
     fetchCustomers();
     fetchServices(true);
     if (canUseGiftCards) {
@@ -161,7 +188,7 @@ export default function AppointmentsPage() {
         setUnavailabilityColors(data.unavailabilityColors);
       }
     }).catch((err) => console.error('Error fetching unavailabilities in AppointmentsPage:', err));
-  }, [fetchAppointments, fetchCustomers, fetchServices, fetchGiftCards, canUseGiftCards]);
+  }, [fetchCustomers, fetchServices, fetchGiftCards, canUseGiftCards]);
 
   // Efecto para abrir el modal de edición o agendar próxima cita automáticamente si viene el ID en la URL
   useEffect(() => {
@@ -339,22 +366,14 @@ export default function AppointmentsPage() {
   }, [appointments, statusFilter, dateFilter, searchQuery]);
 
   const handleApplyFilters = () => {
-    const filters: { startDate?: string; endDate?: string; status?: AppointmentStatus } = {};
-    if (statusFilter !== 'ACTIVE' && statusFilter !== 'ALL') {
-      filters.status = statusFilter;
-    }
-    if (dateFilter) {
-      filters.startDate = dateFilter;
-      filters.endDate = dateFilter;
-    }
-    fetchAppointments(filters);
+    reloadAppointments();
   };
 
+  // Al cambiar estado/fecha el efecto de filtros vuelve a pedir las citas
   const handleClearFilters = () => {
     setStatusFilter('ACTIVE');
     setDateFilter('');
     setSearchQuery('');
-    fetchAppointments();
   };
 
   const normalizeNotes = (notes: string) => {
@@ -632,7 +651,8 @@ export default function AppointmentsPage() {
       serviceIds: serviceIds.length > 0 ? serviceIds : (appointment.service ? [appointment.service.id] : []),
       appointmentDate: '',
       appointmentTime: appointment.appointmentTime || '',
-      notes: appointment.notes?.split('Extras personalizados:')[0].trim() || '',
+      // La próxima cita hereda solo las notas de la clienta, no bloques de sistema de la cita anterior
+      notes: stripSystemNoteBlocks(appointment.notes?.split('Extras personalizados:')[0]),
     });
     setCustomChargeItems([]);
     setSummaryServiceSearch('');
@@ -746,7 +766,7 @@ export default function AppointmentsPage() {
         navigate(returnTo, { replace: true });
         return;
       }
-      fetchAppointments();
+      reloadAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al crear la cita'));
     } finally {
@@ -909,7 +929,7 @@ export default function AppointmentsPage() {
 
       toast.success(editMode === 'reschedule' ? `Cita #${editingAppointmentId} reagendada exitosamente` : 'Cita actualizada exitosamente');
       closeEditModal();
-      fetchAppointments();
+      reloadAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, editMode === 'reschedule' ? 'Error al reagendar la cita' : 'Error al actualizar la cita'));
     }
@@ -926,7 +946,7 @@ export default function AppointmentsPage() {
       try {
         await updateAppointmentStatus(id, status);
         toast.success('Cita completada');
-        fetchAppointments();
+        reloadAppointments();
       } catch (err: unknown) {
         toast.error(getErrorMessage(err, 'Error al completar la cita'));
       }
@@ -940,7 +960,7 @@ export default function AppointmentsPage() {
     try {
       await updateAppointmentStatus(id, status);
       toast.success('Estado actualizado correctamente');
-      fetchAppointments();
+      reloadAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al actualizar el estado'));
     }
@@ -1043,7 +1063,7 @@ export default function AppointmentsPage() {
 
       setShowCancelModal(false);
       setCancelingAppointmentId(null);
-      await fetchAppointments();
+      await reloadAppointments();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Error al cancelar la cita'));
     } finally {
@@ -1056,7 +1076,7 @@ export default function AppointmentsPage() {
       try {
         await deleteAppointment(id);
         toast.success('Cita eliminada');
-        fetchAppointments();
+        reloadAppointments();
       } catch (err: unknown) {
         toast.error(getErrorMessage(err, 'Error al eliminar la cita'));
       }
@@ -1354,7 +1374,7 @@ export default function AppointmentsPage() {
           setCompletingAppointmentId(null);
         }}
         onCompleted={() => {
-          fetchAppointments();
+          reloadAppointments();
         }}
       />
       {/* Modal de Historial de Mensajes / Entregas */}

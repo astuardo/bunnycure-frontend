@@ -21,11 +21,17 @@ export const appointmentsApi = {
     startDate?: string;
     endDate?: string;
     status?: AppointmentStatus;
+    /** Varios estados a la vez (se envían separados por coma) */
+    statuses?: AppointmentStatus[];
+    /** 'nearest' = próximas citas primero (ascendente) y luego historial (descendente) */
+    order?: 'nearest';
     customerId?: number;
     size?: number;
     page?: number;
   }): Promise<Appointment[]> => {
-    const response = await apiClient.get<ApiResponse<Appointment[] | { content: Appointment[] }>>('/api/appointments', { params });
+    const { statuses, ...rest } = params || {};
+    const query = statuses?.length ? { ...rest, statuses: statuses.join(',') } : rest;
+    const response = await apiClient.get<ApiResponse<Appointment[] | { content: Appointment[] }>>('/api/appointments', { params: query });
     const data = response.data.data;
     if (Array.isArray(data)) return data;
     if (data && 'content' in data && Array.isArray(data.content)) return data.content;

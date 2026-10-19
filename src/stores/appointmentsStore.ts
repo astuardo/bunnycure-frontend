@@ -8,6 +8,15 @@ import { appointmentsApi } from '../api/appointments.api';
 import { invalidateAnalyticsCache } from '../api/analytics.api';
 import { Appointment, AppointmentCreateRequest, AppointmentUpdateRequest, AppointmentStatus } from '../types/appointment.types';
 
+export interface AppointmentListFilters {
+  startDate?: string;
+  endDate?: string;
+  status?: AppointmentStatus;
+  statuses?: AppointmentStatus[];
+  order?: 'nearest';
+  size?: number;
+}
+
 interface AppointmentsState {
   appointments: Appointment[];
   selectedAppointment: Appointment | null;
@@ -22,7 +31,7 @@ interface AppointmentsState {
   };
   
   // Actions
-  fetchAppointments: (filters?: { startDate?: string; endDate?: string; status?: AppointmentStatus }) => Promise<void>;
+  fetchAppointments: (filters?: AppointmentListFilters) => Promise<void>;
   fetchAppointmentById: (id: number) => Promise<void>;
   createAppointment: (data: AppointmentCreateRequest) => Promise<Appointment>;
   updateAppointment: (id: number, data: AppointmentUpdateRequest) => Promise<Appointment>;

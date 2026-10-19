@@ -15,7 +15,7 @@ import { CancelAppointmentDialog, CancelledByOption } from '@/components/appoint
 import { CompleteAppointmentWithSuppliesModal } from '@/components/appointments/CompleteAppointmentWithSuppliesModal';
 import { CashClosingModal } from '@/components/finances/CashClosingModal';
 import SalonOnboardingWizardModal from '@/components/onboarding/SalonOnboardingWizardModal';
-import { useAppointmentsStore } from '@/stores/appointmentsStore';
+import { useAppointmentsStore, AppointmentListFilters } from '@/stores/appointmentsStore';
 import { useCustomersStore } from '@/stores/customersStore';
 import { useGiftCardsStore } from '@/stores/giftcardsStore';
 import { Appointment, AppointmentStatus } from '@/types/appointment.types';
@@ -55,6 +55,9 @@ import { PendingBookingsWidget } from './components/PendingBookingsWidget';
 import { WhatsAppManagerWidget } from './components/WhatsAppManagerWidget';
 import { TodayAppointmentsList } from './components/TodayAppointmentsList';
 import { MonthCalendarPreview, MonthCalendarCell } from './components/MonthCalendarPreview';
+
+// Hoy, semana y calendario del mes: se piden las citas más cercanas a hoy (no las de fecha más lejana)
+const DASHBOARD_APPOINTMENT_FILTERS: AppointmentListFilters = { order: 'nearest', size: 200 };
 
 export default function DashboardPage() {
     const toast = useToast();
@@ -103,7 +106,7 @@ export default function DashboardPage() {
                     statsApi.getDashboardStats(),
                     statsApi.getTodayOperationalStats().catch(() => null),
                     settingsApi.getAll().catch(() => null),
-                    fetchAppointments(),
+                    fetchAppointments(DASHBOARD_APPOINTMENT_FILTERS),
                     fetchCustomers(),
                 ]);
                 setDashboardStats(stats);
@@ -209,7 +212,7 @@ export default function DashboardPage() {
 
             setShowCancelModal(false);
             setCancelingAppointmentId(null);
-            await fetchAppointments();
+            await fetchAppointments(DASHBOARD_APPOINTMENT_FILTERS);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Error al cancelar la cita');
         } finally {
@@ -329,7 +332,7 @@ export default function DashboardPage() {
                         try {
                             await updateAppointmentStatus(aptId, AppointmentStatus.COMPLETED);
                             toast.success('Cita completada');
-                            await fetchAppointments();
+                            await fetchAppointments(DASHBOARD_APPOINTMENT_FILTERS);
                             setDashboardStats(await statsApi.getDashboardStats());
                         } catch {
                             toast.error('No se pudo completar la cita');
@@ -362,7 +365,7 @@ export default function DashboardPage() {
                 appointmentId={completeDialog.appointmentId}
                 onHide={() => setCompleteDialog({ show: false, appointmentId: null })}
                 onCompleted={async () => {
-                    await fetchAppointments();
+                    await fetchAppointments(DASHBOARD_APPOINTMENT_FILTERS);
                     try {
                         const stats = await statsApi.getDashboardStats();
                         setDashboardStats(stats);
@@ -401,7 +404,7 @@ export default function DashboardPage() {
                 onClose={() => setShowOnboardingModal(false)}
                 onCompleted={async () => {
                     setIsOnboardingCompleted(true);
-                    await fetchAppointments();
+                    await fetchAppointments(DASHBOARD_APPOINTMENT_FILTERS);
                     await fetchCustomers();
                 }}
             />
