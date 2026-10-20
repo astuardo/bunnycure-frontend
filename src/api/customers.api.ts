@@ -84,6 +84,17 @@ const buildPhoneLookupCandidates = (phone: string): string[] => {
   return Array.from(candidates).filter((value) => value.length > 0);
 };
 
+/** Tamaño de página de la agenda de clientas (se cargan más al llegar al final). */
+export const CUSTOMERS_PAGE_SIZE = 50;
+/** Tamaño de página al cargar el directorio completo de clientas. */
+const DIRECTORY_PAGE_SIZE = 500;
+
+export interface CustomerPage {
+  items: Customer[];
+  total: number;
+  hasMore: boolean;
+}
+
 export const customersApi = {
   /**
    * Listar clientes (opcionalmente con búsqueda y paginación)
@@ -107,6 +118,29 @@ export const customersApi = {
       return arr;
     }
     return [];
+  },
+
+  /**
+   * Una página de clientas (búsqueda en el servidor: tolera tildes, orden de palabras,
+   * RUT sin puntos y teléfono con espacios).
+   */
+  listPage: async (search: string | undefined, page: number, size = CUSTOMERS_PAGE_SIZE): Promise<CustomerPage> => {
+    const items = await customersApi.list(search, { page, size });
+    const total = (items as Customer[] & { totalElements?: number }).totalElements ?? items.length;
+    return { items, total, hasMore: (page + 1) * size < total };
+  },
+
+  /**
+   * Todas las clientas del salón, en páginas grandes. Para pantallas que calculan sobre
+   * el universo completo (cumpleaños, reactivación, fidelización, selectores).
+   */
+  listAll: async (): Promise<Customer[]> => {
+    const all: Customer[] = [];
+    for (let page = 0; ; page++) {
+      const { items, hasMore } = await customersApi.listPage(undefined, page, DIRECTORY_PAGE_SIZE);
+      all.push(...items);
+      if (!hasMore || items.length === 0) return all;
+    }
   },
 
   /**
