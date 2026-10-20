@@ -158,7 +158,7 @@ export default function MarketingCampaignsPage() {
       void (async () => {
         setLoadingCustomers(true);
         try {
-          const data = await customersApi.list();
+          const data = await customersApi.listAll();
           if (isMounted) {
             setAllCustomers(data);
           }

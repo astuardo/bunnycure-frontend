@@ -66,7 +66,7 @@ const getStatusBadgeVariant = (status: GiftCardStatus): BadgeVariant => {
 export default function GiftCardsPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { customers, fetchCustomers: loadStoreCustomers } = useCustomersStore();
+  const { directory: customers, fetchDirectory } = useCustomersStore();
   const {
     giftCards,
     loading,
@@ -104,8 +104,8 @@ export default function GiftCardsPage() {
 
   useEffect(() => {
     fetchGiftCards();
-    loadStoreCustomers();
-  }, [fetchGiftCards, loadStoreCustomers]);
+    fetchDirectory();
+  }, [fetchGiftCards, fetchDirectory]);
 
   useEffect(() => {
     localStorage.setItem(ADMIN_GIFTCARD_PINS_KEY, JSON.stringify(generatedPins));
@@ -493,7 +493,7 @@ export default function GiftCardsPage() {
                           variant="warning"
                           size="sm"
                           onClick={() => {
-                            loadStoreCustomers();
+                            fetchDirectory(true);
                             setShowAssignModal(true);
                           }}
                         >
@@ -550,7 +550,7 @@ export default function GiftCardsPage() {
                               size="sm"
                               className="mt-2 text-xs"
                               onClick={() => {
-                                loadStoreCustomers();
+                                fetchDirectory(true);
                                 setShowAssignModal(true);
                               }}
                             >
@@ -565,7 +565,7 @@ export default function GiftCardsPage() {
                               type="button"
                               className="text-xs text-bunny-primary hover:underline font-semibold block mt-1"
                               onClick={() => {
-                                loadStoreCustomers();
+                                fetchDirectory(true);
                                 setShowAssignModal(true);
                               }}
                             >

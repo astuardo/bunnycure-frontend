@@ -46,7 +46,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { customers, fetchCustomers } = useCustomersStore();
+  const { directory: customers, fetchDirectory } = useCustomersStore();
   const { appointments, fetchAppointments } = useAppointmentsStore();
   const { services, fetchServices } = useServicesStore();
 
@@ -58,7 +58,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
     if (show) {
       setQuery('');
       setSelectedIndex(0);
-      if (customers.length === 0) fetchCustomers();
+      fetchDirectory();
       if (appointments.length === 0) fetchAppointments();
       if (services.length === 0) fetchServices();
 
