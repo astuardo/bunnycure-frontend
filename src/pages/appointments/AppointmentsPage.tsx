@@ -73,7 +73,7 @@ export default function AppointmentsPage() {
     clearError,
   } = useAppointmentsStore();
 
-  const { customers, fetchCustomers } = useCustomersStore();
+  const { directory: customers, fetchDirectory } = useCustomersStore();
   const { services, fetchServices } = useServicesStore();
   const { giftCards, fetchGiftCards, redeemGiftCard, updateGiftCard, revertGiftCardRedeem } = useGiftCardsStore();
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
@@ -174,7 +174,7 @@ export default function AppointmentsPage() {
   }, [fetchAppointments, statusFilter, dateFilter]);
 
   useEffect(() => {
-    fetchCustomers();
+    fetchDirectory();
     fetchServices(true);
     if (canUseGiftCards) {
       fetchGiftCards();
@@ -188,7 +188,7 @@ export default function AppointmentsPage() {
         setUnavailabilityColors(data.unavailabilityColors);
       }
     }).catch((err) => console.error('Error fetching unavailabilities in AppointmentsPage:', err));
-  }, [fetchCustomers, fetchServices, fetchGiftCards, canUseGiftCards]);
+  }, [fetchDirectory, fetchServices, fetchGiftCards, canUseGiftCards]);
 
   // Efecto para abrir el modal de edición o agendar próxima cita automáticamente si viene el ID en la URL
   useEffect(() => {

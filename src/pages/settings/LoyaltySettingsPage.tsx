@@ -13,14 +13,14 @@ import { Spinner } from '@/components/ui/Spinner';
 export default function LoyaltySettingsPage() {
   const navigate = useNavigate();
   const { rewards, loading: rewardsLoading, fetchRewards, createReward, updateReward, deleteReward } = useLoyaltyStore();
-  const { customers, loading: customersLoading, fetchCustomers } = useCustomersStore();
+  const { directory: customers, loadingDirectory: customersLoading, fetchDirectory } = useCustomersStore();
   const [newRewardName, setNewRewardName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchRewards();
-    fetchCustomers();
-  }, [fetchRewards, fetchCustomers]);
+    fetchDirectory(true);
+  }, [fetchRewards, fetchDirectory]);
 
   const handleAddReward = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,6 +6,7 @@ import DeleteCustomerModal from '../../components/customers/DeleteCustomerModal'
 import CustomerReactivationTab from '../../components/customers/CustomerReactivationTab';
 import CustomerBirthdaysTab from '../../components/customers/CustomerBirthdaysTab';
 import { useCustomersStore } from '../../stores/customersStore';
+import { LoadMoreSentinel } from '../../components/common/LoadMoreSentinel';
 import { useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useServicesStore } from '../../stores/servicesStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -30,6 +31,12 @@ export default function CustomersPage() {
     const { 
         customers, 
         totalCustomers,
+        hasMoreCustomers,
+        loadingMore,
+        loadMoreCustomers,
+        directory,
+        loadingDirectory,
+        fetchDirectory,
         loading, 
         error, 
         fetchCustomers, 
@@ -51,22 +58,23 @@ export default function CustomersPage() {
     useEffect(() => {
         if (isAuthenticated && user) {
             fetchCustomers();
+            fetchDirectory(true);
             fetchAppointments();
             fetchServices();
         }
-    }, [isAuthenticated, user, fetchCustomers, fetchAppointments, fetchServices]);
+    }, [isAuthenticated, user, fetchCustomers, fetchDirectory, fetchAppointments, fetchServices]);
 
     const showCustomerFormModal = showFormModal || isQuickCreateMode;
 
-    // Calcular cantidad de clientas inactivas para la insignia del tab
+    // Calcular cantidad de clientas inactivas para la insignia del tab (sobre todas las clientas, no solo la página visible)
     const inactiveCustomersCount = useMemo(() => {
-        return computeInactiveCustomers(customers, appointments).length;
-    }, [customers, appointments]);
+        return computeInactiveCustomers(directory, appointments).length;
+    }, [directory, appointments]);
 
     // Calcular cumpleañeras del mes para la insignia del tab
     const { metrics: birthdayMetrics } = useMemo(() => {
-        return computeBirthdayCustomers(customers);
-    }, [customers]);
+        return computeBirthdayCustomers(directory);
+    }, [directory]);
 
     const isFirstSearchRender = useRef(true);
 
@@ -575,6 +583,13 @@ export default function CustomersPage() {
                                                 );
                                             })}
                                         </div>
+
+                                        <LoadMoreSentinel
+                                            hasMore={hasMoreCustomers}
+                                            loading={loadingMore}
+                                            onLoadMore={loadMoreCustomers}
+                                            remaining={totalCustomers - customers.length}
+                                        />
                                     </div>
                                 )}
                             </Card.Body>
@@ -585,18 +600,18 @@ export default function CustomersPage() {
                 {/* Vista: Cumpleañeras del Mes */}
                 {activeTab === 'birthdays' && (
                     <CustomerBirthdaysTab
-                        customers={customers}
-                        loading={loading}
+                        customers={directory}
+                        loading={loadingDirectory}
                     />
                 )}
 
                 {/* Vista: Reactivación de Clientas */}
                 {activeTab === 'reactivation' && (
                     <CustomerReactivationTab
-                        customers={customers}
+                        customers={directory}
                         appointments={appointments}
                         services={services}
-                        loading={loading || appointmentsLoading || servicesLoading}
+                        loading={loadingDirectory || appointmentsLoading || servicesLoading}
                     />
                 )}
 

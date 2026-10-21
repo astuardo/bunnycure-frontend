@@ -4,14 +4,25 @@ import { customersApi } from '../api/customers.api';
 import { toast } from 'react-toastify';
 
 interface CustomersState {
+    /** Agenda paginada: primera página de la búsqueda actual + las que se cargan al hacer scroll. */
     customers: Customer[];
     totalCustomers: number;
+    customersQuery: string;
+    customersPage: number;
+    hasMoreCustomers: boolean;
+    loadingMore: boolean;
+    /** Todas las clientas del salón, para pantallas que calculan sobre el universo completo. */
+    directory: Customer[];
+    directoryLoaded: boolean;
+    loadingDirectory: boolean;
     currentCustomer: Customer | null;
     loading: boolean;
     error: string | null;
-    
+
     // Actions
     fetchCustomers: (search?: string) => Promise<void>;
+    loadMoreCustomers: () => Promise<void>;
+    fetchDirectory: (force?: boolean) => Promise<void>;
     fetchCustomerById: (id: number) => Promise<void>;
     createCustomer: (data: CustomerFormData) => Promise<Customer | null>;
     updateCustomer: (id: number, data: CustomerFormData) => Promise<Customer | null>;
@@ -23,22 +34,43 @@ interface CustomersState {
     clearError: () => void;
 }
 
-export const useCustomersStore = create<CustomersState>((set) => ({
+// Cada búsqueda incrementa este contador; las respuestas de búsquedas anteriores se descartan
+// para que escribir rápido no deje en pantalla los resultados de una consulta vieja.
+let customersRequestSeq = 0;
+let directoryRequest: Promise<void> | null = null;
+
+/** Reemplaza (o agrega) una clienta en una lista sin perder los campos que no vienen en la respuesta. */
+const upsert = (list: Customer[], customer: Customer, prepend = false): Customer[] => {
+    if (list.some((c) => c.id === customer.id)) {
+        return list.map((c) => (c.id === customer.id ? { ...c, ...customer } : c));
+    }
+    return prepend ? [customer, ...list] : [...list, customer];
+};
+
+export const useCustomersStore = create<CustomersState>((set, get) => ({
     customers: [],
     totalCustomers: 0,
+    customersQuery: '',
+    customersPage: 0,
+    hasMoreCustomers: false,
+    loadingMore: false,
+    directory: [],
+    directoryLoaded: false,
+    loadingDirectory: false,
     currentCustomer: null,
     loading: false,
     error: null,
 
     fetchCustomers: async (search?: string) => {
-        set({ loading: true, error: null });
+        const query = search?.trim() || '';
+        const seq = ++customersRequestSeq;
+        set({ loading: true, error: null, customersQuery: query });
         try {
-            console.log('📡 Fetching customers...', search ? `search="${search}"` : 'all');
-            const customers = await customersApi.list(search);
-            const totalCustomers = (customers as any).totalElements ?? customers.length;
-            console.log(`✅ Loaded ${customers.length} (total: ${totalCustomers}) customers`);
-            set({ customers, totalCustomers, loading: false });
+            const { items, total, hasMore } = await customersApi.listPage(query || undefined, 0);
+            if (seq !== customersRequestSeq) return;
+            set({ customers: items, totalCustomers: total, customersPage: 0, hasMoreCustomers: hasMore, loading: false });
         } catch (error) {
+            if (seq !== customersRequestSeq) return;
             const err = error as { response?: { status?: number; data?: { message?: string } } };
             const errorMessage = err.response?.data?.message || 'Error al cargar clientes';
             
@@ -53,6 +85,52 @@ export const useCustomersStore = create<CustomersState>((set) => ({
                 set({ loading: false });
             }
         }
+    },
+
+    loadMoreCustomers: async () => {
+        const { hasMoreCustomers, loadingMore, loading, customersPage, customersQuery } = get();
+        if (!hasMoreCustomers || loadingMore || loading) return;
+        const seq = customersRequestSeq;
+        set({ loadingMore: true });
+        try {
+            const nextPage = customersPage + 1;
+            const { items, total, hasMore } = await customersApi.listPage(customersQuery || undefined, nextPage);
+            if (seq !== customersRequestSeq) return;
+            set((state) => ({
+                customers: [...state.customers, ...items.filter((c) => !state.customers.some((e) => e.id === c.id))],
+                totalCustomers: total,
+                customersPage: nextPage,
+                hasMoreCustomers: hasMore,
+                loadingMore: false,
+            }));
+        } catch (error) {
+            const err = error as { response?: { status?: number; data?: { message?: string } } };
+            set({ loadingMore: false });
+            if (err.response?.status !== 401) {
+                toast.error(err.response?.data?.message || 'Error al cargar más clientas');
+            }
+        }
+    },
+
+    fetchDirectory: async (force = false) => {
+        if (!force && get().directoryLoaded) return;
+        if (directoryRequest) return directoryRequest;
+        set({ loadingDirectory: true });
+        directoryRequest = (async () => {
+            try {
+                const directory = await customersApi.listAll();
+                set({ directory, directoryLoaded: true, loadingDirectory: false });
+            } catch (error) {
+                const err = error as { response?: { status?: number; data?: { message?: string } } };
+                set({ loadingDirectory: false });
+                if (err.response?.status !== 401) {
+                    toast.error(err.response?.data?.message || 'Error al cargar el listado de clientas');
+                }
+            } finally {
+                directoryRequest = null;
+            }
+        })();
+        return directoryRequest;
     },
 
     fetchCustomerById: async (id: number) => {
@@ -72,9 +150,11 @@ export const useCustomersStore = create<CustomersState>((set) => ({
         try {
             const newCustomer = await customersApi.create(data);
             
-            // Agregar a la lista
+            // Agregar a la agenda y al directorio
             set((state) => ({
-                customers: [newCustomer, ...state.customers],
+                customers: upsert(state.customers, newCustomer, true),
+                totalCustomers: state.totalCustomers + 1,
+                directory: state.directoryLoaded ? upsert(state.directory, newCustomer, true) : state.directory,
                 loading: false
             }));
             
@@ -99,11 +179,12 @@ export const useCustomersStore = create<CustomersState>((set) => ({
         try {
             const updatedCustomer = await customersApi.update(id, data);
             
-            // Actualizar en la lista
+            // Actualizar en la agenda y en el directorio
             set((state) => ({
                 customers: state.customers.map((c) => 
                     c.id === id ? updatedCustomer : c
                 ),
+                directory: state.directory.map((c) => (c.id === id ? updatedCustomer : c)),
                 currentCustomer: updatedCustomer,
                 loading: false
             }));
@@ -123,9 +204,11 @@ export const useCustomersStore = create<CustomersState>((set) => ({
         try {
             await customersApi.delete(id);
             
-            // Remover de la lista
+            // Remover de la agenda y del directorio
             set((state) => ({
                 customers: state.customers.filter((c) => c.id !== id),
+                totalCustomers: Math.max(0, state.totalCustomers - 1),
+                directory: state.directory.filter((c) => c.id !== id),
                 loading: false
             }));
             
@@ -155,10 +238,7 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             
             // Actualizar en la lista y en el actual
             set((state) => {
-                const exists = state.customers.some((c) => c.id === id);
-                const updatedCustomers = exists
-                    ? state.customers.map((c) => (c.id === id ? { ...c, ...updatedCustomer } : c))
-                    : [...state.customers, updatedCustomer];
+                const updatedCustomers = upsert(state.customers, updatedCustomer);
                 
                 const currentCustomer = state.currentCustomer?.id === id 
                     ? { ...state.currentCustomer, ...updatedCustomer } 
@@ -166,6 +246,7 @@ export const useCustomersStore = create<CustomersState>((set) => ({
                 
                 return {
                     customers: updatedCustomers,
+                    directory: state.directoryLoaded ? upsert(state.directory, updatedCustomer) : state.directory,
                     currentCustomer,
                     loading: false
                 };
@@ -190,6 +271,7 @@ export const useCustomersStore = create<CustomersState>((set) => ({
             const updatedCustomer = await customersApi.syncVisits(id);
             set((state) => ({
                 customers: state.customers.map((c) => (c.id === id ? { ...c, ...updatedCustomer } : c)),
+                directory: state.directory.map((c) => (c.id === id ? { ...c, ...updatedCustomer } : c)),
                 currentCustomer: state.currentCustomer?.id === id 
                     ? { ...state.currentCustomer, ...updatedCustomer }
                     : (state.currentCustomer ?? updatedCustomer),
@@ -209,8 +291,8 @@ export const useCustomersStore = create<CustomersState>((set) => ({
         set({ loading: true, error: null });
         try {
             const result = await customersApi.syncAllVisits();
-            const customers = await customersApi.list();
-            set({ customers, loading: false });
+            set({ loading: false });
+            await Promise.all([get().fetchCustomers(get().customersQuery), get().fetchDirectory(true)]);
             toast.success(`Sincronización completada: ${result.totalProcessed} clientes procesados (${result.updatedCount} actualizados).`);
             return true;
         } catch (error: any) {
