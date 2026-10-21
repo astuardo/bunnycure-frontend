@@ -81,10 +81,10 @@ jobs:
         id: vercel_deploy
         if: ${{ env.VERCEL_TOKEN != '' }}
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || 'team_cEonHxkHQlmkR1cHOX3l4GPa' }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || 'prj_MoAh68e9uqn4vulWtFwpuTeKBiI9' }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm install -g vercel@latest
+          npm install -g vercel@64.5.0
           echo "Deploying prebuilt staging artifacts to Vercel..."
           DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN || vercel deploy --token=$VERCEL_TOKEN)
           echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV

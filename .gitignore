@@ -40,3 +40,9 @@ playwright-report/
 
 # Documentos legales de la plataforma: se importan en el build (PlatformLegalPage)
 !src/legal/*.md
+
+# Capturas de red del navegador: incluyen tokens y cookies de sesión
+*.har
+
+# Caché local de ggshield (GitGuardian)
+.cache_ggshield
