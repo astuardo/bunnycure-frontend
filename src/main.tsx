@@ -26,8 +26,21 @@ if (sentryDsn) {
     tracePropagationTargets: ['localhost', 'api.bunnycure.cl', /^\/api/],
     replaysSessionSampleRate: 0.0,
     replaysOnErrorSampleRate: 1.0,
+    // Sin conectividad (p. ej. PWA reanudada en iOS) axios rechaza sin respuesta: no es accionable.
+    ignoreErrors: [/^Network Error$/],
   });
 }
+
+// Tras un deploy, una pestaña abierta puede pedir chunks con hashes que ya no existen.
+// Recargamos (como máximo una vez por minuto, para no entrar en bucle) para tomar el index nuevo.
+const CHUNK_RELOAD_KEY = 'chunk-reload-at';
+window.addEventListener('vite:preloadError', (event) => {
+  const lastReload = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+  if (Date.now() - lastReload < 60_000) return;
+  event.preventDefault();
+  sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  window.location.reload();
+});
 
 const registerWebPushSubscription = async (registration: ServiceWorkerRegistration) => {
   if (!('PushManager' in window) || !('Notification' in window)) return;

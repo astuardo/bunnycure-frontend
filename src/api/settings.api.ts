@@ -176,11 +176,7 @@ export const settingsApi = {
    * Actualizar una configuración específica en la BD
    */
   update: async (key: string, value: string): Promise<void> => {
-    try {
-      await apiClient.put<ApiResponse<void>>(`/api/settings/${key}`, { value });
-    } catch {
-      await apiClient.patch<ApiResponse<void>>(`/api/settings/${key}`, { value }).catch(() => null);
-    }
+    await apiClient.put<ApiResponse<void>>(`/api/settings/${key}`, { value });
   },
 
   /**
@@ -468,32 +464,10 @@ export const settingsApi = {
     if (settings.whatsappHandoffAdminPrefill !== undefined) flatSettings['whatsapp.handoff.admin-prefill'] = settings.whatsappHandoffAdminPrefill;
 
     // Unavailabilities, Colors and Notifications
-    let holidaysJson = '';
-    let blocksJson = '';
-    let unavailabilitiesJson = '';
-
+    // Las claves legadas business.holidays / business.schedule_blocks solo se leen para migración:
+    // el backend no las acepta y enviarlas hacía fallar el bulk completo.
     if (settings.unavailabilities !== undefined) {
-      unavailabilitiesJson = JSON.stringify(settings.unavailabilities);
-      flatSettings['schedule.unavailabilities'] = unavailabilitiesJson;
-
-      // Sincronizar también con formato legado de feriados y bloqueos para compatibilidad 100% con la BD
-      const holidaysList = settings.unavailabilities
-        .filter((u) => u.type === 'FULL_DAY')
-        .map((u) => u.startDate);
-      holidaysJson = JSON.stringify(holidaysList);
-      flatSettings['business.holidays'] = holidaysJson;
-
-      const blocksList = settings.unavailabilities
-        .filter((u) => u.type === 'TIME_SLOT')
-        .map((u) => ({
-          id: u.id,
-          date: u.startDate,
-          startTime: u.startTime || '09:00',
-          endTime: u.endTime || '18:00',
-          reason: u.reason || 'Bloqueo de horario',
-        }));
-      blocksJson = JSON.stringify(blocksList);
-      flatSettings['business.schedule_blocks'] = blocksJson;
+      flatSettings['schedule.unavailabilities'] = JSON.stringify(settings.unavailabilities);
     }
     if (settings.unavailabilityColors !== undefined) {
       flatSettings['schedule.unavailability.colors'] = JSON.stringify(settings.unavailabilityColors);
@@ -502,23 +476,7 @@ export const settingsApi = {
       flatSettings['schedule.unavailability.notifications'] = JSON.stringify(settings.unavailabilityNotifications);
     }
 
-    // Guardar en backend vía bulk
-    try {
-      await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
-    } catch (bulkErr) {
-      console.warn('Bulk settings save returned error, attempting direct updates:', bulkErr);
-    }
-
-    // Guardar de forma directa por clave en la BD para asegurar que las tablas de Spring Boot persistan el valor
-    if (settings.unavailabilities !== undefined) {
-      try {
-        await Promise.allSettled([
-          settingsApi.update('schedule.unavailabilities', unavailabilitiesJson),
-          settingsApi.update('business.holidays', holidaysJson),
-          settingsApi.update('business.schedule_blocks', blocksJson),
-        ]);
-      } catch {}
-    }
+    await apiClient.put<ApiResponse<void>>('/api/settings/bulk', { settings: flatSettings });
   },
 
   /**
