@@ -15,7 +15,7 @@ export function PWAUpdatePrompt() {
   return (
     <aside
       aria-label="Notificación de actualización de la aplicación"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-[9999]"
+      className="fixed bottom-[calc(1rem_+_var(--bottom-nav-h,0px)_+_env(safe-area-inset-bottom,0px))] left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-[9999]"
     >
       {needRefresh && (
         <div className="bg-white border border-bunny-border rounded-2xl shadow-bunny-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
