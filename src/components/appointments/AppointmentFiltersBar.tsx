@@ -35,12 +35,12 @@ export const AppointmentFiltersBar: React.FC<AppointmentFiltersBarProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
       {/* Buscador de texto */}
-      <div className="sm:col-span-2 lg:col-span-5">
-        <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+      <div className="sm:col-span-2 lg:col-span-4">
+        <label htmlFor="appointment-filters-bar-buscar-cita" className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
           <FaSearch className="text-bunny-mid" /> Buscar cita
         </label>
         <div className="relative">
-          <input
+          <input id="appointment-filters-bar-buscar-cita"
             type="text"
             placeholder="Clienta, RUT, teléfono, servicio o notas..."
             value={searchQuery}
@@ -62,10 +62,10 @@ export const AppointmentFiltersBar: React.FC<AppointmentFiltersBarProps> = ({
 
       {/* Selector de Fecha */}
       <div className="sm:col-span-1 lg:col-span-3">
-        <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+        <label htmlFor="appointment-filters-bar-fecha" className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
           <FaCalendarAlt className="text-bunny-mid" /> Fecha
         </label>
-        <input
+        <input id="appointment-filters-bar-fecha"
           type="date"
           value={dateFilter}
           onChange={(e) => onDateFilterChange(e.target.value)}
@@ -102,11 +102,11 @@ export const AppointmentFiltersBar: React.FC<AppointmentFiltersBarProps> = ({
       </div>
 
       {/* Selector de Estado */}
-      <div className="sm:col-span-1 lg:col-span-2">
-        <label className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+      <div className="sm:col-span-1 lg:col-span-3">
+        <label htmlFor="appointment-filters-bar-estado" className="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
           <FaCalendarDay className="text-bunny-mid" /> Estado
         </label>
-        <select
+        <select id="appointment-filters-bar-estado"
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value as AppointmentStatusFilter)}
           className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"
@@ -134,11 +134,12 @@ export const AppointmentFiltersBar: React.FC<AppointmentFiltersBarProps> = ({
         </Button>
         <Button
           variant="outline"
-          className="text-sm py-2 px-3"
+          className="shrink-0 text-sm py-2 px-3"
           onClick={onClearFilters}
           title="Restablecer todos los filtros"
+          aria-label="Limpiar filtros"
         >
-          Limpiar
+          <FaTimes />
         </Button>
       </div>
     </div>

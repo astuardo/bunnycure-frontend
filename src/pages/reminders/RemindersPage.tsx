@@ -7,11 +7,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { FaBell, FaClock, FaCheckCircle, FaPaperPlane, FaWhatsapp } from 'react-icons/fa';
 import { FiSearch, FiRefreshCw, FiCalendar } from 'react-icons/fi';
 import DashboardLayout from '../../components/common/DashboardLayout';
-import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { RANGE_PAGE_SIZE, useAppointmentsStore } from '../../stores/appointmentsStore';
 import { remindersApi, type ReminderStats } from '../../api/reminders.api';
 import { appointmentsApi } from '../../api/appointments.api';
 import { useToast } from '../../hooks/useToast';
-import { format, isToday, isTomorrow, parseISO, isValid } from 'date-fns';
+import { addDays, format, isToday, isTomorrow, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { matchRutSearch } from '../../utils/rutUtils';
@@ -64,8 +64,14 @@ export default function RemindersPage() {
     }
   }, []);
 
+  // Recordatorios: citas de hoy en adelante (un año), no solo las 50 más recientes
   const loadData = useCallback(async () => {
-    await fetchAppointments();
+    const today = new Date();
+    await fetchAppointments({
+      startDate: format(today, 'yyyy-MM-dd'),
+      endDate: format(addDays(today, 365), 'yyyy-MM-dd'),
+      size: RANGE_PAGE_SIZE,
+    });
     await loadStats();
   }, [fetchAppointments, loadStats]);
 

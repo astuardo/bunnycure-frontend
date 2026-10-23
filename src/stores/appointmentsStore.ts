@@ -8,6 +8,12 @@ import { appointmentsApi } from '../api/appointments.api';
 import { invalidateAnalyticsCache } from '../api/analytics.api';
 import { Appointment, AppointmentCreateRequest, AppointmentUpdateRequest, AppointmentStatus } from '../types/appointment.types';
 
+/**
+ * La API pagina (50 por defecto, las más recientes primero). Las pantallas que trabajan sobre un
+ * período piden ese rango completo con este tamaño (tope del backend: 5000).
+ */
+export const RANGE_PAGE_SIZE = 5000;
+
 export interface AppointmentListFilters {
   startDate?: string;
   endDate?: string;

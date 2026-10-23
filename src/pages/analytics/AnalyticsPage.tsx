@@ -47,7 +47,7 @@ import {
 import { exportToCSV, exportFullAnalyticsReport } from '@/utils/exportUtils';
 import { getAppointmentTotal } from '@/utils/appointmentUtils';
 import { CashClosingModal } from '@/components/finances/CashClosingModal';
-import { useAppointmentsStore } from '@/stores/appointmentsStore';
+import { RANGE_PAGE_SIZE, useAppointmentsStore } from '@/stores/appointmentsStore';
 import { statsApi } from '../../api/stats.api';
 import { SpecialistStat } from '../../types/stats.types';
 import { Button } from '@/components/ui/Button';
@@ -71,9 +71,10 @@ export default function AnalyticsPage() {
   const [showCashClosing, setShowCashClosing] = useState<boolean>(false);
   const [activePreset, setActivePreset] = useState<PresetKey>('thisMonth');
 
+  // Desempeño por especialista: todas las citas del período elegido (no solo las 50 más recientes)
   useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+    if (startDate && endDate) fetchAppointments({ startDate, endDate, size: RANGE_PAGE_SIZE }).catch(() => {});
+  }, [fetchAppointments, startDate, endDate]);
 
   const specialistPerformance = useMemo(() => {
     if (specialistsStats && specialistsStats.length > 0) {

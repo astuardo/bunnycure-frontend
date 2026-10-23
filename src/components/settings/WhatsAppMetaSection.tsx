@@ -228,10 +228,10 @@ export const WhatsAppMetaSection: React.FC = () => {
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                <label htmlFor="whats-app-meta-descripcion-corta-slogan-about" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                   Descripción Corta / Slogan (About)
                 </label>
-                <input
+                <input id="whats-app-meta-descripcion-corta-slogan-about"
                   type="text"
                   maxLength={139}
                   value={profileData.about}
@@ -245,12 +245,12 @@ export const WhatsAppMetaSection: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                <label htmlFor="whats-app-meta-correo-de-contacto" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                   Correo de Contacto
                 </label>
                 <div className="relative">
                   <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
-                  <input
+                  <input id="whats-app-meta-correo-de-contacto"
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData((prev) => ({ ...prev, email: e.target.value }))}
@@ -261,12 +261,12 @@ export const WhatsAppMetaSection: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                <label htmlFor="whats-app-meta-direccion-fisica-del-salon" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                   Dirección Física del Salón
                 </label>
                 <div className="relative">
                   <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
-                  <input
+                  <input id="whats-app-meta-direccion-fisica-del-salon"
                     type="text"
                     value={profileData.address}
                     onChange={(e) => setProfileData((prev) => ({ ...prev, address: e.target.value }))}
@@ -277,12 +277,12 @@ export const WhatsAppMetaSection: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                <label htmlFor="whats-app-meta-sitio-web-oficial" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                   Sitio Web Oficial
                 </label>
                 <div className="relative">
                   <FiGlobe className="absolute left-3 top-1/2 -translate-y-1/2 text-bunny-text-muted" />
-                  <input
+                  <input id="whats-app-meta-sitio-web-oficial"
                     type="url"
                     value={profileData.websites?.[0] || ''}
                     onChange={(e) => setProfileData((prev) => ({ ...prev, websites: [e.target.value] }))}
@@ -293,10 +293,10 @@ export const WhatsAppMetaSection: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                <label htmlFor="whats-app-meta-descripcion-extensa-del-negocio" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                   Descripción Extensa del Negocio
                 </label>
-                <textarea
+                <textarea id="whats-app-meta-descripcion-extensa-del-negocio"
                   rows={3}
                   maxLength={512}
                   value={profileData.description}

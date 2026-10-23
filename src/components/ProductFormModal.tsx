@@ -133,10 +133,10 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
         </Modal.Header>
         <Modal.Body className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+            <label htmlFor="product-form-nombre" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
               Nombre *
             </label>
-            <input
+            <input id="product-form-nombre"
               className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
               {...register('name', { required: true })}
             />
@@ -144,12 +144,12 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+            <label htmlFor="product-form-precio-de-compra-por" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
               Precio de compra (por unidad de compra)
             </label>
             <div className="relative flex items-center">
               <span className="absolute left-3.5 text-sm text-bunny-text-muted">$</span>
-              <input
+              <input id="product-form-precio-de-compra-por"
                 type="number"
                 step="0.01"
                 className="w-full rounded-xl border border-bunny-border bg-white pl-8 pr-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
@@ -160,11 +160,11 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+            <label htmlFor="product-form-url-del-proveedor" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
               URL del proveedor
             </label>
             <div className="flex gap-2">
-              <input
+              <input id="product-form-url-del-proveedor"
                 type="url"
                 className="flex-1 rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
                 {...register('purchaseUrl', {
@@ -186,19 +186,19 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              <label htmlFor="product-form-unidad-de-compra" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
                 Unidad de compra *
               </label>
-              <input
+              <input id="product-form-unidad-de-compra"
                 className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
                 {...register('purchaseUnit', { required: true })}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              <label htmlFor="product-form-unidad-de-consumo" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
                 Unidad de consumo *
               </label>
-              <input
+              <input id="product-form-unidad-de-consumo"
                 className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
                 {...register('consumptionUnit', { required: true })}
               />
@@ -207,10 +207,10 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              <label htmlFor="product-form-factor-de-conversion" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
                 Factor de conversión
               </label>
-              <input
+              <input id="product-form-factor-de-conversion"
                 type="number"
                 step="0.0001"
                 className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
@@ -221,10 +221,10 @@ export const ProductFormModal: React.FC<Props> = ({ show, onHide, onSaved, produ
               </small>
             </div>
             <div>
-              <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+              <label htmlFor="product-form-stock-unidad-de-consumo" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
                 Stock (unidad de consumo)
               </label>
-              <input
+              <input id="product-form-stock-unidad-de-consumo"
                 type="number"
                 step="0.01"
                 className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"

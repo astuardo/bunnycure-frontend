@@ -154,10 +154,10 @@ export function NotificationTemplatesSection() {
           </h4>
           
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+            <label htmlFor="notification-templates-titulo" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
               Título
             </label>
-            <input
+            <input id="notification-templates-titulo"
               type="text"
               value={templates.defaultTitle}
               onChange={(e) => handleChange('defaultTitle', e.target.value)}
@@ -171,10 +171,10 @@ export function NotificationTemplatesSection() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+            <label htmlFor="notification-templates-mensaje" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
               Mensaje
             </label>
-            <textarea
+            <textarea id="notification-templates-mensaje"
               rows={3}
               value={templates.defaultBody}
               onChange={(e) => handleChange('defaultBody', e.target.value)}
@@ -197,10 +197,10 @@ export function NotificationTemplatesSection() {
           </h4>
           
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+            <label htmlFor="notification-templates-titulo-2" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
               Título
             </label>
-            <input
+            <input id="notification-templates-titulo-2"
               type="text"
               value={templates.twoHourTitle}
               onChange={(e) => handleChange('twoHourTitle', e.target.value)}
@@ -214,10 +214,10 @@ export function NotificationTemplatesSection() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+            <label htmlFor="notification-templates-mensaje-2" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
               Mensaje
             </label>
-            <textarea
+            <textarea id="notification-templates-mensaje-2"
               rows={3}
               value={templates.twoHourBody}
               onChange={(e) => handleChange('twoHourBody', e.target.value)}

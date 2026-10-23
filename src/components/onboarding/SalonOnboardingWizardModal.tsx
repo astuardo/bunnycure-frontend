@@ -564,10 +564,10 @@ export default function SalonOnboardingWizardModal({
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-[#5C3D2E] mb-1">
+                  <label htmlFor="salon-onboarding-wizard-nombre-del-salon-o" className="block text-xs font-bold text-[#5C3D2E] mb-1">
                     Nombre del Salón o Estudio *
                   </label>
-                  <input
+                  <input id="salon-onboarding-wizard-nombre-del-salon-o"
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
@@ -577,10 +577,10 @@ export default function SalonOnboardingWizardModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#5C3D2E] mb-1">
+                  <label htmlFor="salon-onboarding-wizard-eslogan-o-especialidad" className="block text-xs font-bold text-[#5C3D2E] mb-1">
                     Eslogan o Especialidad
                   </label>
-                  <input
+                  <input id="salon-onboarding-wizard-eslogan-o-especialidad"
                     type="text"
                     value={businessSlogan}
                     onChange={(e) => setBusinessSlogan(e.target.value)}
@@ -591,10 +591,10 @@ export default function SalonOnboardingWizardModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-[#5C3D2E] mb-1 flex items-center gap-1">
+                    <label htmlFor="salon-onboarding-wizard-telefono-whatsapp-de-atencion" className="block text-xs font-bold text-[#5C3D2E] mb-1 flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-[#C9897A]" /> Teléfono / WhatsApp de Atención *
                     </label>
-                    <input
+                    <input id="salon-onboarding-wizard-telefono-whatsapp-de-atencion"
                       type="text"
                       value={businessPhone}
                       onChange={(e) => setBusinessPhone(e.target.value)}
@@ -604,10 +604,10 @@ export default function SalonOnboardingWizardModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#5C3D2E] mb-1 flex items-center gap-1">
+                    <label htmlFor="salon-onboarding-wizard-duracion-base-por-cita" className="block text-xs font-bold text-[#5C3D2E] mb-1 flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-[#C9897A]" /> Duración Base por Cita
                     </label>
-                    <select
+                    <select id="salon-onboarding-wizard-duracion-base-por-cita"
                       value={appointmentDuration}
                       onChange={(e) => setAppointmentDuration(Number(e.target.value))}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8CFC4] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9897A] text-sm"
@@ -622,10 +622,10 @@ export default function SalonOnboardingWizardModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#5C3D2E] mb-1 flex items-center gap-1">
+                  <label htmlFor="salon-onboarding-wizard-direccion-fisica-y-comuna" className="block text-xs font-bold text-[#5C3D2E] mb-1 flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-[#C9897A]" /> Dirección Física y Comuna
                   </label>
-                  <input
+                  <input id="salon-onboarding-wizard-direccion-fisica-y-comuna"
                     type="text"
                     value={businessAddress}
                     onChange={(e) => setBusinessAddress(e.target.value)}

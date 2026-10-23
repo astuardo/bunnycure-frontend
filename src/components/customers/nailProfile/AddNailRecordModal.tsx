@@ -213,10 +213,10 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             {/* Título */}
             <div className="md:col-span-8">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-titulo-o-diseno-realizado" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 TÍTULO O DISEÑO REALIZADO *
               </label>
-              <input
+              <input id="add-nail-record-titulo-o-diseno-realizado"
                 type="text"
                 placeholder="Ej: Kapping Gel Rosa Glaseado + Cristales Swarovski"
                 value={title}
@@ -228,10 +228,10 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
             {/* Fecha */}
             <div className="md:col-span-4">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-fecha-de-atencion" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 FECHA DE ATENCIÓN
               </label>
-              <input
+              <input id="add-nail-record-fecha-de-atencion"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -241,10 +241,10 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
             {/* Técnica / Base Usada */}
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-tecnica-base-aplicada" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 TÉCNICA / BASE APLICADA
               </label>
-              <select
+              <select id="add-nail-record-tecnica-base-aplicada"
                 value={baseType}
                 onChange={(e) => setBaseType(e.target.value as BaseTechniqueType)}
                 className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 font-semibold text-bunny-dark focus:outline-none focus:ring-1 focus:ring-bunny-primary"
@@ -259,10 +259,10 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
             {/* Estado de Cutícula / Uña */}
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-estado-de-la-una" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 ESTADO DE LA UÑA / CUTÍCULA
               </label>
-              <select
+              <select id="add-nail-record-estado-de-la-una"
                 value={nailCondition}
                 onChange={(e) => setNailCondition(e.target.value as NailConditionType)}
                 className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
@@ -277,10 +277,10 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
             {/* Esmaltes y Tonos Usados */}
             <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-esmaltes-y-tonos-utilizados" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 ESMALTES Y TONOS UTILIZADOS
               </label>
-              <input
+              <input id="add-nail-record-esmaltes-y-tonos-utilizados"
                 type="text"
                 placeholder="Ej: OPI #21, Pink Blush, Foil Dorado, Top Coat Diamond"
                 value={polishColors}
@@ -291,10 +291,10 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
             {/* Notas Técnicas */}
             <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-notas-tecnicas-observaciones" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 NOTAS TÉCNICAS & OBSERVACIONES
               </label>
-              <textarea
+              <textarea id="add-nail-record-notas-tecnicas-observaciones"
                 rows={3}
                 placeholder="Ej: Cutícula sensible en dedo anular derecho. Requiere nivelación con base rubber media. Prefiere largo almendra."
                 value={techniqueNotes}
@@ -305,11 +305,11 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
             {/* Etiquetas / Tags */}
             <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="add-nail-record-etiquetas-del-estilo" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 ETIQUETAS DEL ESTILO
               </label>
               <div className="flex gap-2 mb-2">
-                <input
+                <input id="add-nail-record-etiquetas-del-estilo"
                   type="text"
                   placeholder="Ej: Francesa, Glitter, Efecto Espejo..."
                   value={tagInput}

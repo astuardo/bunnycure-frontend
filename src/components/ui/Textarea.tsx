@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -22,7 +22,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     },
     ref
   ) => {
-    const textareaId = id || props.name;
+    const autoId = useId();
+    const textareaId = id || props.name || autoId;
+    const messageId = error || helperText ? `${textareaId}-message` : undefined;
 
     return (
       <div className={`flex flex-col gap-1.5 w-full ${containerClassName}`}>
@@ -35,6 +37,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={textareaId}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={messageId}
           rows={rows}
           className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-bunny-text
             placeholder:text-bunny-cocoa-light/60 transition-all duration-150 resize-y
@@ -49,9 +53,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {error ? (
-          <p className="text-xs text-bunny-danger font-medium mt-0.5">{error}</p>
+          <p id={messageId} role="alert" className="text-xs text-bunny-danger font-medium mt-0.5">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-bunny-text-muted mt-0.5">{helperText}</p>
+          <p id={messageId} className="text-xs text-bunny-text-muted mt-0.5">{helperText}</p>
         ) : null}
       </div>
     );

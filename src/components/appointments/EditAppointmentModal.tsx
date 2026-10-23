@@ -99,7 +99,7 @@ export function EditAppointmentModal({
         <Modal.Body className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+              <label htmlFor="edit-appointment-cliente" className="text-xs font-bold text-slate-700 mb-1.5 block">
                 Cliente <span className="text-rose-500">*</span>
               </label>
               {editMode === 'reschedule' ? (
@@ -109,7 +109,7 @@ export function EditAppointmentModal({
                 </div>
               ) : (
                 <>
-                  <input
+                  <input id="edit-appointment-cliente"
                     type="text"
                     placeholder="Buscar cliente por nombre o teléfono..."
                     value={editCustomerSearch}
@@ -145,10 +145,10 @@ export function EditAppointmentModal({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+              <label htmlFor="edit-appointment-servicio-s" className="text-xs font-bold text-slate-700 mb-1.5 block">
                 Servicio(s) <span className="text-rose-500">*</span>
               </label>
-              <input
+              <input id="edit-appointment-servicio-s"
                 type="text"
                 placeholder="Buscar servicios..."
                 value={editServiceSearch}
@@ -199,8 +199,8 @@ export function EditAppointmentModal({
           {editMode === 'edit' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1.5 block">Estado</label>
-                <select
+                <label htmlFor="edit-appointment-estado" className="text-xs font-bold text-slate-700 mb-1.5 block">Estado</label>
+                <select id="edit-appointment-estado"
                   value={editFormData.status}
                   onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as AppointmentStatus }))}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bunny-mid/50 focus:border-bunny-mid bg-white"
@@ -223,8 +223,8 @@ export function EditAppointmentModal({
           )}
 
           <div>
-            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Detalle de servicios</label>
-            <input
+            <label htmlFor="edit-appointment-detalle-de-servicios" className="text-xs font-bold text-slate-700 mb-1.5 block">Detalle de servicios</label>
+            <input id="edit-appointment-detalle-de-servicios"
               type="text"
               readOnly
               value={selectedEditServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
@@ -233,8 +233,8 @@ export function EditAppointmentModal({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Precio Final (CLP)</label>
-            <input
+            <label htmlFor="edit-appointment-precio-final-clp" className="text-xs font-bold text-slate-700 mb-1.5 block">Precio Final (CLP)</label>
+            <input id="edit-appointment-precio-final-clp"
               type="number"
               min={0}
               step={100}
@@ -248,8 +248,8 @@ export function EditAppointmentModal({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Notas</label>
-            <textarea
+            <label htmlFor="edit-appointment-notas" className="text-xs font-bold text-slate-700 mb-1.5 block">Notas</label>
+            <textarea id="edit-appointment-notas"
               rows={3}
               value={editFormData.notes}
               onChange={(e) => setEditFormData((prev) => ({ ...prev, notes: e.target.value }))}

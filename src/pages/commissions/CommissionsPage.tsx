@@ -23,7 +23,7 @@ import {
   parseISO 
 } from 'date-fns';
 import DashboardLayout from '../../components/common/DashboardLayout';
-import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { RANGE_PAGE_SIZE, useAppointmentsStore } from '../../stores/appointmentsStore';
 import { useTenant } from '../../context/TenantContext';
 import { useToast } from '../../hooks/useToast';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
@@ -92,9 +92,10 @@ export default function CommissionsPage() {
     }
   });
 
+  // Liquidación del período elegido: todas sus citas (la API pagina y devolvía solo las 50 más recientes)
   useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+    if (startDate && endDate) fetchAppointments({ startDate, endDate, size: RANGE_PAGE_SIZE }).catch(() => {});
+  }, [fetchAppointments, startDate, endDate]);
 
   // Manejador de presets de tiempo
   const handlePresetChange = (preset: PeriodPreset) => {

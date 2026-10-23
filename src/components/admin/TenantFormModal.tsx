@@ -239,9 +239,9 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Color Primario de Marca</label>
+                <label htmlFor="tenant-form-color-primario-de-marca" className="block text-xs font-semibold text-gray-700 mb-1">Color Primario de Marca</label>
                 <div className="flex items-center gap-2">
-                  <input
+                  <input id="tenant-form-color-primario-de-marca"
                     type="color"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}

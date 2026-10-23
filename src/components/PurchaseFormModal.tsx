@@ -72,10 +72,10 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
         </Modal.Header>
         <Modal.Body className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+            <label htmlFor="purchase-form-producto" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
               Producto
             </label>
-            <input
+            <input id="purchase-form-producto"
               className="w-full rounded-xl border border-bunny-border bg-bunny-paper/50 px-3.5 py-2 text-sm font-semibold text-bunny-cocoa cursor-not-allowed"
               value={product?.name ?? ''}
               disabled
@@ -86,10 +86,10 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-bunny-cocoa uppercase block mb-1">
+            <label htmlFor="purchase-form-cantidad-a-comprar-en" className="text-xs font-semibold text-bunny-cocoa uppercase block mb-1">
               Cantidad a Comprar (en {product?.purchaseUnit ?? 'unidades de compra'})
             </label>
-            <input
+            <input id="purchase-form-cantidad-a-comprar-en"
               type="number"
               step="0.01"
               className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
@@ -106,7 +106,7 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-semibold text-bunny-cocoa uppercase block">
+              <label htmlFor="purchase-form-precio-unitario-de-compra" className="text-xs font-semibold text-bunny-cocoa uppercase block">
                 Precio Unitario de Compra (por {product?.purchaseUnit ?? 'unidad'})
               </label>
               {oldPrice > 0 && enteredPrice > 0 && (
@@ -130,7 +130,7 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
 
             <div className="relative flex items-center">
               <span className="absolute left-3.5 text-sm text-bunny-text-muted">$</span>
-              <input
+              <input id="purchase-form-precio-unitario-de-compra"
                 type="number"
                 step="0.01"
                 className="w-full rounded-xl border border-bunny-border bg-white pl-8 pr-3.5 py-2 text-sm font-semibold text-bunny-cocoa focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
@@ -156,10 +156,10 @@ export const PurchaseFormModal: React.FC<Props> = ({ show, onHide, product, onPu
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
+            <label htmlFor="purchase-form-proveedor-referencia-factura" className="text-xs font-semibold text-bunny-text-muted uppercase block mb-1">
               Proveedor / Referencia / Factura
             </label>
-            <input
+            <input id="purchase-form-proveedor-referencia-factura"
               className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/30"
               placeholder="Ej: Distribuidora Nails, Factura #1234"
               {...register('reference')}

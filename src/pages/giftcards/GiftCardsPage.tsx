@@ -647,10 +647,10 @@ export default function GiftCardsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-bunny-border bg-bunny-paper/30">
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                    <label htmlFor="gift-cards-nota-de-canje" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                       Nota de canje *
                     </label>
-                    <input
+                    <input id="gift-cards-nota-de-canje"
                       type="text"
                       className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                       value={redeemNote}
@@ -684,10 +684,10 @@ export default function GiftCardsPage() {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                    <label htmlFor="gift-cards-nota-de-reversa" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                       Nota de reversa *
                     </label>
-                    <input
+                    <input id="gift-cards-nota-de-reversa"
                       type="text"
                       className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                       value={revertNote}

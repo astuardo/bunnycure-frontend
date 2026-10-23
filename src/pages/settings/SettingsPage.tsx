@@ -542,10 +542,10 @@ export default function SettingsPage() {
                 </Card.Header>
                 <Card.Body className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                    <label htmlFor="settings-nombre-comercial-del-salon" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                       Nombre Comercial del Salón
                     </label>
-                    <input
+                    <input id="settings-nombre-comercial-del-salon"
                       type="text"
                       value={settings.businessName}
                       onChange={(e) => handleChange('businessName', e.target.value)}
@@ -556,10 +556,10 @@ export default function SettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      <label htmlFor="settings-correo-electronico-oficial" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                         Correo Electrónico Oficial
                       </label>
-                      <input
+                      <input id="settings-correo-electronico-oficial"
                         type="email"
                         value={settings.email}
                         onChange={(e) => handleChange('email', e.target.value)}
@@ -568,10 +568,10 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      <label htmlFor="settings-telefono-whatsapp-oficial" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                         Teléfono / WhatsApp Oficial
                       </label>
-                      <input
+                      <input id="settings-telefono-whatsapp-oficial"
                         type="text"
                         value={settings.phone}
                         onChange={(e) => handleChange('phone', e.target.value)}
@@ -582,10 +582,10 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                    <label htmlFor="settings-direccion-fisica-del-salon" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                       Dirección Física del Salón
                     </label>
-                    <input
+                    <input id="settings-direccion-fisica-del-salon"
                       type="text"
                       value={settings.address}
                       onChange={(e) => handleChange('address', e.target.value)}
@@ -596,10 +596,10 @@ export default function SettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      <label htmlFor="settings-dominio-propio-custom-domain" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                         Dominio Propio (Custom Domain)
                       </label>
-                      <input
+                      <input id="settings-dominio-propio-custom-domain"
                         type="text"
                         value={settings.customDomain}
                         disabled
@@ -611,10 +611,10 @@ export default function SettingsPage() {
                       </span>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      <label htmlFor="settings-identificador-slug" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                         Identificador (Slug)
                       </label>
-                      <input
+                      <input id="settings-identificador-slug"
                         type="text"
                         value={settings.slug}
                         disabled
@@ -634,11 +634,11 @@ export default function SettingsPage() {
                 </Card.Header>
                 <Card.Body className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="settings-color-primario-de-marca" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Color Primario de Marca
                     </label>
                     <div className="flex items-center gap-3">
-                      <input
+                      <input id="settings-color-primario-de-marca"
                         type="color"
                         value={settings.primaryColor}
                         onChange={(e) => handleChange('primaryColor', e.target.value)}
@@ -756,10 +756,10 @@ export default function SettingsPage() {
                 </Card.Header>
                 <Card.Body className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                    <label htmlFor="settings-duracion-estandar-minutos" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                       Duración Estándar (Minutos)
                     </label>
-                    <select
+                    <select id="settings-duracion-estandar-minutos"
                       value={settings.appointmentDuration}
                       onChange={(e) => handleChange('appointmentDuration', Number(e.target.value))}
                       className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
@@ -784,11 +784,11 @@ export default function SettingsPage() {
                 </Card.Header>
                 <Card.Body className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
+                    <label htmlFor="settings-manana" className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
                       MAÑANA
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
+                      <input id="settings-manana"
                         type="time"
                         value={settings.calendarDisplay.morning.start}
                         onChange={(e) => handleCalendarDisplayChange('morning', 'start', e.target.value)}
@@ -811,11 +811,11 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
+                    <label htmlFor="settings-tarde" className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
                       TARDE
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
+                      <input id="settings-tarde"
                         type="time"
                         value={settings.calendarDisplay.afternoon.start}
                         onChange={(e) => handleCalendarDisplayChange('afternoon', 'start', e.target.value)}
@@ -838,11 +838,11 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
+                    <label htmlFor="settings-noche" className="text-[10px] font-bold text-bunny-text-muted uppercase tracking-wider block mb-1">
                       NOCHE
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
+                      <input id="settings-noche"
                         type="time"
                         value={settings.calendarDisplay.night.start}
                         onChange={(e) => handleCalendarDisplayChange('night', 'start', e.target.value)}
@@ -919,11 +919,11 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="settings-enlace-directo-de-reservas" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Enlace Directo de Reservas
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <input
+                      <input id="settings-enlace-directo-de-reservas"
                         type="text"
                         value={`${window.location.origin}/reservar`}
                         readOnly
@@ -1005,10 +1005,10 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        <label htmlFor="settings-telefono-de-derivacion-operadora" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                           Teléfono de Derivación (Operadora)
                         </label>
-                        <input
+                        <input id="settings-telefono-de-derivacion-operadora"
                           type="text"
                           value={settings.whatsappHumanNumber}
                           onChange={(e) => handleChange('whatsappHumanNumber', e.target.value)}
@@ -1017,10 +1017,10 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                        <label htmlFor="settings-nombre-visible-de-la" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                           Nombre Visible de la Operadora
                         </label>
-                        <input
+                        <input id="settings-nombre-visible-de-la"
                           type="text"
                           value={settings.whatsappHumanDisplayName}
                           onChange={(e) => handleChange('whatsappHumanDisplayName', e.target.value)}
@@ -1031,10 +1031,10 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      <label htmlFor="settings-mensaje-de-derivacion-al" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                         Mensaje de Derivación al Cliente
                       </label>
-                      <textarea
+                      <textarea id="settings-mensaje-de-derivacion-al"
                         rows={2}
                         value={settings.whatsappHandoffClientMessage}
                         onChange={(e) => handleChange('whatsappHandoffClientMessage', e.target.value)}
@@ -1043,10 +1043,10 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                      <label htmlFor="settings-prefijo-de-asistencia-pre" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                         Prefijo de Asistencia Pre-rellenado
                       </label>
-                      <input
+                      <input id="settings-prefijo-de-asistencia-pre"
                         type="text"
                         value={settings.whatsappHandoffAdminPrefill}
                         onChange={(e) => handleChange('whatsappHandoffAdminPrefill', e.target.value)}
@@ -1061,8 +1061,8 @@ export default function SettingsPage() {
                         ⏰ Estrategia de Recordatorios Automáticos
                       </h4>
                       <div>
-                        <label className="text-[11px] text-bunny-text-muted mb-1 block">Momento del recordatorio</label>
-                        <select
+                        <label htmlFor="settings-momento-del-recordatorio" className="text-[11px] text-bunny-text-muted mb-1 block">Momento del recordatorio</label>
+                        <select id="settings-momento-del-recordatorio"
                           value={settings.reminderStrategy}
                           onChange={(e) => handleChange('reminderStrategy', e.target.value as BusinessSettings['reminderStrategy'])}
                           className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2 text-xs text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
@@ -1076,11 +1076,11 @@ export default function SettingsPage() {
 
                       {(settings.reminderStrategy === 'TWO_HOURS' || settings.reminderStrategy === 'BOTH') && (
                         <div className="p-4 bg-bunny-paper/40 rounded-xl border border-bunny-border mt-3 space-y-2">
-                          <label className="text-xs font-semibold text-bunny-text block">
+                          <label htmlFor="settings-horas-de-anticipacion-del" className="text-xs font-semibold text-bunny-text block">
                             ⏰ Horas de anticipación del recordatorio previo:
                           </label>
                           <div className="flex items-center gap-2">
-                            <input
+                            <input id="settings-horas-de-anticipacion-del"
                               type="number"
                               min={1}
                               max={72}

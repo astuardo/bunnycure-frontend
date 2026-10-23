@@ -378,10 +378,10 @@ export default function GenerateGiftCardPage() {
               {isBlankGiftCard ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="generate-gift-card-identificador-titulo-en-tarjeta" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Identificador / Título en Tarjeta
                     </label>
-                    <input
+                    <input id="generate-gift-card-identificador-titulo-en-tarjeta"
                       type="text"
                       className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text placeholder:text-bunny-cocoa-light/60 focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                       placeholder="Ej: Al portador, Ganadora Sorteo Instagram, etc."
@@ -393,10 +393,10 @@ export default function GenerateGiftCardPage() {
                     </small>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="generate-gift-card-vencimiento" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Vencimiento *
                     </label>
-                    <input
+                    <input id="generate-gift-card-vencimiento"
                       type="date"
                       className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                       value={createData.expiresOn}
@@ -407,11 +407,11 @@ export default function GenerateGiftCardPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="generate-gift-card-beneficiaria-telefono" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Beneficiaria - Teléfono *
                     </label>
                     <div className="flex gap-2">
-                      <input
+                      <input id="generate-gift-card-beneficiaria-telefono"
                         type="tel"
                         autoFocus
                         placeholder="+569..."
@@ -441,10 +441,10 @@ export default function GenerateGiftCardPage() {
                     </small>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="generate-gift-card-beneficiaria-nombre" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Beneficiaria - Nombre *
                     </label>
-                    <input
+                    <input id="generate-gift-card-beneficiaria-nombre"
                       type="text"
                       placeholder="Nombre completo"
                       disabled={lookupStatus === 'idle'}
@@ -454,10 +454,10 @@ export default function GenerateGiftCardPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="generate-gift-card-beneficiaria-email" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Beneficiaria - Email
                     </label>
-                    <input
+                    <input id="generate-gift-card-beneficiaria-email"
                       type="email"
                       placeholder="correo@ejemplo.com"
                       disabled={lookupStatus === 'idle'}
@@ -467,10 +467,10 @@ export default function GenerateGiftCardPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                    <label htmlFor="generate-gift-card-vencimiento-2" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                       Vencimiento *
                     </label>
-                    <input
+                    <input id="generate-gift-card-vencimiento-2"
                       type="date"
                       disabled={lookupStatus === 'idle'}
                       className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
@@ -483,10 +483,10 @@ export default function GenerateGiftCardPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-bunny-border/50">
                 <div>
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  <label htmlFor="generate-gift-card-compradora-nombre" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                     Compradora - Nombre
                   </label>
-                  <input
+                  <input id="generate-gift-card-compradora-nombre"
                     type="text"
                     placeholder="Opcional"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
@@ -496,10 +496,10 @@ export default function GenerateGiftCardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  <label htmlFor="generate-gift-card-compradora-telefono" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                     Compradora - Teléfono
                   </label>
-                  <input
+                  <input id="generate-gift-card-compradora-telefono"
                     type="tel"
                     placeholder="Opcional"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
@@ -509,10 +509,10 @@ export default function GenerateGiftCardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  <label htmlFor="generate-gift-card-compradora-email" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                     Compradora - Email
                   </label>
-                  <input
+                  <input id="generate-gift-card-compradora-email"
                     type="email"
                     placeholder="Opcional"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
@@ -522,10 +522,10 @@ export default function GenerateGiftCardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                  <label htmlFor="generate-gift-card-metodo-de-pago" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                     Método de pago *
                   </label>
-                  <select
+                  <select id="generate-gift-card-metodo-de-pago"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
                     className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
                     value={createData.paymentMethod}

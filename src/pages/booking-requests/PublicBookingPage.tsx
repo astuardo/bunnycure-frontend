@@ -550,10 +550,10 @@ export const PublicBookingPage: React.FC = () => {
 
                   {/* Bloques Horarios */}
                   <div>
-                    <label className="text-xs font-bold text-bunny-text-muted uppercase block mb-2">
+                    <p id="public-booking-bloque-horario" className="text-xs font-bold text-bunny-text-muted uppercase block mb-2">
                       Bloque Horario Deseado
-                    </label>
-                    <div className="grid grid-cols-1 gap-2">
+                    </p>
+                    <div role="radiogroup" aria-labelledby="public-booking-bloque-horario" className="grid grid-cols-1 gap-2">
                       {Object.entries(timeBlockLabels).map(([key, label]) => {
                         const blockTimeCheck =
                           key === 'MANANA'
@@ -565,15 +565,8 @@ export const PublicBookingPage: React.FC = () => {
                           !preferredDateBlock.blocked && blockTimeCheck.hasConflict;
 
                         return (
-                          <div
+                          <label
                             key={key}
-                            onClick={() => {
-                              if (isBlockBlocked) return;
-                              setPreferredTimeBlock(key);
-                              if (key === 'MANANA') setPreferredTimeExact('11:00');
-                              if (key === 'TARDE') setPreferredTimeExact('15:00');
-                              if (key === 'NOCHE') setPreferredTimeExact('18:30');
-                            }}
                             className={`p-3 rounded-xl border flex items-center justify-between transition-all duration-150 ${
                               isBlockBlocked
                                 ? 'border-dashed border-red-300 bg-red-50/50 opacity-60 cursor-not-allowed'
@@ -593,12 +586,18 @@ export const PublicBookingPage: React.FC = () => {
                             <input
                               type="radio"
                               name="timeBlock"
+                              value={key}
                               checked={preferredTimeBlock === key}
-                              onChange={() => {}}
+                              onChange={() => {
+                                setPreferredTimeBlock(key);
+                                if (key === 'MANANA') setPreferredTimeExact('11:00');
+                                if (key === 'TARDE') setPreferredTimeExact('15:00');
+                                if (key === 'NOCHE') setPreferredTimeExact('18:30');
+                              }}
                               disabled={isBlockBlocked}
-                              className="pointer-events-none text-bunny-primary accent-[#8c2a3e]"
+                              className="text-bunny-primary accent-[#8c2a3e]"
                             />
-                          </div>
+                          </label>
                         );
                       })}
                     </div>

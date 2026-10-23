@@ -209,10 +209,10 @@ export function CancelAppointmentDialog({
 
         {/* Reason Field */}
         <div>
-          <label className="block font-semibold text-xs text-slate-700 mb-1">
+          <label htmlFor="cancel-appointment-dialog-motivo-de-cancelacion" className="block font-semibold text-xs text-slate-700 mb-1">
             Motivo de cancelación *
           </label>
-          <textarea
+          <textarea id="cancel-appointment-dialog-motivo-de-cancelacion"
             rows={3}
             placeholder={
               isManicurist
