@@ -150,7 +150,7 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
           <Button variant="danger" size="sm" onClick={handleDelete} className="flex items-center gap-1.5">
             <FiTrash2 /> Eliminar Registro
           </Button>
-          <Button variant="secondary" size="sm" onClick={onHide}>
+          <Button variant="outline" size="sm" onClick={onHide}>
             Cerrar
           </Button>
         </div>

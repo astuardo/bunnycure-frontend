@@ -480,7 +480,7 @@ export default function InvoicesPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa flex items-center gap-2">
               <span>🧾</span> Boletas SII (BHE)
             </h1>
             <p className="text-sm text-bunny-text-muted mt-1">

@@ -330,7 +330,7 @@ export default function CommissionsPage() {
               💰
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#5C3D2E] tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa">
                 Liquidación de Comisiones
               </h1>
               <p className="text-xs sm:text-sm text-[#9E7B6E]">
@@ -783,7 +783,7 @@ export default function CommissionsPage() {
                   <FaWhatsapp className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Enviar por WhatsApp</span>
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => setShowDetailModal(false)}>
+                <Button variant="outline" size="sm" onClick={() => setShowDetailModal(false)}>
                   Cerrar
                 </Button>
               </div>
@@ -886,7 +886,7 @@ export default function CommissionsPage() {
                   <Printer className="w-4 h-4" />
                   <span>Imprimir / Guardar PDF</span>
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => setShowReceiptModal(false)}>
+                <Button variant="outline" size="sm" onClick={() => setShowReceiptModal(false)}>
                   Cerrar
                 </Button>
               </div>

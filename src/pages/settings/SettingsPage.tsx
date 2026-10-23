@@ -472,7 +472,7 @@ export default function SettingsPage() {
         {/* Encabezado y Barra de Guardado */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa flex items-center gap-2">
               <FiSettings className="text-bunny-primary" />
               Configuración del Salón
             </h1>

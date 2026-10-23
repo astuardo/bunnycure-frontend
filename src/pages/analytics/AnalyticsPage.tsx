@@ -279,7 +279,7 @@ export default function AnalyticsPage() {
                 <BarChart3 size={26} style={{ color: '#c9897a' }} />
               </div>
               <div>
-                <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: TEXT_DARK }}>
+                <h1 className="m-0 text-2xl font-bold tracking-tight text-bunny-cocoa">
                   Analíticas y Rendimiento
                 </h1>
                 <small style={{ color: TEXT_MID }}>Métricas de productividad, clientas y servicios completados</small>

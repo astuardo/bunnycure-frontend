@@ -218,7 +218,7 @@ export default function CustomerDetailsPage() {
             </h2>
             <p className="text-bunny-text-muted text-sm">Detalles del cliente</p>
           </div>
-          <Button variant="secondary" onClick={() => navigate('/customers')} className="shrink-0 text-xs sm:text-sm">
+          <Button variant="outline" onClick={() => navigate('/customers')} className="shrink-0 text-xs sm:text-sm">
             ← Volver
           </Button>
         </div>

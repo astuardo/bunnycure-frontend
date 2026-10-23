@@ -353,7 +353,7 @@ export default function CalendarPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-bunny-dark tracking-tight mb-1">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa mb-1">
               📅 Calendario de Citas
             </h1>
             <p className="text-bunny-text-muted text-sm">Vista mensual de todas las citas programadas</p>

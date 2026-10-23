@@ -250,7 +250,7 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
 
       <Modal.Footer className="bg-bunny-paper border-t border-bunny-border">
         <div className="w-full flex justify-end">
-          <Button variant="secondary" size="sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={onClose}>
             Cerrar
           </Button>
         </div>

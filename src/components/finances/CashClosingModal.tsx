@@ -390,7 +390,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           <small className="text-bunny-text-muted/70 text-xs">
             BunnyCure POS &copy; {new Date().getFullYear()} &bull; Todos los valores calculados con reglas de negocio oficiales.
           </small>
-          <Button variant="secondary" onClick={onHide}>
+          <Button variant="outline" onClick={onHide}>
             Cerrar
           </Button>
         </div>

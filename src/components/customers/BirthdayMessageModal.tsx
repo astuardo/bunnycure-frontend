@@ -222,7 +222,7 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
 
       <Modal.Footer className="bg-bunny-light/20 border-t border-bunny-accent/40">
         <div className="w-full flex justify-between items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={onHide}>
+          <Button variant="outline" size="sm" onClick={onHide}>
             Cerrar
           </Button>
           <div className="flex gap-2">

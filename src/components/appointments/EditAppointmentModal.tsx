@@ -399,7 +399,7 @@ export function EditAppointmentModal({
           </div>
         </Modal.Body>
         <Modal.Footer className="border-t border-bunny-border flex justify-end gap-2 p-4">
-          <Button variant="secondary" onClick={closeEditModal}>
+          <Button variant="outline" onClick={closeEditModal}>
             Cancelar
           </Button>
           <Button variant="primary" type="submit">

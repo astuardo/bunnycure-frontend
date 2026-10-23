@@ -352,7 +352,7 @@ export const AddNailRecordModal: React.FC<AddNailRecordModalProps> = ({
 
         <Modal.Footer className="bg-bunny-creamy/30 border-t border-bunny-accent/40">
           <div className="w-full flex justify-end gap-2">
-            <Button type="button" variant="secondary" size="sm" onClick={onHide}>
+            <Button type="button" variant="outline" size="sm" onClick={onHide}>
               Cancelar
             </Button>
             <Button

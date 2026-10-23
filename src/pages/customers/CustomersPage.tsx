@@ -213,7 +213,7 @@ export default function CustomersPage() {
                 {/* Header de Página */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-bunny-dark tracking-tight mb-1">
+                        <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa mb-1">
                             👥 Clientes &amp; Reactivación
                         </h1>
                         <p className="text-bunny-text-muted text-sm">

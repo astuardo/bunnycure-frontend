@@ -237,7 +237,7 @@ export default function ReactivationMessageModal({
 
       <Modal.Footer>
         <div className="w-full flex justify-between items-center">
-          <Button variant="secondary" size="sm" onClick={onHide}>
+          <Button variant="outline" size="sm" onClick={onHide}>
             Cerrar
           </Button>
           <div className="flex gap-2">

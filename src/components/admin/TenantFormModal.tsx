@@ -393,7 +393,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={onHide} disabled={submitting}>
+          <Button variant="outline" onClick={onHide} disabled={submitting}>
             <FiX className="mr-1.5" /> Cancelar
           </Button>
           <Button variant="primary" type="submit" isLoading={submitting}>

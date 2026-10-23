@@ -2,6 +2,7 @@ import { useState, useEffect, ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiX } from 'react-icons/fi';
 import { useEdgeSwipe } from '../../hooks/useEdgeSwipe';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { BottomTabBar } from './BottomTabBar';
@@ -10,6 +11,30 @@ import { CashClosingModal } from '../finances/CashClosingModal';
 import { CamiLoveModal } from './CamiLoveModal';
 import { useTenant } from '../../context/TenantContext';
 import SubscriptionBanner from '../billing/SubscriptionBanner';
+
+// Título de la pestaña del navegador por pantalla ("Citas · BunnyCure Studio"); la ruta más larga gana
+const SCREEN_TITLES: [string, string][] = [
+  ['/giftcards/generar', 'Generar GiftCard'],
+  ['/settings/loyalty', 'Fidelización'],
+  ['/customers/', 'Ficha de clienta'],
+  ['/dashboard', 'Inicio'],
+  ['/appointments', 'Citas'],
+  ['/booking-requests', 'Solicitudes de reserva'],
+  ['/calendar', 'Calendario'],
+  ['/customers', 'Clientas'],
+  ['/services', 'Servicios'],
+  ['/products', 'Inventario'],
+  ['/analytics', 'Analíticas'],
+  ['/commissions', 'Comisiones'],
+  ['/giftcards', 'GiftCards'],
+  ['/invoices', 'Boletas SII'],
+  ['/marketing', 'Marketing'],
+  ['/reminders', 'Recordatorios'],
+  ['/settings', 'Configuración'],
+  ['/users', 'Equipo'],
+  ['/suscripcion', 'Mi suscripción'],
+  ['/admin/tenants', 'Salones'],
+];
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -25,6 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [closingSidebar, setClosingSidebar] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  usePageTitle(SCREEN_TITLES.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ?? 'Panel');
 
   // La animación de entrada corre una sola vez por apertura (no al soltar un arrastre a medias)
   const [drawerEntered, setDrawerEntered] = useState(false);
