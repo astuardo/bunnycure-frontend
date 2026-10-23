@@ -1,9 +1,16 @@
-import React, { useEffect, createContext, useContext } from 'react';
+import React, { useEffect, useId, useRef, createContext, useContext } from 'react';
 import { FiX } from 'react-icons/fi';
 
 interface ModalContextType {
   onHide?: () => void;
+  titleId?: string;
 }
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// Modales abiertos, del más antiguo al más reciente: solo el de arriba responde a Escape y Tab
+const openModals: HTMLElement[] = [];
 
 const ModalContext = createContext<ModalContextType>({});
 
@@ -63,12 +70,51 @@ export const Modal: React.FC<ModalProps> & {
   className = '',
   children,
 }) => {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Ref para que un onHide nuevo en cada render no reinicie el foco del modal
+  const onHideRef = useRef(onHide);
   useEffect(() => {
-    if (!show) return;
+    onHideRef.current = onHide;
+  }, [onHide]);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!show || !panel) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    openModals.push(panel);
+
+    // Foco inicial: lo que pida autoFocus, si no el primer control, si no el panel
+    if (!panel.contains(document.activeElement)) {
+      const first = panel.querySelector<HTMLElement>(FOCUSABLE);
+      (first ?? panel).focus();
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (openModals[openModals.length - 1] !== panel) return;
       if (keyboard && e.key === 'Escape') {
-        onHide();
+        e.stopPropagation();
+        onHideRef.current();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (el) => el.offsetParent !== null || el === document.activeElement
+      );
+      if (focusables.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
 
@@ -79,8 +125,11 @@ export const Modal: React.FC<ModalProps> & {
     return () => {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      openModals.splice(openModals.indexOf(panel), 1);
+      // Devolver el foco al botón que abrió el modal
+      if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus();
     };
-  }, [show, keyboard, onHide]);
+  }, [show, keyboard]);
 
   if (!show) return null;
 
@@ -91,15 +140,18 @@ export const Modal: React.FC<ModalProps> & {
   };
 
   return (
-    <ModalContext.Provider value={{ onHide }}>
+    <ModalContext.Provider value={{ onHide, titleId }}>
       <div
         className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
         onClick={handleBackdropClick}
-        role="dialog"
-        aria-modal="true"
       >
         <div
-          className={`relative w-full ${sizeClasses[size]} ${
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
+          className={`relative w-full outline-none ${sizeClasses[size]} ${
             centered ? 'my-auto' : 'my-8'
           } rounded-2xl bg-white shadow-bunny-lg border border-bunny-border overflow-hidden transition-all duration-200 transform scale-100 ${className}`}
         >
@@ -133,8 +185,10 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({ children, closeButton = false
 };
 
 const ModalTitle: React.FC<ModalTitleProps> = ({ children, className = '', as: Tag = 'h3' }) => {
+  const { titleId } = useContext(ModalContext);
+
   return (
-    <Tag className={`text-base font-semibold text-bunny-cocoa m-0 ${className}`}>
+    <Tag id={titleId} className={`text-base font-semibold text-bunny-cocoa m-0 ${className}`}>
       {children}
     </Tag>
   );

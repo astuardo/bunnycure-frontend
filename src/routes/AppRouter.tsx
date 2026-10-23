@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Spinner } from '../components/ui/Spinner';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import PlanFeatureGate from '../components/billing/PlanFeatureGate';
@@ -72,13 +73,7 @@ function BunnyRouteLoading() {
             <div style={{ fontWeight: 700, fontSize: '16px', letterSpacing: '-0.3px', color: '#5c3d2e' }}>
                 BunnyCure
             </div>
-            <div
-                className="spinner-border text-primary"
-                role="status"
-                style={{ width: '1.75rem', height: '1.75rem', color: '#c9897a !important' }}
-            >
-                <span className="visually-hidden">Cargando...</span>
-            </div>
+            <Spinner size="lg" />
         </div>
     );
 }

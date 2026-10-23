@@ -345,10 +345,10 @@ export const CompleteAppointmentWithSuppliesModal = ({
 
                     <div className="sm:col-span-4 flex flex-col justify-between gap-2">
                       <div>
-                        <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                        <label htmlFor="complete-appointment-with-supplies-cantidad-a-consumir" className="block text-[11px] font-semibold text-stone-600 mb-1">
                           Cantidad a Consumir:
                         </label>
-                        <input
+                        <input id="complete-appointment-with-supplies-cantidad-a-consumir"
                           type="number"
                           min={0.001}
                           step="any"

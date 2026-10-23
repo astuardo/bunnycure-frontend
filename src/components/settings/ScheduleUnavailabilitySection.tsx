@@ -252,10 +252,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
             {blockType === 'FULL_DAY' ? (
               <>
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  <label htmlFor="schedule-unavailability-fecha-inicio-dia" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Fecha Inicio / Día
                   </label>
-                  <input
+                  <input id="schedule-unavailability-fecha-inicio-dia"
                     type="date"
                     min={todayStr}
                     value={startDate}
@@ -264,10 +264,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   />
                 </div>
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  <label htmlFor="schedule-unavailability-fecha-fin-opcional-si" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Fecha Fin (Opcional si es 1 día)
                   </label>
-                  <input
+                  <input id="schedule-unavailability-fecha-fin-opcional-si"
                     type="date"
                     value={endDate}
                     min={startDate || todayStr}
@@ -280,10 +280,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
             ) : (
               <>
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  <label htmlFor="schedule-unavailability-fecha-del-bloqueo" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Fecha del Bloqueo
                   </label>
-                  <input
+                  <input id="schedule-unavailability-fecha-del-bloqueo"
                     type="date"
                     min={todayStr}
                     value={startDate}
@@ -292,10 +292,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  <label htmlFor="schedule-unavailability-hora-inicio" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Hora Inicio
                   </label>
-                  <input
+                  <input id="schedule-unavailability-hora-inicio"
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
@@ -303,10 +303,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+                  <label htmlFor="schedule-unavailability-hora-fin" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                     Hora Fin
                   </label>
-                  <input
+                  <input id="schedule-unavailability-hora-fin"
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
@@ -317,10 +317,10 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
             )}
 
             <div className={blockType === 'FULL_DAY' ? 'md:col-span-4' : 'md:col-span-3'}>
-              <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
+              <label htmlFor="schedule-unavailability-motivo-comentario" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1">
                 Motivo / Comentario
               </label>
-              <input
+              <input id="schedule-unavailability-motivo-comentario"
                 type="text"
                 placeholder={blockType === 'FULL_DAY' ? 'Ej: Vacaciones, Feriado' : 'Ej: Médico, Trámite'}
                 value={reason}

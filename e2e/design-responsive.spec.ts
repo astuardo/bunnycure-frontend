@@ -171,7 +171,8 @@ test.describe('Pruebas Integrales de Diseño y Responsividad: Móvil vs PC', () 
         await expect(page.getByRole('dialog')).toBeVisible();
 
         // Al volver a pulsar el botón en el header, el drawer se esconde
-        const toggleBtn = page.getByRole('button', { name: /cerrar menú/i }).first();
+        // El menú lateral cubre la barra superior (como un modal): se cierra con su propio botón
+        const toggleBtn = page.getByRole('dialog').getByRole('button', { name: /cerrar menú/i });
         await toggleBtn.click();
         await expect(page.getByRole('dialog')).toBeHidden();
       });

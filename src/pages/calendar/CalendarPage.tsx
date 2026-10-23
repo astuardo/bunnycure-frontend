@@ -24,7 +24,7 @@ import { FaChevronLeft, FaChevronRight, FaWhatsapp, FaBell, FaEnvelope, FaHistor
 import { FiCalendar, FiSlash, FiPlus } from 'react-icons/fi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/common/DashboardLayout';
-import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { RANGE_PAGE_SIZE, useAppointmentsStore } from '../../stores/appointmentsStore';
 import { Appointment, AppointmentStatus } from '../../types/appointment.types';
 import { appointmentsApi } from '../../api/appointments.api';
 import { AppointmentNotificationsModal } from '../../components/appointments/AppointmentNotificationsModal';
@@ -103,8 +103,19 @@ export default function CalendarPage() {
 
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
+  // Citas de las semanas visibles del mes en pantalla; se vuelven a pedir al cambiar de mes
+  const visibleRange = useMemo(
+    () => ({
+      startDate: format(startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+      endDate: format(endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+    }),
+    [currentMonth]
+  );
   useEffect(() => {
-    fetchAppointments();
+    fetchAppointments({ ...visibleRange, size: RANGE_PAGE_SIZE }).catch(() => {});
+  }, [fetchAppointments, visibleRange]);
+
+  useEffect(() => {
     settingsApi.getAll()
       .then((data) => {
         if (data.unavailabilities && data.unavailabilities.length > 0) {
@@ -118,7 +129,7 @@ export default function CalendarPage() {
         }
       })
       .catch((err: unknown) => console.error('Error cargando configuraciones de calendario:', err));
-  }, [fetchAppointments]);
+  }, []);
 
   // Si viene con parámetro ?date=YYYY-MM-DD
   useEffect(() => {

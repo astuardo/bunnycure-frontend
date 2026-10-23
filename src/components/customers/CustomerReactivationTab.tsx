@@ -320,8 +320,8 @@ export default function CustomerReactivationTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
             {/* Rango de Inactividad */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">📅 Días de Inactividad:</label>
-              <select
+              <label htmlFor="customer-reactivation-dias-de-inactividad" className="block text-xs font-semibold text-slate-600 mb-1">📅 Días de Inactividad:</label>
+              <select id="customer-reactivation-dias-de-inactividad"
                 value={inactivityRange}
                 onChange={(e) => setInactivityRange(e.target.value as InactivityRange)}
                 className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
@@ -335,8 +335,8 @@ export default function CustomerReactivationTab({
 
             {/* Servicio Previo */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">💅 Servicio Previo:</label>
-              <select
+              <label htmlFor="customer-reactivation-servicio-previo" className="block text-xs font-semibold text-slate-600 mb-1">💅 Servicio Previo:</label>
+              <select id="customer-reactivation-servicio-previo"
                 value={selectedServiceId}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -355,8 +355,8 @@ export default function CustomerReactivationTab({
 
             {/* Estado Anti-Spam */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">🛡️ Estado Anti-Spam:</label>
-              <select
+              <label htmlFor="customer-reactivation-estado-anti-spam" className="block text-xs font-semibold text-slate-600 mb-1">🛡️ Estado Anti-Spam:</label>
+              <select id="customer-reactivation-estado-anti-spam"
                 value={contactStatus}
                 onChange={(e) => setContactStatus(e.target.value as ContactStatusFilter)}
                 className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
@@ -369,9 +369,9 @@ export default function CustomerReactivationTab({
 
             {/* Búsqueda por Texto */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">🔍 Buscar Clienta:</label>
+              <label htmlFor="customer-reactivation-buscar-clienta" className="block text-xs font-semibold text-slate-600 mb-1">🔍 Buscar Clienta:</label>
               <div className="relative">
-                <input
+                <input id="customer-reactivation-buscar-clienta"
                   type="text"
                   placeholder="Nombre, teléfono o RUT..."
                   value={search}

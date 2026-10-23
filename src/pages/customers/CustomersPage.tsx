@@ -7,7 +7,8 @@ import CustomerReactivationTab from '../../components/customers/CustomerReactiva
 import CustomerBirthdaysTab from '../../components/customers/CustomerBirthdaysTab';
 import { useCustomersStore } from '../../stores/customersStore';
 import { LoadMoreSentinel } from '../../components/common/LoadMoreSentinel';
-import { useAppointmentsStore } from '../../stores/appointmentsStore';
+import { RANGE_PAGE_SIZE, useAppointmentsStore } from '../../stores/appointmentsStore';
+import { addDays, format, subMonths } from 'date-fns';
 import { useServicesStore } from '../../stores/servicesStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Customer, NotificationPreference } from '../../types/customer.types';
@@ -59,7 +60,13 @@ export default function CustomersPage() {
         if (isAuthenticated && user) {
             fetchCustomers();
             fetchDirectory(true);
-            fetchAppointments();
+            // Reactivación: última visita de cada clienta dentro de los últimos 12 meses
+            const today = new Date();
+            fetchAppointments({
+                startDate: format(subMonths(today, 12), 'yyyy-MM-dd'),
+                endDate: format(addDays(today, 90), 'yyyy-MM-dd'),
+                size: RANGE_PAGE_SIZE,
+            }).catch(() => {});
             fetchServices();
         }
     }, [isAuthenticated, user, fetchCustomers, fetchDirectory, fetchAppointments, fetchServices]);

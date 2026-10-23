@@ -44,7 +44,7 @@ export default function Navbar({
 
     return (
         <nav style={{
-            position: 'sticky', top: 0, zIndex: 1000,
+            position: 'sticky', top: 0, zIndex: 40, // bajo los modales (z-50) y el menú móvil
             background: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(8px)',
             borderBottom: '1px solid #f0e0d8',

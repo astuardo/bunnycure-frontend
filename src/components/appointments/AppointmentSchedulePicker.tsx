@@ -311,7 +311,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         <div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-semibold text-xs text-slate-700 flex items-center gap-1 mb-0">
+              <label htmlFor="appointment-schedule-picker-hora" className="font-semibold text-xs text-slate-700 flex items-center gap-1 mb-0">
                 <FiClock className="text-bunny-primary" /> Hora *
               </label>
               {calculatedEndTime && (
@@ -321,7 +321,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               )}
             </div>
             <div className="flex mb-2">
-              <input
+              <input id="appointment-schedule-picker-hora"
                 type="time"
                 required={required}
                 value={selectedTime}

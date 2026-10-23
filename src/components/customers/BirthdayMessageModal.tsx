@@ -189,7 +189,7 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
         {/* Vista previa y edición del mensaje */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <label htmlFor="birthday-message-mensaje-personalizable" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               MENSAJE PERSONALIZABLE:
             </label>
             <button
@@ -208,7 +208,7 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
               )}
             </button>
           </div>
-          <textarea
+          <textarea id="birthday-message-mensaje-personalizable"
             rows={6}
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}

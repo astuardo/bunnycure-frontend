@@ -207,10 +207,10 @@ export default function ReactivationMessageModal({
 
         {/* Editor de Texto */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label htmlFor="reactivation-message-personalizar-mensaje-antes-de" className="block text-xs font-semibold text-slate-700 mb-1">
             ✏️ Personalizar mensaje antes de enviar:
           </label>
-          <textarea
+          <textarea id="reactivation-message-personalizar-mensaje-antes-de"
             rows={5}
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}

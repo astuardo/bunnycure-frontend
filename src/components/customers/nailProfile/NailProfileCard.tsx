@@ -94,10 +94,10 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
         {editing ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-tecnica-base-habitual" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 TÉCNICA / BASE HABITUAL
               </label>
-              <select
+              <select id="nail-profile-card-tecnica-base-habitual"
                 value={preferredBase}
                 onChange={(e) => setPreferredBase(e.target.value as BaseTechniqueType)}
                 className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
@@ -112,10 +112,10 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-condicion-habitual-de-la" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 CONDICIÓN HABITUAL DE LA UÑA
               </label>
-              <select
+              <select id="nail-profile-card-condicion-habitual-de-la"
                 value={usualCondition}
                 onChange={(e) => setUsualCondition(e.target.value as NailConditionType)}
                 className="w-full text-xs sm:text-sm rounded-lg border border-bunny-accent/60 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
@@ -130,10 +130,10 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-tonos-gamas-favoritas" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 TONOS / GAMAS FAVORITAS
               </label>
-              <input
+              <input id="nail-profile-card-tonos-gamas-favoritas"
                 type="text"
                 placeholder="Ej: Nudes rosados, Burdeos, Francesa con microglitter..."
                 value={favoriteColors}
@@ -143,10 +143,10 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-alergias-o-sensibilidades" className="block text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">
                 ⚠️ ALERGIAS O SENSIBILIDADES
               </label>
-              <input
+              <input id="nail-profile-card-alergias-o-sensibilidades"
                 type="text"
                 placeholder="Ej: Alergia a monómero fuerte, cutícula hipersensible..."
                 value={allergyNotes}
@@ -156,10 +156,10 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-recomendaciones-tecnicas-generales" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 RECOMENDACIONES TÉCNICAS GENERALES
               </label>
-              <input
+              <input id="nail-profile-card-recomendaciones-tecnicas-generales"
                 type="text"
                 placeholder="Ej: Trabajar a baja revolución, usar primer sin ácido..."
                 value={generalNotes}

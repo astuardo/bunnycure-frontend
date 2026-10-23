@@ -1290,10 +1290,10 @@ export default function InvoicesPage() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                <label htmlFor="invoices-rut-del-cliente" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                   RUT del Cliente <span className="text-rose-600">*</span>
                 </label>
-                <input
+                <input id="invoices-rut-del-cliente"
                   type="text"
                   placeholder="Ej: 18.664.589-8"
                   value={editRut}
@@ -1307,10 +1307,10 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                <label htmlFor="invoices-correo-oficial-del-cliente" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                   Correo Oficial del Cliente (Opcional)
                 </label>
-                <input
+                <input id="invoices-correo-oficial-del-cliente"
                   type="email"
                   placeholder="cliente@ejemplo.com"
                   value={editEmail}
@@ -1367,10 +1367,10 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                <label htmlFor="invoices-numero-de-folio-manual" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                   Número de Folio Manual (Opcional)
                 </label>
-                <input
+                <input id="invoices-numero-de-folio-manual"
                   type="text"
                   placeholder="Ej: 1420 (Si lo dejas vacío, se guardará como MANUAL-ID)"
                   value={manualFolio}
@@ -1380,10 +1380,10 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                <label htmlFor="invoices-observacion-nota" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                   Observación / Nota
                 </label>
-                <input
+                <input id="invoices-observacion-nota"
                   type="text"
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
@@ -1431,10 +1431,10 @@ export default function InvoicesPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+            <label htmlFor="invoices-folio-inicial-consecutivo-opcional" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
               Folio Inicial Consecutivo (Opcional)
             </label>
-            <input
+            <input id="invoices-folio-inicial-consecutivo-opcional"
               type="text"
               placeholder="Ej: 1400 (Asignará 1400, 1401, 1402... correlativamente)"
               value={batchInitialFolio}
@@ -1444,10 +1444,10 @@ export default function InvoicesPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+            <label htmlFor="invoices-nota-general-del-lote" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
               Nota General del Lote
             </label>
-            <input
+            <input id="invoices-nota-general-del-lote"
               type="text"
               value={batchManualNotes}
               onChange={(e) => setBatchManualNotes(e.target.value)}
@@ -1533,10 +1533,10 @@ export default function InvoicesPage() {
                 XML adjuntos para la boleta <strong>Folio #{selectedIssued.invoiceNumber}</strong>.
               </p>
               <div>
-                <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+                <label htmlFor="invoices-destinatario" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
                   Destinatario:
                 </label>
-                <input
+                <input id="invoices-destinatario"
                   type="email"
                   placeholder="correo@ejemplo.com"
                   value={resendEmailTarget}
@@ -1570,10 +1570,10 @@ export default function InvoicesPage() {
             <strong>Atención:</strong> Esta acción anulará definitivamente la boleta <strong>Folio #{cancelFolio}</strong> directamente en la plataforma del SII.
           </div>
           <div>
-            <label className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
+            <label htmlFor="invoices-causa-de-anulacion" className="block text-xs font-semibold text-bunny-text uppercase tracking-wider mb-1.5">
               Causa de Anulación:
             </label>
-            <select
+            <select id="invoices-causa-de-anulacion"
               value={cancelCause}
               onChange={(e) => setCancelCause(e.target.value)}
               className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"

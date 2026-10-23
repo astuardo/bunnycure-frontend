@@ -1102,10 +1102,10 @@ export default function MarketingCampaignsPage() {
               WhatsApp para revisar cómo se ve antes de enviarlo a las clientas.
             </p>
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label htmlFor="marketing-campaigns-numero-de-whatsapp-con" className="block text-xs font-semibold text-stone-700 mb-1">
                 Número de WhatsApp (con código +56):
               </label>
-              <input
+              <input id="marketing-campaigns-numero-de-whatsapp-con"
                 type="text"
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
@@ -1279,10 +1279,10 @@ export default function MarketingCampaignsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label htmlFor="marketing-campaigns-encabezado-texto-plano-sin" className="block text-xs font-semibold text-stone-700 mb-1">
                 Encabezado (Texto plano, sin emojis según reglas de Meta):
               </label>
-              <input
+              <input id="marketing-campaigns-encabezado-texto-plano-sin"
                 type="text"
                 value={editHeaderText}
                 onChange={(e) => setEditHeaderText(e.target.value)}
@@ -1292,10 +1292,10 @@ export default function MarketingCampaignsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label htmlFor="marketing-campaigns-cuerpo-del-mensaje-soporta" className="block text-xs font-semibold text-stone-700 mb-1">
                 Cuerpo del Mensaje (Soporta emojis, *negrita* y variables {'{{1}}'}, {'{{2}}'}):
               </label>
-              <textarea
+              <textarea id="marketing-campaigns-cuerpo-del-mensaje-soporta"
                 rows={6}
                 value={editBodyText}
                 onChange={(e) => setEditBodyText(e.target.value)}
@@ -1308,8 +1308,8 @@ export default function MarketingCampaignsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Texto de Pie (Footer):</label>
-                <input
+                <label htmlFor="marketing-campaigns-texto-de-pie-footer" className="block text-xs font-semibold text-stone-700 mb-1">Texto de Pie (Footer):</label>
+                <input id="marketing-campaigns-texto-de-pie-footer"
                   type="text"
                   value={editFooterText}
                   onChange={(e) => setEditFooterText(e.target.value)}
@@ -1318,8 +1318,8 @@ export default function MarketingCampaignsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Texto del Botón CTA (Sin emojis):</label>
-                <input
+                <label htmlFor="marketing-campaigns-texto-del-boton-cta" className="block text-xs font-semibold text-stone-700 mb-1">Texto del Botón CTA (Sin emojis):</label>
+                <input id="marketing-campaigns-texto-del-boton-cta"
                   type="text"
                   value={editButtonText}
                   onChange={(e) => setEditButtonText(e.target.value)}
@@ -1330,8 +1330,8 @@ export default function MarketingCampaignsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">URL de Destino del Botón:</label>
-              <input
+              <label htmlFor="marketing-campaigns-url-de-destino-del" className="block text-xs font-semibold text-stone-700 mb-1">URL de Destino del Botón:</label>
+              <input id="marketing-campaigns-url-de-destino-del"
                 type="text"
                 value={editButtonUrl}
                 onChange={(e) => setEditButtonUrl(e.target.value)}
@@ -1399,10 +1399,10 @@ export default function MarketingCampaignsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label htmlFor="marketing-campaigns-que-campana-o-mensaje" className="block text-xs font-semibold text-stone-700 mb-1">
                     ¿Qué campaña o mensaje deseas crear?
                   </label>
-                  <textarea
+                  <textarea id="marketing-campaigns-que-campana-o-mensaje"
                     rows={3}
                     placeholder="Ej: Crea una promoción para Navidad con 20% de descuento en extensiones de uñas acrílicas y diseño festivo..."
                     value={aiPrompt}
@@ -1449,8 +1449,8 @@ export default function MarketingCampaignsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="sm:col-span-2">
-                        <label className="block text-[11px] font-semibold text-stone-600 mb-1">Nombre de la Campaña</label>
-                        <input
+                        <label htmlFor="marketing-campaigns-nombre-de-la-campana" className="block text-[11px] font-semibold text-stone-600 mb-1">Nombre de la Campaña</label>
+                        <input id="marketing-campaigns-nombre-de-la-campana"
                           type="text"
                           value={draftDisplayName}
                           onChange={(e) => setDraftDisplayName(e.target.value)}
@@ -1459,8 +1459,8 @@ export default function MarketingCampaignsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-stone-600 mb-1">Emoji / Icono</label>
-                        <input
+                        <label htmlFor="marketing-campaigns-emoji-icono" className="block text-[11px] font-semibold text-stone-600 mb-1">Emoji / Icono</label>
+                        <input id="marketing-campaigns-emoji-icono"
                           type="text"
                           value={draftEmoji}
                           onChange={(e) => setDraftEmoji(e.target.value)}
@@ -1509,8 +1509,8 @@ export default function MarketingCampaignsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[11px] font-semibold text-stone-600 mb-1">Pie de Página (Footer)</label>
-                        <input
+                        <label htmlFor="marketing-campaigns-pie-de-pagina-footer" className="block text-[11px] font-semibold text-stone-600 mb-1">Pie de Página (Footer)</label>
+                        <input id="marketing-campaigns-pie-de-pagina-footer"
                           type="text"
                           value={draftFooterText}
                           onChange={(e) => setDraftFooterText(e.target.value)}
@@ -1520,8 +1520,8 @@ export default function MarketingCampaignsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-stone-600 mb-1">Botón de Acción (CTA)</label>
-                        <input
+                        <label htmlFor="marketing-campaigns-boton-de-accion-cta" className="block text-[11px] font-semibold text-stone-600 mb-1">Botón de Acción (CTA)</label>
+                        <input id="marketing-campaigns-boton-de-accion-cta"
                           type="text"
                           value={draftButtonText}
                           onChange={(e) => setDraftButtonText(e.target.value)}
@@ -1533,8 +1533,8 @@ export default function MarketingCampaignsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Enlace del Botón</label>
-                      <input
+                      <label htmlFor="marketing-campaigns-enlace-del-boton" className="block text-[11px] font-semibold text-stone-600 mb-1">Enlace del Botón</label>
+                      <input id="marketing-campaigns-enlace-del-boton"
                         type="text"
                         value={draftButtonUrl}
                         onChange={(e) => setDraftButtonUrl(e.target.value)}

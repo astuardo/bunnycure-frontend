@@ -136,7 +136,7 @@ export function CreateAppointmentModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Selector de Cliente */}
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                <label htmlFor="create-appointment-cliente" className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Cliente <span className="text-rose-500">*</span>
                 </label>
                 {isCustomerListCollapsed && selectedCreateCustomer ? (
@@ -169,7 +169,7 @@ export function CreateAppointmentModal({
                   </div>
                 ) : (
                   <>
-                    <input
+                    <input id="create-appointment-cliente"
                       type="text"
                       placeholder="Buscar cliente por nombre o teléfono..."
                       value={customerSearch}
@@ -212,7 +212,7 @@ export function CreateAppointmentModal({
 
               {/* Selector de Servicios */}
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                <label htmlFor="create-appointment-servicio-s" className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Servicio(s) <span className="text-rose-500">*</span>
                 </label>
                 {isServiceListCollapsed && selectedCreateServices.length > 0 ? (
@@ -231,7 +231,7 @@ export function CreateAppointmentModal({
                   </div>
                 ) : (
                   <>
-                    <input
+                    <input id="create-appointment-servicio-s"
                       type="text"
                       placeholder="Buscar servicios..."
                       value={serviceSearch}
@@ -307,8 +307,8 @@ export function CreateAppointmentModal({
             />
 
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 block">Detalle de servicios</label>
-              <input
+              <label htmlFor="create-appointment-detalle-de-servicios" className="text-xs font-bold text-slate-700 mb-1.5 block">Detalle de servicios</label>
+              <input id="create-appointment-detalle-de-servicios"
                 type="text"
                 readOnly
                 value={selectedCreateServices.map((service) => service.name).join(' + ') || 'Sin servicios seleccionados'}
@@ -317,8 +317,8 @@ export function CreateAppointmentModal({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 block">Notas</label>
-              <textarea
+              <label htmlFor="create-appointment-notas" className="text-xs font-bold text-slate-700 mb-1.5 block">Notas</label>
+              <textarea id="create-appointment-notas"
                 rows={3}
                 value={formData.notes}
                 onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
@@ -464,8 +464,8 @@ export function CreateAppointmentModal({
                   <div className="mt-3 pt-3 border-t border-slate-100">
                     {availableCreateCustomerGiftCards.length > 1 && (
                       <div className="mb-3">
-                        <label className="text-xs font-semibold text-slate-700 mb-1 block">GiftCard a utilizar:</label>
-                        <select
+                        <label htmlFor="create-appointment-giftcard-a-utilizar" className="text-xs font-semibold text-slate-700 mb-1 block">GiftCard a utilizar:</label>
+                        <select id="create-appointment-giftcard-a-utilizar"
                           value={effectiveSelectedGiftCard.id}
                           onChange={(e) => {
                             const newId = Number(e.target.value);

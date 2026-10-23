@@ -222,8 +222,8 @@ export default function BookingRequestsPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-rose-100 shadow-sm">
           <div className="w-full sm:w-64">
-            <label className="block text-xs font-semibold text-stone-600 mb-1">Filtrar por estado:</label>
-            <select
+            <label htmlFor="booking-requests-filtrar-por-estado" className="block text-xs font-semibold text-stone-600 mb-1">Filtrar por estado:</label>
+            <select id="booking-requests-filtrar-por-estado"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending')}
               className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
@@ -381,8 +381,8 @@ export default function BookingRequestsPage() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Fecha de la Cita *</label>
-                <input
+                <label htmlFor="booking-requests-fecha-de-la-cita" className="block text-sm font-semibold text-stone-700 mb-1">Fecha de la Cita *</label>
+                <input id="booking-requests-fecha-de-la-cita"
                   type="date"
                   className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={appointmentDate}
@@ -392,8 +392,8 @@ export default function BookingRequestsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Hora de la Cita *</label>
-                <input
+                <label htmlFor="booking-requests-hora-de-la-cita" className="block text-sm font-semibold text-stone-700 mb-1">Hora de la Cita *</label>
+                <input id="booking-requests-hora-de-la-cita"
                   type="time"
                   className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={appointmentTime}
@@ -403,8 +403,8 @@ export default function BookingRequestsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Notas Adicionales</label>
-                <textarea
+                <label htmlFor="booking-requests-notas-adicionales" className="block text-sm font-semibold text-stone-700 mb-1">Notas Adicionales</label>
+                <textarea id="booking-requests-notas-adicionales"
                   rows={3}
                   className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={notes}
@@ -457,8 +457,8 @@ export default function BookingRequestsPage() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Motivo del Rechazo *</label>
-                <textarea
+                <label htmlFor="booking-requests-motivo-del-rechazo" className="block text-sm font-semibold text-stone-700 mb-1">Motivo del Rechazo *</label>
+                <textarea id="booking-requests-motivo-del-rechazo"
                   rows={3}
                   className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={rejectionReason}
