@@ -67,7 +67,7 @@ export function WebPushPrompt() {
     <aside
       role="region"
       aria-label="Aviso de activación de notificaciones push"
-      className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-bunny-card/95 backdrop-blur-md border border-bunny-border/80 shadow-2xl rounded-2xl p-4 transition-all duration-300 animate-slide-up"
+      className="fixed bottom-[calc(1rem_+_var(--bottom-nav-h,0px)_+_env(safe-area-inset-bottom,0px))] sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-bunny-card/95 backdrop-blur-md border border-bunny-border/80 shadow-2xl rounded-2xl p-4 transition-all duration-300 animate-slide-up"
     >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0">

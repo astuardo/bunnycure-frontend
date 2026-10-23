@@ -66,7 +66,7 @@ export function InstallPWA() {
   if (isPublicPath(pathname) || !deferredPrompt || !showToast) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] max-w-sm w-[calc(100vw-2rem)]">
+    <div className="fixed bottom-[calc(1rem_+_var(--bottom-nav-h,0px)_+_env(safe-area-inset-bottom,0px))] right-4 sm:bottom-6 sm:right-6 z-[9999] max-w-sm w-[calc(100vw-2rem)]">
       <div className="bg-bunny-secondary text-white rounded-2xl shadow-bunny-lg p-4 border border-bunny-secondary/40">
         <div className="flex items-start justify-between gap-2 mb-2">
           <strong className="text-sm font-bold flex items-center gap-1.5">

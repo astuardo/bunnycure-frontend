@@ -161,4 +161,33 @@ button:not(:disabled):active,
   background: rgba(180, 120, 100, 0.7);
 }
 
+/* Movimiento reducido: las entradas conservan el fundido (el cambio de estado) sin desplazamiento */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-pop {
+    animation-name: fade-in;
+  }
+}
 
+/* Pantallas táctiles: área mínima de toque para chips, filtros y botones sueltos */
+@media (pointer: coarse) {
+  button,
+  [role="button"] {
+    min-height: 36px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+}
+
+/* Celular: sin el gesto "deslizar para volver" propio del navegador (Chrome Android). El "volver"
+   desde el borde lo hace la app (useEdgeSwipe); con los dos activos un solo gesto navegaba dos veces. */
+@media (pointer: coarse) {
+  html,
+  body {
+    overscroll-behavior-x: none;
+  }
+}
