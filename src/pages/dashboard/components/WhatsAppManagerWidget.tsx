@@ -19,6 +19,7 @@ import {
     TEXT_MID,
     formatMessageTime,
 } from './DashboardCommon';
+import { confirmDialog } from '../../../components/ui/confirmDialog';
 
 interface ClientWhatsAppGroup {
     clientKey: string;
@@ -179,7 +180,7 @@ export const WhatsAppManagerWidget: React.FC = () => {
     };
 
     const handleDiscardAll = async () => {
-        if (!window.confirm('¿Estás segura/o de descartar todos los mensajes fallidos? Ya no se podrán reintentar.')) {
+        if (!(await confirmDialog({ message: '¿Descartar todos los mensajes fallidos? Ya no se podrán reintentar.', confirmLabel: 'Descartar todos', tone: 'danger' }))) {
             return;
         }
         try {

@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import BuildVersionGuard from './components/BuildVersionGuard'
 import { TenantProvider } from './context/TenantContext'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
+import { ConfirmDialogHost } from './components/ui/ConfirmDialogHost'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <PWAUpdatePrompt />
         <InstallPWA />
         <WebPushPrompt />
+        <ConfirmDialogHost />
         <ToastContainer
           position="top-right"
           autoClose={3000}

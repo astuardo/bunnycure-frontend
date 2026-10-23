@@ -20,6 +20,7 @@ import { appointmentsApi } from '../../api/appointments.api';
 import { giftcardsApi } from '../../api/giftcards.api';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { Button, Badge, Card, Spinner, Alert } from '@/components/ui';
+import { confirmDialog } from '../../components/ui/confirmDialog';
 
 export default function CustomerDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -135,7 +136,7 @@ export default function CustomerDetailsPage() {
       ? `¿Deseas agregar ${delta} sello(s) manualmente a ${customer.fullName}?` 
       : `¿Deseas quitar ${Math.abs(delta)} sello(s) a ${customer.fullName}?`;
     
-    if (window.confirm(confirmMsg)) {
+    if (await confirmDialog({ message: confirmMsg, confirmLabel: delta > 0 ? 'Agregar sellos' : 'Quitar sellos' })) {
       const updated = await adjustCustomerLoyalty(customer.id, delta);
       if (updated) {
         setDirectCustomer(updated);
@@ -146,7 +147,7 @@ export default function CustomerDetailsPage() {
 
   const handleSyncVisits = async () => {
     if (!customer) return;
-    if (window.confirm(`¿Deseas recalcular y sincronizar las visitas registradas de ${customer.fullName} con sus citas completadas reales (${completedAppointments} citas)?`)) {
+    if (await confirmDialog(`¿Deseas recalcular y sincronizar las visitas registradas de ${customer.fullName} con sus citas completadas reales (${completedAppointments} citas)?`)) {
       const updated = await syncCustomerVisits(customer.id);
       if (updated) {
         setDirectCustomer(updated);

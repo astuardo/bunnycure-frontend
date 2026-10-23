@@ -20,6 +20,7 @@ import {
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { confirmDialog } from '../ui/confirmDialog';
 
 interface Props {
   unavailabilities: ScheduleUnavailability[];
@@ -403,8 +404,8 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (window.confirm(`¿Estás segura de eliminar los ${pastBlocks.length} registros del historial de bloqueos pasados?`)) {
+              onClick={async () => {
+                if (await confirmDialog({ message: `¿Eliminar los ${pastBlocks.length} registros del historial de bloqueos pasados?`, confirmLabel: 'Eliminar historial', tone: 'danger' })) {
                   onUnavailabilitiesChange(unavailabilities.filter((u) => (u.endDate || u.startDate) >= todayStr));
                 }
               }}

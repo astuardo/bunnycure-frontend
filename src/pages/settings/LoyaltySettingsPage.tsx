@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
+import { confirmDialog } from '../../components/ui/confirmDialog';
 
 export default function LoyaltySettingsPage() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function LoyaltySettingsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('¿Estás seguro de eliminar este premio de la lista?')) {
+    if (await confirmDialog({ message: '¿Eliminar este premio de la lista?', confirmLabel: 'Eliminar', tone: 'danger' })) {
       await deleteReward(id);
     }
   };

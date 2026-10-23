@@ -42,6 +42,7 @@ import {
 import { CreateAppointmentModal } from '../../components/appointments/CreateAppointmentModal';
 import { EditAppointmentModal } from '../../components/appointments/EditAppointmentModal';
 import { AppointmentFormState, CustomChargeItem, CreateStep, formatCurrency, AppointmentEditFormState, EditMode } from '../../components/appointments/appointmentForm.shared';
+import { confirmDialog } from '../../components/ui/confirmDialog';
 
 
 
@@ -526,7 +527,7 @@ export default function AppointmentsPage() {
 
   const handleApplyGiftCardToEditAppointment = async (gc: GiftCard, item: GiftCardItem) => {
     if (applyingGiftCard) return;
-    if (!confirm(`¿Confirmas canjear 1 "${item.serviceName}" de la GiftCard ${gc.code} para esta cita?`)) {
+    if (!(await confirmDialog({ message: `¿Canjear 1 "${item.serviceName}" de la GiftCard ${gc.code} para esta cita?`, confirmLabel: 'Canjear' }))) {
       return;
     }
 
@@ -935,6 +936,13 @@ export default function AppointmentsPage() {
     }
   };
 
+  const STATUS_LABELS: Partial<Record<AppointmentStatus, string>> = {
+    PENDING: 'Pendiente',
+    CONFIRMED: 'Confirmada',
+    COMPLETED: 'Completada',
+    CANCELLED: 'Cancelada',
+  };
+
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
     if (status === AppointmentStatus.COMPLETED) {
       if (hasFeature('INVENTORY')) {
@@ -953,7 +961,7 @@ export default function AppointmentsPage() {
       return;
     }
 
-    if (!confirm(`¿Cambiar estado a ${status}?`)) {
+    if (!(await confirmDialog({ message: `¿Cambiar el estado de la cita a "${STATUS_LABELS[status] ?? status}"?`, confirmLabel: 'Cambiar estado' }))) {
       return;
     }
 
@@ -1072,7 +1080,7 @@ export default function AppointmentsPage() {
   };
 
   const handleDeleteAppointment = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
+    if (await confirmDialog({ message: '¿Eliminar esta cita? Esta acción no se puede deshacer.', confirmLabel: 'Eliminar cita', tone: 'danger' })) {
       try {
         await deleteAppointment(id);
         toast.success('Cita eliminada');

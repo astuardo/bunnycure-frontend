@@ -33,6 +33,7 @@ import {
 import { Button, Badge, Card, Spinner } from '@/components/ui';
 import ReactivationMessageModal from './ReactivationMessageModal';
 import { useToast } from '@/hooks/useToast';
+import { confirmDialog } from '../ui/confirmDialog';
 
 const TEMPLATE_SEND_STORAGE_KEY = 'bunnycure_reactivation_template_enabled_v1';
 
@@ -117,16 +118,18 @@ export default function CustomerReactivationTab({
 
   // Envío WhatsApp 1-clic directo
   const handleQuickWhatsApp = useCallback(
-    (item: InactiveCustomer) => {
+    async (item: InactiveCustomer) => {
       if (!templateSendEnabled) {
         toast.info('El envío 1-clic está desactivado. Usa "Personalizar" o "Copiar"');
         return;
       }
 
       if (item.isContactedRecently) {
-        const confirmSend = window.confirm(
-          `⚠️ ${item.customer.fullName} ya fue contactada hace ${item.daysSinceLastContact} día(s).\n¿Deseas volver a enviarle un mensaje por WhatsApp?`
-        );
+        const confirmSend = await confirmDialog({
+          title: 'Volver a contactar',
+          message: `${item.customer.fullName} ya fue contactada hace ${item.daysSinceLastContact} día(s).\n¿Deseas volver a enviarle un mensaje por WhatsApp?`,
+          confirmLabel: 'Enviar WhatsApp',
+        });
         if (!confirmSend) return;
       }
 
