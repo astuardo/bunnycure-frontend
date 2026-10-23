@@ -14,7 +14,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   danger: 'bg-rose-100 text-rose-800 border-rose-200',
   warning: 'bg-amber-100 text-amber-900 border-amber-200',
   info: 'bg-purple-100 text-purple-900 border-purple-200',
-  neutral: 'bg-gray-100 text-gray-700 border-gray-200',
+  neutral: 'bg-bunny-sand text-bunny-text border-bunny-border',
 };
 
 export const Badge: React.FC<BadgeProps> = ({

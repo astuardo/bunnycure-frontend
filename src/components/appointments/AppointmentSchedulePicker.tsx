@@ -249,7 +249,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         <div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-semibold text-xs text-slate-700 flex items-center gap-1 mb-0">
+              <label className="font-semibold text-xs text-bunny-text flex items-center gap-1 mb-0">
                 <FiCalendar className="text-bunny-primary" /> Fecha *
               </label>
               <button
@@ -275,7 +275,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   ? 'bg-rose-50 border-rose-400 text-rose-800'
                   : selectedDate
                   ? 'bg-bunny-light/10 border-bunny-accent/80 text-bunny-dark hover:border-bunny-primary'
-                  : 'bg-white border-slate-300 text-slate-400 hover:border-bunny-primary'
+                  : 'bg-white border-bunny-border-strong text-bunny-text-muted/70 hover:border-bunny-primary'
               }`}
               title={showVisualCalendar ? 'Toca para ocultar el calendario' : 'Toca para abrir el calendario y cambiar fecha'}
             >
@@ -287,13 +287,13 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   📅 {selectedDate} <span className="text-[10px] opacity-80">{showVisualCalendar ? '▲' : '▼'}</span>
                 </span>
               ) : (
-                <span className="text-slate-400 text-sm ml-2 shrink-0">
+                <span className="text-bunny-text-muted/70 text-sm ml-2 shrink-0">
                   📅
                 </span>
               )}
             </div>
             {!showVisualCalendar && selectedDate && (
-              <div className="flex items-center justify-between mt-1 px-1 text-[11px] text-slate-500">
+              <div className="flex items-center justify-between mt-1 px-1 text-[11px] text-bunny-text-muted">
                 <span>✓ Fecha seleccionada</span>
                 <button
                   type="button"
@@ -311,12 +311,12 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
         <div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label htmlFor="appointment-schedule-picker-hora" className="font-semibold text-xs text-slate-700 flex items-center gap-1 mb-0">
+              <label htmlFor="appointment-schedule-picker-hora" className="font-semibold text-xs text-bunny-text flex items-center gap-1 mb-0">
                 <FiClock className="text-bunny-primary" /> Hora *
               </label>
               {calculatedEndTime && (
-                <small className="text-slate-400 text-[11px]">
-                  Termina: <strong className="text-slate-700">{calculatedEndTime} hrs</strong> ({durationMinutes} min)
+                <small className="text-bunny-text-muted/70 text-[11px]">
+                  Termina: <strong className="text-bunny-text">{calculatedEndTime} hrs</strong> ({durationMinutes} min)
                 </small>
               )}
             </div>
@@ -327,14 +327,14 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 value={selectedTime}
                 onChange={(e) => onTimeChange(e.target.value)}
                 className={`flex-1 text-base sm:text-sm rounded-l-xl border p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary ${
-                  timeConflict.hasConflict ? 'bg-rose-50 border-rose-400 text-rose-800' : 'bg-white border-slate-300 text-slate-800'
+                  timeConflict.hasConflict ? 'bg-rose-50 border-rose-400 text-rose-800' : 'bg-white border-bunny-border-strong text-bunny-text'
                 }`}
               />
               <button
                 type="button"
                 onClick={() => handleAdjustTimeMinutes(-15)}
                 title="Atrasar 15 minutos"
-                className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 border-y border-r border-slate-300 text-slate-700 transition-colors"
+                className="px-2.5 py-1 text-xs font-semibold bg-bunny-sand hover:bg-bunny-border border-y border-r border-bunny-border-strong text-bunny-text transition-colors"
               >
                 -15m
               </button>
@@ -342,7 +342,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                 type="button"
                 onClick={() => handleAdjustTimeMinutes(15)}
                 title="Adelantar 15 minutos"
-                className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 border-y border-r border-slate-300 rounded-r-xl text-slate-700 transition-colors"
+                className="px-2.5 py-1 text-xs font-semibold bg-bunny-sand hover:bg-bunny-border border-y border-r border-bunny-border-strong rounded-r-xl text-bunny-text transition-colors"
               >
                 +15m
               </button>
@@ -350,12 +350,12 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
             {/* ─── HORAS RÁPIDAS (DEBAJO DEL SELECTOR PREDETERMINADO) ─── */}
             {!fullDayBlock.blocked && !(selectedDate && !allowPastDates && selectedDate < todayStr) && (
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="p-2.5 rounded-xl bg-bunny-paper border border-bunny-border/80">
                 <div className="flex justify-between items-center mb-1.5">
-                  <small className="text-slate-600 font-bold text-[11px] flex items-center gap-1">
+                  <small className="text-bunny-text-muted font-bold text-[11px] flex items-center gap-1">
                     <span>⚡</span> Horas rápidas:
                   </small>
-                  <small className="text-slate-400 text-[10px]">
+                  <small className="text-bunny-text-muted/70 text-[10px]">
                     👤 Cita · 🚫 Bloqueado
                   </small>
                 </div>
@@ -391,7 +391,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                             ? 'border-rose-200 bg-rose-50 text-rose-400 line-through cursor-not-allowed opacity-60'
                             : isAptOccupied
                             ? 'border-dashed border-amber-400 bg-amber-50 text-amber-900 font-semibold'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                            : 'border-bunny-border bg-white text-bunny-text hover:bg-bunny-sand hover:border-bunny-border-strong'
                         }`}
                         title={
                           isBlocked
@@ -422,7 +422,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           <div className="flex justify-between items-center mb-2.5">
             <button
               type="button"
-              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors"
+              className="p-1.5 rounded-lg border border-bunny-border bg-white hover:bg-bunny-paper text-bunny-text-muted transition-colors"
               onClick={() => setCurrentMonth((prev) => subMonths(prev, 1))}
               aria-label="Mes anterior"
             >
@@ -450,7 +450,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               </button>
               <button
                 type="button"
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors"
+                className="p-1.5 rounded-lg border border-bunny-border bg-white hover:bg-bunny-paper text-bunny-text-muted transition-colors"
                 onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}
                 aria-label="Mes siguiente"
               >
@@ -555,7 +555,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                   {/* Indicadores en la celda */}
                   <div>
                     {cell.isPast && (
-                      <div className="text-[8px] text-slate-400 font-bold leading-none">
+                      <div className="text-[8px] text-bunny-text-muted/70 font-bold leading-none">
                         Pasado
                       </div>
                     )}
@@ -581,7 +581,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
           </div>
 
           {/* Leyenda del calendario */}
-          <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-slate-100 text-[10.5px]">
+          <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-bunny-border text-[10.5px]">
             <span className="flex items-center gap-1 text-rose-600 font-semibold">
               <span className="w-2 h-2 rounded-xs bg-rose-400 inline-block" />
               Día Cerrado
@@ -594,11 +594,11 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
               <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />
               Citas Agendadas
             </span>
-            <span className="flex items-center gap-1 text-slate-400">
+            <span className="flex items-center gap-1 text-bunny-text-muted/70">
               <span className="w-2 h-2 rounded-xs bg-slate-300 inline-block" />
               Fechas Pasadas (Inactivas)
             </span>
-            <span className="flex items-center gap-1 text-slate-400 ml-auto">
+            <span className="flex items-center gap-1 text-bunny-text-muted/70 ml-auto">
               Click en cualquier día futuro para seleccionarlo
             </span>
           </div>
@@ -633,7 +633,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
             <Alert variant="warning" className="mb-2 text-xs flex items-start gap-2">
               <FiAlertTriangle className="text-amber-600 text-base shrink-0 mt-0.5" />
               <div>
-                <strong className="text-slate-800 block">Aviso de superposición con otra cita:</strong>
+                <strong className="text-bunny-text block">Aviso de superposición con otra cita:</strong>
                 <div>
                   La hora seleccionada se superpone con la cita de{' '}
                   <strong>{existingAptConflict.customer?.fullName || 'Clienta'}</strong>{' '}
@@ -653,15 +653,15 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
 
           {/* ─── DETALLE DE CITAS PARA EL DÍA ─── */}
           {dayAppointments.length > 0 ? (
-            <div className="p-3 mb-2 rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+            <div className="p-3 mb-2 rounded-xl border border-bunny-border bg-bunny-paper shadow-sm">
               <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">📋</span>
                   <div>
-                    <strong className="text-slate-800 text-xs sm:text-sm block">
+                    <strong className="text-bunny-text text-xs sm:text-sm block">
                       Citas agendadas para este día ({dayAppointments.length})
                     </strong>
-                    <div className="text-slate-500 text-[11px]">
+                    <div className="text-bunny-text-muted text-[11px]">
                       Revisa los horarios ocupados para organizar la nueva cita
                     </div>
                   </div>
@@ -685,7 +685,7 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                       className={`p-2 rounded-xl border flex justify-between items-center flex-wrap gap-2 transition-all ${
                         isColliding
                           ? 'bg-rose-50 border-rose-300 ring-1 ring-rose-300'
-                          : 'bg-white border-slate-200'
+                          : 'bg-white border-bunny-border'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -699,18 +699,18 @@ export const AppointmentSchedulePicker: React.FC<AppointmentSchedulePickerProps>
                         </div>
 
                         <div>
-                          <div className="font-semibold text-slate-800 text-xs flex items-center gap-1">
-                            <FiUser size={12} className="text-slate-400" />
+                          <div className="font-semibold text-bunny-text text-xs flex items-center gap-1">
+                            <FiUser size={12} className="text-bunny-text-muted/70" />
                             <span>{apt.customer?.fullName || 'Clienta'}</span>
                             {apt.customer?.phone && (
-                              <small className="text-slate-400 font-normal">
+                              <small className="text-bunny-text-muted/70 font-normal">
                                 ({apt.customer.phone})
                               </small>
                             )}
                           </div>
-                          <div className="text-slate-500 text-[11px] flex items-center gap-1">
+                          <div className="text-bunny-text-muted text-[11px] flex items-center gap-1">
                             <span>💅 {servicesText}</span>
-                            <span className="text-slate-400 font-semibold">({dur} min)</span>
+                            <span className="text-bunny-text-muted/70 font-semibold">({dur} min)</span>
                           </div>
                         </div>
                       </div>

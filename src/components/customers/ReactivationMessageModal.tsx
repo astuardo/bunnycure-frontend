@@ -121,26 +121,26 @@ export default function ReactivationMessageModal({
 
       <Modal.Body className="space-y-4">
         {/* Info de la Clienta */}
-        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <div className="p-3 rounded-xl bg-bunny-paper border border-bunny-border">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             <div>
-              <span className="text-slate-500 block mb-0.5">Teléfono:</span>
-              <span className="font-semibold text-slate-800">{inactiveItem.customer.phone || 'No registrado'}</span>
+              <span className="text-bunny-text-muted block mb-0.5">Teléfono:</span>
+              <span className="font-semibold text-bunny-text">{inactiveItem.customer.phone || 'No registrado'}</span>
             </div>
             <div>
-              <span className="text-slate-500 block mb-0.5">Último Servicio:</span>
-              <span className="font-semibold text-slate-800 truncate block" title={inactiveItem.lastServiceName}>
+              <span className="text-bunny-text-muted block mb-0.5">Último Servicio:</span>
+              <span className="font-semibold text-bunny-text truncate block" title={inactiveItem.lastServiceName}>
                 {inactiveItem.lastServiceName}
               </span>
             </div>
             <div>
-              <span className="text-slate-500 block mb-0.5">Días Inactiva:</span>
+              <span className="text-bunny-text-muted block mb-0.5">Días Inactiva:</span>
               <Badge variant={inactiveItem.daysSinceLastAppointment >= 45 ? 'danger' : inactiveItem.daysSinceLastAppointment >= 30 ? 'warning' : 'info'}>
                 {inactiveItem.daysSinceLastAppointment} días
               </Badge>
             </div>
             <div>
-              <span className="text-slate-500 block mb-0.5">Historial Contacto:</span>
+              <span className="text-bunny-text-muted block mb-0.5">Historial Contacto:</span>
               {inactiveItem.isContactedRecently ? (
                 <span className="text-amber-600 font-semibold flex items-center gap-1">
                   <FaRegClock />
@@ -159,10 +159,10 @@ export default function ReactivationMessageModal({
         {/* Selector de Tono de Plantilla */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-700">🎨 Selecciona el estilo del mensaje:</span>
+            <span className="text-xs font-semibold text-bunny-text">🎨 Selecciona el estilo del mensaje:</span>
             <button
               type="button"
-              className="text-xs text-slate-500 hover:text-bunny-primary flex items-center gap-1 transition-colors"
+              className="text-xs text-bunny-text-muted hover:text-bunny-primary flex items-center gap-1 transition-colors"
               onClick={handleResetToDefault}
             >
               <FaUndo /> Restablecer
@@ -175,7 +175,7 @@ export default function ReactivationMessageModal({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tone === 'MAINTENANCE'
                   ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  : 'bg-white text-bunny-text border-bunny-border hover:bg-bunny-paper'
               }`}
             >
               💅 Mantención Ideal (20-29d)
@@ -186,7 +186,7 @@ export default function ReactivationMessageModal({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tone === 'MISS_YOU'
                   ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  : 'bg-white text-bunny-text border-bunny-border hover:bg-bunny-paper'
               }`}
             >
               🐰 Te Extrañamos (30-44d)
@@ -197,7 +197,7 @@ export default function ReactivationMessageModal({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tone === 'SPECIAL_OFFER'
                   ? 'bg-bunny-primary text-white border-bunny-primary shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  : 'bg-white text-bunny-text border-bunny-border hover:bg-bunny-paper'
               }`}
             >
               ✨ Reactivación Especial (45+d)
@@ -207,27 +207,27 @@ export default function ReactivationMessageModal({
 
         {/* Editor de Texto */}
         <div>
-          <label htmlFor="reactivation-message-personalizar-mensaje-antes-de" className="block text-xs font-semibold text-slate-700 mb-1">
+          <label htmlFor="reactivation-message-personalizar-mensaje-antes-de" className="block text-xs font-semibold text-bunny-text mb-1">
             ✏️ Personalizar mensaje antes de enviar:
           </label>
           <textarea id="reactivation-message-personalizar-mensaje-antes-de"
             rows={5}
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            className="w-full font-mono text-xs rounded-xl border border-slate-300 p-3 focus:outline-none focus:ring-2 focus:ring-bunny-primary/30 focus:border-bunny-primary"
+            className="w-full font-mono text-xs rounded-xl border border-bunny-border-strong p-3 focus:outline-none focus:ring-2 focus:ring-bunny-primary/30 focus:border-bunny-primary"
           />
         </div>
 
         {/* Previsualización WhatsApp */}
         <div>
-          <span className="text-slate-500 font-semibold text-xs flex items-center gap-1 mb-1.5">
+          <span className="text-bunny-text-muted font-semibold text-xs flex items-center gap-1 mb-1.5">
             <FaMagic className="text-bunny-primary" />
             Vista previa en chat:
           </span>
           <div className="p-3 rounded-2xl bg-[#e5ddd5] shadow-inner">
-            <div className="bg-white rounded-xl rounded-tr-none p-3 max-w-[92%] shadow-sm text-slate-900 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+            <div className="bg-white rounded-xl rounded-tr-none p-3 max-w-[92%] shadow-sm text-bunny-text text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
               {messageText}
-              <div className="text-right mt-1 text-[10px] text-slate-500 font-sans">
+              <div className="text-right mt-1 text-[10px] text-bunny-text-muted font-sans">
                 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓✓
               </div>
             </div>

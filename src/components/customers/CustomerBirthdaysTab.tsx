@@ -111,7 +111,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
     return (
       <div className="text-center py-12">
         <Spinner size="lg" className="border-bunny-primary mx-auto" />
-        <p className="mt-3 text-slate-500 text-sm">Cargando clientas y fechas de cumpleaños...</p>
+        <p className="mt-3 text-bunny-text-muted text-sm">Cargando clientas y fechas de cumpleaños...</p>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                 ¿Quieres saludar a todas las cumpleañeras del mes en 1 solo clic?
               </span>
             </div>
-            <p className="text-slate-600 text-xs sm:text-sm mb-0 max-w-2xl">
+            <p className="text-bunny-text-muted text-xs sm:text-sm mb-0 max-w-2xl">
               Usa la plantilla oficial de Meta con botón de reserva para enviar un saludo con descuento a todas las clientas que cumplen este mes.
             </p>
           </div>
@@ -154,7 +154,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
           <div className="text-2xl sm:text-3xl font-bold text-bunny-dark mb-0.5">
             {metrics.totalThisMonth}
           </div>
-          <small className="text-slate-400 text-[11px]">
+          <small className="text-bunny-text-muted/70 text-[11px]">
             {MONTHS.find((m) => m.value === currentMonthNumber)?.label}
           </small>
         </div>
@@ -163,7 +163,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
           className={`p-3.5 rounded-xl border shadow-sm transition-all ${
             metrics.totalToday > 0
               ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-300'
-              : 'bg-white border-rose-100'
+              : 'bg-white border-bunny-border'
           }`}
         >
           <div className="flex justify-between items-center mb-1">
@@ -186,7 +186,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
           <div className="text-2xl sm:text-3xl font-bold text-amber-800 mb-0.5">
             {metrics.totalNext7Days}
           </div>
-          <small className="text-slate-400 text-[11px]">
+          <small className="text-bunny-text-muted/70 text-[11px]">
             Para agendar turnos
           </small>
         </div>
@@ -199,14 +199,14 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
           <div className="text-2xl sm:text-3xl font-bold text-emerald-800 mb-0.5">
             {metrics.totalGreetedThisYear}
           </div>
-          <small className="text-slate-400 text-[11px]">
+          <small className="text-bunny-text-muted/70 text-[11px]">
             {new Date().getFullYear()}
           </small>
         </div>
       </div>
 
       {/* ══ 2. Barra de Filtros y Buscador ═════════════════════════════════ */}
-      <Card className="border border-slate-200 shadow-sm bg-white">
+      <Card className="border border-bunny-border shadow-sm bg-white">
         <Card.Body className="p-3.5">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             {/* Mes */}
@@ -277,7 +277,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                   quickFilter === 'ALL'
                     ? 'bg-slate-700 text-white border-slate-700'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    : 'bg-white text-bunny-text-muted border-bunny-border hover:bg-bunny-paper'
                 }`}
               >
                 Todos
@@ -306,8 +306,8 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
       </Card>
 
       {/* ══ 3. Listado de Cumpleañeras ══════════════════════════════════════ */}
-      <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-        <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+      <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+        <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <FaBirthdayCake className="text-bunny-primary" />
             <span className="font-bold text-bunny-dark text-sm sm:text-base">
@@ -333,10 +333,10 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                 <th className="py-3 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-bunny-border">
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400">
+                  <td colSpan={6} className="text-center py-12 text-bunny-text-muted/70">
                     <FaBirthdayCake size={32} className="mx-auto mb-2 opacity-30 text-bunny-primary" />
                     <div>No hay cumpleañeras registradas con los filtros seleccionados.</div>
                   </td>
@@ -345,7 +345,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                 filteredCustomers.map((bc) => (
                   <tr
                     key={bc.customer.id}
-                    className={`transition-colors hover:bg-slate-50/60 ${
+                    className={`transition-colors hover:bg-bunny-paper/60 ${
                       bc.isToday ? 'bg-rose-50/40' : ''
                     }`}
                   >
@@ -353,7 +353,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                       <div className="font-bold text-bunny-dark text-sm">
                         {bc.customer.fullName}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
+                      <div className="text-xs text-bunny-text-muted mt-0.5">
                         {(bc.customer as any).rut ? `RUT: ${(bc.customer as any).rut} • ` : ''}
                         📱 {bc.customer.phone || 'Sin teléfono'}
                       </div>
@@ -363,7 +363,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                       <div className="font-semibold text-bunny-primary">
                         {bc.formattedBirthDay}
                       </div>
-                      <small className="text-slate-400 text-xs">
+                      <small className="text-bunny-text-muted/70 text-xs">
                         {bc.birthDate}
                       </small>
                     </td>
@@ -374,7 +374,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                           {bc.ageToTurn} años
                         </Badge>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-bunny-text-muted/70">-</span>
                       )}
                     </td>
 
@@ -392,7 +392,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                           Este mes
                         </Badge>
                       ) : (
-                        <span className="text-slate-400 text-xs">Mes {bc.birthMonthNumber}</span>
+                        <span className="text-bunny-text-muted/70 text-xs">Mes {bc.birthMonthNumber}</span>
                       )}
                     </td>
 
@@ -404,7 +404,7 @@ export const CustomerBirthdaysTab: React.FC<CustomerBirthdaysTabProps> = ({ cust
                           </Badge>
                           <button
                             type="button"
-                            className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                            className="text-bunny-text-muted/70 hover:text-bunny-text-muted transition-colors p-1"
                             title="Restablecer para volver a enviar"
                             onClick={() => handleResetGreeting(bc)}
                           >

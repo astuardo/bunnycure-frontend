@@ -137,7 +137,7 @@ export function NotificationTemplatesSection() {
                   title={v.description}
                   className="inline-block"
                 >
-                  <Badge variant="neutral" className="cursor-pointer hover:bg-slate-200 transition-colors">
+                  <Badge variant="neutral" className="cursor-pointer hover:bg-bunny-border transition-colors">
                     {v.name}
                   </Badge>
                 </span>

@@ -341,7 +341,7 @@ export default function CalendarPage() {
       <DashboardLayout>
         <div className="text-center py-16">
           <Spinner size="lg" className="border-bunny-primary mx-auto" />
-          <p className="mt-3 text-slate-500 text-sm">Cargando calendario...</p>
+          <p className="mt-3 text-bunny-text-muted text-sm">Cargando calendario...</p>
         </div>
       </DashboardLayout>
     );
@@ -356,7 +356,7 @@ export default function CalendarPage() {
             <h1 className="text-2xl font-bold text-bunny-dark tracking-tight mb-1">
               📅 Calendario de Citas
             </h1>
-            <p className="text-slate-500 text-sm">Vista mensual de todas las citas programadas</p>
+            <p className="text-bunny-text-muted text-sm">Vista mensual de todas las citas programadas</p>
             <div className="calendar-time-legend mt-2 flex flex-wrap gap-2 text-xs">
               <span className="flex items-center gap-1"><i style={{ background: calendarDisplayConfig.morning.color }} /> {calendarDisplayConfig.morning.start}–{calendarDisplayConfig.morning.end}</span>
               <span className="flex items-center gap-1"><i style={{ background: calendarDisplayConfig.afternoon.color }} /> {calendarDisplayConfig.afternoon.start}–{calendarDisplayConfig.afternoon.end}</span>
@@ -397,14 +397,14 @@ export default function CalendarPage() {
         </div>
 
         {/* Calendario */}
-        <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+        <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
           <Card.Body className="p-3.5 sm:p-4">
             {/* Navegación del mes */}
             <div className="calendar-header mb-3">
               <div className="month-navigation flex items-center gap-3">
                 <button 
                   type="button"
-                  className="nav-button p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" 
+                  className="nav-button p-2 rounded-lg border border-bunny-border hover:bg-bunny-paper transition-colors" 
                   onClick={handlePrevMonth}
                   aria-label="Mes anterior"
                 >
@@ -417,7 +417,7 @@ export default function CalendarPage() {
                 
                 <button 
                   type="button"
-                  className="nav-button p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" 
+                  className="nav-button p-2 rounded-lg border border-bunny-border hover:bg-bunny-paper transition-colors" 
                   onClick={handleNextMonth}
                   aria-label="Mes siguiente"
                 >
@@ -518,9 +518,9 @@ export default function CalendarPage() {
 
         {/* Citas del día seleccionado */}
         {selectedDate && (
-          <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-            <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center flex-wrap gap-2">
-              <span className="font-bold text-sm sm:text-base text-slate-800">
+          <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+            <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4 flex justify-between items-center flex-wrap gap-2">
+              <span className="font-bold text-sm sm:text-base text-bunny-text">
                 Citas del día: {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}
               </span>
               {isDateBlockedFullDay(selectedDate, unavailabilities).blocked ? (
@@ -560,7 +560,7 @@ export default function CalendarPage() {
                             ? 'Día Completo Cerrado / No Disponible'
                             : `Horario Bloqueado: ${u.startTime} a ${u.endTime} hrs`}
                         </div>
-                        <small className="text-slate-500">{u.reason}</small>
+                        <small className="text-bunny-text-muted">{u.reason}</small>
                       </div>
                     </div>
                     <Badge variant={u.type === 'FULL_DAY' ? 'danger' : 'warning'}>
@@ -572,14 +572,14 @@ export default function CalendarPage() {
             )}
             
             {selectedDayAppointments.length === 0 ? (
-              <Card.Body className="p-6 text-center text-slate-400 text-sm">
+              <Card.Body className="p-6 text-center text-bunny-text-muted/70 text-sm">
                 No hay citas programadas para este día
               </Card.Body>
             ) : (
               <Card.Body className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
+                    <thead className="bg-bunny-paper border-b border-bunny-border text-bunny-text-muted font-semibold uppercase text-xs">
                       <tr>
                         <th className="py-3 px-4">Hora</th>
                         <th className="py-3 px-4">Cliente</th>
@@ -588,10 +588,10 @@ export default function CalendarPage() {
                         <th className="py-3 px-4 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-bunny-border">
                       {selectedDayAppointments.map(apt => (
-                        <tr key={apt.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3 px-4 font-bold text-slate-800">
+                        <tr key={apt.id} className="hover:bg-bunny-paper/60 transition-colors">
+                          <td className="py-3 px-4 font-bold text-bunny-text">
                             {apt.appointmentTime}
                           </td>
                           <td className="py-3 px-4">
@@ -603,12 +603,12 @@ export default function CalendarPage() {
                               >
                                 {apt.customer.fullName}
                               </button>
-                              <small className="text-slate-400 block text-xs">
+                              <small className="text-bunny-text-muted/70 block text-xs">
                                 🪪 {apt.customer.rut?.trim() ? apt.customer.rut.trim() : 'No tiene'}
                               </small>
                             </div>
                           </td>
-                          <td className="py-3 px-4 font-medium text-slate-700">{getAppointmentServiceLabel(apt)}</td>
+                          <td className="py-3 px-4 font-medium text-bunny-text">{getAppointmentServiceLabel(apt)}</td>
                           <td className="py-3 px-4">
                             <span className={`status-badge ${apt.status}`}>
                               {statusLabels[apt.status]}
@@ -632,11 +632,11 @@ export default function CalendarPage() {
                                 {openDropdownAptId === apt.id && (
                                   <div
                                     onClick={(e) => e.stopPropagation()}
-                                    className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50 text-xs"
+                                    className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-bunny-border py-1.5 z-50 text-xs"
                                   >
                                     <button
                                       type="button"
-                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                       onClick={() => {
                                         setOpenDropdownAptId(null);
                                         handleSendNotification(apt.id);
@@ -646,7 +646,7 @@ export default function CalendarPage() {
                                     </button>
                                     <button
                                       type="button"
-                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                       onClick={() => {
                                         setOpenDropdownAptId(null);
                                         handleSendWhatsAppConfirmation(apt.id);
@@ -656,7 +656,7 @@ export default function CalendarPage() {
                                     </button>
                                     <button
                                       type="button"
-                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                       onClick={() => {
                                         setOpenDropdownAptId(null);
                                         handleSendWhatsAppReminder(apt.id);
@@ -664,10 +664,10 @@ export default function CalendarPage() {
                                     >
                                       <FaEnvelope className="text-sky-500" /> Recordatorio WhatsApp
                                     </button>
-                                    <div className="border-t border-slate-100 my-1"></div>
+                                    <div className="border-t border-bunny-border my-1"></div>
                                     <button
                                       type="button"
-                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                       onClick={() => {
                                         setOpenDropdownAptId(null);
                                         setSelectedNotificationsApt(apt);
@@ -675,10 +675,10 @@ export default function CalendarPage() {
                                     >
                                       <FaHistory className="text-sky-600" /> Historial de Mensajes
                                     </button>
-                                    <div className="border-t border-slate-100 my-1"></div>
+                                    <div className="border-t border-bunny-border my-1"></div>
                                     <button
                                       type="button"
-                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                      className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                       onClick={() => {
                                         setOpenDropdownAptId(null);
                                         handleWhatsAppHandoff(apt.id);
@@ -712,10 +712,10 @@ export default function CalendarPage() {
         )}
 
         {/* Resumen estadístico del mes en curso */}
-        <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
+        <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
           <Card.Body className="p-4">
             <div className="flex justify-between items-center mb-3">
-              <h6 className="font-bold text-sm text-slate-800 mb-0">
+              <h6 className="font-bold text-sm text-bunny-text mb-0">
                 📊 Resumen del Mes ({format(currentMonth, 'MMMM yyyy', { locale: es })})
               </h6>
               <Badge variant="secondary" className="text-xs">
@@ -723,9 +723,9 @@ export default function CalendarPage() {
               </Badge>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                <div className="text-2xl font-bold text-slate-800">{currentMonthAppointments.length}</div>
-                <div className="text-xs text-slate-500 mt-0.5">Citas del Mes</div>
+              <div className="p-2.5 rounded-xl bg-bunny-paper border border-bunny-border">
+                <div className="text-2xl font-bold text-bunny-text">{currentMonthAppointments.length}</div>
+                <div className="text-xs text-bunny-text-muted mt-0.5">Citas del Mes</div>
               </div>
               <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-100">
                 <div className="text-2xl font-bold text-sky-700">{monthConfirmed}</div>
@@ -739,7 +739,7 @@ export default function CalendarPage() {
                 <div className="text-2xl font-bold text-emerald-700">{monthCompleted}</div>
                 <div className="text-xs text-emerald-600 mt-0.5">Completadas</div>
               </div>
-              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-100 col-span-2 sm:col-span-1">
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-bunny-border col-span-2 sm:col-span-1">
                 <div className="text-2xl font-bold text-rose-700">{monthCancelled}</div>
                 <div className="text-xs text-rose-600 mt-0.5">Canceladas</div>
               </div>

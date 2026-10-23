@@ -106,7 +106,7 @@ export default function LoyaltySettingsPage() {
                                   updateReward(reward.id, e.target.value);
                                 }
                               }}
-                              className="flex-1 rounded-lg border-0 bg-slate-50 px-3 py-1.5 text-sm font-medium text-bunny-text focus:ring-2 focus:ring-bunny-primary/20 focus:bg-white transition-all"
+                              className="flex-1 rounded-lg border-0 bg-bunny-paper px-3 py-1.5 text-sm font-medium text-bunny-text focus:ring-2 focus:ring-bunny-primary/20 focus:bg-white transition-all"
                             />
                             <button
                               type="button"
@@ -204,7 +204,7 @@ export default function LoyaltySettingsPage() {
                 placeholder="Buscar clienta por nombre o RUT..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-1.5 text-xs rounded-xl border border-bunny-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary transition-all"
+                className="w-full pl-9 pr-3.5 py-1.5 text-xs rounded-xl border border-bunny-border bg-bunny-paper focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary transition-all"
               />
             </div>
           </Card.Header>

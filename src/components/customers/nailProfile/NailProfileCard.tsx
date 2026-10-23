@@ -65,7 +65,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
           <h5 className="font-bold text-bunny-dark text-base sm:text-lg mb-0.5">
             💅 Ficha Técnica Permanente de Manicure
           </h5>
-          <small className="text-slate-500 text-xs">
+          <small className="text-bunny-text-muted text-xs">
             Preferencias de base, estado de uña y precauciones para cada servicio
           </small>
         </div>
@@ -94,7 +94,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
         {editing ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             <div className="md:col-span-6">
-              <label htmlFor="nail-profile-card-tecnica-base-habitual" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-tecnica-base-habitual" className="block text-xs font-bold text-bunny-text-muted uppercase tracking-wider mb-1">
                 TÉCNICA / BASE HABITUAL
               </label>
               <select id="nail-profile-card-tecnica-base-habitual"
@@ -112,7 +112,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-6">
-              <label htmlFor="nail-profile-card-condicion-habitual-de-la" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-condicion-habitual-de-la" className="block text-xs font-bold text-bunny-text-muted uppercase tracking-wider mb-1">
                 CONDICIÓN HABITUAL DE LA UÑA
               </label>
               <select id="nail-profile-card-condicion-habitual-de-la"
@@ -130,7 +130,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-12">
-              <label htmlFor="nail-profile-card-tonos-gamas-favoritas" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-tonos-gamas-favoritas" className="block text-xs font-bold text-bunny-text-muted uppercase tracking-wider mb-1">
                 TONOS / GAMAS FAVORITAS
               </label>
               <input id="nail-profile-card-tonos-gamas-favoritas"
@@ -156,7 +156,7 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
             </div>
 
             <div className="md:col-span-6">
-              <label htmlFor="nail-profile-card-recomendaciones-tecnicas-generales" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="nail-profile-card-recomendaciones-tecnicas-generales" className="block text-xs font-bold text-bunny-text-muted uppercase tracking-wider mb-1">
                 RECOMENDACIONES TÉCNICAS GENERALES
               </label>
               <input id="nail-profile-card-recomendaciones-tecnicas-generales"
@@ -171,38 +171,38 @@ export const NailProfileCard: React.FC<NailProfileCardProps> = ({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <small className="text-slate-400 block text-xs uppercase tracking-wider">TÉCNICA HABITUAL</small>
+              <small className="text-bunny-text-muted/70 block text-xs uppercase tracking-wider">TÉCNICA HABITUAL</small>
               <div className="font-bold text-bunny-dark text-sm mt-0.5">
                 {profile.preferredBaseType
                   ? BASE_TECHNIQUE_LABELS[profile.preferredBaseType]
-                  : <span className="text-slate-400 font-normal">No definida</span>}
+                  : <span className="text-bunny-text-muted/70 font-normal">No definida</span>}
               </div>
             </div>
 
             <div>
-              <small className="text-slate-400 block text-xs uppercase tracking-wider">CONDICIÓN DE UÑA</small>
+              <small className="text-bunny-text-muted/70 block text-xs uppercase tracking-wider">CONDICIÓN DE UÑA</small>
               <div className="font-bold text-bunny-dark text-sm mt-0.5">
                 {profile.usualNailCondition
                   ? NAIL_CONDITION_LABELS[profile.usualNailCondition]
-                  : <span className="text-slate-400 font-normal">No evaluada</span>}
+                  : <span className="text-bunny-text-muted/70 font-normal">No evaluada</span>}
               </div>
             </div>
 
             <div>
-              <small className="text-slate-400 block text-xs uppercase tracking-wider">COLORES FAVORITOS</small>
+              <small className="text-bunny-text-muted/70 block text-xs uppercase tracking-wider">COLORES FAVORITOS</small>
               <div className="text-bunny-dark text-sm mt-0.5 break-words">
-                {profile.favoriteColors || <span className="text-slate-400">Sin registrar</span>}
+                {profile.favoriteColors || <span className="text-bunny-text-muted/70">Sin registrar</span>}
               </div>
             </div>
 
             <div>
-              <small className="text-slate-400 block text-xs uppercase tracking-wider">SENSIBILIDAD / ALERGIAS</small>
+              <small className="text-bunny-text-muted/70 block text-xs uppercase tracking-wider">SENSIBILIDAD / ALERGIAS</small>
               {profile.allergyNotes ? (
                 <div className="flex items-start gap-1 text-rose-600 font-semibold text-xs sm:text-sm mt-0.5 break-words">
                   <FiAlertCircle className="shrink-0 mt-0.5" /> <span>{profile.allergyNotes}</span>
                 </div>
               ) : (
-                <span className="text-slate-400 text-sm mt-0.5 block">Ninguna reportada</span>
+                <span className="text-bunny-text-muted/70 text-sm mt-0.5 block">Ninguna reportada</span>
               )}
             </div>
           </div>

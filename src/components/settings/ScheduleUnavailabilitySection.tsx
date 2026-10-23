@@ -374,7 +374,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'active'
                   ? 'bg-bunny-primary text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-bunny-sand text-bunny-text hover:bg-bunny-border'
               }`}
             >
               <span>Vigentes y Próximos</span>
@@ -389,7 +389,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'history'
                   ? 'bg-bunny-primary text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-bunny-sand text-bunny-text hover:bg-bunny-border'
               }`}
             >
               <FiArchive size={13} />
@@ -446,7 +446,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                   key={item.id}
                   className={`flex justify-between items-center p-3 rounded-xl border transition-all ${
                     isPast
-                      ? 'bg-slate-50 border-slate-200 opacity-80'
+                      ? 'bg-bunny-paper border-bunny-border opacity-80'
                       : isFullDay
                       ? 'bg-rose-50/60 border-rose-200'
                       : 'bg-amber-50/60 border-amber-200'
@@ -456,7 +456,7 @@ export const ScheduleUnavailabilitySection: React.FC<Props> = ({
                     <div
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold text-center min-w-[70px] ${
                         isPast
-                          ? 'bg-slate-200 text-slate-700'
+                          ? 'bg-bunny-border text-bunny-text'
                           : isFullDay
                           ? 'bg-rose-200 text-rose-900'
                           : 'bg-amber-200 text-amber-900'

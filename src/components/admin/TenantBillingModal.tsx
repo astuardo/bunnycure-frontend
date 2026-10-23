@@ -110,13 +110,13 @@ export function TenantBillingModal({ tenantId, tenantName, onHide }: TenantBilli
         ) : (
           <div className="space-y-5 text-sm">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div><div className="text-xs text-gray-500">Plan</div><div className="font-semibold">{subscription.planName}</div></div>
-              <div><div className="text-xs text-gray-500">Estado</div><Badge pill>{SUBSCRIPTION_STATUS_LABELS[subscription.status]}</Badge></div>
+              <div><div className="text-xs text-bunny-text-muted">Plan</div><div className="font-semibold">{subscription.planName}</div></div>
+              <div><div className="text-xs text-bunny-text-muted">Estado</div><Badge pill>{SUBSCRIPTION_STATUS_LABELS[subscription.status]}</Badge></div>
               <div>
-                <div className="text-xs text-gray-500">{subscription.status === 'TRIALING' ? 'Prueba hasta' : 'Pagado hasta'}</div>
+                <div className="text-xs text-bunny-text-muted">{subscription.status === 'TRIALING' ? 'Prueba hasta' : 'Pagado hasta'}</div>
                 <div className="font-semibold">{(subscription.status === 'TRIALING' ? subscription.trialEndsOn : subscription.currentPeriodEnd) ?? 'Sin vencimiento'}</div>
               </div>
-              <div><div className="text-xs text-gray-500">Puestos</div><div className="font-semibold">{subscription.usedStaffSeats} / {subscription.maxStaffSeats ?? '∞'}</div></div>
+              <div><div className="text-xs text-bunny-text-muted">Puestos</div><div className="font-semibold">{subscription.usedStaffSeats} / {subscription.maxStaffSeats ?? '∞'}</div></div>
             </div>
 
             <section className="border rounded-xl p-3 space-y-3">
@@ -136,7 +136,7 @@ export function TenantBillingModal({ tenantId, tenantName, onHide }: TenantBilli
                 <Input name="amountClp" label="Monto CLP (vacío = precio de lista)" type="number" min={1} value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
                 <Input name="reference" label="Referencia (n° transferencia)" value={payReference} maxLength={200} onChange={(e) => setPayReference(e.target.value)} />
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-bunny-text-muted">
                 Activa el salón y extiende su período. Si aún no vence, el nuevo período empieza al día siguiente del actual.
               </p>
               <Button onClick={registerPayment} isLoading={saving}>Registrar pago</Button>

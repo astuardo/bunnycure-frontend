@@ -185,12 +185,12 @@ export default function CustomersPage() {
     };
 
     const formatHealthNotes = (notes?: string) => {
-        if (!notes || !notes.trim()) return <span className="text-slate-400 text-xs">Sin observaciones</span>;
+        if (!notes || !notes.trim()) return <span className="text-bunny-text-muted/70 text-xs">Sin observaciones</span>;
         const isAlert = /alerg|diabet|hong|medic|sensib|dolor/i.test(notes);
         return (
             <div>
                 {isAlert && <Badge variant="danger" className="mb-1 inline-block text-[10px]">⚠️ Alerta de Salud</Badge>}
-                <div className="text-xs text-slate-500 leading-tight">
+                <div className="text-xs text-bunny-text-muted leading-tight">
                     {notes.length > 70 ? `${notes.slice(0, 70)}...` : notes}
                 </div>
             </div>
@@ -216,7 +216,7 @@ export default function CustomersPage() {
                         <h1 className="text-2xl font-bold text-bunny-dark tracking-tight mb-1">
                             👥 Clientes &amp; Reactivación
                         </h1>
-                        <p className="text-slate-500 text-sm">
+                        <p className="text-bunny-text-muted text-sm">
                             Administra la base de datos de clientas y fideliza a las inactivas
                         </p>
                     </div>
@@ -241,7 +241,7 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Pestañas de Navegación */}
-                <div className="flex items-center gap-2 flex-wrap border-b border-slate-200 pb-2">
+                <div className="flex items-center gap-2 flex-wrap border-b border-bunny-border pb-2">
                     <button
                         type="button"
                         onClick={() => {
@@ -251,7 +251,7 @@ export default function CustomersPage() {
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                             activeTab === 'directory'
                                 ? 'bg-bunny-primary text-white shadow-sm'
-                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                : 'bg-white text-bunny-text-muted hover:bg-bunny-sand border border-bunny-border'
                         }`}
                     >
                         <span>👥 Directorio de Clientes</span>
@@ -272,7 +272,7 @@ export default function CustomersPage() {
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                             activeTab === 'birthdays'
                                 ? 'bg-bunny-primary text-white shadow-sm'
-                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                : 'bg-white text-bunny-text-muted hover:bg-bunny-sand border border-bunny-border'
                         }`}
                     >
                         <span>🎂 Cumpleañeras del Mes</span>
@@ -295,7 +295,7 @@ export default function CustomersPage() {
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                             activeTab === 'reactivation'
                                 ? 'bg-bunny-primary text-white shadow-sm'
-                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                : 'bg-white text-bunny-text-muted hover:bg-bunny-sand border border-bunny-border'
                         }`}
                     >
                         <span>✨ Reactivación de Clientas</span>
@@ -315,7 +315,7 @@ export default function CustomersPage() {
                     <div className="space-y-4">
                         {/* Búsqueda */}
                         <div className="max-w-xl">
-                            <Card className="border border-slate-200 shadow-sm bg-white">
+                            <Card className="border border-bunny-border shadow-sm bg-white">
                                 <Card.Body className="p-3">
                                     <form onSubmit={handleSearch} className="flex gap-2">
                                         <input
@@ -323,7 +323,7 @@ export default function CustomersPage() {
                                             placeholder="Buscar por nombre, RUT (18.664.589-8 o 18664589-8) o teléfono..."
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
-                                            className="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                                            className="w-full text-xs sm:text-sm rounded-lg border border-bunny-border-strong p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
                                         />
                                         <Button type="submit" variant="primary" size="sm" disabled={loading} className="whitespace-nowrap flex items-center gap-1">
                                             {loading ? (
@@ -360,9 +360,9 @@ export default function CustomersPage() {
                         )}
 
                         {/* Tabla de Clientes */}
-                        <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-                            <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
-                                <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">Lista de Clientes</h5>
+                        <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+                            <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4 flex justify-between items-center">
+                                <h5 className="font-bold text-sm sm:text-base text-bunny-text mb-0">Lista de Clientes</h5>
                                 <div className="flex items-center gap-2">
                                     {loading && <Spinner size="sm" className="border-bunny-primary" />}
                                     <Badge variant="secondary">
@@ -376,11 +376,11 @@ export default function CustomersPage() {
                                 {loading && customers.length === 0 ? (
                                     <div className="text-center py-12">
                                         <Spinner size="lg" className="border-bunny-primary mx-auto" />
-                                        <p className="mt-2 text-slate-500 text-xs">Cargando clientes...</p>
+                                        <p className="mt-2 text-bunny-text-muted text-xs">Cargando clientes...</p>
                                     </div>
                                 ) : !loading && customers.length === 0 ? (
                                     <div className="text-center py-12 px-4">
-                                        <p className="text-slate-500 text-sm mb-0">
+                                        <p className="text-bunny-text-muted text-sm mb-0">
                                             {search 
                                                 ? 'No se encontraron clientes con ese criterio'
                                                 : 'No hay clientes registrados'
@@ -392,7 +392,7 @@ export default function CustomersPage() {
                                         {/* Vista Desktop: Tabla */}
                                         <div className="hidden md:block overflow-x-auto">
                                             <table className="w-full text-left text-xs sm:text-sm">
-                                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                                                <thead className="bg-bunny-paper border-b border-bunny-border text-bunny-text-muted font-semibold text-xs uppercase tracking-wider">
                                                     <tr>
                                                         <th className="py-3 px-4 min-w-[220px]">Cliente</th>
                                                         <th className="py-3 px-4">Contacto Directo</th>
@@ -401,13 +401,13 @@ export default function CustomersPage() {
                                                         <th className="py-3 px-4 text-center min-w-[160px]">Acciones</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-100">
+                                                <tbody className="divide-y divide-bunny-border">
                                                     {customers.map((customer) => {
                                                         const rawPhone = (customer.phone || '').replace(/\D/g, '');
                                                         const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
 
                                                         return (
-                                                            <tr key={customer.id} className="hover:bg-slate-50/60 transition-colors">
+                                                            <tr key={customer.id} className="hover:bg-bunny-paper/60 transition-colors">
                                                                 <td className="py-3 px-4">
                                                                     <div className="flex flex-col gap-1">
                                                                         <div className="flex items-center gap-2 flex-wrap">
@@ -426,14 +426,14 @@ export default function CustomersPage() {
                                                                         </div>
                                                                         <div className="flex items-center gap-2 flex-wrap text-xs">
                                                                             {customer.rut ? (
-                                                                                <span className="bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px]">
+                                                                                <span className="bg-bunny-sand text-bunny-text-muted border border-bunny-border px-1.5 py-0.5 rounded font-mono text-[11px]">
                                                                                     🆔 {formatRutWithDots(customer.rut)}
                                                                                 </span>
                                                                             ) : (
-                                                                                <span className="text-slate-400 italic text-[11px]">Sin RUT</span>
+                                                                                <span className="text-bunny-text-muted/70 italic text-[11px]">Sin RUT</span>
                                                                             )}
-                                                                            <span className="text-slate-500 text-[11px]">
-                                                                                ⭐ <strong className="text-slate-700">{customer.loyaltyStamps || 0}/10</strong> sellos &bull; {customer.totalCompletedVisits || 0} visitas
+                                                                            <span className="text-bunny-text-muted text-[11px]">
+                                                                                ⭐ <strong className="text-bunny-text">{customer.loyaltyStamps || 0}/10</strong> sellos &bull; {customer.totalCompletedVisits || 0} visitas
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -457,7 +457,7 @@ export default function CustomersPage() {
                                                                             )}
                                                                         </div>
                                                                         {customer.email && (
-                                                                            <span className="text-slate-400 text-xs truncate max-w-[200px]">
+                                                                            <span className="text-bunny-text-muted/70 text-xs truncate max-w-[200px]">
                                                                                 ✉️ {customer.email}
                                                                             </span>
                                                                         )}
@@ -512,7 +512,7 @@ export default function CustomersPage() {
                                                 const waPhone = rawPhone.length === 9 ? `56${rawPhone}` : rawPhone;
 
                                                 return (
-                                                    <div key={customer.id} className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-sm space-y-2.5">
+                                                    <div key={customer.id} className="p-3.5 rounded-xl border border-bunny-border bg-white shadow-sm space-y-2.5">
                                                         <div className="flex justify-between items-start gap-2">
                                                             <div className="min-w-0">
                                                                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -526,13 +526,13 @@ export default function CustomersPage() {
                                                                 </div>
                                                                 <div className="flex items-center gap-2 flex-wrap text-xs">
                                                                     {customer.rut ? (
-                                                                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-1 py-0.5 rounded font-mono text-[10.5px]">
+                                                                        <span className="bg-bunny-sand text-bunny-text-muted border border-bunny-border px-1 py-0.5 rounded font-mono text-[10.5px]">
                                                                             🆔 {formatRutWithDots(customer.rut)}
                                                                         </span>
                                                                     ) : (
-                                                                        <span className="text-slate-400 italic text-[10.5px]">Sin RUT</span>
+                                                                        <span className="text-bunny-text-muted/70 italic text-[10.5px]">Sin RUT</span>
                                                                     )}
-                                                                    <span className="text-slate-500 text-[11px]">
+                                                                    <span className="text-bunny-text-muted text-[11px]">
                                                                         ⭐ {customer.loyaltyStamps || 0}/10 sellos
                                                                     </span>
                                                                 </div>
@@ -543,7 +543,7 @@ export default function CustomersPage() {
                                                         </div>
                                                         
                                                         <div className="flex items-center gap-2">
-                                                            <small className="text-slate-500 text-xs">📱 {customer.phone}</small>
+                                                            <small className="text-bunny-text-muted text-xs">📱 {customer.phone}</small>
                                                             {rawPhone && (
                                                                 <a
                                                                     href={`https://wa.me/${waPhone}`}
@@ -642,11 +642,11 @@ export default function CustomersPage() {
                 <Modal show={showSyncModal} onHide={() => !syncingAll && setShowSyncModal(false)} centered>
                     <Modal.Header closeButton={!syncingAll}>
                         <Modal.Title>
-                            <span className="text-base font-bold text-slate-800">🔄 Sincronizar Visitas de Clientes</span>
+                            <span className="text-base font-bold text-bunny-text">🔄 Sincronizar Visitas de Clientes</span>
                         </Modal.Title>
                     </Modal.Header>
                     <Modal.Body className="space-y-3">
-                        <p className="text-slate-600 text-sm mb-0">
+                        <p className="text-bunny-text-muted text-sm mb-0">
                             ¿Deseas recalcular las visitas registradas de <strong>todos los clientes ({customers.length})</strong> basándote en sus citas reales en estado <strong>COMPLETADA</strong>?
                         </p>
                         <Alert variant="info" className="text-xs">

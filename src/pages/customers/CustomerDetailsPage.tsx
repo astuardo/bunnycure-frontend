@@ -184,7 +184,7 @@ export default function CustomerDetailsPage() {
       <DashboardLayout>
         <div className="text-center py-16">
           <Spinner size="lg" className="border-bunny-primary mx-auto" />
-          <p className="mt-3 text-slate-500 text-sm">Cargando información del cliente...</p>
+          <p className="mt-3 text-bunny-text-muted text-sm">Cargando información del cliente...</p>
         </div>
       </DashboardLayout>
     );
@@ -216,7 +216,7 @@ export default function CustomerDetailsPage() {
             <h2 className="text-2xl font-bold text-bunny-dark tracking-tight break-words">
               👤 {customer.fullName}
             </h2>
-            <p className="text-slate-500 text-sm">Detalles del cliente</p>
+            <p className="text-bunny-text-muted text-sm">Detalles del cliente</p>
           </div>
           <Button variant="secondary" onClick={() => navigate('/customers')} className="shrink-0 text-xs sm:text-sm">
             ← Volver
@@ -228,31 +228,31 @@ export default function CustomerDetailsPage() {
           {/* Columna Izquierda: Info de contacto, Estadísticas, Notas */}
           <div className="lg:col-span-4 space-y-4">
             {/* Info de Contacto */}
-            <Card className="border border-slate-200 shadow-sm bg-white">
-              <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4">
-                <h5 className="font-bold text-sm text-slate-800 mb-0">Información de Contacto</h5>
+            <Card className="border border-bunny-border shadow-sm bg-white">
+              <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4">
+                <h5 className="font-bold text-sm text-bunny-text mb-0">Información de Contacto</h5>
               </Card.Header>
               <Card.Body className="p-4 space-y-3 text-xs sm:text-sm">
                 <div>
-                  <strong className="text-slate-500 block text-xs">🪪 RUT:</strong>
-                  <p className="font-medium text-slate-800 mb-0">{customer.rut?.trim() ? customer.rut.trim() : 'No tiene'}</p>
+                  <strong className="text-bunny-text-muted block text-xs">🪪 RUT:</strong>
+                  <p className="font-medium text-bunny-text mb-0">{customer.rut?.trim() ? customer.rut.trim() : 'No tiene'}</p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">📧 Email:</strong>
-                  <p className="font-medium text-slate-800 break-words mb-0">
+                  <strong className="text-bunny-text-muted block text-xs">📧 Email:</strong>
+                  <p className="font-medium text-bunny-text break-words mb-0">
                     {customer.email?.trim() ? customer.email.trim() : 'No tiene'}
                   </p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">📱 Teléfono:</strong>
-                  <p className="font-medium text-slate-800 mb-0">{customer.phone?.trim() ? customer.phone.trim() : 'No tiene'}</p>
+                  <strong className="text-bunny-text-muted block text-xs">📱 Teléfono:</strong>
+                  <p className="font-medium text-bunny-text mb-0">{customer.phone?.trim() ? customer.phone.trim() : 'No tiene'}</p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">🚨 Teléfono de Emergencia:</strong>
-                  <p className="font-medium text-slate-800 mb-0">{customer.emergencyPhone?.trim() ? customer.emergencyPhone.trim() : 'No tiene'}</p>
+                  <strong className="text-bunny-text-muted block text-xs">🚨 Teléfono de Emergencia:</strong>
+                  <p className="font-medium text-bunny-text mb-0">{customer.emergencyPhone?.trim() ? customer.emergencyPhone.trim() : 'No tiene'}</p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">📸 Instagram:</strong>
+                  <strong className="text-bunny-text-muted block text-xs">📸 Instagram:</strong>
                   <div className="break-words">
                     {customer.instagram?.trim() ? (
                       <a
@@ -264,28 +264,28 @@ export default function CustomerDetailsPage() {
                         @{customer.instagram.replace(/^@/, '')}
                       </a>
                     ) : (
-                      <p className="text-slate-400 mb-0">No tiene</p>
+                      <p className="text-bunny-text-muted/70 mb-0">No tiene</p>
                     )}
                   </div>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">🚻 Género:</strong>
-                  <p className="font-medium text-slate-800 mb-0">
+                  <strong className="text-bunny-text-muted block text-xs">🚻 Género:</strong>
+                  <p className="font-medium text-bunny-text mb-0">
                     {customer.gender === 'FEMENINO' || customer.gender === 'F' ? 'Femenino' :
                      customer.gender === 'MASCULINO' || customer.gender === 'M' ? 'Masculino' :
                      customer.gender?.trim() ? customer.gender.trim() : 'No especificado'}
                   </p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">🎂 Fecha de Nacimiento:</strong>
-                  <p className="font-medium text-slate-800 mb-0">{customer.birthDate ? formatDateSafe(customer.birthDate) : 'No tiene'}</p>
+                  <strong className="text-bunny-text-muted block text-xs">🎂 Fecha de Nacimiento:</strong>
+                  <p className="font-medium text-bunny-text mb-0">{customer.birthDate ? formatDateSafe(customer.birthDate) : 'No tiene'}</p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">📅 Cliente desde:</strong>
-                  <p className="font-medium text-slate-800 mb-0">{customer.createdAt ? formatDateSafe(customer.createdAt) : 'No tiene'}</p>
+                  <strong className="text-bunny-text-muted block text-xs">📅 Cliente desde:</strong>
+                  <p className="font-medium text-bunny-text mb-0">{customer.createdAt ? formatDateSafe(customer.createdAt) : 'No tiene'}</p>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs mb-1">🔔 Notificaciones:</strong>
+                  <strong className="text-bunny-text-muted block text-xs mb-1">🔔 Notificaciones:</strong>
                   <div>
                     {customer.notificationPreference === NotificationPreference.WHATSAPP_ONLY ? (
                       <Badge variant="success">💬 Solo WhatsApp</Badge>
@@ -299,8 +299,8 @@ export default function CustomerDetailsPage() {
                   </div>
                 </div>
                 <div>
-                  <strong className="text-slate-500 block text-xs">🩺 Notas de Salud / Alergias:</strong>
-                  <p className="text-slate-600 text-xs mt-0.5 mb-0">
+                  <strong className="text-bunny-text-muted block text-xs">🩺 Notas de Salud / Alergias:</strong>
+                  <p className="text-bunny-text-muted text-xs mt-0.5 mb-0">
                     {customer.healthNotes?.trim() ? customer.healthNotes.trim() : 'Sin observaciones de salud registradas'}
                   </p>
                 </div>
@@ -308,27 +308,27 @@ export default function CustomerDetailsPage() {
             </Card>
 
             {/* Estadísticas */}
-            <Card className="border border-slate-200 shadow-sm bg-white">
-              <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4">
-                <h5 className="font-bold text-sm text-slate-800 mb-0">Estadísticas</h5>
+            <Card className="border border-bunny-border shadow-sm bg-white">
+              <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4">
+                <h5 className="font-bold text-sm text-bunny-text mb-0">Estadísticas</h5>
               </Card.Header>
               <Card.Body className="p-4 space-y-2.5 text-xs sm:text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Total de Citas:</span>
-                  <strong className="text-slate-800">{totalAppointments}</strong>
+                  <span className="text-bunny-text-muted">Total de Citas:</span>
+                  <strong className="text-bunny-text">{totalAppointments}</strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Completadas:</span>
+                  <span className="text-bunny-text-muted">Completadas:</span>
                   <strong className="text-emerald-600">{completedAppointments}</strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Canceladas:</span>
+                  <span className="text-bunny-text-muted">Canceladas:</span>
                   <strong className="text-rose-600">{cancelledAppointments}</strong>
                 </div>
-                <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
+                <div className="flex justify-between items-center pt-2.5 border-t border-bunny-border">
                   <div>
-                    <span className="text-xs text-slate-400 block">Visitas registradas:</span>
-                    <strong className="text-slate-800">{customer.totalCompletedVisits || 0}</strong>
+                    <span className="text-xs text-bunny-text-muted/70 block">Visitas registradas:</span>
+                    <strong className="text-bunny-text">{customer.totalCompletedVisits || 0}</strong>
                   </div>
                   <Button
                     size="sm"
@@ -341,9 +341,9 @@ export default function CustomerDetailsPage() {
                   </Button>
                 </div>
                 {lastAppointment && (
-                  <div className="pt-2.5 border-t border-slate-100">
-                    <small className="text-slate-400 block text-xs">Última visita:</small>
-                    <p className="font-semibold text-slate-800 mb-0">
+                  <div className="pt-2.5 border-t border-bunny-border">
+                    <small className="text-bunny-text-muted/70 block text-xs">Última visita:</small>
+                    <p className="font-semibold text-bunny-text mb-0">
                       {formatDateSafe(lastAppointment.appointmentDate)}
                     </p>
                   </div>
@@ -352,9 +352,9 @@ export default function CustomerDetailsPage() {
             </Card>
 
             {/* Notas */}
-            <Card className="border border-slate-200 shadow-sm bg-white">
-              <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
-                <h5 className="font-bold text-sm text-slate-800 mb-0">Notas</h5>
+            <Card className="border border-bunny-border shadow-sm bg-white">
+              <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4 flex justify-between items-center">
+                <h5 className="font-bold text-sm text-bunny-text mb-0">Notas</h5>
                 {!editingNotes && (
                   <button
                     type="button"
@@ -376,7 +376,7 @@ export default function CustomerDetailsPage() {
                       value={notesDraft}
                       onChange={(e) => setNotesDraft(e.target.value)}
                       placeholder="Agregar notas sobre el cliente..."
-                      className="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                      className="w-full text-xs sm:text-sm rounded-lg border border-bunny-border-strong p-2.5 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
                     />
                     <div className="flex gap-2">
                       <Button size="sm" variant="primary" onClick={handleSaveNotes} className="text-xs">
@@ -396,7 +396,7 @@ export default function CustomerDetailsPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-slate-700 text-xs sm:text-sm mb-0">{displayedNotes || 'Sin notas'}</p>
+                  <p className="text-bunny-text text-xs sm:text-sm mb-0">{displayedNotes || 'Sin notas'}</p>
                 )}
               </Card.Body>
             </Card>
@@ -405,14 +405,14 @@ export default function CustomerDetailsPage() {
           {/* Columna Derecha: Tabs (Historial & Citas, Galería de Diseños, GiftCards) */}
           <div className="lg:col-span-8 space-y-4">
             {/* Pestañas de Navegación de la Ficha */}
-            <div className="flex gap-2 flex-wrap border-b border-slate-200 pb-2">
+            <div className="flex gap-2 flex-wrap border-b border-bunny-border pb-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('appointments')}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   activeTab === 'appointments'
                     ? 'bg-bunny-primary text-white shadow-sm'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    : 'bg-white text-bunny-text-muted hover:bg-bunny-sand border border-bunny-border'
                 }`}
               >
                 <span>📋 Historial &amp; Citas</span>
@@ -430,7 +430,7 @@ export default function CustomerDetailsPage() {
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   activeTab === 'gallery'
                     ? 'bg-bunny-primary text-white shadow-sm'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    : 'bg-white text-bunny-text-muted hover:bg-bunny-sand border border-bunny-border'
                 }`}
               >
                 <span>💅 Galería de Diseños &amp; Ficha Técnica</span>
@@ -442,7 +442,7 @@ export default function CustomerDetailsPage() {
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   activeTab === 'giftcards'
                     ? 'bg-bunny-primary text-white shadow-sm'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    : 'bg-white text-bunny-text-muted hover:bg-bunny-sand border border-bunny-border'
                 }`}
               >
                 <span>🎁 GiftCards</span>
@@ -479,9 +479,9 @@ export default function CustomerDetailsPage() {
                   onAdjust={handleLoyaltyAdjust}
                 />
 
-                <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-                  <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4">
-                    <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">Historial de Citas</h5>
+                <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+                  <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4">
+                    <h5 className="font-bold text-sm sm:text-base text-bunny-text mb-0">Historial de Citas</h5>
                   </Card.Header>
                   <Card.Body className="p-0">
                     {customerAppointments.length === 0 ? (
@@ -493,7 +493,7 @@ export default function CustomerDetailsPage() {
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs sm:text-sm">
-                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                          <thead className="bg-bunny-paper border-b border-bunny-border text-bunny-text-muted font-semibold text-xs uppercase tracking-wider">
                             <tr>
                               <th className="py-3 px-4">Fecha</th>
                               <th className="py-3 px-4">Hora</th>
@@ -502,20 +502,20 @@ export default function CustomerDetailsPage() {
                               <th className="py-3 px-4">Notas</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-bunny-border">
                             {customerAppointments.map((apt) => (
-                              <tr key={apt.id} className="hover:bg-slate-50/60 transition-colors">
-                                <td className="py-3 px-4 font-semibold text-slate-800">{formatDateSafe(apt.appointmentDate)}</td>
-                                <td className="py-3 px-4 text-slate-600">{apt.appointmentTime}</td>
-                                <td className="py-3 px-4 font-medium text-slate-800">{getAppointmentServiceLabel(apt)}</td>
+                              <tr key={apt.id} className="hover:bg-bunny-paper/60 transition-colors">
+                                <td className="py-3 px-4 font-semibold text-bunny-text">{formatDateSafe(apt.appointmentDate)}</td>
+                                <td className="py-3 px-4 text-bunny-text-muted">{apt.appointmentTime}</td>
+                                <td className="py-3 px-4 font-medium text-bunny-text">{getAppointmentServiceLabel(apt)}</td>
                                 <td className="py-3 px-4">{getStatusBadge(apt.status)}</td>
                                 <td className="py-3 px-4">
                                   {apt.notes ? (
-                                    <span className="text-slate-500 text-xs">
+                                    <span className="text-bunny-text-muted text-xs">
                                       {apt.notes.length > 50 ? `${apt.notes.substring(0, 50)}...` : apt.notes}
                                     </span>
                                   ) : (
-                                    <span className="text-slate-300">-</span>
+                                    <span className="text-bunny-text-muted/70">-</span>
                                   )}
                                 </td>
                               </tr>
@@ -531,10 +531,10 @@ export default function CustomerDetailsPage() {
 
             {/* Vista: GiftCards */}
             {activeTab === 'giftcards' && (
-              <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-                <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+              <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+                <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4 flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">🎁 GiftCards del Cliente</h5>
+                    <h5 className="font-bold text-sm sm:text-base text-bunny-text mb-0">🎁 GiftCards del Cliente</h5>
                     <Badge variant={activeCustomerGiftCards.length > 0 ? 'success' : 'secondary'}>
                       {activeCustomerGiftCards.length} activa{activeCustomerGiftCards.length !== 1 ? 's' : ''}
                     </Badge>
@@ -550,15 +550,15 @@ export default function CustomerDetailsPage() {
                 </Card.Header>
                 <Card.Body className="p-0">
                   {customerGiftCardsLoading ? (
-                    <div className="text-center py-6 text-slate-400 text-xs">Cargando GiftCards...</div>
+                    <div className="text-center py-6 text-bunny-text-muted/70 text-xs">Cargando GiftCards...</div>
                   ) : customerGiftCards.length === 0 ? (
-                    <div className="p-4 text-slate-500 text-xs">
+                    <div className="p-4 text-bunny-text-muted text-xs">
                       Esta clienta no tiene GiftCards asociadas (como beneficiaria ni compradora).
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs sm:text-sm">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                        <thead className="bg-bunny-paper border-b border-bunny-border text-bunny-text-muted font-semibold text-xs uppercase tracking-wider">
                           <tr>
                             <th className="py-3 px-4">Código</th>
                             <th className="py-3 px-4">Rol</th>
@@ -568,7 +568,7 @@ export default function CustomerDetailsPage() {
                             <th className="py-3 px-4 text-right">Acciones</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-bunny-border">
                           {customerGiftCards.map((gc) => {
                             const isBeneficiary = toWhatsAppPhone(gc.beneficiaryPhone) === toWhatsAppPhone(customer.phone);
                             const remainingServices = gc.items.map(
@@ -577,10 +577,10 @@ export default function CustomerDetailsPage() {
                             const publicUrl = normalizeGiftCardPublicUrl(gc.publicUrl, gc.code);
 
                             return (
-                              <tr key={gc.id} className="hover:bg-slate-50/60 transition-colors">
+                              <tr key={gc.id} className="hover:bg-bunny-paper/60 transition-colors">
                                 <td className="py-3 px-4">
-                                  <strong className="text-slate-800">{gc.code}</strong>
-                                  <div className="text-slate-500 text-xs mt-0.5">${gc.totalAmount.toLocaleString('es-CL')}</div>
+                                  <strong className="text-bunny-text">{gc.code}</strong>
+                                  <div className="text-bunny-text-muted text-xs mt-0.5">${gc.totalAmount.toLocaleString('es-CL')}</div>
                                 </td>
                                 <td className="py-3 px-4">
                                   <Badge variant={isBeneficiary ? 'primary' : 'info'}>
@@ -593,10 +593,10 @@ export default function CustomerDetailsPage() {
                                   </Badge>
                                 </td>
                                 <td className="py-3 px-4">
-                                  <small className="text-slate-600">{remainingServices || 'Sin servicios'}</small>
+                                  <small className="text-bunny-text-muted">{remainingServices || 'Sin servicios'}</small>
                                 </td>
                                 <td className="py-3 px-4">
-                                  <small className="text-slate-600">{gc.expiresOn}</small>
+                                  <small className="text-bunny-text-muted">{gc.expiresOn}</small>
                                 </td>
                                 <td className="py-3 px-4 text-right">
                                   <div className="flex justify-end gap-1 items-center">

@@ -131,7 +131,7 @@ export default function TenantsPage() {
             <h1 className="text-2xl font-bold text-[#5c3d2e] tracking-tight flex items-center gap-2">
               <span>🏢</span> Plataforma SaaS Multi-Salón
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-bunny-text-muted mt-1">
               Aprovisionamiento, métricas de actividad y control centralizado de salones.
             </p>
           </div>
@@ -162,7 +162,7 @@ export default function TenantsPage() {
           <Card className="p-4 bg-gradient-to-br from-white to-[#fdf9f7] border-[#f0e0d8]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Salones Registrados</p>
+                <p className="text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">Salones Registrados</p>
                 <p className="text-2xl font-extrabold text-[#5c3d2e] mt-1">{stats.total}</p>
               </div>
               <span className="text-2xl p-2.5 bg-[#f5ebe6] rounded-xl text-[#d48b70]">🏢</span>
@@ -172,7 +172,7 @@ export default function TenantsPage() {
           <Card className="p-4 bg-gradient-to-br from-white to-[#fdf9f7] border-[#f0e0d8]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Salones Activos</p>
+                <p className="text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">Salones Activos</p>
                 <p className="text-2xl font-extrabold text-emerald-600 mt-1">{stats.active}</p>
               </div>
               <span className="text-2xl p-2.5 bg-emerald-50 rounded-xl text-emerald-600">✨</span>
@@ -182,7 +182,7 @@ export default function TenantsPage() {
           <Card className="p-4 bg-gradient-to-br from-white to-[#fdf9f7] border-[#f0e0d8]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Citas Globales</p>
+                <p className="text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">Citas Globales</p>
                 <p className="text-2xl font-extrabold text-[#5c3d2e] mt-1">{stats.totalAppointments}</p>
               </div>
               <span className="text-2xl p-2.5 bg-[#f5ebe6] rounded-xl text-[#d48b70]">📅</span>
@@ -192,7 +192,7 @@ export default function TenantsPage() {
           <Card className="p-4 bg-gradient-to-br from-white to-[#fdf9f7] border-[#f0e0d8]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Clientes en Red</p>
+                <p className="text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">Clientes en Red</p>
                 <p className="text-2xl font-extrabold text-[#5c3d2e] mt-1">{stats.totalCustomers}</p>
               </div>
               <span className="text-2xl p-2.5 bg-[#f5ebe6] rounded-xl text-[#d48b70]">👥</span>
@@ -204,7 +204,7 @@ export default function TenantsPage() {
         <Card className="p-4 border-[#f0e0d8]">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <FiSearch className="absolute left-3 top-3 text-gray-400" />
+              <FiSearch className="absolute left-3 top-3 text-bunny-text-muted/70" />
               <Input
                 className="pl-9"
                 placeholder="Buscar por nombre, slug, dominio o email..."
@@ -215,7 +215,7 @@ export default function TenantsPage() {
 
             <div className="flex gap-2">
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#d48b70]"
+                className="px-3 py-2 border border-bunny-border-strong rounded-lg text-sm bg-white text-bunny-text focus:outline-none focus:ring-2 focus:ring-[#d48b70]"
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
               >
@@ -226,7 +226,7 @@ export default function TenantsPage() {
               </select>
 
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#d48b70]"
+                className="px-3 py-2 border border-bunny-border-strong rounded-lg text-sm bg-white text-bunny-text focus:outline-none focus:ring-2 focus:ring-[#d48b70]"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -242,13 +242,13 @@ export default function TenantsPage() {
         {loading ? (
           <div className="py-16 text-center">
             <Spinner size="lg" />
-            <p className="text-sm text-gray-500 mt-2">Cargando salones de la plataforma...</p>
+            <p className="text-sm text-bunny-text-muted mt-2">Cargando salones de la plataforma...</p>
           </div>
         ) : filteredTenants.length === 0 ? (
-          <Card className="p-12 text-center border-dashed border-2 border-gray-200">
+          <Card className="p-12 text-center border-dashed border-2 border-bunny-border">
             <div className="text-4xl mb-3">🏢</div>
-            <h3 className="text-lg font-bold text-gray-700">No se encontraron salones</h3>
-            <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+            <h3 className="text-lg font-bold text-bunny-text">No se encontraron salones</h3>
+            <p className="text-sm text-bunny-text-muted mt-1 max-w-md mx-auto">
               {search || planFilter !== 'ALL' || statusFilter !== 'ALL'
                 ? 'Intenta ajustar los criterios de búsqueda o filtros.'
                 : 'Comienza aprovisionando el primer salón secundario para la plataforma.'}
@@ -269,7 +269,7 @@ export default function TenantsPage() {
                         <img
                           src={t.logoUrl}
                           alt={t.name}
-                          className="w-11 h-11 rounded-xl object-contain border border-gray-200 p-1 bg-white"
+                          className="w-11 h-11 rounded-xl object-contain border border-bunny-border p-1 bg-white"
                           onError={(e) => {
                             (e.currentTarget as HTMLElement).style.display = 'none';
                           }}
@@ -294,7 +294,7 @@ export default function TenantsPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5 font-mono">@{t.slug}</p>
+                        <p className="text-xs text-bunny-text-muted mt-0.5 font-mono">@{t.slug}</p>
                       </div>
                     </div>
 
@@ -304,21 +304,21 @@ export default function TenantsPage() {
                   </div>
 
                   {/* Dominio y URLs */}
-                  <div className="space-y-1.5 text-xs text-gray-600 mb-4 bg-[#fdfaf8] p-2.5 rounded-lg border border-[#f5ede8]">
+                  <div className="space-y-1.5 text-xs text-bunny-text-muted mb-4 bg-[#fdfaf8] p-2.5 rounded-lg border border-[#f5ede8]">
                     {t.customDomain ? (
                       <div className="flex items-center gap-1.5 text-indigo-700 font-medium">
                         <FiGlobe className="flex-shrink-0" />
                         <span className="truncate">{t.customDomain}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-gray-500">
-                        <FiGlobe className="flex-shrink-0 text-gray-400" />
+                      <div className="flex items-center gap-1.5 text-bunny-text-muted">
+                        <FiGlobe className="flex-shrink-0 text-bunny-text-muted/70" />
                         <span>Sin dominio propio configurado</span>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-1 border-t border-gray-200/50">
-                      <span className="text-[11px] text-gray-500">Portal Público:</span>
+                    <div className="flex items-center justify-between pt-1 border-t border-bunny-border/50">
+                      <span className="text-[11px] text-bunny-text-muted">Portal Público:</span>
                       <a
                         href={`/reservar?salon=${t.slug}`}
                         target="_blank"
@@ -331,24 +331,24 @@ export default function TenantsPage() {
                   </div>
 
                   {/* Métricas del Salón */}
-                  <div className="grid grid-cols-3 gap-2 py-2 border-t border-b border-gray-100 text-center mb-4">
+                  <div className="grid grid-cols-3 gap-2 py-2 border-t border-b border-bunny-border text-center mb-4">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold flex items-center justify-center gap-1">
+                      <p className="text-[10px] uppercase tracking-wider text-bunny-text-muted/70 font-bold flex items-center justify-center gap-1">
                         <FiUsers /> Personal
                       </p>
-                      <p className="text-sm font-bold text-gray-800 mt-0.5">{t.userCount}</p>
+                      <p className="text-sm font-bold text-bunny-text mt-0.5">{t.userCount}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold flex items-center justify-center gap-1">
+                      <p className="text-[10px] uppercase tracking-wider text-bunny-text-muted/70 font-bold flex items-center justify-center gap-1">
                         <FiCalendar /> Citas
                       </p>
-                      <p className="text-sm font-bold text-gray-800 mt-0.5">{t.appointmentCount}</p>
+                      <p className="text-sm font-bold text-bunny-text mt-0.5">{t.appointmentCount}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold flex items-center justify-center gap-1">
+                      <p className="text-[10px] uppercase tracking-wider text-bunny-text-muted/70 font-bold flex items-center justify-center gap-1">
                         👥 Clientes
                       </p>
-                      <p className="text-sm font-bold text-gray-800 mt-0.5">{t.customerCount}</p>
+                      <p className="text-sm font-bold text-bunny-text mt-0.5">{t.customerCount}</p>
                     </div>
                   </div>
                 </div>
@@ -361,7 +361,7 @@ export default function TenantsPage() {
                         <FiCheckCircle className="mr-1 text-emerald-600" /> Activo
                       </span>
                     ) : (
-                      <span className="inline-flex items-center text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center text-xs font-semibold text-bunny-text-muted bg-bunny-sand px-2 py-0.5 rounded-full">
                         <FiXCircle className="mr-1" /> Inactivo
                       </span>
                     )}
@@ -374,7 +374,7 @@ export default function TenantsPage() {
                         onClick={() => setStatusCandidate(t)}
                         className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
                           t.active
-                            ? 'border-gray-200 text-gray-600 hover:bg-gray-100'
+                            ? 'border-bunny-border text-bunny-text-muted hover:bg-bunny-sand'
                             : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                         }`}
                         title={t.active ? 'Desactivar salón' : 'Activar salón'}
@@ -433,7 +433,7 @@ export default function TenantsPage() {
               </Modal.Title>
             </Modal.Header>
             <Modal.Body>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-bunny-text-muted">
                 {statusCandidate.active
                   ? `Al desactivar ${statusCandidate.name}, los usuarios de este salón no podrán iniciar sesión ni se aceptarán reservas en línea.`
                   : `Al activar ${statusCandidate.name}, el personal podrá acceder a su panel y el portal público quedará disponible.`}

@@ -179,7 +179,7 @@ export const WhatsAppMetaSection: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border">
+              <div className="p-4 bg-bunny-paper rounded-xl border border-bunny-border">
                 <span className="text-xs text-bunny-text-muted block font-semibold mb-1.5">
                   Reputación y Calidad
                 </span>
@@ -189,7 +189,7 @@ export const WhatsAppMetaSection: React.FC = () => {
                 </p>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border">
+              <div className="p-4 bg-bunny-paper rounded-xl border border-bunny-border">
                 <span className="text-xs text-bunny-text-muted block font-semibold mb-1.5">
                   Límite de Envíos Diarios
                 </span>
@@ -199,7 +199,7 @@ export const WhatsAppMetaSection: React.FC = () => {
                 </p>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border sm:col-span-2 md:col-span-1">
+              <div className="p-4 bg-bunny-paper rounded-xl border border-bunny-border sm:col-span-2 md:col-span-1">
                 <span className="text-xs text-bunny-text-muted block font-semibold mb-1.5">
                   Nombre Verificado &amp; Teléfono
                 </span>
@@ -395,7 +395,7 @@ export const WhatsAppMetaSection: React.FC = () => {
                         </td>
                         <td className="py-3 px-4">{getTemplateStatusBadge(tpl.status)}</td>
                         <td className="py-3 px-4">
-                          <span className="inline-block px-2 py-0.5 rounded border border-bunny-border bg-slate-50 font-mono text-[11px]">
+                          <span className="inline-block px-2 py-0.5 rounded border border-bunny-border bg-bunny-paper font-mono text-[11px]">
                             {tpl.language}
                           </span>
                         </td>

@@ -318,7 +318,7 @@ export default function AnalyticsPage() {
                     setStartDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  className="w-32 text-xs rounded-xl border border-rose-200 px-2 py-1.5 bg-white text-stone-700"
+                  className="w-32 text-xs rounded-xl border border-rose-200 px-2 py-1.5 bg-white text-bunny-text"
                 />
                 <span style={{ color: TEXT_MID, fontSize: '13px' }}>a</span>
                 <input
@@ -328,7 +328,7 @@ export default function AnalyticsPage() {
                     setEndDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  className="w-32 text-xs rounded-xl border border-rose-200 px-2 py-1.5 bg-white text-stone-700"
+                  className="w-32 text-xs rounded-xl border border-rose-200 px-2 py-1.5 bg-white text-bunny-text"
                 />
                 <Button
                   variant="primary"
@@ -365,7 +365,7 @@ export default function AnalyticsPage() {
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
                     isSelected
                       ? 'bg-amber-950 text-white shadow-sm font-semibold'
-                      : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
+                      : 'bg-white text-bunny-text border border-bunny-border hover:bg-bunny-paper'
                   }`}
                 >
                   {p.label}
@@ -462,7 +462,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
                 <div>
-                  <div className="p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
+                  <div className="p-2.5 rounded-xl bg-white border border-bunny-border shadow-2xs">
                     <strong>📅 Día Pico de Demanda:</strong>{' '}
                     <span className="text-blue-600 font-semibold">
                       {peakWeekday && peakWeekday.count > 0
@@ -472,7 +472,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
+                  <div className="p-2.5 rounded-xl bg-white border border-bunny-border shadow-2xs">
                     <strong>⏰ Franja Horaria de Mayor Flujo:</strong>{' '}
                     <span className="text-emerald-600 font-semibold">
                       {peakSlot && peakSlot.count > 0
@@ -482,9 +482,9 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
+                  <div className="p-2.5 rounded-xl bg-white border border-bunny-border shadow-2xs">
                     <strong>🎯 Optimización de Turnos:</strong>{' '}
-                    <span className="text-stone-800">
+                    <span className="text-bunny-text">
                       {peakWeekday && peakWeekday.count > 0
                         ? `Reforzar disponibilidad los días ${peakWeekday.dayName} durante la franja de la ${peakSlot?.slotName?.toLowerCase() || 'tarde'}.`
                         : 'Continúa registrando citas para obtener sugerencias automáticas.'}

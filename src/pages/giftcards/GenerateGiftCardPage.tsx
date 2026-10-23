@@ -448,7 +448,7 @@ export default function GenerateGiftCardPage() {
                       type="text"
                       placeholder="Nombre completo"
                       disabled={lookupStatus === 'idle'}
-                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                       value={createData.beneficiaryFullName}
                       onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryFullName: e.target.value }))}
                     />
@@ -461,7 +461,7 @@ export default function GenerateGiftCardPage() {
                       type="email"
                       placeholder="correo@ejemplo.com"
                       disabled={lookupStatus === 'idle'}
-                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                       value={createData.beneficiaryEmail}
                       onChange={(e) => setCreateData((prev) => ({ ...prev, beneficiaryEmail: e.target.value }))}
                     />
@@ -473,7 +473,7 @@ export default function GenerateGiftCardPage() {
                     <input id="generate-gift-card-vencimiento-2"
                       type="date"
                       disabled={lookupStatus === 'idle'}
-                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                      className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                       value={createData.expiresOn}
                       onChange={(e) => setCreateData((prev) => ({ ...prev, expiresOn: e.target.value }))}
                     />
@@ -490,7 +490,7 @@ export default function GenerateGiftCardPage() {
                     type="text"
                     placeholder="Opcional"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
-                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                     value={createData.buyerName}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, buyerName: e.target.value }))}
                   />
@@ -503,7 +503,7 @@ export default function GenerateGiftCardPage() {
                     type="tel"
                     placeholder="Opcional"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
-                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                     value={createData.buyerPhone}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, buyerPhone: e.target.value }))}
                   />
@@ -516,7 +516,7 @@ export default function GenerateGiftCardPage() {
                     type="email"
                     placeholder="Opcional"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
-                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                     value={createData.buyerEmail}
                     onChange={(e) => setCreateData((prev) => ({ ...prev, buyerEmail: e.target.value }))}
                   />
@@ -527,7 +527,7 @@ export default function GenerateGiftCardPage() {
                   </label>
                   <select id="generate-gift-card-metodo-de-pago"
                     disabled={!isBlankGiftCard && lookupStatus === 'idle'}
-                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-bunny-border bg-white px-3.5 py-2.5 text-sm text-bunny-text focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                     value={createData.paymentMethod}
                     onChange={(e) =>
                       setCreateData((prev) => ({ ...prev, paymentMethod: e.target.value as GiftCardPaymentMethod }))
@@ -570,7 +570,7 @@ export default function GenerateGiftCardPage() {
                         <input
                           type="number"
                           min={0}
-                          className="w-full rounded-lg border border-bunny-border bg-white px-3 py-1.5 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-slate-50 disabled:text-slate-400"
+                          className="w-full rounded-lg border border-bunny-border bg-white px-3 py-1.5 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary disabled:bg-bunny-paper disabled:text-bunny-text-muted/70"
                           value={quantities[service.id] || 0}
                           disabled={!isBlankGiftCard && lookupStatus === 'idle'}
                           onChange={(e) =>

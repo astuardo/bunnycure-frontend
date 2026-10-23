@@ -239,11 +239,11 @@ export default function RemindersPage() {
         {/* Encabezado y Acciones */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-amber-950 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-bunny-cocoa flex items-center gap-2">
               <FaBell className="text-rose-600" />
               Gestión de Recordatorios
             </h2>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-bunny-text-muted">
               Notifica a tus clientas de forma automática o mediante WhatsApp directo en 1-clic
             </p>
           </div>
@@ -272,48 +272,48 @@ export default function RemindersPage() {
 
         {/* Tarjetas KPI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-bunny-border shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
               <FaClock />
             </div>
             <div>
-              <div className="text-xs font-semibold text-stone-500">Pendientes Hoy</div>
-              <h3 className="text-2xl font-bold text-amber-950">
+              <div className="text-xs font-semibold text-bunny-text-muted">Pendientes Hoy</div>
+              <h3 className="text-2xl font-bold text-bunny-cocoa">
                 {todayAppointments.filter((a) => !a.reminderSent).length}
               </h3>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-bunny-border shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shrink-0">
               <FiCalendar />
             </div>
             <div>
-              <div className="text-xs font-semibold text-stone-500">Citas Mañana</div>
-              <h3 className="text-2xl font-bold text-amber-950">
+              <div className="text-xs font-semibold text-bunny-text-muted">Citas Mañana</div>
+              <h3 className="text-2xl font-bold text-bunny-cocoa">
                 {tomorrowAppointments.length}
               </h3>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-bunny-border shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
               <FaCheckCircle />
             </div>
             <div>
-              <div className="text-xs font-semibold text-stone-500">Enviados Hoy (Backend)</div>
+              <div className="text-xs font-semibold text-bunny-text-muted">Enviados Hoy (Backend)</div>
               <h3 className="text-2xl font-bold text-emerald-700">
                 {loadingStats ? <Spinner size="sm" /> : stats?.sentToday ?? todayAppointments.filter((a) => a.reminderSent).length}
               </h3>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-bunny-border shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center text-xl shrink-0">
               <FaBell />
             </div>
             <div>
-              <div className="text-xs font-semibold text-stone-500">Total Próximas</div>
+              <div className="text-xs font-semibold text-bunny-text-muted">Total Próximas</div>
               <h3 className="text-2xl font-bold text-rose-900">
                 {allActiveAppointments.length}
               </h3>
@@ -322,7 +322,7 @@ export default function RemindersPage() {
         </div>
 
         {/* Pestañas Rápidas y Buscador */}
-        <div className="p-4 rounded-2xl bg-white border border-rose-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 rounded-2xl bg-white border border-bunny-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -330,7 +330,7 @@ export default function RemindersPage() {
               className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 activeTab === 'TODAY'
                   ? 'bg-rose-900 text-white shadow-sm'
-                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+                  : 'bg-bunny-paper text-bunny-text-muted border border-bunny-border hover:bg-bunny-sand'
               }`}
             >
               📅 Citas de Hoy ({todayAppointments.length})
@@ -341,7 +341,7 @@ export default function RemindersPage() {
               className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 activeTab === 'TOMORROW'
                   ? 'bg-rose-900 text-white shadow-sm'
-                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+                  : 'bg-bunny-paper text-bunny-text-muted border border-bunny-border hover:bg-bunny-sand'
               }`}
             >
               🌅 Citas de Mañana ({tomorrowAppointments.length})
@@ -352,7 +352,7 @@ export default function RemindersPage() {
               className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 activeTab === 'ALL_PENDING'
                   ? 'bg-rose-900 text-white shadow-sm'
-                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+                  : 'bg-bunny-paper text-bunny-text-muted border border-bunny-border hover:bg-bunny-sand'
               }`}
             >
               ⏳ Todas las Pendientes ({pendingReminders.length})
@@ -363,7 +363,7 @@ export default function RemindersPage() {
               className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
                 activeTab === 'UPCOMING'
                   ? 'bg-rose-900 text-white shadow-sm'
-                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+                  : 'bg-bunny-paper text-bunny-text-muted border border-bunny-border hover:bg-bunny-sand'
               }`}
             >
               🗓️ Todas ({allActiveAppointments.length})
@@ -378,14 +378,14 @@ export default function RemindersPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
             />
-            <FiSearch className="absolute text-stone-400 top-2.5 left-3 text-sm" />
+            <FiSearch className="absolute text-bunny-text-muted/70 top-2.5 left-3 text-sm" />
           </div>
         </div>
 
         {/* Tabla de Citas */}
-        <div className="rounded-2xl bg-white border border-rose-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-rose-100">
-            <h5 className="font-bold text-amber-950 text-base">
+        <div className="rounded-2xl bg-white border border-bunny-border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-bunny-border">
+            <h5 className="font-bold text-bunny-cocoa text-base">
               Listado de Citas ({tabAppointments.length})
             </h5>
           </div>
@@ -393,13 +393,13 @@ export default function RemindersPage() {
           {isLoading ? (
             <div className="text-center py-12">
               <Spinner size="lg" variant="primary" />
-              <p className="text-stone-400 mt-2 text-xs">Cargando citas...</p>
+              <p className="text-bunny-text-muted/70 mt-2 text-xs">Cargando citas...</p>
             </div>
           ) : tabAppointments.length === 0 ? (
             <div className="text-center py-12 px-4 space-y-2">
               <FaCheckCircle className="text-emerald-500/50 mx-auto text-4xl" />
-              <h6 className="font-bold text-amber-950">No hay citas en este filtro</h6>
-              <p className="text-stone-400 text-xs">
+              <h6 className="font-bold text-bunny-cocoa">No hay citas en este filtro</h6>
+              <p className="text-bunny-text-muted/70 text-xs">
                 Todas las clientas de esta sección están al día o no tienen citas agendadas.
               </p>
             </div>
@@ -407,7 +407,7 @@ export default function RemindersPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-rose-50/50 border-b border-rose-100 text-xs font-semibold text-stone-600 uppercase tracking-wider">
+                  <tr className="bg-rose-50/50 border-b border-bunny-border text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">
                     <th className="py-3 px-5">Fecha y Hora</th>
                     <th className="py-3 px-5">Clienta</th>
                     <th className="py-3 px-5">Servicio</th>
@@ -416,25 +416,25 @@ export default function RemindersPage() {
                     <th className="py-3 px-5 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rose-50 text-stone-700">
+                <tbody className="divide-y divide-rose-50 text-bunny-text">
                   {tabAppointments.map((apt) => {
                     const isPending = !apt.reminderSent;
                     return (
                       <tr key={apt.id} className="hover:bg-rose-50/30 transition-colors">
                         <td className="py-3.5 px-5">
-                          <div className="font-bold text-amber-950 text-sm">
+                          <div className="font-bold text-bunny-cocoa text-sm">
                             {apt.appointmentTime} hrs
                           </div>
-                          <div className="text-xs text-stone-400">
+                          <div className="text-xs text-bunny-text-muted/70">
                             {formatAppointmentDateTime(apt)}
                           </div>
                         </td>
 
                         <td className="py-3.5 px-5">
-                          <div className="font-semibold text-amber-950 text-sm">
+                          <div className="font-semibold text-bunny-cocoa text-sm">
                             {apt.customer?.fullName || 'Clienta'}
                           </div>
-                          <div className="text-xs text-stone-400">
+                          <div className="text-xs text-bunny-text-muted/70">
                             {apt.customer?.phone || 'Sin teléfono'} {apt.customer?.rut ? `• ${apt.customer.rut}` : ''}
                           </div>
                         </td>

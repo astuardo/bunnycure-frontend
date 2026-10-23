@@ -149,12 +149,12 @@ export default function InstallPage() {
 
                 {/* Instrucciones para Desktop */}
                 {!isIOS && !isAndroid && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-800 space-y-2">
-                    <h6 className="font-bold flex items-center gap-2 text-gray-900">
-                      <FiMonitor className="w-4 h-4 text-gray-700" />
+                  <div className="bg-bunny-paper border border-bunny-border rounded-xl p-4 text-sm text-bunny-text space-y-2">
+                    <h6 className="font-bold flex items-center gap-2 text-bunny-text">
+                      <FiMonitor className="w-4 h-4 text-bunny-text" />
                       Instalación en Computador
                     </h6>
-                    <p className="text-xs text-gray-700 leading-relaxed mb-0">
+                    <p className="text-xs text-bunny-text leading-relaxed mb-0">
                       Haz clic en el ícono de instalación que aparece en la barra de direcciones de tu navegador (Chrome o Edge) o selecciona <em>Instalar BunnyCure</em> en el menú superior derecho.
                     </p>
                   </div>

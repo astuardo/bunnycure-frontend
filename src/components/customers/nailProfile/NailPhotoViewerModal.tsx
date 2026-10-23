@@ -89,7 +89,7 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
             )}
           </div>
         ) : (
-          <div className="text-center py-16 text-slate-400 bg-slate-50">
+          <div className="text-center py-16 text-bunny-text-muted/70 bg-bunny-paper">
             Sin fotografías adjuntas
           </div>
         )}
@@ -107,7 +107,7 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
                 </Badge>
               )}
             </div>
-            <small className="text-slate-400 text-xs flex items-center gap-1">
+            <small className="text-bunny-text-muted/70 text-xs flex items-center gap-1">
               <FiCalendar /> {record.date}
             </small>
           </div>

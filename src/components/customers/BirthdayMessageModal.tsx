@@ -146,7 +146,7 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
 
         {/* Selector de Tono / Tipo de Beneficio */}
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-bunny-text-muted uppercase tracking-wider mb-2">
             SELECCIONA EL TIPO DE SALUDO Y BENEFICIO:
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -189,7 +189,7 @@ export const BirthdayMessageModal: React.FC<BirthdayMessageModalProps> = ({
         {/* Vista previa y edición del mensaje */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label htmlFor="birthday-message-mensaje-personalizable" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <label htmlFor="birthday-message-mensaje-personalizable" className="text-xs font-bold text-bunny-text-muted uppercase tracking-wider">
               MENSAJE PERSONALIZABLE:
             </label>
             <button
