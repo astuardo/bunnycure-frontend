@@ -81,7 +81,7 @@ export function CancelAppointmentDialog({
         <Modal.Title>
           <div className="flex items-center gap-2.5">
             <AlertCircle size={22} className="text-rose-600 shrink-0" />
-            <span className="text-base font-semibold text-slate-800">
+            <span className="text-base font-semibold text-bunny-text">
               Cancelar Cita
             </span>
           </div>
@@ -117,13 +117,13 @@ export function CancelAppointmentDialog({
                 checked={revertGiftCard}
                 onChange={(e) => setRevertGiftCard(e.target.checked)}
                 disabled={isLoading}
-                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                className="rounded border-bunny-border-strong text-emerald-600 focus:ring-emerald-500"
               />
               <span className="font-semibold text-xs text-emerald-900">
                 Restituir saldo a la GiftCard automáticamente
               </span>
             </label>
-            <div className="text-[11px] text-slate-500 mt-1 ml-5">
+            <div className="text-[11px] text-bunny-text-muted mt-1 ml-5">
               {revertGiftCard
                 ? '✓ El servicio canjeado volverá a estar disponible en la GiftCard de la clienta al cancelar.'
                 : '⚠️ El saldo no se devolverá a la GiftCard (quedará como consumido).'}
@@ -134,7 +134,7 @@ export function CancelAppointmentDialog({
         {/* Checkbox Origen de Cancelación */}
         <div
           className={`p-3 rounded-xl border transition-colors ${
-            isManicurist ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-50 border-slate-200'
+            isManicurist ? 'bg-amber-50/70 border-amber-300' : 'bg-bunny-paper border-bunny-border'
           }`}
         >
           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -147,11 +147,11 @@ export function CancelAppointmentDialog({
                 if (error) setError('');
               }}
               disabled={isLoading}
-              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+              className="rounded border-bunny-border-strong text-amber-600 focus:ring-amber-500"
             />
             <span
               className={`font-semibold text-xs sm:text-sm ${
-                isManicurist ? 'text-amber-900' : 'text-slate-700'
+                isManicurist ? 'text-amber-900' : 'text-bunny-text'
               }`}
             >
               Cancelación por parte de la manicurista / salón
@@ -159,7 +159,7 @@ export function CancelAppointmentDialog({
           </label>
           <div
             className={`text-xs mt-1 ml-5 leading-relaxed ${
-              isManicurist ? 'text-amber-800' : 'text-slate-500'
+              isManicurist ? 'text-amber-800' : 'text-bunny-text-muted'
             }`}
           >
             {isManicurist
@@ -170,7 +170,7 @@ export function CancelAppointmentDialog({
 
         {/* Chips de motivos frecuentes */}
         <div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+          <div className="text-[11px] font-bold text-bunny-text-muted/70 uppercase tracking-wider mb-1.5">
             Motivos frecuentes ({isManicurist ? '💅 Manicurista / Salón' : '👤 Clienta'}):
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -190,7 +190,7 @@ export function CancelAppointmentDialog({
                       ? isManicurist
                         ? 'bg-amber-100 border-amber-400 text-amber-900 font-semibold'
                         : 'bg-rose-100 border-rose-400 text-rose-900 font-semibold'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      : 'bg-white border-bunny-border text-bunny-text-muted hover:bg-bunny-paper'
                   }`}
                 >
                   {quick}
@@ -209,7 +209,7 @@ export function CancelAppointmentDialog({
 
         {/* Reason Field */}
         <div>
-          <label htmlFor="cancel-appointment-dialog-motivo-de-cancelacion" className="block font-semibold text-xs text-slate-700 mb-1">
+          <label htmlFor="cancel-appointment-dialog-motivo-de-cancelacion" className="block font-semibold text-xs text-bunny-text mb-1">
             Motivo de cancelación *
           </label>
           <textarea id="cancel-appointment-dialog-motivo-de-cancelacion"
@@ -226,10 +226,10 @@ export function CancelAppointmentDialog({
             }}
             disabled={isLoading}
             className={`w-full text-xs sm:text-sm rounded-lg border p-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500 ${
-              error ? 'border-rose-500' : 'border-slate-300'
+              error ? 'border-rose-500' : 'border-bunny-border-strong'
             }`}
           />
-          <div className="text-[11px] text-slate-400 mt-1">
+          <div className="text-[11px] text-bunny-text-muted/70 mt-1">
             {reason.length} caracteres
           </div>
         </div>

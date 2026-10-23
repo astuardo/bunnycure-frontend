@@ -70,11 +70,11 @@ export function AppointmentsList({
   return (
     <>
       {/* Vista Desktop: Tabla */}
-      <div className="hidden md:block overflow-hidden bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+      <div className="hidden md:block overflow-hidden bg-white border border-bunny-border/80 rounded-2xl shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+              <tr className="bg-bunny-paper/80 border-b border-bunny-border text-bunny-text font-bold uppercase tracking-wider">
                 <th className="px-3.5 py-3">Fecha</th>
                 <th className="px-3.5 py-3">Hora</th>
                 <th className="px-3.5 py-3">Cliente</th>
@@ -84,21 +84,21 @@ export function AppointmentsList({
                 <th className="px-3.5 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-bunny-border">
               {displayedAppointments.map((apt) => {
                 const appointmentServices = getAppointmentServices(apt);
                 return (
-                  <tr key={apt.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-3.5 py-3 font-medium text-slate-800 whitespace-nowrap">
+                  <tr key={apt.id} className="hover:bg-bunny-paper/60 transition-colors">
+                    <td className="px-3.5 py-3 font-medium text-bunny-text whitespace-nowrap">
                       {format(parseISO(apt.appointmentDate), 'dd/MM/yyyy', { locale: es })}
                     </td>
-                    <td className="px-3.5 py-3 font-semibold text-slate-700 whitespace-nowrap">
+                    <td className="px-3.5 py-3 font-semibold text-bunny-text whitespace-nowrap">
                       {apt.appointmentTime.slice(0, 5)}
                     </td>
-                    <td className="px-3.5 py-3 text-slate-800 font-medium">
+                    <td className="px-3.5 py-3 text-bunny-text font-medium">
                       {apt.customer.fullName}
                     </td>
-                    <td className="px-3.5 py-3 text-slate-600 max-w-xs truncate" title={appointmentServices.map((s) => s.name).join(' + ')}>
+                    <td className="px-3.5 py-3 text-bunny-text-muted max-w-xs truncate" title={appointmentServices.map((s) => s.name).join(' + ')}>
                       {appointmentServices.map((service) => service.name).join(' + ')}
                     </td>
                     <td className="px-3.5 py-3 font-bold text-emerald-700 whitespace-nowrap">
@@ -188,7 +188,7 @@ export function AppointmentsList({
                         <div className="relative inline-block text-left">
                           <button
                             type="button"
-                            className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-xs text-xs font-medium"
+                            className="inline-flex items-center justify-center p-1.5 rounded-lg border border-bunny-border bg-white text-bunny-text hover:bg-bunny-paper shadow-xs text-xs font-medium"
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenDropdownAptId(openDropdownAptId === apt.id ? null : apt.id);
@@ -199,12 +199,12 @@ export function AppointmentsList({
                           </button>
                           {openDropdownAptId === apt.id && (
                             <div 
-                              className="absolute right-0 mt-1 w-52 rounded-xl bg-white shadow-xl border border-slate-200 py-1 z-50 text-xs text-left"
+                              className="absolute right-0 mt-1 w-52 rounded-xl bg-white shadow-xl border border-bunny-border py-1 z-50 text-xs text-left"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
                                 type="button"
-                                className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                 onClick={() => {
                                   setOpenDropdownAptId(null);
                                   handleSendNotification(apt.id);
@@ -214,7 +214,7 @@ export function AppointmentsList({
                               </button>
                               <button
                                 type="button"
-                                className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                 onClick={() => {
                                   setOpenDropdownAptId(null);
                                   handleSendWhatsAppConfirmation(apt.id);
@@ -224,7 +224,7 @@ export function AppointmentsList({
                               </button>
                               <button
                                 type="button"
-                                className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                 onClick={() => {
                                   setOpenDropdownAptId(null);
                                   handleSendWhatsAppReminder(apt.id);
@@ -232,10 +232,10 @@ export function AppointmentsList({
                               >
                                 <FaEnvelope className="text-sky-500" /> Recordatorio WhatsApp
                               </button>
-                              <div className="border-t border-slate-100 my-1"></div>
+                              <div className="border-t border-bunny-border my-1"></div>
                               <button
                                 type="button"
-                                className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                 onClick={() => {
                                   setOpenDropdownAptId(null);
                                   setSelectedNotificationsApt(apt);
@@ -243,10 +243,10 @@ export function AppointmentsList({
                               >
                                 <FaHistory className="text-sky-600" /> Historial de Mensajes
                               </button>
-                              <div className="border-t border-slate-100 my-1"></div>
+                              <div className="border-t border-bunny-border my-1"></div>
                               <button
                                 type="button"
-                                className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                                className="w-full text-left px-3 py-1.5 hover:bg-bunny-paper flex items-center gap-2 text-bunny-text"
                                 onClick={() => {
                                   setOpenDropdownAptId(null);
                                   handleWhatsAppHandoff(apt.id);
@@ -281,11 +281,11 @@ export function AppointmentsList({
         {displayedAppointments.map((apt) => {
           const appointmentServices = getAppointmentServices(apt);
           return (
-            <Card key={apt.id} className="border border-slate-200 shadow-xs bg-white">
+            <Card key={apt.id} className="border border-bunny-border shadow-xs bg-white">
               <Card.Body className="p-4">
                 <div className="flex justify-between items-start mb-2 gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-slate-400 text-xs mb-0.5 truncate">
+                    <div className="text-bunny-text-muted/70 text-xs mb-0.5 truncate">
                       {format(parseISO(apt.appointmentDate), 'EEEE d MMMM', { locale: es })}
                     </div>
                     <h6 className="font-bold text-bunny-dark text-sm truncate">
@@ -299,7 +299,7 @@ export function AppointmentsList({
 
                 <div className="mb-3">
                   <div className="flex justify-between items-center gap-2">
-                    <span className="text-slate-600 text-xs truncate flex-1">
+                    <span className="text-bunny-text-muted text-xs truncate flex-1">
                       {appointmentServices.map((service) => service.name).join(' + ')}
                     </span>
                     <span className="font-bold text-emerald-700 text-xs flex-shrink-0">
@@ -307,7 +307,7 @@ export function AppointmentsList({
                     </span>
                   </div>
                   {apt.notes && (
-                    <div className="mt-2 p-2 bg-slate-50 rounded-lg text-xs text-slate-600 italic border border-slate-100">
+                    <div className="mt-2 p-2 bg-bunny-paper rounded-lg text-xs text-bunny-text-muted italic border border-bunny-border">
                       {apt.notes}
                     </div>
                   )}

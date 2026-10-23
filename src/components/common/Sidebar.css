@@ -42,11 +42,6 @@
     margin-bottom: 4px;
 }
 
-.sidebar-link:hover {
-    background-color: #fce8e4 !important;
-    color: #5c3d2e !important;
-    border-color: #f0d8d0 !important;
-}
 
 .sidebar-link.active {
     background-color: #fce8e4 !important;
@@ -86,4 +81,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: #b09080;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .sidebar-link:hover {
+        background-color: #fce8e4 !important;
+        color: #5c3d2e !important;
+        border-color: #f0d8d0 !important;
+    }
 }

@@ -472,7 +472,7 @@ export default function SettingsPage() {
         {/* Encabezado y Barra de Guardado */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa flex items-center gap-2">
               <FiSettings className="text-bunny-primary" />
               Configuración del Salón
             </h1>
@@ -604,7 +604,7 @@ export default function SettingsPage() {
                         value={settings.customDomain}
                         disabled
                         placeholder="app.bunnycure.cl"
-                        className="w-full rounded-xl border border-bunny-border bg-slate-50 px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed"
+                        className="w-full rounded-xl border border-bunny-border bg-bunny-paper px-3.5 py-2 text-xs text-bunny-text-muted cursor-not-allowed"
                       />
                       <span className="text-[11px] text-bunny-text-muted mt-0.5 block">
                         Configurado en el plan Multi-Tenant SaaS.
@@ -619,7 +619,7 @@ export default function SettingsPage() {
                         value={settings.slug}
                         disabled
                         placeholder="bunnycure"
-                        className="w-full rounded-xl border border-bunny-border bg-slate-50 px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed"
+                        className="w-full rounded-xl border border-bunny-border bg-bunny-paper px-3.5 py-2 text-xs text-bunny-text-muted cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -708,7 +708,7 @@ export default function SettingsPage() {
                         {(Object.keys(settings.workingHours) as Array<keyof BusinessSettings['workingHours']>).map((day) => {
                           const hours = settings.workingHours[day];
                           return (
-                            <tr key={day} className={`hover:bg-bunny-paper/40 transition-colors ${!hours.enabled ? 'bg-slate-50/70 text-slate-400' : ''}`}>
+                            <tr key={day} className={`hover:bg-bunny-paper/40 transition-colors ${!hours.enabled ? 'bg-bunny-paper/70 text-bunny-text-muted/70' : ''}`}>
                               <td className="py-3 px-4 font-semibold text-bunny-text">{dayNames[day]}</td>
                               <td className="py-3 px-4">
                                 <label className="flex items-center gap-2 cursor-pointer font-medium text-xs">
@@ -727,7 +727,7 @@ export default function SettingsPage() {
                                   value={hours.start}
                                   disabled={!hours.enabled}
                                   onChange={(e) => handleWorkingHoursChange(day, 'start', e.target.value)}
-                                  className="w-32 rounded-lg border border-bunny-border bg-white px-2.5 py-1 text-xs text-bunny-text focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:bg-slate-100 disabled:text-slate-400"
+                                  className="w-32 rounded-lg border border-bunny-border bg-white px-2.5 py-1 text-xs text-bunny-text focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:bg-bunny-sand disabled:text-bunny-text-muted/70"
                                 />
                               </td>
                               <td className="py-3 px-4">
@@ -736,7 +736,7 @@ export default function SettingsPage() {
                                   value={hours.end}
                                   disabled={!hours.enabled}
                                   onChange={(e) => handleWorkingHoursChange(day, 'end', e.target.value)}
-                                  className="w-32 rounded-lg border border-bunny-border bg-white px-2.5 py-1 text-xs text-bunny-text focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:bg-slate-100 disabled:text-slate-400"
+                                  className="w-32 rounded-lg border border-bunny-border bg-white px-2.5 py-1 text-xs text-bunny-text focus:outline-none focus:ring-1 focus:ring-bunny-primary disabled:bg-bunny-sand disabled:text-bunny-text-muted/70"
                                 />
                               </td>
                             </tr>
@@ -927,7 +927,7 @@ export default function SettingsPage() {
                         type="text"
                         value={`${window.location.origin}/reservar`}
                         readOnly
-                        className="flex-1 rounded-xl border border-bunny-border bg-slate-50 px-3.5 py-2 text-xs font-mono text-bunny-text"
+                        className="flex-1 rounded-xl border border-bunny-border bg-bunny-paper px-3.5 py-2 text-xs font-mono text-bunny-text"
                       />
                       <Button
                         variant={copiedLink ? "success" : "outline"}
@@ -1134,7 +1134,7 @@ export default function SettingsPage() {
                       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                       : permission === 'granted'
                       ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                      : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                      : 'bg-bunny-sand text-bunny-text dark:bg-zinc-800 dark:text-bunny-text-muted/70'
                   }`}>
                     {isSubscribed ? '● Suscrito y Activo' : permission === 'granted' ? '● Permiso Concedido' : '● Sin Suscribir'}
                   </span>

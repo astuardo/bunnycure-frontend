@@ -46,18 +46,18 @@ export const InvoicePeriodSelector: React.FC<InvoicePeriodSelectorProps> = ({
   const displayPeriod = `${MONTH_NAMES[month - 1] || ''} ${year}`;
 
   return (
-    <div className={`inline-flex items-center gap-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-1.5 shadow-sm ${className}`}>
+    <div className={`inline-flex items-center gap-2 bg-white dark:bg-neutral-900 border border-bunny-border dark:border-neutral-800 rounded-lg p-1.5 shadow-sm ${className}`}>
       <Button
         variant="ghost"
         size="sm"
         onClick={handlePrevMonth}
-        className="p-1 h-8 w-8 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        className="p-1 h-8 w-8 text-bunny-text-muted dark:text-bunny-text-muted/70 hover:bg-bunny-sand dark:hover:bg-neutral-800"
         title="Mes anterior"
       >
         <FiChevronLeft className="w-4 h-4" />
       </Button>
 
-      <div className="flex items-center gap-2 px-3 text-sm font-semibold text-neutral-800 dark:text-neutral-100 min-w-[140px] justify-center">
+      <div className="flex items-center gap-2 px-3 text-sm font-semibold text-bunny-text dark:text-bunny-text-muted/70 min-w-[140px] justify-center">
         <FiCalendar className="w-4 h-4 text-primary-500" />
         <span>{displayPeriod}</span>
       </div>
@@ -66,7 +66,7 @@ export const InvoicePeriodSelector: React.FC<InvoicePeriodSelectorProps> = ({
         variant="ghost"
         size="sm"
         onClick={handleNextMonth}
-        className="p-1 h-8 w-8 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        className="p-1 h-8 w-8 text-bunny-text-muted dark:text-bunny-text-muted/70 hover:bg-bunny-sand dark:hover:bg-neutral-800"
         title="Mes siguiente"
       >
         <FiChevronRight className="w-4 h-4" />

@@ -641,7 +641,7 @@ export default function PublicLoyaltyCardPage() {
                   </span>
                   <p>
                     En <strong>Safari</strong>, presiona el botón <strong>Compartir</strong>{' '}
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">
+                    <span className="inline-block px-1.5 py-0.5 rounded bg-bunny-sand font-mono text-[10px]">
                       (⎋ / ↑)
                     </span>{' '}
                     en la barra inferior.
@@ -654,7 +654,7 @@ export default function PublicLoyaltyCardPage() {
                   </span>
                   <p>
                     Baja en el menú y selecciona <strong>"Agregar a pantalla de inicio"</strong>{' '}
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">
+                    <span className="inline-block px-1.5 py-0.5 rounded bg-bunny-sand font-mono text-[10px]">
                       (⊞)
                     </span>.
                   </p>

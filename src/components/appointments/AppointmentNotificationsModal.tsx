@@ -106,9 +106,9 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
 
   return (
     <Modal show={show} onHide={onClose} size="lg" centered>
-      <Modal.Header closeButton className="bg-slate-50 border-b border-slate-200">
+      <Modal.Header closeButton className="bg-bunny-paper border-b border-bunny-border">
         <Modal.Title>
-          <span className="text-base font-bold text-slate-800">
+          <span className="text-base font-bold text-bunny-text">
             📨 Historial de Mensajes - Cita #{appointmentId}
           </span>
         </Modal.Title>
@@ -116,12 +116,12 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
 
       <Modal.Body className="p-4 space-y-4">
         {/* Cabecera informativa */}
-        <div className="flex flex-wrap justify-between items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap justify-between items-center gap-3 p-3 bg-bunny-paper rounded-xl border border-bunny-border">
           <div>
-            <div className="font-bold text-slate-800 text-sm">
+            <div className="font-bold text-bunny-text text-sm">
               Clienta: <span className="text-bunny-primary">{customerName || 'No especificada'}</span>
             </div>
-            <div className="text-xs text-slate-500 mt-0.5">
+            <div className="text-xs text-bunny-text-muted mt-0.5">
               Teléfono: <span className="font-semibold">{customerPhone || 'Sin teléfono registrado'}</span>
             </div>
           </div>
@@ -166,21 +166,21 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
         {loading ? (
           <div className="text-center py-12">
             <Spinner size="lg" className="border-bunny-primary mx-auto" />
-            <div className="mt-2 text-slate-400 text-xs">Cargando registro de mensajes...</div>
+            <div className="mt-2 text-bunny-text-muted/70 text-xs">Cargando registro de mensajes...</div>
           </div>
         ) : logs.length === 0 ? (
-          <div className="text-center py-12 border border-slate-200 rounded-xl bg-white">
-            <div className="text-4xl text-slate-300 mb-2">📭</div>
-            <div className="font-semibold text-slate-600 text-sm">Aún no hay mensajes registrados para esta cita</div>
-            <p className="text-slate-400 text-xs mt-1 mb-0 max-w-sm mx-auto">
+          <div className="text-center py-12 border border-bunny-border rounded-xl bg-white">
+            <div className="text-4xl text-bunny-text-muted/70 mb-2">📭</div>
+            <div className="font-semibold text-bunny-text-muted text-sm">Aún no hay mensajes registrados para esta cita</div>
+            <p className="text-bunny-text-muted/70 text-xs mt-1 mb-0 max-w-sm mx-auto">
               Puedes enviar una confirmación manual usando el botón verde de arriba.
             </p>
           </div>
         ) : (
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
             {logs.map((log) => (
-              <Card key={log.id} className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-                <Card.Header className="flex justify-between items-center bg-white py-2 px-3 border-b border-slate-100">
+              <Card key={log.id} className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+                <Card.Header className="flex justify-between items-center bg-white py-2 px-3 border-b border-bunny-border">
                   <div className="flex items-center gap-2">
                     {log.channel === 'WHATSAPP' ? (
                       <Badge variant="success" className="inline-flex items-center gap-1 text-[11px]">
@@ -191,7 +191,7 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
                         <FaEnvelope /> Email
                       </Badge>
                     )}
-                    <span className="font-bold text-xs text-slate-800">
+                    <span className="font-bold text-xs text-bunny-text">
                       {log.subject || (log.channel === 'WHATSAPP' ? 'Mensaje WhatsApp' : 'Correo')}
                     </span>
                   </div>
@@ -203,29 +203,29 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
                 <Card.Body className="py-2.5 px-3 text-xs space-y-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs">
                     <div>
-                      <span className="text-slate-400">Destinatario:</span>{' '}
-                      <span className="font-semibold text-slate-700">{log.recipient}</span>
+                      <span className="text-bunny-text-muted/70">Destinatario:</span>{' '}
+                      <span className="font-semibold text-bunny-text">{log.recipient}</span>
                     </div>
                     <div className="md:text-right">
-                      <span className="text-slate-400">Fecha de envío:</span>{' '}
-                      <span className="text-slate-700">{formatDate(log.createdAt)}</span>
+                      <span className="text-bunny-text-muted/70">Fecha de envío:</span>{' '}
+                      <span className="text-bunny-text">{formatDate(log.createdAt)}</span>
                     </div>
                   </div>
 
                   {log.content && (
-                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 font-mono text-xs whitespace-pre-wrap break-words leading-relaxed text-slate-800">
+                    <div className="p-2 bg-bunny-paper rounded-lg border border-bunny-border font-mono text-xs whitespace-pre-wrap break-words leading-relaxed text-bunny-text">
                       {log.content}
                     </div>
                   )}
 
                   {log.wamid && (
-                    <div className="flex items-center justify-between p-1.5 px-2 bg-slate-50 rounded border border-slate-100 text-[11px] text-slate-500">
+                    <div className="flex items-center justify-between p-1.5 px-2 bg-bunny-paper rounded border border-bunny-border text-[11px] text-bunny-text-muted">
                       <span className="font-mono truncate mr-2" title={log.wamid}>
                         <strong>Meta ID:</strong> {log.wamid}
                       </span>
                       <button
                         type="button"
-                        className="text-slate-500 hover:text-slate-800 text-xs shrink-0 flex items-center gap-1"
+                        className="text-bunny-text-muted hover:text-bunny-text text-xs shrink-0 flex items-center gap-1"
                         onClick={() => handleCopyWamid(log.wamid!)}
                         title="Copiar comprobante Meta ID"
                       >
@@ -248,9 +248,9 @@ export const AppointmentNotificationsModal: React.FC<AppointmentNotificationsMod
         )}
       </Modal.Body>
 
-      <Modal.Footer className="bg-slate-50 border-t border-slate-200">
+      <Modal.Footer className="bg-bunny-paper border-t border-bunny-border">
         <div className="w-full flex justify-end">
-          <Button variant="secondary" size="sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={onClose}>
             Cerrar
           </Button>
         </div>

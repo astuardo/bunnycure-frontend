@@ -221,18 +221,18 @@ export const CompleteAppointmentWithSuppliesModal = ({
         {loading ? (
           <div className="text-center py-16 space-y-2">
             <Spinner size="lg" variant="primary" />
-            <p className="text-stone-400 text-xs">Cargando receta e insumos sugeridos...</p>
+            <p className="text-bunny-text-muted/70 text-xs">Cargando receta e insumos sugeridos...</p>
           </div>
         ) : (
           <>
             {/* Resumen de la Cita & Análisis de Margen */}
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+            <div className="p-4 rounded-2xl bg-bunny-paper border border-bunny-border space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                 <div>
-                  <span className="text-stone-400 block text-xs">Cliente</span>
-                  <span className="font-bold text-amber-950 text-sm">{preview?.customerName}</span>
+                  <span className="text-bunny-text-muted/70 block text-xs">Cliente</span>
+                  <span className="font-bold text-bunny-cocoa text-sm">{preview?.customerName}</span>
                   {appointmentData?.customer?.rut ? (
-                    <div className="text-stone-500 font-mono text-xs mt-0.5">
+                    <div className="text-bunny-text-muted font-mono text-xs mt-0.5">
                       🆔 {formatRutWithDots(appointmentData.customer.rut)}
                     </div>
                   ) : (
@@ -242,8 +242,8 @@ export const CompleteAppointmentWithSuppliesModal = ({
                   )}
                 </div>
                 <div>
-                  <span className="text-stone-400 block text-xs">Servicios Realizados</span>
-                  <span className="font-semibold text-stone-800">
+                  <span className="text-bunny-text-muted/70 block text-xs">Servicios Realizados</span>
+                  <span className="font-semibold text-bunny-text">
                     {preview?.serviceNames.join(' + ') || 'Servicio'}
                   </span>
                 </div>
@@ -251,17 +251,17 @@ export const CompleteAppointmentWithSuppliesModal = ({
 
               {/* Métricas de Rentabilidad de la Cita */}
               {appointmentPrice > 0 && (
-                <div className="pt-3 border-t border-stone-200 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="bg-white p-2 rounded-xl border border-stone-100 shadow-2xs">
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Precio Cita</span>
-                    <span className="font-bold text-stone-900">{formatCurrencyCLP(appointmentPrice)}</span>
+                <div className="pt-3 border-t border-bunny-border grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="bg-white p-2 rounded-xl border border-bunny-border shadow-2xs">
+                    <span className="text-bunny-text-muted/70 block text-[10px] uppercase font-bold">Precio Cita</span>
+                    <span className="font-bold text-bunny-text">{formatCurrencyCLP(appointmentPrice)}</span>
                   </div>
-                  <div className="bg-white p-2 rounded-xl border border-stone-100 shadow-2xs">
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Costo Materiales</span>
+                  <div className="bg-white p-2 rounded-xl border border-bunny-border shadow-2xs">
+                    <span className="text-bunny-text-muted/70 block text-[10px] uppercase font-bold">Costo Materiales</span>
                     <span className="font-bold text-rose-700">{formatCurrencyCLP(totalCost)}</span>
                   </div>
-                  <div className="bg-white p-2 rounded-xl border border-stone-100 shadow-2xs">
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Margen Bruto</span>
+                  <div className="bg-white p-2 rounded-xl border border-bunny-border shadow-2xs">
+                    <span className="text-bunny-text-muted/70 block text-[10px] uppercase font-bold">Margen Bruto</span>
                     <span className={`font-bold ${grossMargin >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                       {formatCurrencyCLP(grossMargin)} ({marginPercentage}%)
                     </span>
@@ -273,18 +273,18 @@ export const CompleteAppointmentWithSuppliesModal = ({
             {/* Insumos a Descontar */}
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="font-bold text-xs sm:text-sm text-stone-800 flex items-center gap-2">
+                <div className="font-bold text-xs sm:text-sm text-bunny-text flex items-center gap-2">
                   <FiPackage className="text-rose-700" />
                   <span>Insumos y Esmaltes a Descontar del Inventario:</span>
                   <Badge variant="neutral">{items.length}</Badge>
                 </div>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-stone-600">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-bunny-text-muted">
                     <input
                       type="checkbox"
                       checked={deductSupplies}
                       onChange={(e) => setDeductSupplies(e.target.checked)}
-                      className="rounded border-stone-300 text-rose-800 focus:ring-rose-500"
+                      className="rounded border-bunny-border-strong text-rose-800 focus:ring-rose-500"
                     />
                     <span>Descontar stock</span>
                   </label>
@@ -304,13 +304,13 @@ export const CompleteAppointmentWithSuppliesModal = ({
               {showAddProductSelector && (
                 <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-bunny-cocoa flex items-center gap-1.5">
                       <FiPlus className="text-rose-700" /> Agregar Insumo / Esmalte no incluido en la receta:
                     </span>
                     <button
                       type="button"
                       onClick={() => setShowAddProductSelector(false)}
-                      className="text-stone-400 hover:text-stone-600 text-xs font-bold"
+                      className="text-bunny-text-muted/70 hover:text-bunny-text-muted text-xs font-bold"
                     >
                       ✕
                     </button>
@@ -323,13 +323,13 @@ export const CompleteAppointmentWithSuppliesModal = ({
                         placeholder="Buscar producto por nombre o unidad (ej: OPI, Top Coat, Base, Foil)..."
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                       />
                       <select
                         size={4}
                         value={selectedExtraProductId || ''}
                         onChange={(e) => setSelectedExtraProductId(Number(e.target.value))}
-                        className="w-full mt-1 px-2 py-1 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none"
+                        className="w-full mt-1 px-2 py-1 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none"
                       >
                         {filteredProductsForAdd.length === 0 ? (
                           <option disabled>No hay productos coincidentes</option>
@@ -345,7 +345,7 @@ export const CompleteAppointmentWithSuppliesModal = ({
 
                     <div className="sm:col-span-4 flex flex-col justify-between gap-2">
                       <div>
-                        <label htmlFor="complete-appointment-with-supplies-cantidad-a-consumir" className="block text-[11px] font-semibold text-stone-600 mb-1">
+                        <label htmlFor="complete-appointment-with-supplies-cantidad-a-consumir" className="block text-[11px] font-semibold text-bunny-text-muted mb-1">
                           Cantidad a Consumir:
                         </label>
                         <input id="complete-appointment-with-supplies-cantidad-a-consumir"
@@ -354,7 +354,7 @@ export const CompleteAppointmentWithSuppliesModal = ({
                           step="any"
                           value={extraQuantity}
                           onChange={(e) => setExtraQuantity(parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none"
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none"
                         />
                       </div>
                       <Button
@@ -383,14 +383,14 @@ export const CompleteAppointmentWithSuppliesModal = ({
               {items.length === 0 ? (
                 <div className="p-4 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-xs text-center space-y-1">
                   <p className="font-semibold">ℹ️ No hay insumos registrados para esta atención.</p>
-                  <p className="text-stone-500">
+                  <p className="text-bunny-text-muted">
                     Puedes pulsar "Agregar Insumo / Esmalte" arriba para registrar los materiales utilizados, o completar la cita directamente.
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-stone-200 rounded-2xl bg-white shadow-2xs">
+                <div className="overflow-x-auto border border-bunny-border rounded-2xl bg-white shadow-2xs">
                   <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 font-semibold uppercase text-[11px] tracking-wider">
+                    <thead className="bg-bunny-paper border-b border-bunny-border text-bunny-text-muted font-semibold uppercase text-[11px] tracking-wider">
                       <tr>
                         <th className="py-2.5 px-3.5">Insumo / Material</th>
                         <th className="py-2.5 px-3.5 w-32">Cantidad Usada</th>
@@ -400,21 +400,21 @@ export const CompleteAppointmentWithSuppliesModal = ({
                         <th className="py-2.5 px-3 text-center w-10"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-stone-100 text-stone-700">
+                    <tbody className="divide-y divide-bunny-border text-bunny-text">
                       {items.map((item) => {
                         const stockAfter = item.currentStock - item.quantity;
                         const isItemDeficit = stockAfter < 0;
 
                         return (
-                          <tr key={item.productId} className="hover:bg-stone-50/60 transition-colors">
+                          <tr key={item.productId} className="hover:bg-bunny-paper/60 transition-colors">
                             <td className="py-2.5 px-3.5">
-                              <div className="font-semibold text-amber-950 flex items-center gap-1.5">
+                              <div className="font-semibold text-bunny-cocoa flex items-center gap-1.5">
                                 <span>{item.productName}</span>
                                 {item.isExtra && (
                                   <Badge variant="info">Extra</Badge>
                                 )}
                               </div>
-                              <span className="text-stone-400 text-xs">{item.consumptionUnit}</span>
+                              <span className="text-bunny-text-muted/70 text-xs">{item.consumptionUnit}</span>
                             </td>
                             <td className="py-2.5 px-3.5">
                               <input
@@ -426,10 +426,10 @@ export const CompleteAppointmentWithSuppliesModal = ({
                                   handleQuantityChange(item.productId, parseFloat(e.target.value) || 0)
                                 }
                                 disabled={!deductSupplies}
-                                className="w-24 text-xs rounded-xl border border-stone-200 p-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50 bg-white"
+                                className="w-24 text-xs rounded-xl border border-bunny-border p-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50 bg-white"
                               />
                             </td>
-                            <td className="py-2.5 px-3.5 text-stone-500">
+                            <td className="py-2.5 px-3.5 text-bunny-text-muted">
                               {item.currentStock.toFixed(1)} {item.consumptionUnit}
                             </td>
                             <td className="py-2.5 px-3.5">
@@ -447,14 +447,14 @@ export const CompleteAppointmentWithSuppliesModal = ({
                                 </Badge>
                               )}
                             </td>
-                            <td className="py-2.5 px-3.5 text-right text-stone-600 font-medium">
+                            <td className="py-2.5 px-3.5 text-right text-bunny-text-muted font-medium">
                               {formatCurrencyCLP(item.quantity * item.unitConsumptionCost)}
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(item.productId)}
-                                className="text-stone-300 hover:text-red-500 transition-colors p-1"
+                                className="text-bunny-text-muted/70 hover:text-red-500 transition-colors p-1"
                                 title="Quitar insumo de esta cita"
                               >
                                 <FiTrash2 size={14} />
@@ -464,9 +464,9 @@ export const CompleteAppointmentWithSuppliesModal = ({
                         );
                       })}
                     </tbody>
-                    <tfoot className="bg-stone-50 border-t border-stone-200 font-bold">
+                    <tfoot className="bg-bunny-paper border-t border-bunny-border font-bold">
                       <tr>
-                        <td colSpan={4} className="py-2.5 px-3.5 text-right text-stone-700">
+                        <td colSpan={4} className="py-2.5 px-3.5 text-right text-bunny-text">
                           Costo Total de Materiales Usados:
                         </td>
                         <td className="py-2.5 px-3.5 text-right text-rose-800 font-bold">
@@ -481,21 +481,21 @@ export const CompleteAppointmentWithSuppliesModal = ({
             </div>
 
             {/* Opción de Boleta Electrónica SII */}
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-xs sm:text-sm font-semibold text-stone-800">
+            <div className="p-3.5 rounded-2xl bg-bunny-paper border border-bunny-border">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs sm:text-sm font-semibold text-bunny-text">
                 <input
                   type="checkbox"
                   id="generate-invoice-checkbox"
                   checked={generateInvoice}
                   onChange={(e) => setGenerateInvoice(e.target.checked)}
-                  className="rounded border-stone-300 text-rose-800 focus:ring-rose-500"
+                  className="rounded border-bunny-border-strong text-rose-800 focus:ring-rose-500"
                 />
                 <span className="flex items-center gap-1.5">
                   <FiFileText className="text-rose-700" /> Emitir boleta electrónica SII para esta atención
                 </span>
               </label>
               {invoiceQuotaInfo && (
-                <small className="text-stone-400 block mt-1 ml-5 text-xs">{invoiceQuotaInfo}</small>
+                <small className="text-bunny-text-muted/70 block mt-1 ml-5 text-xs">{invoiceQuotaInfo}</small>
               )}
             </div>
           </>

@@ -183,13 +183,13 @@ export default function BookingRequestsPage() {
         {/* Header & Controls */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-amber-950">Solicitudes de Citas</h2>
-            <p className="text-sm text-stone-500">Gestiona las solicitudes de citas recibidas desde el portal público</p>
+            <h2 className="text-2xl font-bold text-bunny-cocoa">Solicitudes de Citas</h2>
+            <p className="text-sm text-bunny-text-muted">Gestiona las solicitudes de citas recibidas desde el portal público</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-3 py-2 px-3.5 rounded-xl shadow-sm border border-rose-100 bg-white">
+            <div className="flex items-center gap-3 py-2 px-3.5 rounded-xl shadow-sm border border-bunny-border bg-white">
               <label htmlFor="booking-toggle-switch" className="flex items-center cursor-pointer gap-2.5">
-                <span className="text-xs font-semibold text-stone-700">
+                <span className="text-xs font-semibold text-bunny-text">
                   Agendamiento Online:{' '}
                   <span className={bookingEnabled ? 'text-emerald-600 font-bold' : 'text-red-500 font-bold'}>
                     {bookingEnabled ? 'ACTIVO' : 'PAUSADO'}
@@ -203,7 +203,7 @@ export default function BookingRequestsPage() {
                     checked={bookingEnabled}
                     onChange={(e) => handleToggleBooking(e.target.checked)}
                   />
-                  <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <div className="w-9 h-5 bg-bunny-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-bunny-border-strong after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                 </div>
               </label>
             </div>
@@ -212,7 +212,7 @@ export default function BookingRequestsPage() {
               href="/reservar"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center font-medium transition-all duration-200 border border-stone-200 text-stone-700 hover:bg-stone-50 px-3 py-1.5 text-xs rounded-xl shadow-2xs"
+              className="inline-flex items-center justify-center font-medium transition-all duration-200 border border-bunny-border text-bunny-text hover:bg-bunny-paper px-3 py-1.5 text-xs rounded-xl shadow-2xs"
             >
               🌐 Ver Portal (/reservar)
             </a>
@@ -220,13 +220,13 @@ export default function BookingRequestsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-rose-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-bunny-border shadow-sm">
           <div className="w-full sm:w-64">
-            <label htmlFor="booking-requests-filtrar-por-estado" className="block text-xs font-semibold text-stone-600 mb-1">Filtrar por estado:</label>
+            <label htmlFor="booking-requests-filtrar-por-estado" className="block text-xs font-semibold text-bunny-text-muted mb-1">Filtrar por estado:</label>
             <select id="booking-requests-filtrar-por-estado"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending')}
-              className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+              className="w-full px-3 py-2 text-sm bg-bunny-paper border border-bunny-border rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
             >
               <option value="pending">Pendientes</option>
               <option value="all">Todas</option>
@@ -260,10 +260,10 @@ export default function BookingRequestsPage() {
 
         {/* Table */}
         {!isLoading && (
-          <div className="overflow-x-auto rounded-2xl border border-rose-100 shadow-sm bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-bunny-border shadow-sm bg-white">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-stone-50 border-b border-rose-100 text-xs font-semibold text-stone-600 uppercase tracking-wider">
+                <tr className="bg-bunny-paper border-b border-bunny-border text-xs font-semibold text-bunny-text-muted uppercase tracking-wider">
                   <th className="py-3 px-4">ID</th>
                   <th className="py-3 px-4">Cliente</th>
                   <th className="py-3 px-4">Contacto</th>
@@ -275,18 +275,18 @@ export default function BookingRequestsPage() {
                   <th className="py-3 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-rose-50 text-stone-700">
+              <tbody className="divide-y divide-rose-50 text-bunny-text">
                 {filteredRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-stone-400">
+                    <td colSpan={9} className="py-8 text-center text-bunny-text-muted/70">
                       No hay solicitudes {filterStatus === 'pending' ? 'pendientes' : ''}
                     </td>
                   </tr>
                 ) : (
                   filteredRequests.map((request: BookingRequest) => (
                     <tr key={request.id} className="hover:bg-rose-50/40 transition-colors">
-                      <td className="py-3 px-4 font-mono text-xs text-stone-500">#{request.id}</td>
-                      <td className="py-3 px-4 font-medium text-amber-950">{request.fullName}</td>
+                      <td className="py-3 px-4 font-mono text-xs text-bunny-text-muted">#{request.id}</td>
+                      <td className="py-3 px-4 font-medium text-bunny-cocoa">{request.fullName}</td>
                       <td className="py-3 px-4">
                         {request.phone && (
                           <div className="text-xs">
@@ -294,7 +294,7 @@ export default function BookingRequestsPage() {
                           </div>
                         )}
                         {request.email && (
-                          <div className="text-xs text-stone-400">✉️ {request.email}</div>
+                          <div className="text-xs text-bunny-text-muted/70">✉️ {request.email}</div>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -305,7 +305,7 @@ export default function BookingRequestsPage() {
                       <td className="py-3 px-4">{request.preferredBlock || '-'}</td>
                       <td className="py-3 px-4">{request.service?.name || '-'}</td>
                       <td className="py-3 px-4">{getStatusBadge(request.status)}</td>
-                      <td className="py-3 px-4 text-xs text-stone-500">
+                      <td className="py-3 px-4 text-xs text-bunny-text-muted">
                         {request.createdAt 
                           ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm', { locale: es })
                           : '-'}
@@ -367,24 +367,24 @@ export default function BookingRequestsPage() {
               )}
 
               {selectedRequest && (
-                <div className="p-3.5 bg-rose-50/60 rounded-xl border border-rose-100 text-sm space-y-1">
-                  <h6 className="font-bold text-amber-950 mb-1">Información del Cliente:</h6>
-                  <p className="text-stone-700"><strong>Nombre:</strong> {selectedRequest.fullName}</p>
-                  <p className="text-stone-700"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
+                <div className="p-3.5 bg-rose-50/60 rounded-xl border border-bunny-border text-sm space-y-1">
+                  <h6 className="font-bold text-bunny-cocoa mb-1">Información del Cliente:</h6>
+                  <p className="text-bunny-text"><strong>Nombre:</strong> {selectedRequest.fullName}</p>
+                  <p className="text-bunny-text"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
                   {selectedRequest.email && (
-                    <p className="text-stone-700"><strong>Email:</strong> {selectedRequest.email}</p>
+                    <p className="text-bunny-text"><strong>Email:</strong> {selectedRequest.email}</p>
                   )}
                   {selectedRequest.service && (
-                    <p className="text-stone-700"><strong>Servicio:</strong> {selectedRequest.service.name}</p>
+                    <p className="text-bunny-text"><strong>Servicio:</strong> {selectedRequest.service.name}</p>
                   )}
                 </div>
               )}
 
               <div>
-                <label htmlFor="booking-requests-fecha-de-la-cita" className="block text-sm font-semibold text-stone-700 mb-1">Fecha de la Cita *</label>
+                <label htmlFor="booking-requests-fecha-de-la-cita" className="block text-sm font-semibold text-bunny-text mb-1">Fecha de la Cita *</label>
                 <input id="booking-requests-fecha-de-la-cita"
                   type="date"
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={appointmentDate}
                   onChange={(e) => setAppointmentDate(e.target.value)}
                   required
@@ -392,10 +392,10 @@ export default function BookingRequestsPage() {
               </div>
 
               <div>
-                <label htmlFor="booking-requests-hora-de-la-cita" className="block text-sm font-semibold text-stone-700 mb-1">Hora de la Cita *</label>
+                <label htmlFor="booking-requests-hora-de-la-cita" className="block text-sm font-semibold text-bunny-text mb-1">Hora de la Cita *</label>
                 <input id="booking-requests-hora-de-la-cita"
                   type="time"
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={appointmentTime}
                   onChange={(e) => setAppointmentTime(e.target.value)}
                   required
@@ -403,10 +403,10 @@ export default function BookingRequestsPage() {
               </div>
 
               <div>
-                <label htmlFor="booking-requests-notas-adicionales" className="block text-sm font-semibold text-stone-700 mb-1">Notas Adicionales</label>
+                <label htmlFor="booking-requests-notas-adicionales" className="block text-sm font-semibold text-bunny-text mb-1">Notas Adicionales</label>
                 <textarea id="booking-requests-notas-adicionales"
                   rows={3}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Notas adicionales para la cita..."
@@ -450,17 +450,17 @@ export default function BookingRequestsPage() {
               )}
 
               {selectedRequest && (
-                <div className="p-3.5 bg-rose-50/60 rounded-xl border border-rose-100 text-sm space-y-1">
-                  <p className="text-stone-700"><strong>Cliente:</strong> {selectedRequest.fullName}</p>
-                  <p className="text-stone-700"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
+                <div className="p-3.5 bg-rose-50/60 rounded-xl border border-bunny-border text-sm space-y-1">
+                  <p className="text-bunny-text"><strong>Cliente:</strong> {selectedRequest.fullName}</p>
+                  <p className="text-bunny-text"><strong>Teléfono:</strong> {selectedRequest.phone}</p>
                 </div>
               )}
 
               <div>
-                <label htmlFor="booking-requests-motivo-del-rechazo" className="block text-sm font-semibold text-stone-700 mb-1">Motivo del Rechazo *</label>
+                <label htmlFor="booking-requests-motivo-del-rechazo" className="block text-sm font-semibold text-bunny-text mb-1">Motivo del Rechazo *</label>
                 <textarea id="booking-requests-motivo-del-rechazo"
                   rows={3}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Indica el motivo por el cual se rechaza esta solicitud..."

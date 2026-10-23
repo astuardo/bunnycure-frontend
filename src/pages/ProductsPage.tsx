@@ -21,6 +21,7 @@ import ProductPriceAnalysisModal from '@/components/inventory/ProductPriceAnalys
 import { useToast } from '@/hooks/useToast';
 import { formatCurrencyCLP } from '@/utils/formatters';
 import { Card, Button, Badge, Alert, Spinner } from '@/components/ui';
+import { confirmDialog } from '../components/ui/confirmDialog';
 
 export default function ProductsPage() {
   const toast = useToast();
@@ -125,7 +126,7 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (product: Product) => {
-    if (!confirm(`¿Eliminar producto "${product.name}"?`)) return;
+    if (!(await confirmDialog({ message: `¿Eliminar el producto "${product.name}"?`, confirmLabel: 'Eliminar', tone: 'danger' }))) return;
     try {
       await inventoryApi.deleteProduct(product.id);
       setProducts((prev) => prev.filter((item) => item.id !== product.id));

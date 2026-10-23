@@ -90,16 +90,16 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                 Cierre de Caja & Finanzas del Salón
               </span>
             </Modal.Title>
-            <p className="text-xs text-slate-500 mb-0">
+            <p className="text-xs text-bunny-text-muted mb-0">
               Resumen contable de atenciones, métodos de pago, costos y boletas
             </p>
           </div>
         </div>
       </Modal.Header>
 
-      <Modal.Body className="p-4 sm:p-6 space-y-5 bg-slate-50/50 max-h-[80vh] overflow-y-auto">
+      <Modal.Body className="p-4 sm:p-6 space-y-5 bg-bunny-paper/50 max-h-[80vh] overflow-y-auto">
         {/* Barra de Filtros y Tipo de Período */}
-        <Card className="border border-slate-200/80 shadow-xs bg-white">
+        <Card className="border border-bunny-border/80 shadow-xs bg-white">
           <Card.Body className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
               <div className="md:col-span-5 flex gap-2">
@@ -127,14 +127,14 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                     type="date"
                     value={selectedDateStr}
                     onChange={(e) => setSelectedDateStr(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
+                    className="w-full rounded-xl border border-bunny-border px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
                   />
                 ) : (
                   <input
                     type="month"
                     value={selectedMonthStr}
                     onChange={(e) => setSelectedMonthStr(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
+                    className="w-full rounded-xl border border-bunny-border px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-bunny-mid/50"
                   />
                 )}
               </div>
@@ -167,10 +167,10 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         {/* Encabezado del Período */}
         <div className="flex justify-between items-center flex-wrap gap-2">
           <div>
-            <h5 className="font-bold text-slate-800 text-base mb-0">
+            <h5 className="font-bold text-bunny-text text-base mb-0">
               📊 Informe de {summary.dateFormattedLabel}
             </h5>
-            <small className="text-slate-500 text-xs">
+            <small className="text-bunny-text-muted text-xs">
               {summary.completedAppointments} cita(s) completada(s) de {summary.totalAppointments} agendada(s)
             </small>
           </div>
@@ -199,10 +199,10 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           <Card className="border border-bunny-accent/40 shadow-xs bg-white">
             <Card.Body className="p-3.5">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-slate-500 font-semibold">INGRESOS TOTALES</span>
+                <span className="text-xs text-bunny-text-muted font-semibold">INGRESOS TOTALES</span>
                 <FiDollarSign className="text-bunny-dark" />
               </div>
-              <h4 className="font-bold text-lg sm:text-xl text-slate-800 mb-0">
+              <h4 className="font-bold text-lg sm:text-xl text-bunny-text mb-0">
                 {formatCurrency(summary.grossRevenue)}
               </h4>
               <small className="text-emerald-600 font-bold text-xs">
@@ -220,8 +220,8 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
               <h4 className="font-bold text-lg sm:text-xl text-emerald-800 mb-0">
                 {formatCurrency(summary.netProfit)}
               </h4>
-              <small className="text-slate-500 text-xs">
-                Margen Bruto: <strong className="text-slate-700">{summary.grossMarginPercentage}%</strong>
+              <small className="text-bunny-text-muted text-xs">
+                Margen Bruto: <strong className="text-bunny-text">{summary.grossMarginPercentage}%</strong>
               </small>
             </Card.Body>
           </Card>
@@ -235,7 +235,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
               <h4 className="font-bold text-lg sm:text-xl text-amber-800 mb-0">
                 {formatCurrency(summary.estimatedSuppliesCost)}
               </h4>
-              <small className="text-slate-500 text-xs">
+              <small className="text-bunny-text-muted text-xs">
                 Deducido en recetas
               </small>
             </Card.Body>
@@ -249,11 +249,11 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
               </div>
               <h4 className="font-bold text-lg sm:text-xl text-sky-800 mb-0">
                 {summary.invoicesCount}{' '}
-                <span className="text-xs font-normal text-slate-500">
+                <span className="text-xs font-normal text-bunny-text-muted">
                   / {summary.completedAppointments}
                 </span>
               </h4>
-              <small className="text-slate-500 text-xs">
+              <small className="text-bunny-text-muted text-xs">
                 Total: {formatCurrency(summary.invoicesTotalAmount)}
               </small>
             </Card.Body>
@@ -261,25 +261,25 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         </div>
 
         {/* Desglose de Métodos de Pago */}
-        <Card className="border border-slate-200/80 shadow-xs bg-white">
-          <Card.Header className="py-3 px-4 bg-transparent border-b border-slate-100 flex items-center gap-2">
+        <Card className="border border-bunny-border/80 shadow-xs bg-white">
+          <Card.Header className="py-3 px-4 bg-transparent border-b border-bunny-border flex items-center gap-2">
             <FiCreditCard className="text-bunny-dark" />
-            <span className="font-bold text-slate-800 text-sm">
+            <span className="font-bold text-bunny-text text-sm">
               Desglose por Método de Pago
             </span>
           </Card.Header>
           <Card.Body className="p-4">
             {summary.paymentBreakdown.length === 0 ? (
-              <p className="text-slate-400 mb-0 text-xs italic">No hay transacciones registradas en este período.</p>
+              <p className="text-bunny-text-muted/70 mb-0 text-xs italic">No hay transacciones registradas en este período.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {summary.paymentBreakdown.map((item) => (
                   <div
                     key={item.methodName}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-200/80"
+                    className="p-3 rounded-xl bg-bunny-paper border border-bunny-border/80"
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-semibold text-xs text-slate-800">
+                      <span className="font-semibold text-xs text-bunny-text">
                         {item.methodName}
                       </span>
                       <Badge variant="secondary" className="text-xs">
@@ -290,7 +290,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                       <span className="font-bold text-sm text-bunny-dark">
                         {formatCurrency(item.totalAmount)}
                       </span>
-                      <small className="text-slate-500 text-xs">{item.count} cita(s)</small>
+                      <small className="text-bunny-text-muted text-xs">{item.count} cita(s)</small>
                     </div>
                   </div>
                 ))}
@@ -300,11 +300,11 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         </Card>
 
         {/* Tabla de Detalle de Citas del Cierre */}
-        <Card className="border border-slate-200/80 shadow-xs bg-white overflow-hidden">
-          <Card.Header className="py-3 px-4 bg-transparent border-b border-slate-100 flex justify-between items-center flex-wrap gap-2">
+        <Card className="border border-bunny-border/80 shadow-xs bg-white overflow-hidden">
+          <Card.Header className="py-3 px-4 bg-transparent border-b border-bunny-border flex justify-between items-center flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <FiClock className="text-bunny-dark" />
-              <span className="font-bold text-slate-800 text-sm">
+              <span className="font-bold text-bunny-text text-sm">
                 Detalle de Citas Atendidas ({summary.transactions.length})
               </span>
             </div>
@@ -315,7 +315,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+                <tr className="bg-bunny-paper/80 border-b border-bunny-border text-bunny-text font-bold uppercase tracking-wider">
                   <th className="px-3.5 py-2.5">Hora / Fecha</th>
                   <th className="px-3.5 py-2.5">Clienta</th>
                   <th className="px-3.5 py-2.5">Servicios</th>
@@ -325,33 +325,33 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                   <th className="px-3.5 py-2.5 text-right">Valor Cita ($)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-bunny-border">
                 {summary.transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-6 text-slate-400 italic">
+                    <td colSpan={7} className="text-center py-6 text-bunny-text-muted/70 italic">
                       No hay citas completadas en el período seleccionado.
                     </td>
                   </tr>
                 ) : (
                   summary.transactions.map((tx) => (
-                    <tr key={tx.appointmentId} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-3.5 py-2.5 font-semibold text-slate-800 whitespace-nowrap">
+                    <tr key={tx.appointmentId} className="hover:bg-bunny-paper/60 transition-colors">
+                      <td className="px-3.5 py-2.5 font-semibold text-bunny-text whitespace-nowrap">
                         {tx.appointmentTime}
                         {periodType === 'MONTHLY' && (
-                          <div className="text-slate-400 text-xs font-normal">{tx.appointmentDate}</div>
+                          <div className="text-bunny-text-muted/70 text-xs font-normal">{tx.appointmentDate}</div>
                         )}
                       </td>
                       <td className="px-3.5 py-2.5">
-                        <div className="font-bold text-slate-800">
+                        <div className="font-bold text-bunny-text">
                           {tx.customerName}
                         </div>
                         {tx.customerRut && (
-                          <small className="text-slate-400 text-xs">
+                          <small className="text-bunny-text-muted/70 text-xs">
                             RUT: {tx.customerRut}
                           </small>
                         )}
                       </td>
-                      <td className="px-3.5 py-2.5 text-slate-600 max-w-xs truncate" title={tx.serviceNames.join(' + ')}>
+                      <td className="px-3.5 py-2.5 text-bunny-text-muted max-w-xs truncate" title={tx.serviceNames.join(' + ')}>
                         {tx.serviceNames.join(' + ')}
                       </td>
                       <td className="px-3.5 py-2.5">
@@ -370,7 +370,7 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
                           </Badge>
                         )}
                       </td>
-                      <td className="px-3.5 py-2.5 text-right text-slate-500">
+                      <td className="px-3.5 py-2.5 text-right text-bunny-text-muted">
                         {formatCurrency(tx.estimatedMaterialsCost)}
                       </td>
                       <td className="px-3.5 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">
@@ -385,12 +385,12 @@ export const CashClosingModal: React.FC<CashClosingModalProps> = ({ show, onHide
         </Card>
       </Modal.Body>
 
-      <Modal.Footer className="border-t border-slate-100 p-4">
+      <Modal.Footer className="border-t border-bunny-border p-4">
         <div className="flex justify-between items-center w-full flex-wrap gap-2">
-          <small className="text-slate-400 text-xs">
+          <small className="text-bunny-text-muted/70 text-xs">
             BunnyCure POS &copy; {new Date().getFullYear()} &bull; Todos los valores calculados con reglas de negocio oficiales.
           </small>
-          <Button variant="secondary" onClick={onHide}>
+          <Button variant="outline" onClick={onHide}>
             Cerrar
           </Button>
         </div>

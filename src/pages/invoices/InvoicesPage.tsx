@@ -480,7 +480,7 @@ export default function InvoicesPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa flex items-center gap-2">
               <span>🧾</span> Boletas SII (BHE)
             </h1>
             <p className="text-sm text-bunny-text-muted mt-1">
@@ -558,7 +558,7 @@ export default function InvoicesPage() {
                   className={`p-2 rounded-xl ${
                     summary && summary.pendingInvoicesCount > 0
                       ? 'bg-amber-100 text-amber-800'
-                      : 'bg-slate-100 text-slate-500'
+                      : 'bg-bunny-sand text-bunny-text-muted'
                   }`}
                 >
                   <FiAlertTriangle size={18} />
@@ -604,7 +604,7 @@ export default function InvoicesPage() {
                 <span className="text-xs text-bunny-text-muted font-bold uppercase tracking-wider">
                   RUT Emisor SII
                 </span>
-                <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
+                <div className="p-2 rounded-xl bg-bunny-sand text-bunny-text">
                   <FiShield size={18} />
                 </div>
               </div>
@@ -677,7 +677,7 @@ export default function InvoicesPage() {
                       <Badge variant="warning" className="text-sm px-3 py-1 font-bold">
                         {selectedAppointmentIds.length} seleccionadas
                       </Badge>
-                      <span className="text-xs text-slate-300">
+                      <span className="text-xs text-bunny-text-muted/70">
                         Monto total: <strong className="text-white">{formatCurrencyCLP(selectedTotalAmount)}</strong> | RUTs válidos:{' '}
                         <strong className="text-white">
                           {selectedValidRutsCount}/{selectedAppointmentIds.length}
@@ -708,7 +708,7 @@ export default function InvoicesPage() {
                         type="button"
                         onClick={() => setSelectedAppointmentIds([])}
                         title="Deseleccionar todo"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                        className="p-1.5 rounded-lg text-bunny-text-muted/70 hover:text-white hover:bg-slate-800 transition-colors"
                       >
                         <FiX size={18} />
                       </button>
@@ -726,7 +726,7 @@ export default function InvoicesPage() {
                       className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
                         pendingFilter === 'ALL'
                           ? 'bg-bunny-text text-white'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          : 'bg-bunny-sand text-bunny-text hover:bg-bunny-border'
                       }`}
                     >
                       Todas ({pendingList.length})
@@ -762,7 +762,7 @@ export default function InvoicesPage() {
                       placeholder="Buscar por cliente, RUT o ID..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-bunny-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-bunny-border bg-bunny-paper focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     />
                   </div>
                 </div>
@@ -917,7 +917,7 @@ export default function InvoicesPage() {
                       placeholder="Buscar por folio, cliente, RUT..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-bunny-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-bunny-border bg-bunny-paper focus:bg-white focus:outline-none focus:ring-2 focus:ring-bunny-primary/20 focus:border-bunny-primary"
                     />
                   </div>
                 </div>
@@ -1260,7 +1260,7 @@ export default function InvoicesPage() {
         <Modal.Body className="space-y-4">
           {selectedPending && (
             <div className="space-y-4">
-              <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border space-y-2 text-xs">
+              <div className="p-4 bg-bunny-paper rounded-xl border border-bunny-border space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-bunny-text-muted">Cita:</span>
                   <span className="font-bold text-bunny-text">#{selectedPending.appointmentId}</span>
@@ -1351,7 +1351,7 @@ export default function InvoicesPage() {
                 sistema registrando el folio que emitiste a mano directamente en el portal del SII.
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-bunny-border space-y-1 text-xs">
+              <div className="p-3 bg-bunny-paper rounded-xl border border-bunny-border space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span className="text-bunny-text-muted">Cita:</span>
                   <span className="font-bold text-bunny-text">#{manualPendingItem.appointmentId}</span>
@@ -1419,7 +1419,7 @@ export default function InvoicesPage() {
             datos de BunnyCure.
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border space-y-1.5 text-xs">
+          <div className="p-4 bg-bunny-paper rounded-xl border border-bunny-border space-y-1.5 text-xs">
             <div className="flex justify-between">
               <span className="text-bunny-text-muted">Citas seleccionadas:</span>
               <span className="font-bold text-bunny-text">{selectedAppointmentIds.length} citas</span>
@@ -1479,7 +1479,7 @@ export default function InvoicesPage() {
             <strong>{selectedAppointmentIds.length} citas seleccionadas</strong> al servicio de emisión de BHE del SII.
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-bunny-border space-y-1.5 text-xs">
+          <div className="p-4 bg-bunny-paper rounded-xl border border-bunny-border space-y-1.5 text-xs">
             <div className="flex justify-between">
               <span className="text-bunny-text-muted">Total Citas a Emitir:</span>
               <span className="font-bold text-bunny-text">{selectedAppointmentIds.length}</span>

@@ -71,7 +71,7 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
       />
 
       {/* 2. Barra de Acciones y Filtros de la Galería */}
-      <Card className="border border-slate-200 shadow-sm bg-white">
+      <Card className="border border-bunny-border shadow-sm bg-white">
         <Card.Body className="p-3.5">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             <div className="sm:col-span-4">
@@ -119,13 +119,13 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
 
       {/* 3. Grid de Galería Fotográfica */}
       {filteredRecords.length === 0 ? (
-        <Card className="border border-slate-200 shadow-sm text-center py-12 bg-white">
+        <Card className="border border-bunny-border shadow-sm text-center py-12 bg-white">
           <Card.Body>
-            <FiImage size={44} className="text-slate-300 mx-auto mb-2" />
+            <FiImage size={44} className="text-bunny-text-muted/70 mx-auto mb-2" />
             <h6 className="font-bold text-bunny-dark text-base mb-1">
               No hay fotos o diseños registrados aún
             </h6>
-            <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto mb-4">
+            <p className="text-bunny-text-muted text-xs sm:text-sm max-w-md mx-auto mb-4">
               Guarda las fotos del resultado final de cada cita para llevar un historial visual de la clienta.
             </p>
             <Button
@@ -148,7 +148,7 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
               <div
                 key={record.id}
                 onClick={() => setSelectedRecord(record)}
-                className="group rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col"
+                className="group rounded-2xl border border-bunny-border bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col"
               >
                 {/* Foto de Portada */}
                 <div className="relative h-48 bg-bunny-light/20 flex items-center justify-center overflow-hidden">
@@ -192,7 +192,7 @@ export const NailGalleryTab: React.FC<NailGalleryTabProps> = ({
                     </div>
 
                     {record.polishColors && (
-                      <p className="text-xs text-slate-500 truncate mb-2">
+                      <p className="text-xs text-bunny-text-muted truncate mb-2">
                         🎨 {record.polishColors}
                       </p>
                     )}

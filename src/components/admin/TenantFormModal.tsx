@@ -180,7 +180,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre Comercial *</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Nombre Comercial *</label>
                 <Input
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
@@ -190,7 +190,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Identificador Slug (Subdominio / Ruta) *</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Identificador Slug (Subdominio / Ruta) *</label>
                 <Input
                   value={slug}
                   onChange={(e) => setSlug(slugify(e.target.value))}
@@ -199,16 +199,16 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
                   required
                 />
                 {!isEditing && (
-                  <p className="text-[11px] text-gray-500 mt-1">
+                  <p className="text-[11px] text-bunny-text-muted mt-1">
                     URL pública: <code>/reservar?salon={slug || 'slug'}</code>
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Dominio Personalizado (Opcional)</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Dominio Personalizado (Opcional)</label>
                 <div className="relative">
-                  <FiGlobe className="absolute left-3 top-3 text-gray-400" />
+                  <FiGlobe className="absolute left-3 top-3 text-bunny-text-muted/70" />
                   <Input
                     className="pl-9"
                     value={customDomain}
@@ -219,7 +219,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Plan de Suscripción</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Plan de Suscripción</label>
                 <Select
                   value={planTier}
                   onChange={(e) => setPlanTier(e.target.value)}
@@ -233,19 +233,19 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
           </div>
 
           {/* Bloque 2: Branding y Estilo */}
-          <div className="border-t border-gray-100 pt-3">
+          <div className="border-t border-bunny-border pt-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#7a5c4d] mb-3 flex items-center gap-1.5">
               <FiLayers /> Personalización de Marca
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="tenant-form-color-primario-de-marca" className="block text-xs font-semibold text-gray-700 mb-1">Color Primario de Marca</label>
+                <label htmlFor="tenant-form-color-primario-de-marca" className="block text-xs font-semibold text-bunny-text mb-1">Color Primario de Marca</label>
                 <div className="flex items-center gap-2">
                   <input id="tenant-form-color-primario-de-marca"
                     type="color"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="w-10 h-10 p-0 border border-gray-300 rounded-lg cursor-pointer"
+                    className="w-10 h-10 p-0 border border-bunny-border-strong rounded-lg cursor-pointer"
                   />
                   <Input
                     value={primaryColor}
@@ -257,9 +257,9 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">URL de Logotipo</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">URL de Logotipo</label>
                 <div className="relative">
-                  <FiImage className="absolute left-3 top-3 text-gray-400" />
+                  <FiImage className="absolute left-3 top-3 text-bunny-text-muted/70" />
                   <Input
                     className="pl-9"
                     value={logoUrl}
@@ -272,15 +272,15 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
           </div>
 
           {/* Bloque 3: Contacto y Facturación */}
-          <div className="border-t border-gray-100 pt-3">
+          <div className="border-t border-bunny-border pt-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#7a5c4d] mb-3 flex items-center gap-1.5">
               <FiPhone /> Contacto y Facturación
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono Comercial</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Teléfono Comercial</label>
                 <div className="relative">
-                  <FiPhone className="absolute left-3 top-3 text-gray-400" />
+                  <FiPhone className="absolute left-3 top-3 text-bunny-text-muted/70" />
                   <Input
                     className="pl-9"
                     value={phone}
@@ -291,9 +291,9 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Email de Contacto</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Email de Contacto</label>
                 <div className="relative">
-                  <FiMail className="absolute left-3 top-3 text-gray-400" />
+                  <FiMail className="absolute left-3 top-3 text-bunny-text-muted/70" />
                   <Input
                     type="email"
                     className="pl-9"
@@ -305,7 +305,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">RUT Empresa / Salón</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">RUT Empresa / Salón</label>
                 <Input
                   value={rut}
                   onChange={(e) => setRut(e.target.value)}
@@ -314,9 +314,9 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Dirección Física</label>
+                <label className="block text-xs font-semibold text-bunny-text mb-1">Dirección Física</label>
                 <div className="relative">
-                  <FiMapPin className="absolute left-3 top-3 text-gray-400" />
+                  <FiMapPin className="absolute left-3 top-3 text-bunny-text-muted/70" />
                   <Input
                     className="pl-9"
                     value={address}
@@ -334,14 +334,14 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#7a5c4d] mb-1 flex items-center gap-1.5">
                 <FiUser /> Administrador(a) Inicial del Salón
               </h4>
-              <p className="text-[11px] text-gray-500 mb-3">
+              <p className="text-[11px] text-bunny-text-muted mb-3">
                 Se creará una cuenta administradora exclusiva para este salón con cambio de contraseña obligatorio en el primer inicio.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Usuario Admin</label>
+                  <label className="block text-xs font-semibold text-bunny-text mb-1">Usuario Admin</label>
                   <div className="relative">
-                    <FiUser className="absolute left-3 top-3 text-gray-400" />
+                    <FiUser className="absolute left-3 top-3 text-bunny-text-muted/70" />
                     <Input
                       className="pl-9"
                       value={initialAdminUsername}
@@ -352,7 +352,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre Completo</label>
+                  <label className="block text-xs font-semibold text-bunny-text mb-1">Nombre Completo</label>
                   <Input
                     value={initialAdminFullName}
                     onChange={(e) => setInitialAdminFullName(e.target.value)}
@@ -361,9 +361,9 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Email del Admin</label>
+                  <label className="block text-xs font-semibold text-bunny-text mb-1">Email del Admin</label>
                   <div className="relative">
-                    <FiMail className="absolute left-3 top-3 text-gray-400" />
+                    <FiMail className="absolute left-3 top-3 text-bunny-text-muted/70" />
                     <Input
                       type="email"
                       className="pl-9"
@@ -375,9 +375,9 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Contraseña Provisoria</label>
+                  <label className="block text-xs font-semibold text-bunny-text mb-1">Contraseña Provisoria</label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-3 text-gray-400" />
+                    <FiLock className="absolute left-3 top-3 text-bunny-text-muted/70" />
                     <Input
                       type="password"
                       className="pl-9"
@@ -393,7 +393,7 @@ export const TenantFormModal: React.FC<TenantFormModalProps> = ({
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={onHide} disabled={submitting}>
+          <Button variant="outline" onClick={onHide} disabled={submitting}>
             <FiX className="mr-1.5" /> Cancelar
           </Button>
           <Button variant="primary" type="submit" isLoading={submitting}>

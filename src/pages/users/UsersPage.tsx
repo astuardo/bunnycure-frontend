@@ -268,7 +268,7 @@ export default function UsersPage() {
                               onClick={() => handleToggleEnabled(u)}
                               className={`p-1.5 rounded-lg border transition-colors ${
                                 u.enabled
-                                  ? 'border-bunny-border text-bunny-text-muted hover:bg-gray-100'
+                                  ? 'border-bunny-border text-bunny-text-muted hover:bg-bunny-sand'
                                   : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                               }`}
                             >

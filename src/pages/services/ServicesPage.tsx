@@ -305,14 +305,14 @@ export default function ServicesPage() {
                                   title={service.active ? 'Desactivar' : 'Activar'}
                                   className={`p-1.5 rounded-lg border transition-colors ${
                                     service.active
-                                      ? 'border-bunny-border text-bunny-text-muted hover:bg-gray-100'
+                                      ? 'border-bunny-border text-bunny-text-muted hover:bg-bunny-sand'
                                       : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                                   }`}
                                 >
                                   {service.active ? (
                                     <FiToggleRight className="text-sm text-emerald-600" />
                                   ) : (
-                                    <FiToggleLeft className="text-sm text-gray-400" />
+                                    <FiToggleLeft className="text-sm text-bunny-text-muted/70" />
                                   )}
                                 </button>
                                 <button

@@ -32,7 +32,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
 
-    if (tenantData.name) {
+    // Título genérico solo si la pantalla no puso el suyo (usePageTitle: "Pantalla · Salón")
+    if (tenantData.name && !document.title.includes(' · ')) {
       document.title = `${tenantData.name} | Agendamiento & Salón`;
     }
 

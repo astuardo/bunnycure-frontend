@@ -44,7 +44,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             className={`w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-10 text-sm text-bunny-text
               transition-all duration-150
               focus:outline-none focus:ring-2 focus:ring-offset-0
-              disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
+              disabled:bg-bunny-paper disabled:text-bunny-text-muted/70 disabled:cursor-not-allowed
               ${
                 error
                   ? 'border-bunny-danger text-bunny-danger focus:border-bunny-danger focus:ring-bunny-danger/20'

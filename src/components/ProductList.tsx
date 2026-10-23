@@ -103,7 +103,7 @@ export const ProductList: React.FC<Props> = ({
                         </span>
                         <button
                           type="button"
-                          className="p-1 rounded border border-bunny-border text-bunny-text-muted hover:bg-gray-100 transition-colors"
+                          className="p-1 rounded border border-bunny-border text-bunny-text-muted hover:bg-bunny-sand transition-colors"
                           onClick={() => onRefreshObserved(p)}
                           title="Refrescar precio observado ahora"
                         >

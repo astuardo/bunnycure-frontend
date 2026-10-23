@@ -42,6 +42,7 @@ import {
 import { CreateAppointmentModal } from '../../components/appointments/CreateAppointmentModal';
 import { EditAppointmentModal } from '../../components/appointments/EditAppointmentModal';
 import { AppointmentFormState, CustomChargeItem, CreateStep, formatCurrency, AppointmentEditFormState, EditMode } from '../../components/appointments/appointmentForm.shared';
+import { confirmDialog } from '../../components/ui/confirmDialog';
 
 
 
@@ -526,7 +527,7 @@ export default function AppointmentsPage() {
 
   const handleApplyGiftCardToEditAppointment = async (gc: GiftCard, item: GiftCardItem) => {
     if (applyingGiftCard) return;
-    if (!confirm(`¿Confirmas canjear 1 "${item.serviceName}" de la GiftCard ${gc.code} para esta cita?`)) {
+    if (!(await confirmDialog({ message: `¿Canjear 1 "${item.serviceName}" de la GiftCard ${gc.code} para esta cita?`, confirmLabel: 'Canjear' }))) {
       return;
     }
 
@@ -935,6 +936,13 @@ export default function AppointmentsPage() {
     }
   };
 
+  const STATUS_LABELS: Partial<Record<AppointmentStatus, string>> = {
+    PENDING: 'Pendiente',
+    CONFIRMED: 'Confirmada',
+    COMPLETED: 'Completada',
+    CANCELLED: 'Cancelada',
+  };
+
   const handleChangeStatus = async (id: number, status: AppointmentStatus) => {
     if (status === AppointmentStatus.COMPLETED) {
       if (hasFeature('INVENTORY')) {
@@ -953,7 +961,7 @@ export default function AppointmentsPage() {
       return;
     }
 
-    if (!confirm(`¿Cambiar estado a ${status}?`)) {
+    if (!(await confirmDialog({ message: `¿Cambiar el estado de la cita a "${STATUS_LABELS[status] ?? status}"?`, confirmLabel: 'Cambiar estado' }))) {
       return;
     }
 
@@ -1072,7 +1080,7 @@ export default function AppointmentsPage() {
   };
 
   const handleDeleteAppointment = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
+    if (await confirmDialog({ message: '¿Eliminar esta cita? Esta acción no se puede deshacer.', confirmLabel: 'Eliminar cita', tone: 'danger' })) {
       try {
         await deleteAppointment(id);
         toast.success('Cita eliminada');
@@ -1183,10 +1191,10 @@ export default function AppointmentsPage() {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-bunny-dark tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa">
               📅 Gestión de Citas
             </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-bunny-text-muted mt-0.5">
               Administra las citas y agenda del salón
             </p>
           </div>
@@ -1204,7 +1212,7 @@ export default function AppointmentsPage() {
         )}
 
         {/* Barra de Búsqueda y Filtros */}
-        <Card className="border border-slate-200/80 shadow-xs bg-white">
+        <Card className="border border-bunny-border/80 shadow-xs bg-white">
           <Card.Body className="p-4 sm:p-5">
             <AppointmentFiltersBar
               searchQuery={searchQuery}
@@ -1222,8 +1230,8 @@ export default function AppointmentsPage() {
 
         {/* Resumen de resultados */}
         <div className="flex justify-between items-center">
-          <div className="text-slate-500 text-xs sm:text-sm">
-            Mostrando <strong className="text-slate-800 font-bold">{displayedAppointments.length}</strong> de <strong className="text-slate-800 font-bold">{appointments.length}</strong> citas
+          <div className="text-bunny-text-muted text-xs sm:text-sm">
+            Mostrando <strong className="text-bunny-text font-bold">{displayedAppointments.length}</strong> de <strong className="text-bunny-text font-bold">{appointments.length}</strong> citas
             {(dateFilter || searchQuery || statusFilter !== 'ACTIVE') && (
               <Badge variant="info" className="ml-2 font-normal">Filtros activos</Badge>
             )}
@@ -1234,7 +1242,7 @@ export default function AppointmentsPage() {
           {isLoading ? (
             <div className="text-center py-12 flex flex-col items-center justify-center">
               <Spinner size="lg" variant="primary" />
-              <span className="text-slate-500 text-sm mt-3">Cargando citas...</span>
+              <span className="text-bunny-text-muted text-sm mt-3">Cargando citas...</span>
             </div>
           ) : displayedAppointments.length === 0 ? (
             <Alert variant="info">

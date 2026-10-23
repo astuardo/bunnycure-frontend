@@ -303,7 +303,7 @@ export default function GiftCardsPage() {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-bunny-text tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-bunny-cocoa flex items-center gap-2">
               <span>🎁</span> GiftCards
             </h1>
             <p className="text-sm text-bunny-text-muted mt-1">
@@ -836,7 +836,7 @@ export default function GiftCardsPage() {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
+          <Button variant="outline" onClick={() => setShowAssignModal(false)}>
             Cerrar
           </Button>
         </Modal.Footer>

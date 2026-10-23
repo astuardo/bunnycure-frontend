@@ -233,7 +233,7 @@ export default function PublicGiftCardPage() {
                                   }))
                                 }
                                 disabled={item.remainingQuantity <= 0}
-                                className="w-20 rounded-lg border border-bunny-border px-2.5 py-1 text-center text-sm font-semibold text-bunny-cocoa focus:outline-none focus:ring-2 focus:ring-bunny-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="w-20 rounded-lg border border-bunny-border px-2.5 py-1 text-center text-sm font-semibold text-bunny-cocoa focus:outline-none focus:ring-2 focus:ring-bunny-primary/30 disabled:bg-bunny-sand disabled:cursor-not-allowed"
                               />
                             </td>
                           </tr>

@@ -3,6 +3,7 @@ import { Modal, Button, Badge } from '@/components/ui';
 import { FiTrash2, FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { NailPhotoRecord } from '../../../types/nailProfile.types';
 import { BASE_TECHNIQUE_LABELS, NAIL_CONDITION_LABELS } from '../../../utils/nailProfileUtils';
+import { confirmDialog } from '../../ui/confirmDialog';
 
 interface NailPhotoViewerModalProps {
   show: boolean;
@@ -36,8 +37,8 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
     setPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
   };
 
-  const handleDelete = () => {
-    if (window.confirm('¿Segura que deseas eliminar este registro y sus fotos?')) {
+  const handleDelete = async () => {
+    if (await confirmDialog({ message: '¿Eliminar este registro y sus fotos?', confirmLabel: 'Eliminar', tone: 'danger' })) {
       if (onDeleteRecord) {
         onDeleteRecord(record.id);
       }
@@ -88,7 +89,7 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
             )}
           </div>
         ) : (
-          <div className="text-center py-16 text-slate-400 bg-slate-50">
+          <div className="text-center py-16 text-bunny-text-muted/70 bg-bunny-paper">
             Sin fotografías adjuntas
           </div>
         )}
@@ -106,7 +107,7 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
                 </Badge>
               )}
             </div>
-            <small className="text-slate-400 text-xs flex items-center gap-1">
+            <small className="text-bunny-text-muted/70 text-xs flex items-center gap-1">
               <FiCalendar /> {record.date}
             </small>
           </div>
@@ -149,7 +150,7 @@ export const NailPhotoViewerModal: React.FC<NailPhotoViewerModalProps> = ({
           <Button variant="danger" size="sm" onClick={handleDelete} className="flex items-center gap-1.5">
             <FiTrash2 /> Eliminar Registro
           </Button>
-          <Button variant="secondary" size="sm" onClick={onHide}>
+          <Button variant="outline" size="sm" onClick={onHide}>
             Cerrar
           </Button>
         </div>

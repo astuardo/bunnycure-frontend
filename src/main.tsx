@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import './index.css'
 import App from './App.tsx'
-import './styles/mobile.css';
 import './styles/bunny-theme.css';
 import apiClient from './api/client';
 import { initializeGA } from './utils/analytics';

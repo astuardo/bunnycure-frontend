@@ -46,17 +46,17 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-neutral-100 p-6 text-center">
+        <div className="min-h-screen bg-bunny-paper flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-bunny-border p-6 text-center">
             <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8" />
             </div>
 
-            <h1 className="text-xl font-bold text-neutral-800 mb-2">
+            <h1 className="text-xl font-bold text-bunny-text mb-2">
               Algo no salió como esperábamos
             </h1>
 
-            <p className="text-sm text-neutral-600 mb-6 leading-relaxed">
+            <p className="text-sm text-bunny-text-muted mb-6 leading-relaxed">
               Ha ocurrido un error inesperado en la aplicación. Nuestro equipo ha sido notificado
               para resolverlo a la brevedad.
             </p>
@@ -74,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <button
                 type="button"
                 onClick={this.handleGoHome}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 text-neutral-700 font-medium rounded-xl text-sm transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bunny-sand hover:bg-bunny-border active:bg-neutral-300 text-bunny-text font-medium rounded-xl text-sm transition-colors"
               >
                 <Home className="w-4 h-4" />
                 Ir al Inicio
@@ -82,8 +82,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             {import.meta.env.DEV && this.state.error && (
-              <details className="mt-4 text-left border-t border-neutral-100 pt-3">
-                <summary className="text-xs text-neutral-400 cursor-pointer font-mono hover:text-neutral-600">
+              <details className="mt-4 text-left border-t border-bunny-border pt-3">
+                <summary className="text-xs text-bunny-text-muted/70 cursor-pointer font-mono hover:text-bunny-text-muted">
                   Detalles técnicos (modo desarrollo)
                 </summary>
                 <pre className="mt-2 text-xs bg-neutral-900 text-rose-200 p-3 rounded-lg overflow-x-auto font-mono whitespace-pre-wrap">

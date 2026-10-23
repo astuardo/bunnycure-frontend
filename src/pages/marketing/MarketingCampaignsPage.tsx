@@ -494,7 +494,7 @@ export default function MarketingCampaignsPage() {
         <div className="marketing-header-card p-6 md:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-400 text-stone-900">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-400 text-bunny-text">
                 Meta WhatsApp Cloud API
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white">
@@ -532,18 +532,18 @@ export default function MarketingCampaignsPage() {
         {loadingTemplates ? (
           <div className="text-center py-16">
             <Spinner size="lg" variant="primary" />
-            <p className="mt-3 text-stone-400 text-sm">Cargando catálogo y sincronizando estado con Meta Graph API...</p>
+            <p className="mt-3 text-bunny-text-muted/70 text-sm">Cargando catálogo y sincronizando estado con Meta Graph API...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Columna Izquierda: Selección de Plantilla y Audiencia */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
               {/* Paso 1: Catálogo de Campañas */}
-              <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-4 md:p-6 space-y-4">
+              <div className="bg-white rounded-2xl border border-bunny-border shadow-sm p-4 md:p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <h5 className="font-bold text-amber-950 text-base">1. Selecciona la Campaña o Festividad</h5>
-                    <span className="text-stone-400 text-xs">
+                    <h5 className="font-bold text-bunny-cocoa text-base">1. Selecciona la Campaña o Festividad</h5>
+                    <span className="text-bunny-text-muted/70 text-xs">
                       Plantillas optimizadas para conversión con botones de llamado a la acción
                     </span>
                   </div>
@@ -608,7 +608,7 @@ export default function MarketingCampaignsPage() {
                           </div>
                           <div className="template-card-title">{tpl.displayName}</div>
                           <div className="template-occasion-badge">{tpl.occasion}</div>
-                          <p className="text-stone-400 text-xs truncate mb-0">{tpl.headerText}</p>
+                          <p className="text-bunny-text-muted/70 text-xs truncate mb-0">{tpl.headerText}</p>
                         </div>
                       </div>
                     );
@@ -617,11 +617,11 @@ export default function MarketingCampaignsPage() {
               </div>
 
               {/* Paso 2: Segmentación de Audiencia */}
-              <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-4 md:p-6 space-y-4">
+              <div className="bg-white rounded-2xl border border-bunny-border shadow-sm p-4 md:p-6 space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h5 className="font-bold text-amber-950 text-base">2. Segmenta tus Destinatarias</h5>
-                    <span className="text-stone-400 text-xs">
+                    <h5 className="font-bold text-bunny-cocoa text-base">2. Segmenta tus Destinatarias</h5>
+                    <span className="text-bunny-text-muted/70 text-xs">
                       Filtra las clientas registradas que tienen teléfono válido y aceptan WhatsApp
                     </span>
                   </div>
@@ -636,9 +636,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaUsers className="text-blue-600" />
-                        <span className="font-bold text-xs text-stone-800">Todas las Clientas Registradas</span>
+                        <span className="font-bold text-xs text-bunny-text">Todas las Clientas Registradas</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Base completa con número de WhatsApp válido.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Base completa con número de WhatsApp válido.</p>
                     </div>
                   </div>
 
@@ -651,9 +651,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaUserClock className="text-amber-500" />
-                        <span className="font-bold text-xs text-stone-800">Clientas Inactivas (+30 días)</span>
+                        <span className="font-bold text-xs text-bunny-text">Clientas Inactivas (+30 días)</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Sin citas en 30+ días. Reactivación oportuna.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Sin citas en 30+ días. Reactivación oportuna.</p>
                     </div>
                   </div>
 
@@ -666,9 +666,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaUserClock className="text-red-500" />
-                        <span className="font-bold text-xs text-stone-800">Clientas Inactivas (+60 días)</span>
+                        <span className="font-bold text-xs text-bunny-text">Clientas Inactivas (+60 días)</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Sin citas en 60+ días. Alto riesgo de pérdida.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Sin citas en 60+ días. Alto riesgo de pérdida.</p>
                     </div>
                   </div>
 
@@ -681,9 +681,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaBirthdayCake className="text-amber-500" />
-                        <span className="font-bold text-xs text-stone-800">Cumpleañeras de Este Mes 🎂</span>
+                        <span className="font-bold text-xs text-bunny-text">Cumpleañeras de Este Mes 🎂</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Clientas con cumpleaños en el mes actual.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Clientas con cumpleaños en el mes actual.</p>
                     </div>
                   </div>
 
@@ -696,9 +696,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaBirthdayCake className="text-rose-600" />
-                        <span className="font-bold text-xs text-stone-800">¡Cumplen Años Hoy! 🎉</span>
+                        <span className="font-bold text-xs text-bunny-text">¡Cumplen Años Hoy! 🎉</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Clientas que cumplen años exactamente hoy.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Clientas que cumplen años exactamente hoy.</p>
                     </div>
                   </div>
 
@@ -711,9 +711,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaUserCheck className="text-emerald-600" />
-                        <span className="font-bold text-xs text-stone-800">Clientas Activas Recientes</span>
+                        <span className="font-bold text-xs text-bunny-text">Clientas Activas Recientes</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Atendidas en los últimos 45 días (cupos prioritarios).</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Atendidas en los últimos 45 días (cupos prioritarios).</p>
                     </div>
                   </div>
 
@@ -726,9 +726,9 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaCrown className="text-amber-500" />
-                        <span className="font-bold text-xs text-stone-800">Clientas Frecuentes / VIP</span>
+                        <span className="font-bold text-xs text-bunny-text">Clientas Frecuentes / VIP</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Con 3 o más atenciones completadas en salón.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Con 3 o más atenciones completadas en salón.</p>
                     </div>
                   </div>
 
@@ -741,22 +741,22 @@ export default function MarketingCampaignsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <FaUserCheck className="text-sky-600" />
-                        <span className="font-bold text-xs text-stone-800">Clientas Específicas 🎯</span>
+                        <span className="font-bold text-xs text-bunny-text">Clientas Específicas 🎯</span>
                       </div>
-                      <p className="text-stone-500 text-xs mb-0">Selección manual de una o varias clientas puntuales.</p>
+                      <p className="text-bunny-text-muted text-xs mb-0">Selección manual de una o varias clientas puntuales.</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Panel Interactivo de Selección de Clientas Específicas */}
                 {selectedAudience === 'SPECIFIC_CUSTOMERS' && (
-                  <div className="p-4 rounded-xl border border-stone-200 bg-stone-50/50 space-y-3">
+                  <div className="p-4 rounded-xl border border-bunny-border bg-bunny-paper/50 space-y-3">
                     <div className="flex flex-wrap justify-between items-center gap-2">
                       <div>
-                        <h6 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                        <h6 className="font-bold text-sm text-bunny-text flex items-center gap-2">
                           <FaUsers className="text-rose-700" /> Seleccionar Clientas ({selectedCustomerIds.length} seleccionada{selectedCustomerIds.length === 1 ? '' : 's'})
                         </h6>
-                        <span className="text-stone-500 text-xs">
+                        <span className="text-bunny-text-muted text-xs">
                           Busca por nombre o teléfono y marca las clientas que recibirán este WhatsApp.
                         </span>
                       </div>
@@ -787,13 +787,13 @@ export default function MarketingCampaignsPage() {
                         placeholder="Buscar clienta por nombre o teléfono..."
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
-                        className="w-full pl-9 pr-9 py-2 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                        className="w-full pl-9 pr-9 py-2 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
                       />
-                      <FaSearch className="absolute text-stone-400 top-3 left-3 text-xs" />
+                      <FaSearch className="absolute text-bunny-text-muted/70 top-3 left-3 text-xs" />
                       {customerSearch && (
                         <button
                           type="button"
-                          className="absolute text-stone-400 hover:text-stone-600 top-2.5 right-3 text-xs"
+                          className="absolute text-bunny-text-muted/70 hover:text-bunny-text-muted top-2.5 right-3 text-xs"
                           onClick={() => setCustomerSearch('')}
                         >
                           <FaTimes />
@@ -803,9 +803,9 @@ export default function MarketingCampaignsPage() {
 
                     {/* Chips de Seleccionadas */}
                     {selectedCustomerIds.length > 0 && (
-                      <div className="p-2.5 rounded-xl bg-white border border-stone-200 space-y-1.5">
+                      <div className="p-2.5 rounded-xl bg-white border border-bunny-border space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-semibold text-stone-600">
+                          <span className="font-semibold text-bunny-text-muted">
                             Clientas seleccionadas ({selectedCustomerIds.length}):
                           </span>
                           <button
@@ -820,15 +820,15 @@ export default function MarketingCampaignsPage() {
                           {selectedCustomersDetails.map((c) => (
                             <span
                               key={c.id}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-rose-50 border border-rose-200 text-amber-950"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-rose-50 border border-rose-200 text-bunny-cocoa"
                             >
                               <span>{c.fullName}</span>
-                              <span className="text-stone-400 text-[10px]">
+                              <span className="text-bunny-text-muted/70 text-[10px]">
                                 ({c.phone || 'S/T'})
                               </span>
                               <button
                                 type="button"
-                                className="text-stone-400 hover:text-stone-700 font-bold ml-0.5"
+                                className="text-bunny-text-muted/70 hover:text-bunny-text font-bold ml-0.5"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRemoveCustomerChip(c.id);
@@ -847,12 +847,12 @@ export default function MarketingCampaignsPage() {
                     {loadingCustomers ? (
                       <div className="text-center py-6">
                         <Spinner size="sm" />
-                        <span className="ml-2 text-stone-500 text-xs">Cargando base de clientas...</span>
+                        <span className="ml-2 text-bunny-text-muted text-xs">Cargando base de clientas...</span>
                       </div>
                     ) : (
-                      <div className="border border-stone-200 rounded-xl max-h-64 overflow-y-auto divide-y divide-stone-100 bg-white">
+                      <div className="border border-bunny-border rounded-xl max-h-64 overflow-y-auto divide-y divide-bunny-border bg-white">
                         {filteredCustomers.length === 0 ? (
-                          <div className="text-center py-6 text-stone-400 text-xs">
+                          <div className="text-center py-6 text-bunny-text-muted/70 text-xs">
                             No se encontraron clientas con el criterio "{customerSearch}".
                           </div>
                         ) : (
@@ -864,7 +864,7 @@ export default function MarketingCampaignsPage() {
                               <div
                                 key={c.id}
                                 className={`p-2.5 px-3.5 flex items-center justify-between transition-colors ${
-                                  isSelected ? 'bg-emerald-50/50' : 'hover:bg-stone-50'
+                                  isSelected ? 'bg-emerald-50/50' : 'hover:bg-bunny-paper'
                                 } ${!hasPhone ? 'opacity-50' : 'cursor-pointer'}`}
                                 onClick={() => {
                                   if (hasPhone) toggleCustomerSelection(c.id);
@@ -876,11 +876,11 @@ export default function MarketingCampaignsPage() {
                                     checked={isSelected}
                                     disabled={!hasPhone}
                                     onChange={() => {}}
-                                    className="rounded border-stone-300 text-rose-800 focus:ring-rose-500 pointer-events-none"
+                                    className="rounded border-bunny-border-strong text-rose-800 focus:ring-rose-500 pointer-events-none"
                                   />
                                   <div>
-                                    <div className="font-semibold text-xs text-stone-900">{c.fullName}</div>
-                                    <div className="text-stone-500 text-[11px]">
+                                    <div className="font-semibold text-xs text-bunny-text">{c.fullName}</div>
+                                    <div className="text-bunny-text-muted text-[11px]">
                                       {hasPhone ? (
                                         <span>📱 {c.phone}</span>
                                       ) : (
@@ -906,30 +906,30 @@ export default function MarketingCampaignsPage() {
 
                 {/* Resumen de la audiencia */}
                 {audiencePreview && (
-                  <div className="bg-stone-50 rounded-xl p-3.5 border border-stone-200 space-y-2">
+                  <div className="bg-bunny-paper rounded-xl p-3.5 border border-bunny-border space-y-2">
                     <div className="flex justify-between items-center flex-wrap gap-2">
-                      <span className="font-bold text-xs text-stone-800 flex items-center gap-1.5">
+                      <span className="font-bold text-xs text-bunny-text flex items-center gap-1.5">
                         🎯 Total estimado de destinatarias:
                         <Badge variant="primary">
                           {audiencePreview.totalCount} clientas
                         </Badge>
                       </span>
-                      <span className="text-xs text-stone-400">
+                      <span className="text-xs text-bunny-text-muted/70">
                         Costo est. Meta: ~${(audiencePreview.totalCount * 0.04).toFixed(2)} USD
                       </span>
                     </div>
 
                     {audiencePreview.sampleRecipients.length > 0 && (
-                      <div className="pt-2 border-t border-stone-200">
-                        <div className="text-[11px] text-stone-500 mb-1.5">Muestra de destinatarias:</div>
+                      <div className="pt-2 border-t border-bunny-border">
+                        <div className="text-[11px] text-bunny-text-muted mb-1.5">Muestra de destinatarias:</div>
                         <div className="flex flex-wrap gap-1.5">
                           {audiencePreview.sampleRecipients.slice(0, 6).map((r) => (
-                            <span key={r.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-white border border-stone-200 text-stone-700">
+                            <span key={r.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-white border border-bunny-border text-bunny-text">
                               👤 {r.fullName} ({r.maskedPhone})
                             </span>
                           ))}
                           {audiencePreview.totalCount > 6 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-stone-100 border border-stone-200 text-stone-500">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-bunny-sand border border-bunny-border text-bunny-text-muted">
                               +{audiencePreview.totalCount - 6} más...
                             </span>
                           )}
@@ -944,7 +944,7 @@ export default function MarketingCampaignsPage() {
               {selectedTemplate && selectedTemplate.bodyText.includes('{{2}}') && (
                 <div className="rounded-2xl border border-rose-200 bg-rose-50/40 p-4 md:p-6 space-y-3">
                   <div className="flex justify-between items-center">
-                    <h6 className="font-bold text-sm text-amber-950">
+                    <h6 className="font-bold text-sm text-bunny-cocoa">
                       ✏️ Beneficio o Parámetro Personalizado ({'{{2}}'})
                     </h6>
                     <button
@@ -955,7 +955,7 @@ export default function MarketingCampaignsPage() {
                       Restablecer por defecto
                     </button>
                   </div>
-                  <p className="text-stone-500 text-xs">
+                  <p className="text-bunny-text-muted text-xs">
                     Puedes cambiar el beneficio, oferta o servicio que se enviará en la plantilla sin requerir re-aprobación de Meta.
                   </p>
                   <input
@@ -969,8 +969,8 @@ export default function MarketingCampaignsPage() {
               )}
 
               {/* Paso 3: Acciones de Envío */}
-              <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-4 md:p-6 space-y-4">
-                <h5 className="font-bold text-amber-950 text-base">3. Acciones de Despacho</h5>
+              <div className="bg-white rounded-2xl border border-bunny-border shadow-sm p-4 md:p-6 space-y-4">
+                <h5 className="font-bold text-bunny-cocoa text-base">3. Acciones de Despacho</h5>
                 <div className="flex flex-wrap gap-3">
                   <Button
                     variant="outline"
@@ -1006,12 +1006,12 @@ export default function MarketingCampaignsPage() {
                 {/* Cabecera con botón de edición y eliminación en Meta */}
                 {selectedTemplate && (
                   <div className="w-full max-w-[360px] flex justify-between items-center mb-2 px-1">
-                    <span className="text-xs font-semibold text-stone-500">Vista Previa:</span>
+                    <span className="text-xs font-semibold text-bunny-text-muted">Vista Previa:</span>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={handleOpenEditMeta}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-bunny-border bg-white text-bunny-text hover:bg-bunny-paper transition-colors"
                         title="Editar el texto base oficial registrado en Meta Graph API"
                       >
                         <FaEdit /> Editar en Meta
@@ -1068,7 +1068,7 @@ export default function MarketingCampaignsPage() {
                           )}
                         </div>
                       ) : (
-                        <div className="text-center text-stone-400 p-8 text-xs">
+                        <div className="text-center text-bunny-text-muted/70 p-8 text-xs">
                           Selecciona una plantilla para ver su previsualización
                         </div>
                       )}
@@ -1078,8 +1078,8 @@ export default function MarketingCampaignsPage() {
               </div>
 
               {/* Tarjeta Informativa de Meta */}
-              <div className="wa-meta-policy-card mt-4 p-4 rounded-2xl bg-white border border-rose-100 shadow-sm text-xs text-stone-500 space-y-1.5">
-                <div className="font-semibold text-stone-800 mb-1">ℹ️ Políticas de Meta WhatsApp</div>
+              <div className="wa-meta-policy-card mt-4 p-4 rounded-2xl bg-white border border-bunny-border shadow-sm text-xs text-bunny-text-muted space-y-1.5">
+                <div className="font-semibold text-bunny-text mb-1">ℹ️ Políticas de Meta WhatsApp</div>
                 <ul className="list-disc pl-4 space-y-1">
                   <li>Las variables dinámicas (como nombres o beneficios) no requieren aprobación previa.</li>
                   <li>Si editas el texto base de la plantilla en Meta, pasará a revisión automática (pocos minutos).</li>
@@ -1097,12 +1097,12 @@ export default function MarketingCampaignsPage() {
             <Modal.Title>Enviar Mensaje de Prueba</Modal.Title>
           </Modal.Header>
           <Modal.Body className="space-y-4">
-            <p className="text-stone-500 text-xs">
+            <p className="text-bunny-text-muted text-xs">
               Recibirás el mensaje con la plantilla <strong>{selectedTemplate?.displayName}</strong> en tu propio
               WhatsApp para revisar cómo se ve antes de enviarlo a las clientas.
             </p>
             <div>
-              <label htmlFor="marketing-campaigns-numero-de-whatsapp-con" className="block text-xs font-semibold text-stone-700 mb-1">
+              <label htmlFor="marketing-campaigns-numero-de-whatsapp-con" className="block text-xs font-semibold text-bunny-text mb-1">
                 Número de WhatsApp (con código +56):
               </label>
               <input id="marketing-campaigns-numero-de-whatsapp-con"
@@ -1110,7 +1110,7 @@ export default function MarketingCampaignsPage() {
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
                 placeholder="+56912345678"
-                className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
               />
             </div>
             {customBenefit && (
@@ -1157,30 +1157,30 @@ export default function MarketingCampaignsPage() {
                   </div>
                 </div>
 
-                <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 text-xs space-y-2">
+                <div className="bg-bunny-paper p-4 rounded-xl border border-bunny-border text-xs space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <span className="text-stone-400">Plantilla:</span>{' '}
-                      <strong className="text-stone-800">{selectedTemplate?.displayName}</strong>
+                      <span className="text-bunny-text-muted/70">Plantilla:</span>{' '}
+                      <strong className="text-bunny-text">{selectedTemplate?.displayName}</strong>
                     </div>
                     <div>
-                      <span className="text-stone-400">Festividad:</span>{' '}
-                      <strong className="text-stone-800">{selectedTemplate?.occasion}</strong>
+                      <span className="text-bunny-text-muted/70">Festividad:</span>{' '}
+                      <strong className="text-bunny-text">{selectedTemplate?.occasion}</strong>
                     </div>
                     <div>
-                      <span className="text-stone-400">Audiencia:</span>{' '}
-                      <strong className="text-stone-800">{audiencePreview?.audienceDescription}</strong>
+                      <span className="text-bunny-text-muted/70">Audiencia:</span>{' '}
+                      <strong className="text-bunny-text">{audiencePreview?.audienceDescription}</strong>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-stone-400">Total destinatarias:</span>{' '}
+                      <span className="text-bunny-text-muted/70">Total destinatarias:</span>{' '}
                       <Badge variant="success">{audiencePreview?.totalCount || 0} personas</Badge>
                     </div>
                     {selectedAudience === 'SPECIFIC_CUSTOMERS' && selectedCustomersDetails.length > 0 && (
-                      <div className="col-span-full pt-2 border-t border-stone-200">
-                        <span className="text-stone-400 block mb-1">Destinatarias seleccionadas ({selectedCustomersDetails.length}):</span>
+                      <div className="col-span-full pt-2 border-t border-bunny-border">
+                        <span className="text-bunny-text-muted/70 block mb-1">Destinatarias seleccionadas ({selectedCustomersDetails.length}):</span>
                         <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                           {selectedCustomersDetails.map((c) => (
-                            <span key={c.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-white border border-stone-200 text-stone-700">
+                            <span key={c.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-white border border-bunny-border text-bunny-text">
                               👤 {c.fullName} ({c.phone || 'S/T'})
                             </span>
                           ))}
@@ -1188,8 +1188,8 @@ export default function MarketingCampaignsPage() {
                       </div>
                     )}
                     {customBenefit && (
-                      <div className="col-span-full pt-2 border-t border-stone-200">
-                        <span className="text-stone-400">Beneficio ({'{{2}}'}):</span>{' '}
+                      <div className="col-span-full pt-2 border-t border-bunny-border">
+                        <span className="text-bunny-text-muted/70">Beneficio ({'{{2}}'}):</span>{' '}
                         <strong className="text-rose-900">{customBenefit}</strong>
                       </div>
                     )}
@@ -1199,8 +1199,8 @@ export default function MarketingCampaignsPage() {
                 {isDispatching && (
                   <div className="text-center py-4 space-y-2">
                     <Spinner size="lg" variant="primary" />
-                    <div className="font-semibold text-xs text-stone-800">Despachando mensajes en ráfagas seguras...</div>
-                    <div className="text-[11px] text-stone-400">Por favor no cierres esta ventana.</div>
+                    <div className="font-semibold text-xs text-bunny-text">Despachando mensajes en ráfagas seguras...</div>
+                    <div className="text-[11px] text-bunny-text-muted/70">Por favor no cierres esta ventana.</div>
                   </div>
                 )}
               </>
@@ -1279,7 +1279,7 @@ export default function MarketingCampaignsPage() {
             </div>
 
             <div>
-              <label htmlFor="marketing-campaigns-encabezado-texto-plano-sin" className="block text-xs font-semibold text-stone-700 mb-1">
+              <label htmlFor="marketing-campaigns-encabezado-texto-plano-sin" className="block text-xs font-semibold text-bunny-text mb-1">
                 Encabezado (Texto plano, sin emojis según reglas de Meta):
               </label>
               <input id="marketing-campaigns-encabezado-texto-plano-sin"
@@ -1287,56 +1287,56 @@ export default function MarketingCampaignsPage() {
                 value={editHeaderText}
                 onChange={(e) => setEditHeaderText(e.target.value)}
                 placeholder="Ej: Celebra con BunnyCure"
-                className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
               />
             </div>
 
             <div>
-              <label htmlFor="marketing-campaigns-cuerpo-del-mensaje-soporta" className="block text-xs font-semibold text-stone-700 mb-1">
+              <label htmlFor="marketing-campaigns-cuerpo-del-mensaje-soporta" className="block text-xs font-semibold text-bunny-text mb-1">
                 Cuerpo del Mensaje (Soporta emojis, *negrita* y variables {'{{1}}'}, {'{{2}}'}):
               </label>
               <textarea id="marketing-campaigns-cuerpo-del-mensaje-soporta"
                 rows={6}
                 value={editBodyText}
                 onChange={(e) => setEditBodyText(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 font-sans"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 font-sans"
               />
-              <span className="text-stone-400 text-[11px] block mt-1">
+              <span className="text-bunny-text-muted/70 text-[11px] block mt-1">
                 Mantén las variables numéricas como <code>{`{{1}}`}</code> (nombre de la clienta) para que la personalización funcione.
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="marketing-campaigns-texto-de-pie-footer" className="block text-xs font-semibold text-stone-700 mb-1">Texto de Pie (Footer):</label>
+                <label htmlFor="marketing-campaigns-texto-de-pie-footer" className="block text-xs font-semibold text-bunny-text mb-1">Texto de Pie (Footer):</label>
                 <input id="marketing-campaigns-texto-de-pie-footer"
                   type="text"
                   value={editFooterText}
                   onChange={(e) => setEditFooterText(e.target.value)}
                   placeholder="BunnyCure Studio"
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
                 />
               </div>
               <div>
-                <label htmlFor="marketing-campaigns-texto-del-boton-cta" className="block text-xs font-semibold text-stone-700 mb-1">Texto del Botón CTA (Sin emojis):</label>
+                <label htmlFor="marketing-campaigns-texto-del-boton-cta" className="block text-xs font-semibold text-bunny-text mb-1">Texto del Botón CTA (Sin emojis):</label>
                 <input id="marketing-campaigns-texto-del-boton-cta"
                   type="text"
                   value={editButtonText}
                   onChange={(e) => setEditButtonText(e.target.value)}
                   placeholder="Reservar mi hora"
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="marketing-campaigns-url-de-destino-del" className="block text-xs font-semibold text-stone-700 mb-1">URL de Destino del Botón:</label>
+              <label htmlFor="marketing-campaigns-url-de-destino-del" className="block text-xs font-semibold text-bunny-text mb-1">URL de Destino del Botón:</label>
               <input id="marketing-campaigns-url-de-destino-del"
                 type="text"
                 value={editButtonUrl}
                 onChange={(e) => setEditButtonUrl(e.target.value)}
                 placeholder="https://reservar.bunnycure.cl"
-                className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
               />
             </div>
           </Modal.Body>
@@ -1373,12 +1373,12 @@ export default function MarketingCampaignsPage() {
           <Modal.Body className="space-y-4">
             {aiStep === 'PROMPT' ? (
               <>
-                <p className="text-stone-500 text-xs">
+                <p className="text-bunny-text-muted text-xs">
                   Describe en lenguaje natural la campaña, promoción o festividad que deseas comunicar. El Agente IA propondrá una redacción profesional optimizada para Meta para que <strong>puedas revisarla, editarla y dar tu visto bueno</strong> antes de guardarla o registrarla.
                 </p>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1.5">Ideas rápidas / Sugerencias:</label>
+                  <label className="block text-xs font-semibold text-bunny-text-muted mb-1.5">Ideas rápidas / Sugerencias:</label>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       'Promoción Cyber Day: 25% dcto en Esmaltado Permanente y Manicura Rusa',
@@ -1389,7 +1389,7 @@ export default function MarketingCampaignsPage() {
                       <button
                         key={idx}
                         type="button"
-                        className="p-2 text-left text-xs bg-stone-50 hover:bg-rose-50 border border-stone-200 rounded-xl text-stone-700 transition-colors"
+                        className="p-2 text-left text-xs bg-bunny-paper hover:bg-rose-50 border border-bunny-border rounded-xl text-bunny-text transition-colors"
                         onClick={() => setAiPrompt(sug)}
                       >
                         ✨ {sug}
@@ -1399,7 +1399,7 @@ export default function MarketingCampaignsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="marketing-campaigns-que-campana-o-mensaje" className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label htmlFor="marketing-campaigns-que-campana-o-mensaje" className="block text-xs font-semibold text-bunny-text mb-1">
                     ¿Qué campaña o mensaje deseas crear?
                   </label>
                   <textarea id="marketing-campaigns-que-campana-o-mensaje"
@@ -1408,14 +1408,14 @@ export default function MarketingCampaignsPage() {
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     disabled={isGeneratingAi}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-bunny-border focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 bg-white"
                   />
                 </div>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-stone-700">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-bunny-text">
                   <input
                     type="checkbox"
-                    className="rounded border-stone-300 text-rose-800 focus:ring-rose-500"
+                    className="rounded border-bunny-border-strong text-rose-800 focus:ring-rose-500"
                     checked={aiAutoRegister}
                     onChange={(e) => setAiAutoRegister(e.target.checked)}
                     disabled={isGeneratingAi}
@@ -1431,8 +1431,8 @@ export default function MarketingCampaignsPage() {
                   <div className="flex items-center gap-2.5">
                     <span className="text-xl">💡</span>
                     <div>
-                      <strong className="block text-stone-900 text-xs">Propuesta generada por el Agente IA</strong>
-                      <span className="text-stone-500 text-[11px]">
+                      <strong className="block text-bunny-text text-xs">Propuesta generada por el Agente IA</strong>
+                      <span className="text-bunny-text-muted text-[11px]">
                         Revisa el mensaje, edita cualquier campo para ajustarlo a tus preferencias y presiona <strong>"Dar Visto Bueno"</strong> cuando esté listo.
                       </span>
                     </div>
@@ -1442,38 +1442,38 @@ export default function MarketingCampaignsPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                   {/* Columna Izquierda: Formulario de Ajustes */}
-                  <div className="lg:col-span-7 p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-3">
-                    <h6 className="font-bold text-stone-900 text-sm flex items-center gap-2">
+                  <div className="lg:col-span-7 p-4 bg-bunny-paper rounded-2xl border border-bunny-border space-y-3">
+                    <h6 className="font-bold text-bunny-text text-sm flex items-center gap-2">
                       <FaEdit className="text-purple-600" /> Ajustar Contenido de la Plantilla
                     </h6>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="sm:col-span-2">
-                        <label htmlFor="marketing-campaigns-nombre-de-la-campana" className="block text-[11px] font-semibold text-stone-600 mb-1">Nombre de la Campaña</label>
+                        <label htmlFor="marketing-campaigns-nombre-de-la-campana" className="block text-[11px] font-semibold text-bunny-text-muted mb-1">Nombre de la Campaña</label>
                         <input id="marketing-campaigns-nombre-de-la-campana"
                           type="text"
                           value={draftDisplayName}
                           onChange={(e) => setDraftDisplayName(e.target.value)}
                           placeholder="Ej: Cyber Day Especial ✨"
-                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                         />
                       </div>
                       <div>
-                        <label htmlFor="marketing-campaigns-emoji-icono" className="block text-[11px] font-semibold text-stone-600 mb-1">Emoji / Icono</label>
+                        <label htmlFor="marketing-campaigns-emoji-icono" className="block text-[11px] font-semibold text-bunny-text-muted mb-1">Emoji / Icono</label>
                         <input id="marketing-campaigns-emoji-icono"
                           type="text"
                           value={draftEmoji}
                           onChange={(e) => setDraftEmoji(e.target.value)}
                           placeholder="💅"
-                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex justify-between items-center text-[11px] font-semibold text-stone-600 mb-1">
+                      <div className="flex justify-between items-center text-[11px] font-semibold text-bunny-text-muted mb-1">
                         <span>Encabezado en WhatsApp (Opcional)</span>
-                        <span className="text-stone-400 font-normal">{draftHeaderText.length}/60 car.</span>
+                        <span className="text-bunny-text-muted/70 font-normal">{draftHeaderText.length}/60 car.</span>
                       </div>
                       <input
                         type="text"
@@ -1481,17 +1481,17 @@ export default function MarketingCampaignsPage() {
                         onChange={(e) => setDraftHeaderText(e.target.value)}
                         placeholder="Ej: Especial Verano en BunnyCure"
                         maxLength={60}
-                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                       />
-                      <span className="text-stone-400 text-[10px] block mt-0.5">
+                      <span className="text-bunny-text-muted/70 text-[10px] block mt-0.5">
                         Regla de Meta: No debe incluir emojis ni formato en la cabecera.
                       </span>
                     </div>
 
                     <div>
-                      <div className="flex justify-between items-center text-[11px] font-semibold text-stone-600 mb-1">
+                      <div className="flex justify-between items-center text-[11px] font-semibold text-bunny-text-muted mb-1">
                         <span>Cuerpo del Mensaje <span className="text-red-500">*</span></span>
-                        <span className={`text-[10px] ${draftBodyText.length > 1000 ? 'text-red-600 font-bold' : 'text-stone-400'}`}>
+                        <span className={`text-[10px] ${draftBodyText.length > 1000 ? 'text-red-600 font-bold' : 'text-bunny-text-muted/70'}`}>
                           {draftBodyText.length} / 1024 caracteres
                         </span>
                       </div>
@@ -1499,54 +1499,54 @@ export default function MarketingCampaignsPage() {
                         rows={6}
                         value={draftBodyText}
                         onChange={(e) => setDraftBodyText(e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 leading-relaxed"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 leading-relaxed"
                         placeholder="Escribe el mensaje..."
                       />
-                      <span className="text-stone-400 text-[10px] block mt-0.5">
+                      <span className="text-bunny-text-muted/70 text-[10px] block mt-0.5">
                         ℹ️ La variable <code>{`{{1}}`}</code> representa el nombre de cada clienta (ej: Camila).
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label htmlFor="marketing-campaigns-pie-de-pagina-footer" className="block text-[11px] font-semibold text-stone-600 mb-1">Pie de Página (Footer)</label>
+                        <label htmlFor="marketing-campaigns-pie-de-pagina-footer" className="block text-[11px] font-semibold text-bunny-text-muted mb-1">Pie de Página (Footer)</label>
                         <input id="marketing-campaigns-pie-de-pagina-footer"
                           type="text"
                           value={draftFooterText}
                           onChange={(e) => setDraftFooterText(e.target.value)}
                           placeholder="BunnyCure Studio"
                           maxLength={60}
-                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                         />
                       </div>
                       <div>
-                        <label htmlFor="marketing-campaigns-boton-de-accion-cta" className="block text-[11px] font-semibold text-stone-600 mb-1">Botón de Acción (CTA)</label>
+                        <label htmlFor="marketing-campaigns-boton-de-accion-cta" className="block text-[11px] font-semibold text-bunny-text-muted mb-1">Botón de Acción (CTA)</label>
                         <input id="marketing-campaigns-boton-de-accion-cta"
                           type="text"
                           value={draftButtonText}
                           onChange={(e) => setDraftButtonText(e.target.value)}
                           placeholder="Reservar mi cita"
                           maxLength={25}
-                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label htmlFor="marketing-campaigns-enlace-del-boton" className="block text-[11px] font-semibold text-stone-600 mb-1">Enlace del Botón</label>
+                      <label htmlFor="marketing-campaigns-enlace-del-boton" className="block text-[11px] font-semibold text-bunny-text-muted mb-1">Enlace del Botón</label>
                       <input id="marketing-campaigns-enlace-del-boton"
                         type="text"
                         value={draftButtonUrl}
                         onChange={(e) => setDraftButtonUrl(e.target.value)}
                         placeholder="https://reservar.bunnycure.cl"
-                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-bunny-border bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                       />
                     </div>
 
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-stone-700 pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-bunny-text pt-1">
                       <input
                         type="checkbox"
-                        className="rounded border-stone-300 text-rose-800 focus:ring-rose-500"
+                        className="rounded border-bunny-border-strong text-rose-800 focus:ring-rose-500"
                         checked={aiAutoRegister}
                         onChange={(e) => setAiAutoRegister(e.target.checked)}
                       />
@@ -1557,9 +1557,9 @@ export default function MarketingCampaignsPage() {
                   </div>
 
                   {/* Columna Derecha: Previsualización en Vivo de WhatsApp */}
-                  <div className="lg:col-span-5 border border-stone-200 rounded-2xl p-4 bg-white shadow-sm flex flex-col">
-                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-stone-100 text-xs">
-                      <span className="font-bold text-stone-600 flex items-center gap-1.5">
+                  <div className="lg:col-span-5 border border-bunny-border rounded-2xl p-4 bg-white shadow-sm flex flex-col">
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-bunny-border text-xs">
+                      <span className="font-bold text-bunny-text-muted flex items-center gap-1.5">
                         <FaMobileAlt className="text-emerald-600" /> Previsualización en WhatsApp
                       </span>
                       <Badge variant="success">En Vivo</Badge>
@@ -1597,7 +1597,7 @@ export default function MarketingCampaignsPage() {
                       </div>
 
                       <div className="text-center mt-auto pt-4">
-                        <span className="text-stone-500 text-[11px]">
+                        <span className="text-bunny-text-muted text-[11px]">
                           Simulación con destinataria: <strong>Camila</strong>
                         </span>
                       </div>
@@ -1669,11 +1669,11 @@ export default function MarketingCampaignsPage() {
             </Modal.Title>
           </Modal.Header>
           <Modal.Body className="space-y-3">
-            <p className="text-sm text-stone-700">
+            <p className="text-sm text-bunny-text">
               ¿Estás seguro de que deseas eliminar permanentemente la plantilla{' '}
               <strong>"{templateToDelete?.displayName}"</strong>?
             </p>
-            <div className="bg-stone-50 p-2.5 rounded-xl text-xs text-stone-500 font-mono">
+            <div className="bg-bunny-paper p-2.5 rounded-xl text-xs text-bunny-text-muted font-mono">
               Identificador Meta: {templateToDelete?.name}
             </div>
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">

@@ -33,6 +33,7 @@ import {
 import { Button, Badge, Card, Spinner } from '@/components/ui';
 import ReactivationMessageModal from './ReactivationMessageModal';
 import { useToast } from '@/hooks/useToast';
+import { confirmDialog } from '../ui/confirmDialog';
 
 const TEMPLATE_SEND_STORAGE_KEY = 'bunnycure_reactivation_template_enabled_v1';
 
@@ -117,16 +118,18 @@ export default function CustomerReactivationTab({
 
   // Envío WhatsApp 1-clic directo
   const handleQuickWhatsApp = useCallback(
-    (item: InactiveCustomer) => {
+    async (item: InactiveCustomer) => {
       if (!templateSendEnabled) {
         toast.info('El envío 1-clic está desactivado. Usa "Personalizar" o "Copiar"');
         return;
       }
 
       if (item.isContactedRecently) {
-        const confirmSend = window.confirm(
-          `⚠️ ${item.customer.fullName} ya fue contactada hace ${item.daysSinceLastContact} día(s).\n¿Deseas volver a enviarle un mensaje por WhatsApp?`
-        );
+        const confirmSend = await confirmDialog({
+          title: 'Volver a contactar',
+          message: `${item.customer.fullName} ya fue contactada hace ${item.daysSinceLastContact} día(s).\n¿Deseas volver a enviarle un mensaje por WhatsApp?`,
+          confirmLabel: 'Enviar WhatsApp',
+        });
         if (!confirmSend) return;
       }
 
@@ -207,7 +210,7 @@ export default function CustomerReactivationTab({
                 ¿Quieres reactivar a todas tus clientas inactivas en 1 clic?
               </span>
             </div>
-            <p className="text-slate-600 text-xs sm:text-sm mb-0 max-w-2xl">
+            <p className="text-bunny-text-muted text-xs sm:text-sm mb-0 max-w-2xl">
               Usa la plantilla oficial de WhatsApp aprobada por Meta para llegar a todo tu segmento inactivo de forma automática con botones interactivos de reserva.
             </p>
           </div>
@@ -225,13 +228,13 @@ export default function CustomerReactivationTab({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <div
           onClick={() => setInactivityRange('ALL_20_PLUS')}
-          className={`p-3.5 rounded-xl border bg-slate-50 cursor-pointer transition-all ${
-            inactivityRange === 'ALL_20_PLUS' ? 'ring-2 ring-bunny-primary border-transparent shadow-sm' : 'border-slate-200 hover:border-slate-300'
+          className={`p-3.5 rounded-xl border bg-bunny-paper cursor-pointer transition-all ${
+            inactivityRange === 'ALL_20_PLUS' ? 'ring-2 ring-bunny-primary border-transparent shadow-sm' : 'border-bunny-border hover:border-bunny-border-strong'
           }`}
         >
-          <div className="text-slate-500 text-xs font-semibold">Total Inactivas</div>
-          <div className="text-2xl font-bold text-slate-800 my-0.5">{metrics.totalInactive20Plus}</div>
-          <div className="text-[11px] text-slate-400">≥20 días sin agendar</div>
+          <div className="text-bunny-text-muted text-xs font-semibold">Total Inactivas</div>
+          <div className="text-2xl font-bold text-bunny-text my-0.5">{metrics.totalInactive20Plus}</div>
+          <div className="text-[11px] text-bunny-text-muted/70">≥20 días sin agendar</div>
         </div>
 
         <div
@@ -275,24 +278,24 @@ export default function CustomerReactivationTab({
       </div>
 
       {/* Switch Maestro de Envío Directo 1-Clic */}
-      <Card className="border border-slate-200 shadow-sm bg-white">
+      <Card className="border border-bunny-border shadow-sm bg-white">
         <Card.Body className="p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 transition-colors ${
-                templateSendEnabled ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                templateSendEnabled ? 'bg-emerald-100 text-emerald-600' : 'bg-bunny-sand text-bunny-text-muted/70'
               }`}
             >
               <FaWhatsapp />
             </div>
             <div>
-              <div className="font-bold text-xs sm:text-sm flex items-center gap-2 text-slate-800">
+              <div className="font-bold text-xs sm:text-sm flex items-center gap-2 text-bunny-text">
                 <span>Envío Rápido de WhatsApp (1-clic) mediante Plantilla</span>
                 <Badge variant={templateSendEnabled ? 'success' : 'secondary'}>
                   {templateSendEnabled ? '🟢 Habilitado' : '⚪ Deshabilitado'}
                 </Badge>
               </div>
-              <p className="text-slate-500 text-xs mt-0.5 mb-0">
+              <p className="text-bunny-text-muted text-xs mt-0.5 mb-0">
                 {templateSendEnabled
                   ? 'El botón "WhatsApp" (1-clic) abrirá la plantilla en WhatsApp directamente (+56 9 8887 3031).'
                   : 'Envío en 1-clic apagado. Las opciones de "Personalizar" (modal) y "Copiar mensaje" continúan 100% activas.'}
@@ -306,8 +309,8 @@ export default function CustomerReactivationTab({
               onChange={(e) => handleToggleTemplateSend(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-            <span className="ml-2 text-xs font-semibold text-slate-700 select-none">
+            <div className="w-11 h-6 bg-bunny-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-bunny-border-strong after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            <span className="ml-2 text-xs font-semibold text-bunny-text select-none">
               {templateSendEnabled ? 'ON' : 'OFF'}
             </span>
           </label>
@@ -315,16 +318,16 @@ export default function CustomerReactivationTab({
       </Card>
 
       {/* Barra de Filtros */}
-      <Card className="border border-slate-200 shadow-sm bg-white">
+      <Card className="border border-bunny-border shadow-sm bg-white">
         <Card.Body className="p-3.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
             {/* Rango de Inactividad */}
             <div>
-              <label htmlFor="customer-reactivation-dias-de-inactividad" className="block text-xs font-semibold text-slate-600 mb-1">📅 Días de Inactividad:</label>
+              <label htmlFor="customer-reactivation-dias-de-inactividad" className="block text-xs font-semibold text-bunny-text-muted mb-1">📅 Días de Inactividad:</label>
               <select id="customer-reactivation-dias-de-inactividad"
                 value={inactivityRange}
                 onChange={(e) => setInactivityRange(e.target.value as InactivityRange)}
-                className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                className="w-full text-xs rounded-lg border border-bunny-border-strong p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
               >
                 <option value="ALL_20_PLUS">Todos los Inactivos (≥20 días)</option>
                 <option value="20_TO_29">20 - 29 días (Mantención Ideal)</option>
@@ -335,14 +338,14 @@ export default function CustomerReactivationTab({
 
             {/* Servicio Previo */}
             <div>
-              <label htmlFor="customer-reactivation-servicio-previo" className="block text-xs font-semibold text-slate-600 mb-1">💅 Servicio Previo:</label>
+              <label htmlFor="customer-reactivation-servicio-previo" className="block text-xs font-semibold text-bunny-text-muted mb-1">💅 Servicio Previo:</label>
               <select id="customer-reactivation-servicio-previo"
                 value={selectedServiceId}
                 onChange={(e) => {
                   const val = e.target.value;
                   setSelectedServiceId(val === 'ALL' ? 'ALL' : Number(val));
                 }}
-                className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                className="w-full text-xs rounded-lg border border-bunny-border-strong p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
               >
                 <option value="ALL">Todos los servicios</option>
                 {services.map((s) => (
@@ -355,11 +358,11 @@ export default function CustomerReactivationTab({
 
             {/* Estado Anti-Spam */}
             <div>
-              <label htmlFor="customer-reactivation-estado-anti-spam" className="block text-xs font-semibold text-slate-600 mb-1">🛡️ Estado Anti-Spam:</label>
+              <label htmlFor="customer-reactivation-estado-anti-spam" className="block text-xs font-semibold text-bunny-text-muted mb-1">🛡️ Estado Anti-Spam:</label>
               <select id="customer-reactivation-estado-anti-spam"
                 value={contactStatus}
                 onChange={(e) => setContactStatus(e.target.value as ContactStatusFilter)}
-                className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                className="w-full text-xs rounded-lg border border-bunny-border-strong p-2 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
               >
                 <option value="ALL">Todas las clientas</option>
                 <option value="UNCONTACTED">🟢 Solo disponibles (Sin contactar)</option>
@@ -369,20 +372,20 @@ export default function CustomerReactivationTab({
 
             {/* Búsqueda por Texto */}
             <div>
-              <label htmlFor="customer-reactivation-buscar-clienta" className="block text-xs font-semibold text-slate-600 mb-1">🔍 Buscar Clienta:</label>
+              <label htmlFor="customer-reactivation-buscar-clienta" className="block text-xs font-semibold text-bunny-text-muted mb-1">🔍 Buscar Clienta:</label>
               <div className="relative">
                 <input id="customer-reactivation-buscar-clienta"
                   type="text"
                   placeholder="Nombre, teléfono o RUT..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-slate-300 p-2 pr-8 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
+                  className="w-full text-xs rounded-lg border border-bunny-border-strong p-2 pr-8 focus:outline-none focus:ring-1 focus:ring-bunny-primary"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-bunny-text-muted/70 hover:text-bunny-text-muted"
                   >
                     <FaTimes size={12} />
                   </button>
@@ -394,10 +397,10 @@ export default function CustomerReactivationTab({
       </Card>
 
       {/* Lista de Resultados */}
-      <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-        <Card.Header className="bg-slate-50 border-b border-slate-200 py-3 px-4 flex justify-between items-center">
+      <Card className="border border-bunny-border shadow-sm bg-white overflow-hidden">
+        <Card.Header className="bg-bunny-paper border-b border-bunny-border py-3 px-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <h5 className="font-bold text-sm sm:text-base text-slate-800 mb-0">Clientas Inactivas para Reactivación</h5>
+            <h5 className="font-bold text-sm sm:text-base text-bunny-text mb-0">Clientas Inactivas para Reactivación</h5>
             <Badge variant="secondary">
               {filteredInactive.length} resultado(s)
             </Badge>
@@ -423,20 +426,20 @@ export default function CustomerReactivationTab({
           {loading ? (
             <div className="text-center py-12">
               <Spinner size="lg" className="border-bunny-primary mx-auto" />
-              <p className="mt-2 text-slate-500 text-xs">Cargando historial de citas y clientes...</p>
+              <p className="mt-2 text-bunny-text-muted text-xs">Cargando historial de citas y clientes...</p>
             </div>
           ) : filteredInactive.length === 0 ? (
             <div className="text-center py-12 px-4">
               <FaCheckCircle className="text-emerald-500 text-4xl mx-auto mb-2 opacity-80" />
-              <p className="text-slate-700 font-semibold mb-1 text-sm">No hay clientas inactivas que coincidan con los filtros.</p>
-              <small className="text-slate-400">¡Excelente trabajo manteniendo a las clientas agendadas!</small>
+              <p className="text-bunny-text font-semibold mb-1 text-sm">No hay clientas inactivas que coincidan con los filtros.</p>
+              <small className="text-bunny-text-muted/70">¡Excelente trabajo manteniendo a las clientas agendadas!</small>
             </div>
           ) : (
             <>
               {/* Vista Desktop: Tabla */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                  <thead className="bg-bunny-paper border-b border-bunny-border text-bunny-text-muted font-semibold text-xs uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Clienta / Contacto</th>
                       <th className="py-3 px-4">Último Servicio Realizado</th>
@@ -445,13 +448,13 @@ export default function CustomerReactivationTab({
                       <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-bunny-border">
                     {filteredInactive.map((item) => (
-                      <tr key={item.customer.id} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={item.customer.id} className="hover:bg-bunny-paper/60 transition-colors">
                         {/* Clienta */}
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-800 text-sm">{item.customer.fullName}</div>
-                          <div className="text-xs text-slate-500 flex gap-2 mt-0.5">
+                          <div className="font-semibold text-bunny-text text-sm">{item.customer.fullName}</div>
+                          <div className="text-xs text-bunny-text-muted flex gap-2 mt-0.5">
                             <span>📱 {item.customer.phone || 'Sin teléfono'}</span>
                             {item.customer.rut && <span>• RUT: {item.customer.rut}</span>}
                           </div>
@@ -464,15 +467,15 @@ export default function CustomerReactivationTab({
 
                         {/* Último Servicio */}
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-xs text-slate-800 truncate max-w-[220px]">
+                          <div className="font-semibold text-xs text-bunny-text truncate max-w-[220px]">
                             {item.lastServiceName}
                           </div>
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-bunny-text-muted">
                             {item.lastAppointmentDate
                               ? `Atendida el ${format(item.lastAppointmentDate, 'dd/MM/yyyy', { locale: es })}`
                               : 'Registrada sin cita previa'}
                           </div>
-                          <div className="text-[11px] text-slate-400">Visitas completadas: {item.totalCompletedVisits}</div>
+                          <div className="text-[11px] text-bunny-text-muted/70">Visitas completadas: {item.totalCompletedVisits}</div>
                         </td>
 
                         {/* Días Inactiva */}
@@ -488,7 +491,7 @@ export default function CustomerReactivationTab({
                               <div className="mt-1">
                                 <button
                                   type="button"
-                                  className="text-[11px] text-slate-400 hover:text-slate-600 underline"
+                                  className="text-[11px] text-bunny-text-muted/70 hover:text-bunny-text-muted underline"
                                   onClick={(e) => handleResetContact(item.customer.id, e)}
                                 >
                                   Restablecer
@@ -518,7 +521,7 @@ export default function CustomerReactivationTab({
                               className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${
                                 templateSendEnabled
                                   ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-bunny-border text-bunny-text-muted/70 cursor-not-allowed'
                               }`}
                             >
                               <FaWhatsapp />
@@ -568,18 +571,18 @@ export default function CustomerReactivationTab({
               {/* Vista Móvil: Tarjetas */}
               <div className="md:hidden p-3 space-y-3">
                 {filteredInactive.map((item) => (
-                  <div key={item.customer.id} className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-sm space-y-2.5">
+                  <div key={item.customer.id} className="p-3.5 rounded-xl border border-bunny-border bg-white shadow-sm space-y-2.5">
                     <div className="flex justify-between items-start gap-2">
                       <div>
-                        <h6 className="font-bold text-slate-800 text-sm mb-0.5">{item.customer.fullName}</h6>
-                        <span className="text-xs text-slate-500">📱 {item.customer.phone}</span>
+                        <h6 className="font-bold text-bunny-text text-sm mb-0.5">{item.customer.fullName}</h6>
+                        <span className="text-xs text-bunny-text-muted">📱 {item.customer.phone}</span>
                       </div>
                       <div>{getInactivityBadge(item.daysSinceLastAppointment)}</div>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                    <div className="p-2.5 rounded-lg bg-bunny-paper border border-bunny-border text-xs">
                       <div><strong>Último Servicio:</strong> {item.lastServiceName}</div>
-                      <div className="text-slate-500 mt-0.5">
+                      <div className="text-bunny-text-muted mt-0.5">
                         {item.lastAppointmentDate
                           ? `Fecha: ${format(item.lastAppointmentDate, 'dd/MM/yyyy', { locale: es })}`
                           : 'Sin citas previas'}
@@ -587,7 +590,7 @@ export default function CustomerReactivationTab({
                     </div>
 
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500">Anti-Spam:</span>
+                      <span className="text-bunny-text-muted">Anti-Spam:</span>
                       {item.isContactedRecently ? (
                         <Badge variant="warning">
                           Contactada hace {item.daysSinceLastContact}d
@@ -605,7 +608,7 @@ export default function CustomerReactivationTab({
                         className={`w-full flex items-center justify-center gap-2 text-xs font-semibold py-2 px-3 rounded-lg transition-all ${
                           templateSendEnabled
                             ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-bunny-border text-bunny-text-muted/70 cursor-not-allowed'
                         }`}
                       >
                         <FaWhatsapp className="text-base" />
